@@ -176,14 +176,14 @@ class LoginController extends Controller
         'activation_token' => $token,
         'activation_expires' => now()->addHours(24),
     ]);
-    
+
 
     $activationUrl = route('account.activate', [
         'userId' => $user->id,
         'token' => $token,
     ]);
     // dd($activationUrl);
-    
+
 
     try {
         Mail::to($user->email)->send(new ActivationMail($activationUrl, $user->name));
@@ -242,7 +242,7 @@ public function activate(Request $request)
         ]);
 
         $user = User::where('email', $request->email)->first();
-        
+
         if ($user->status === 'Bị Khóa') {
             Toastr::error('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.', 'Lỗi');
             return back()->withInput();
@@ -397,6 +397,6 @@ public function activate(Request $request)
         }
 
         session()->flash('success', 'Bạn đã thay đổi mật khẩu thành công!');
-        return redirect()->route('account.showUser');
+        return redirect()->route('account.profile');
     }
 }

@@ -76,7 +76,7 @@ Route::get('/books/{categoryId?}', [BookController::class, 'index'])->name('book
 Route::get('/contact', [ContactController::class, 'showForm'])->name('contact.form');
 Route::post('/contact', [ContactController::class, 'submitForm'])->name('contact.submit');
 
-// lien he 
+// lien he
 Route::get('/news', [NewsController::class, 'index'])->name('news.index');
 Route::get('/news/{id}', [NewsController::class, 'show'])->name('news.show');
 
@@ -341,16 +341,16 @@ Route::prefix('account')->name('account.')->group(function () {
 Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
     // Dashboard
     Route::get('/', [LoginController::class, 'index'])->name('index');
-    
+
     // Profile management
     Route::get('/profile', [LoginController::class, 'showUser'])->name('profile');
     Route::put('/profile/update', [LoginController::class, 'updateProfile'])->name('profile.update');
 
-    
+
     // Password change
     Route::get('/password/change', [LoginController::class, 'showChangePasswordForm'])->name('changePassword');
     Route::post('/password/change', [LoginController::class, 'changePassword'])->name('password.update');
-    
+
     // Orders management
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [ClientOrderController::class, 'index'])->name('index');
@@ -358,7 +358,7 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
         Route::put('/{id}', [ClientOrderController::class, 'update'])->name('update');
         Route::delete('/{id}', [ClientOrderController::class, 'destroy'])->name('destroy');
     });
-    
+
     // Address management
     Route::get('/addresses', [\App\Http\Controllers\AddressController::class, 'index'])->name('addresses');
     Route::post('/addresses', [\App\Http\Controllers\AddressController::class, 'store'])->name('addresses.store');
