@@ -139,9 +139,14 @@
                                             Thêm vào giỏ hàng →
                                         </a>
                                     </div>
-
                                 </div>
                             </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endforeach
+
         <!-- Enhanced Features Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <!-- Feature 1: Free Shipping -->
