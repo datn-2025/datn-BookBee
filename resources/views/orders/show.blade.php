@@ -120,7 +120,7 @@
                         </div>
                         <div>
                             <dt class="font-medium text-gray-800">Trạng thái:</dt>
-                            <dd class="font-semibold {{ $order->paymentStatus->name == 'paid' ? 'text-green-600' : ($order->paymentStatus->name == 'pending' ? 'text-yellow-600' : 'text-red-600') }}">
+                            <dd class="font-semibold {{ $order->paymentStatus->name == 'Đã Thanh Toán' ? 'text-green-600' : ($order->paymentStatus->name == 'Chưa thanh toán' || $order->paymentStatus->name == 'Chờ Xử Lý' ? 'text-yellow-600' : 'text-red-600') }}">
                                 {{ $order->paymentStatus->name }}
                             </dd>
                         </div>

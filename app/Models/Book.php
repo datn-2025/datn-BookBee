@@ -85,17 +85,21 @@ class Book extends Model
     public function attributeValues(): BelongsToMany
     {
         return $this->belongsToMany(AttributeValue::class, 'book_attribute_values', 'book_id', 'attribute_value_id')
-                    ->withPivot('extra_price')
-                    ->withTimestamps();
+            ->withPivot('extra_price')
+            ->withTimestamps();
     }
 
     public function invoiceItems(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
     }
-
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
     public function getAverageRatingAttribute()
     {
         return $this->reviews()->avg('rating') ?? 0;
     }
+    
 }

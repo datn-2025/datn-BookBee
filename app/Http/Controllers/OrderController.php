@@ -9,6 +9,7 @@ use App\Models\OrderItem;
 use App\Models\OrderStatus;
 use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
+use App\Models\Payment; // Thêm import Payment
 use App\Models\User;
 use App\Models\OrderCancellation; // Added for order cancellation
 use App\Models\OrderItemAttributeValue; // Added for order item attributes
@@ -55,6 +56,37 @@ class OrderController extends Controller
         // Lấy thông tin giỏ hàng
         $cartItems = $user->cart()->with(['book.images', 'bookFormat'])->get();
 
+        // Kiểm tra nếu giỏ hàng có cả sách vật lý và sách ebook
+        $hasPhysicalBook = false;
+        $hasEbook = false;
+        $mixedFormatCart = false;
+
+        foreach ($cartItems as $item) {
+            if ($item->bookFormat) {
+                // Kiểm tra format_name để xác định loại sách
+                if (strtolower($item->bookFormat->format_name) === 'ebook') {
+                    $hasEbook = true;
+                } else {
+                    $hasPhysicalBook = true;
+                }
+
+                // Nếu tìm thấy cả hai loại, dừng vòng lặp
+                if ($hasPhysicalBook && $hasEbook) {
+                    $mixedFormatCart = true;
+                    break;
+                }
+            }
+        }
+
+        // Nếu giỏ hàng có cả sách vật lý và ebook, ẩn phương thức thanh toán COD
+        if ($mixedFormatCart) {
+            // Lọc bỏ phương thức thanh toán khi nhận hàng (COD)
+            $paymentMethods = $paymentMethods->filter(function($method) {
+                return !str_contains(strtolower($method->name), 'khi nhận hàng') &&
+                       !str_contains(strtolower($method->name), 'cod');
+            });
+        }
+
         // Tính tổng tiền
         $subtotal = $cartItems->sum(function ($item) {
             return $item->price * $item->quantity;
@@ -65,7 +97,8 @@ class OrderController extends Controller
             'vouchers',
             'paymentMethods',
             'cartItems',
-            'subtotal'
+            'subtotal',
+            'mixedFormatCart' // Truyền biến này để hiển thị thông báo trong view
         ));
     }
 
@@ -204,10 +237,10 @@ class OrderController extends Controller
                 }
             }
             $paymentMethod = PaymentMethod::findOrFail($request->payment_method_id);
-            
+//            dd($paymentMethod);
             // Tính tổng tiền cuối cùng
             $finalTotalAmount = $subtotal + $request->shipping_fee_applied - $actualDiscountAmount;
-            
+
             // Nếu thanh toán VNPay, tạo order trước rồi chuyển hướng
             if ($paymentMethod->name == 'Thanh toán vnpay') {
                 // Tạo order trước khi chuyển đến VNPay
@@ -267,7 +300,74 @@ class OrderController extends Controller
                     'amount' => $order->total_amount,
                     'order_info' => "Thanh toán đơn hàng " . $order->order_code,
                 ];
+//                dd($vnpayData);
+                try {
+                    $order->load([
+                        'orderItems.book',
+                        'orderItems.bookFormat',
+                        'orderItems.attributeValues.attribute', // For attributes
+                        'voucher', // For voucher code
+                        'paymentMethod', // For payment method name
+                        'paymentStatus', // For payment status name
+                        'address'
+                    ]);
 
+                    $qrDataLines = [
+                        "Mã đơn hàng: " . $order->order_code,
+                        "Ngày đặt: " . $order->created_at->format('d/m/Y H:i'),
+                        "--- Sản phẩm ---"
+                    ];
+
+                    foreach ($order->orderItems as $item) {
+                        $productName = $item->book ? $item->book->title : 'Sản phẩm không xác định';
+                        $formatName = $item->bookFormat ? ' (' . $item->bookFormat->format_name . ')' : '';
+
+                        $attributesString = '';
+                        if ($item->attributeValues && $item->attributeValues->count() > 0) {
+                            $attrParts = [];
+                            foreach ($item->attributeValues as $av) {
+                                if ($av->attribute) {
+                                    $attrParts[] = $av->attribute->name . ': ' . $av->value ?? '';
+                                }
+                            }
+                            if (!empty($attrParts)) {
+                                $attributesString = ' (' . implode(', ', $attrParts) . ')';
+                            }
+                        }
+                        $qrDataLines[] = "- " . $productName . $formatName . $attributesString . ": " . $item->quantity . " x " . number_format($item->price, 0, ',', '.') . "đ";
+                    }
+
+                    $qrDataLines[] = "--- Thông tin giao hàng ---";
+                    $qrDataLines[] = "Người nhận: " . $order->recipient_name;
+                    $qrDataLines[] = "Điện thoại: " . $order->recipient_phone;
+                    $qrDataLines[] = "Địa chỉ: " . $order->address->ward . ', ' . $order->address->district . ', ' . $order->address->city . ($order->address->address_detail ? ', ' . $order->address->address_detail : '');
+
+                    $qrDataLines[] = "--- Thanh toán ---";
+                    $qrDataLines[] = "Phí vận chuyển: " . number_format($order->shipping_fee, 0, ',', '.') . "đ";
+                    if ($order->voucher) { // Use loaded voucher relation
+                        $discountAmount = $order->discount_amount ?? 0;
+                        $qrDataLines[] = "Khuyến mãi (" . $order->voucher->code . "): -" . number_format($discountAmount, 0, ',', '.') . "đ";
+                    }
+                    $qrDataLines[] = "Tổng tiền: " . number_format($order->total_amount, 0, ',', '.') . "đ";
+                    $qrDataLines[] = "Phương thức TT: " . ($order->paymentMethod ? $order->paymentMethod->name : 'N/A');
+                    $qrDataLines[] = "Trạng thái TT: " . ($order->paymentStatus ? $order->paymentStatus->name : 'N/A');
+
+                    $qrDataString = implode("\n", $qrDataLines);
+
+                    $qrCodeFileName = 'order_' . $order->id . '_' . $order->order_code . '.png'; // Removed 'qrcodes/' prefix
+                    $path = storage_path('app/private/qrcodes/' . $qrCodeFileName);
+
+                    // Sử dụng Simple Qrcode để tạo mã QR và lưu vào tệp
+                    QrCode::encoding('UTF-8')->size(250)->generate($qrDataString, $path);
+                    // Lưu đường dẫn của mã QR vào cơ sở dữ liệu
+                    $order->qr_code = 'qrcodes/' . $qrCodeFileName;
+                    $order->save(); // Lưu lại đơn hàng với đường dẫn mã QR
+
+                } catch (\Exception $e) {
+                    dd('Error generating QR Code for order ' . $order->id . ': ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+                    // Optionally, you might want to notify someone or handle this error more gracefully
+                    // For now, we'll let the order proceed without a QR code if generation fails
+                }
                 return $this->vnpay_payment($vnpayData);
             }
             $finalTotalAmount = $subtotal + $request->shipping_fee_applied - $actualDiscountAmount;
@@ -329,10 +429,10 @@ class OrderController extends Controller
 
             $payment = $this->paymentService->createPayment([
                 'order_id' => $order->id,
-                // gán transaction_id = order_code
                 'transaction_id' => $order->order_code,
                 'payment_method_id' => $request->payment_method_id,
-                'amount' => $order->total_amount
+                'amount' => $order->total_amount,
+                'paid_at' => now() // Set paid_at ngay lập tức cho thanh toán thường
             ]);
             DB::commit();
 
@@ -408,8 +508,9 @@ class OrderController extends Controller
             $this->emailService->sendOrderConfirmation($order);
             $successMessage = 'Đặt hàng thành công!';
 
-            // Clear the user's cart
-            // $user->cart()->delete();
+            // Clear the user's cart after successful order
+            $user->cart()->delete();
+
             Toastr::success($successMessage);
             if ($newAddressCreated) {
                 $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
@@ -453,9 +554,9 @@ class OrderController extends Controller
         $user = Auth::user();
         $orders = $user->orders()
             ->with(['orderStatus', 'paymentStatus'])
-            ->latest()
-            ->paginate(10);
-
+            ->orderByDesc('created_at')
+            ->paginate(7);
+//        dd($orders);
         return view('orders.index', compact('orders'));
     }
 
@@ -583,7 +684,8 @@ class OrderController extends Controller
         $vnp_TmnCode = config('services.vnpay.tmn_code');
         $vnp_HashSecret = config('services.vnpay.hash_secret');
         $vnp_Url = config('services.vnpay.url');
-        $vnp_Returnurl = "http://127.0.0.1:8000/orders/{$data['order_id']}"; // Tạo route cho xử lý return từ VNPay
+//        $vnp_Returnurl = "http://127.0.0.1:8000/orders/{$data['order_id']}"; // Đúng route xử lý callback
+        $vnp_Returnurl = route("vnpay.return"); // Đúng route xử lý callback
         $vnp_TxnRef = $data['order_code']; // Sử dụng order_code làm transaction reference
         $vnp_OrderInfo = $data['order_info'];
         $vnp_Amount = (int)($data['amount'] * 100); // VNPay yêu cầu amount * 100
@@ -614,15 +716,12 @@ class OrderController extends Controller
         $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
         $vnp_Url = $vnp_Url . "?" . $query . "&vnp_SecureHash=" . $vnpSecureHash;
 
-        // Tạo payment record
+        // Tạo payment record với trạng thái "Chờ Xử Lý"
         $this->paymentService->createPayment([
-            'id' => (string) Str::uuid(),
             'order_id' => $data['order_id'],
-             'payment_method_id' => $data['payment_method_id'],
+            'payment_method_id' => $data['payment_method_id'],
             'transaction_id' => $vnp_TxnRef,
-             'amount' => $data['amount'],
-             'paid_at' => now(),
-            'payment_status_id' => $data['payment_status_id'],
+            'amount' => $data['amount']
         ]);
 
         return redirect($vnp_Url);
@@ -635,7 +734,7 @@ class OrderController extends Controller
         try {
             $order->load([
                 'orderItems.book',
-                'orderItems.bookFormat', 
+                'orderItems.bookFormat',
                 'orderItems.attributeValues.attribute',
                 'voucher',
                 'paymentMethod',
@@ -697,5 +796,131 @@ class OrderController extends Controller
         }
     }
 
-    // ...existing code...
+    public function vnpayReturn(Request $request)
+    {
+        $vnp_HashSecret = config('services.vnpay.hash_secret');
+        $vnp_SecureHash = $request->vnp_SecureHash;
+
+        // Lấy tất cả tham số trừ vnp_SecureHash
+        $inputData = [];
+        foreach ($request->all() as $key => $value) {
+            if ($key !== 'vnp_SecureHash') {
+                $inputData[$key] = $value;
+            }
+        }
+
+        // Sắp xếp theo key
+        ksort($inputData);
+
+        // Tạo hash string
+        $hashData = http_build_query($inputData);
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+
+        // Kiểm tra tính hợp lệ của chữ ký
+        if ($secureHash !== $vnp_SecureHash) {
+            Log::error('VNPay signature verification failed', [
+                'expected' => $secureHash,
+                'received' => $vnp_SecureHash
+            ]);
+            return redirect()->route('orders.checkout')->with('error', 'Có lỗi xảy ra trong quá trình thanh toán');
+        }
+
+        // Lấy thông tin từ VNPay response
+        $vnp_ResponseCode = $request->vnp_ResponseCode;
+        $vnp_TxnRef = $request->vnp_TxnRef; // order_code
+        $vnp_Amount = $request->vnp_Amount / 100; // Chia 100 vì VNPay nhân 100
+        $vnp_TransactionNo = $request->vnp_TransactionNo;
+
+        try {
+            DB::beginTransaction();
+
+            // Tìm đơn hàng theo order_code
+            $order = Order::where('order_code', $vnp_TxnRef)->first();
+
+            if (!$order) {
+                DB::rollBack();
+                Log::error('Order not found for VNPay return', ['order_code' => $vnp_TxnRef]);
+                return redirect()->route('orders.checkout')->with('error', 'Không tìm thấy đơn hàng');
+            }
+
+            // Tìm payment record
+            $payment = Payment::where('order_id', $order->id)
+                              ->where('transaction_id', $vnp_TxnRef)
+                              ->first();
+
+            if ($vnp_ResponseCode === '00') {
+                // Thanh toán thành công - nhưng set trạng thái là "Chưa thanh toán"
+                $paymentStatus = PaymentStatus::where('name', 'Chưa thanh toán')->first();
+
+                if ($payment) {
+                    $payment->update([
+                        'payment_status_id' => $paymentStatus->id,
+                        'paid_at' => null, // Không set paid_at
+                        'transaction_id' => $vnp_TransactionNo // Cập nhật với transaction ID từ VNPay
+                    ]);
+                }
+
+                // Cập nhật trạng thái thanh toán của đơn hàng
+                $order->update([
+                    'payment_status_id' => $paymentStatus->id
+                ]);
+
+                // Xóa giỏ hàng sau khi thanh toán thành công
+                Auth::user()->cart()->delete();
+
+                // Gửi email xác nhận
+                $this->emailService->sendOrderConfirmation($order);
+
+                // Tạo QR code nếu chưa có
+                if (!$order->qr_code) {
+                    $this->generateQrCode($order);
+                }
+
+                DB::commit();
+
+                Toastr::success('Thanh toán thành công! Đơn hàng của bạn đã được xác nhận.');
+                return redirect()->route('orders.show', $order->id);
+
+            } else {
+                // Thanh toán thất bại - Hủy đơn hàng
+                $cancelledStatus = OrderStatus::where('name', 'Đã hủy')->first();
+                $failedPaymentStatus = PaymentStatus::where('name', 'Thất Bại')->first();
+
+                if ($payment) {
+                    $payment->update([
+                        'payment_status_id' => $failedPaymentStatus->id
+                    ]);
+                }
+
+                // Cập nhật trạng thái đơn hàng thành "Đã hủy"
+                $order->update([
+                    'order_status_id' => $cancelledStatus->id,
+                    'payment_status_id' => $failedPaymentStatus->id
+                ]);
+
+                // Tạo bản ghi hủy đơn hàng
+                OrderCancellation::create([
+                    'order_id' => $order->id,
+                    'reason' => 'Thanh toán VNPay thất bại - Mã lỗi: ' . $vnp_ResponseCode,
+                    'cancelled_by' => $order->user_id,
+                    'cancelled_at' => now(),
+                ]);
+
+                DB::commit();
+
+                Toastr::error('Thanh toán thất bại! Đơn hàng đã được hủy tự động.');
+                return redirect()->route('orders.checkout')->with('error', 'Thanh toán thất bại. Vui lòng thử lại.');
+            }
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error processing VNPay return', [
+                'error' => $e->getMessage(),
+                'order_code' => $vnp_TxnRef
+            ]);
+
+            Toastr::error('Có lỗi xảy ra trong quá trình xử lý thanh toán.');
+            return redirect()->route('orders.checkout')->with('error', 'Có lỗi xảy ra trong quá trình xử lý thanh toán.');
+        }
+    }
 }

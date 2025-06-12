@@ -13,6 +13,7 @@ class PaymentMethodSeeder extends Seeder
             ['name' => 'Thanh toán khi nhận hàng'],
             ['name' => 'Chuyển khoản ngân hàng'],
             ['name' => 'Ví điện tử'],
+            ['name' => 'Thanh toán vnpay'],       
         ];
 
         foreach ($methods as $method) {

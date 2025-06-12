@@ -55,20 +55,28 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                            @if($order->orderStatus->name === 'pending') bg-yellow-100 text-yellow-800
-                            @elseif($order->orderStatus->name === 'processing') bg-blue-100 text-blue-800
-                            @elseif($order->orderStatus->name === 'completed') bg-green-100 text-green-800
-                            @elseif($order->orderStatus->name === 'cancelled') bg-red-100 text-red-800
-                            @endif">
+                        <span class="
+                            @if($order->orderStatus->name === 'Đã hủy') bg-red-100 text-red-800
+                            @elseif($order->orderStatus->name === 'Đã xác nhận') bg-blue-100 text-blue-800
+                            @elseif($order->orderStatus->name === 'Giao thất bại') bg-gray-100 text-gray-800
+                            @elseif($order->orderStatus->name === 'Đang giao hàng') bg-teal-100 text-teal-800
+                            @elseif($order->orderStatus->name === 'Hoàn tiền') bg-green-100 text-green-800
+                            @elseif($order->orderStatus->name === 'Đang chuẩn bị') bg-orange-100 text-orange-800
+                            @elseif($order->orderStatus->name === 'Đã giao thành công') bg-green-100 text-green-800
+                            @elseif($order->orderStatus->name === 'Thành công') bg-green-100 text-green-800
+                            @elseif($order->orderStatus->name === 'Đã nhận hàng') bg-blue-100 text-blue-800
+                            @elseif($order->orderStatus->name === 'Chờ xác nhận') bg-yellow-100 text-yellow-800
+                            @endif
+                        ">
                             {{ $order->orderStatus->name }}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                            @if($order->paymentStatus->name === 'pending') bg-yellow-100 text-yellow-800
-                            @elseif($order->paymentStatus->name === 'paid') bg-green-100 text-green-800
-                            @elseif($order->paymentStatus->name === 'failed') bg-red-100 text-red-800
+                       <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                            @if($order->paymentStatus->name === 'Đã Thanh Toán') bg-green-100 text-green-800
+                            @elseif($order->paymentStatus->name === 'Chưa Thanh Toán') bg-yellow-100 text-yellow-800
+                            @elseif($order->paymentStatus->name === 'Thất Bại') bg-red-100 text-red-800
+                            @elseif($order->paymentStatus->name === 'Chờ Xử Lý') bg-blue-100 text-blue-800
                             @endif">
                             {{ $order->paymentStatus->name }}
                         </span>
@@ -78,8 +86,8 @@
                         class="text-blue-600 hover:text-blue-900 transition-transform transform hover:scale-105 text-decoration-none">
                             📜 Chi tiết
                         </a>
-                        <button type="button" 
-                            data-order-id="{{ $order->id }}" 
+                        <button type="button"
+                            data-order-id="{{ $order->id }}"
                             data-order-code="{{ $order->order_code }}"
                             class="open-cancel-modal-btn text-red-600 hover:text-red-900 transition-transform transform hover:scale-105 ml-2 text-decoration-none">
                             ❌ Hủy đơn hàng
@@ -224,3 +232,4 @@ document.addEventListener('DOMContentLoaded', function () {
 @endpush
 
 @endsection
+

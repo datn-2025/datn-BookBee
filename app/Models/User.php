@@ -15,9 +15,6 @@ class User extends Authenticatable
 
     protected $table = 'users';
 
-    const ROLE_ADMIN = 'Admin';
-    const ROLE_USER = 'User';
-
     /**
      * The attributes that are mass assignable.
      *
@@ -59,19 +56,20 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-
+    
     public function isAdmin()
     {
-        // return $this->role === self::ROLE_ADMIN;
-        return $this->role && $this->role->name === 'Admin';
-
-        // return $this->role_id === 'bddabc45-3a65-3311-aa0b-9d95effef61c';
-        // return $this->role()->where('name', 'Admin')->exists();
+        return isset($this->role) && strtolower($this->role->name) === 'admin';
     }
 
     public function isActive()
     {
         return $this->status === 'Hoạt Động';
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
     }
 
     public $incrementing = false;
@@ -86,11 +84,6 @@ class User extends Authenticatable
                 $model->id = (string) Str::uuid();
             }
         });
-    }
-
-    public function role()
-    {
-        return $this->belongsTo(Role::class);
     }
 
     public function addresses()
