@@ -1,167 +1,103 @@
-<!-- Adidas-Style Top Navigation -->
-<nav class="bg-black text-white py-2 px-4 text-xs">
-  <div class="max-w-7xl mx-auto flex justify-between items-center">
-    <div class="flex space-x-4">
-      <a href="#" class="hover:text-gray-300 transition-colors">Miễn phí vận chuyển</a>
-      <a href="#" class="hover:text-gray-300 transition-colors">Đổi trả & Hoàn tiền</a>
-      <a href="#" class="hover:text-gray-300 transition-colors">Hỗ trợ</a>
-    </div>
-    <div class="flex space-x-4">
-      @auth
-        <a href="{{ route('account.profile') }}" class="hover:text-gray-300 transition-colors">{{ Auth::user()->name }}</a>
-        <form method="POST" action="{{ route('logout') }}" class="inline">
-          @csrf
-          <button type="submit" class="hover:text-gray-300 transition-colors">Đăng xuất</button>
-        </form>
-      @else
-        <a href="{{ route('login') }}" class="hover:text-gray-300 transition-colors">Đăng nhập</a>
-        <a href="{{ route('account.register') }}" class="hover:text-gray-300 transition-colors">Đăng ký</a>
-      @endauth
-    </div>
-  </div>
-</nav>
+<nav class="bg-white px-6 py-5 shadow-sm border-b">
+    <div
+        class="max-w-screen-xl mx-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-between min-h-[80px]">
+        {{-- Trái: Logo --}}
+        <div class="flex items-center justify-between md:justify-start gap-3">
+            <a href="#">
+                <img src="{{ asset('images/logo-bookbee-2.png') }}" alt="Logo" class="h-32 w-auto]">
+            </a>
+        </div>
+        {{-- Giữa: Menu chính --}}
+        <ul
+            class="flex flex-wrap justify-center items-center gap-8 text-base semi-bold uppercase tracking-wide text-gray-900">
+            <li><a href="/" class="hover:text-red-500 text-red-500">Trang chủ</a></li>
+            <li><a href="#" class="hover:text-red-500">Giới thiệu</a></li>
+            <li><a href="#" class="hover:text-red-500">Cửa hàng</a></li>
+            <li><a href="#" class="hover:text-red-500">Tin tức</a></li>
+            <li><a href="#" class="hover:text-red-500">Liên hệ</a></li>
+        </ul>
+        {{-- Phải: Tìm kiếm + icon + dòng phụ --}}
+        <div class="flex flex-col items-end gap-1 text-sm md:text-xs">
+            {{-- Dòng phụ --}}
+            <div class="flex items-center gap-4">
 
-<!-- Main Navigation -->
-<nav class="bg-white shadow-lg sticky top-0 z-50 adidas-nav">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center h-16">
-      <!-- Logo -->
-      <div class="flex items-center">
-        <a href="/" class="flex items-center">
-          <h1 class="text-2xl font-black text-black">
-            BOOK<span class="adidas-gradient-text">BEE</span>
-          </h1>
-        </a>
-      </div>
 
-      <!-- Navigation Links -->
-      <div class="hidden md:flex space-x-8">
-        <a href="/" class="nav-link text-black hover:text-blue-800 font-medium transition-colors duration-200 uppercase tracking-wide {{ request()->routeIs('home') ? 'text-blue-800 font-bold border-b-2 border-blue-800' : '' }}">Trang chủ</a>
-        <a href="/books" class="nav-link text-black hover:text-blue-800 font-medium transition-colors duration-200 uppercase tracking-wide {{ request()->routeIs('books.*') ? 'text-blue-800 font-bold border-b-2 border-blue-800' : '' }}">Cửa hàng</a>
-        <a href="#" class="nav-link text-black hover:text-blue-800 font-medium transition-colors duration-200 uppercase tracking-wide">Danh mục</a>
-        <a href="#" class="nav-link text-black hover:text-blue-800 font-medium transition-colors duration-200 uppercase tracking-wide">Giới thiệu</a>
-        <a href="#" class="nav-link text-black hover:text-blue-800 font-medium transition-colors duration-200 uppercase tracking-wide">Liên hệ</a>
-      </div>
+                {{-- Cờ + chọn ngôn ngữ --}}
+                <nav class="relative">
+                    <div class="flex items-center space-x-2">
+                        <img src="{{ asset('storage/images/vn-flag.png') }}" alt="Vietnam Flag" class="h-4 w-6">
+                        {{-- <span class="text-sm font-medium">VietNam</span> --}}
+                    </div>
+                </nav>
 
-      <!-- Action Icons -->
-      <div class="flex items-center space-x-4">
-        <!-- Search -->
-        <div class="relative hidden lg:block">
-          <form method="GET" action="{{ route('books.index') }}" class="flex">
-            <input type="search" name="search" placeholder="Tìm kiếm sách..."
-                   value="{{ request('search') }}"
-                   class="w-64 px-4 py-2 border-2 border-gray-200 rounded-l-xl focus:border-black focus:outline-none transition-all duration-200 text-sm">
-            <button type="submit" class="search-btn bg-black text-white px-4 py-2 rounded-r-xl hover:bg-blue-800 transition-colors duration-200">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </button>
-          </form>
+
+            </div>
+            {{-- Dòng icon + tìm kiếm --}}
+            <div class="flex items-center gap-3 text-[15px] text-gray-800">
+                {{-- Thanh tìm kiếm --}}
+                <div class="relative">
+                    <input type="text" placeholder="tìm kiếm"
+                        class="pl-3 pr-9 py-1 text-sm rounded border border-gray-300 focus:outline-none focus:border-black w-40">
+                    <i class="fas fa-search absolute right-2 top-1.5 text-sm text-gray-500"></i>
+                </div>
+                <!-- <i class="far fa-user hover:text-black cursor-pointer"></i> -->
+                <!-- Thay thế phần user icon cũ bằng code này -->
+                <div style="position: relative; display: inline-block;">
+                    <a href="{{ auth()->check() ? '#' : route('login') }}"
+                        style="text-decoration: none; color: inherit;"
+                        onmouseover="this.nextElementSibling.style.display='block'"
+                        onmouseout="this.nextElementSibling.style.display='none'">
+                        <i class="far fa-user"></i>
+                        @auth
+                        <span style="margin-left: 5px;">{{ Auth::user()->name }}</span>
+                        @endauth
+                    </a>
+
+
+                    <div style="position: absolute; right: 0; background: white;
+                border: 1px solid #ddd; border-radius: 4px; display: none;" onmouseover="this.style.display='block'"
+                        onmouseout="this.style.display='none'">
+                        @auth
+                        <a href="{{ route('account.showUser') }}" style="display: block; padding: 8px 15px; color: #333; text-decoration: none;
+                      border-bottom: 1px solid #eee; white-space: nowrap;">
+                            <i class="fas fa-user-circle" style="margin-right: 8px;"></i> Tài khoản
+                        </a>
+                        <a href="{{ route('orders.index') }}" style="display: block; padding: 8px 15px; color: #333; text-decoration: none;
+                      border-bottom: 1px solid #eee; white-space: nowrap;">
+                            <i class="fas fa-user-circle" style="margin-right: 8px;"></i> Đơn Hàng Của Tôi
+                        </a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" style="width: 100%; text-align: left; padding: 8px 15px;
+                               background: none; border: none; color: #333; cursor: pointer;">
+                                <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i> Đăng xuất
+                            </button>
+                        </form>
+                        @else
+                        <a href="{{ route('login') }}" style="display: block; padding: 8px 15px; color: #333; text-decoration: none;
+                      border-bottom: 1px solid #eee; white-space: nowrap;">
+                            <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i> Đăng nhập
+                        </a>
+                        <a href="{{ route('account.register') }}"
+                            style="display: block; padding: 8px 15px; color: #333; text-decoration: none;">
+                            <i class="fas fa-user-plus" style="margin-right: 8px;"></i> Đăng ký
+                        </a>
+                        @endauth
+                    </div>
+                </div>
+                <i class="far fa-heart hover:text-black cursor-pointer"></i>
+                <div class="relative">
+                   <a href="{{route('cart.index')}}"> <i class="fas fa-shopping-bag hover:text-black cursor-pointer"></i></a>
+                    <span
+                        class="absolute -top-2 -right-2 text-[10px] bg-yellow-400 text-black font-bold rounded-full px-1"></span>
+                </div>
+            </div>
         </div>
 
-        <!-- User Account -->
-        <div class="user-dropdown relative">
-          <button class="user-btn p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
-            <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
-          </button>
 
-          <!-- Dropdown menu -->
-          <div class="dropdown-menu">
-            @auth
-              <a href="{{ route('account.profile') }}" class="block px-4 py-2 text-sm text-black hover:bg-gray-100">
-                <div class="flex items-center space-x-3">
-                  <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                  </svg>
-                  <span>Tài khoản của tôi</span>
-                </div>
-              </a>
-              <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100">
-                  <div class="flex items-center space-x-3">
-                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                    <span>Đăng xuất</span>
-                  </div>
-                </button>
-              </form>
-            @else
-              <a href="{{ route('login') }}" class="block px-4 py-2 text-sm text-black hover:bg-gray-100">
-                <div class="flex items-center space-x-3">
-                  <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                  </svg>
-                  <span>Đăng nhập</span>
-                </div>
-              </a>
-              <a href="{{ route('account.register') }}" class="block px-4 py-2 text-sm text-black hover:bg-gray-100">
-                <div class="flex items-center space-x-3">
-                  <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
-                  </svg>
-                  <span>Đăng ký</span>
-                </div>
-              </a>
-            @endauth
-          </div>
-        </div>
-
-        <!-- Wishlist -->
-        <button class="adidas-btn p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 relative">
-          <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-          </svg>
-          <span class="badge-bounce absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
-        </button>
-
-        <!-- Shopping Cart -->
-        <button class="adidas-btn p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 relative">
-          <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
-          </svg>
-          <span class="badge-bounce absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
-        </button>
-      </div>
-
-      <!-- Mobile menu button -->
-      <button class="md:hidden p-2" id="mobile-menu-btn">
-        <svg class="w-6 h-6 text-black">
-          <path fill="none" stroke="currentColor" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-        </svg>
-      </button>
     </div>
-  </div>
-
-  <!-- Mobile Navigation -->
-  <div class="md:hidden hidden" id="mobile-menu">
-    <div class="px-4 py-4 space-y-2 bg-gray-50 border-t">
-      <!-- Mobile Search -->
-      <div class="mb-4">
-        <form method="GET" action="{{ route('books.index') }}" class="flex">
-          <input type="search" name="search" placeholder="Tìm kiếm sách..."
-                 value="{{ request('search') }}"
-                 class="flex-1 px-4 py-2 border-2 border-gray-200 rounded-l-xl focus:border-black focus:outline-none">
-          <button type="submit" class="search-btn bg-black text-white px-4 py-2 rounded-r-xl">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-          </button>
-        </form>
-      </div>
-
-      <!-- Mobile Menu Links -->
-      <a href="/" class="mobile-menu-item block py-3 text-black hover:text-blue-800 font-medium uppercase tracking-wide {{ request()->routeIs('home') ? 'text-blue-800 font-bold' : '' }}">Trang chủ</a>
-      <a href="/books" class="mobile-menu-item block py-3 text-black hover:text-blue-800 font-medium uppercase tracking-wide {{ request()->routeIs('books.*') ? 'text-blue-800 font-bold' : '' }}">Cửa hàng</a>
-      <a href="#" class="mobile-menu-item block py-3 text-black hover:text-blue-800 font-medium uppercase tracking-wide">Danh mục</a>
-      <a href="#" class="mobile-menu-item block py-3 text-black hover:text-blue-800 font-medium uppercase tracking-wide">Giới thiệu</a>
-      <a href="#" class="mobile-menu-item block py-3 text-black hover:text-blue-800 font-medium uppercase tracking-wide">Liên hệ</a>
-    </div>
-  </div>
 </nav>
+
 
 <style>
   /* Main Navigation */

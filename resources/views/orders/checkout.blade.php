@@ -165,7 +165,7 @@
                     class="w-full bg-green-500 text-white py-3 px-6 rounded-lg text-lg font-semibold hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-md hover:shadow-lg transition-all duration-150 ease-in-out">
                     Đặt hàng
                 </button>
-            </form>ư
+            </form>
         </div>
 
         <!-- Thông tin đơn hàng -->
