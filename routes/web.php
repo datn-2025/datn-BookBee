@@ -25,8 +25,10 @@ use App\Http\Controllers\Contact\ContactController;
 use App\Http\Controllers\Article\NewsController;
 use App\Http\Controllers\Admin\NewsArticleController;
 use App\Http\Controllers\Admin\PaymentMethodController;
-use App\Http\Controllers\cart\CartController;
+use App\Http\Controllers\Admin\WalletController;
 use App\Livewire\RevenueReport;
+
+use App\Http\Controllers\cart\CartController;
 use App\Http\Controllers\Client\ClientOrderController;
 use App\Http\Controllers\Client\ClientReviewController;
 use App\Http\Controllers\Client\UserClientController;
@@ -175,7 +177,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 
 // Route đăng nhập admin (chỉ cho khách)
-Route::middleware('guest.admin')->group(function () {
+Route::middleware('guest:admin')->group(function () {
     Route::get('/admin/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
     Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
 });
@@ -183,7 +185,7 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
     Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard');
-     Route::get('/revenue-report', RevenueReport::class)->name('revenue-report');
+    Route::get('/revenue-report', RevenueReport::class)->name('revenue-report');
     Route::get('/balance-chart', BalanceChart::class)->name('balance-chart');
 
     // Route admin/contacts
@@ -202,6 +204,29 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/trash', [AdminBookController::class, 'trash'])->name('trash');
         Route::post('/restore/{id}', [AdminBookController::class, 'restore'])->name('restore');
         Route::delete('/force-delete/{id}', [AdminBookController::class, 'forceDelete'])->name('force-delete');
+    });
+
+    // Admin Payment Methods
+    Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
+        Route::get('/', [AdminPaymentMethodController::class, 'index'])->name('index');
+        Route::get('/create', [AdminPaymentMethodController::class, 'create'])->name('create');
+        Route::post('/', [AdminPaymentMethodController::class, 'store'])->name('store');
+        Route::get('/{paymentMethod}/edit', [AdminPaymentMethodController::class, 'edit'])->name('edit');
+        Route::put('/{paymentMethod}', [AdminPaymentMethodController::class, 'update'])->name('update');
+        Route::delete('/{paymentMethod}', [AdminPaymentMethodController::class, 'destroy'])->name('destroy');
+        // Thêm các route mới
+        Route::get('/trash', [AdminPaymentMethodController::class, 'trash'])->name('trash');
+        Route::put('/{paymentMethod}/restore', [AdminPaymentMethodController::class, 'restore'])->name('restore');
+        Route::delete('/{paymentMethod}/force-delete', [AdminPaymentMethodController::class, 'forceDelete'])->name('force-delete');
+
+        Route::get('/history', [AdminPaymentMethodController::class, 'history'])->name('history');
+        Route::put('/{id}/status', [AdminPaymentMethodController::class, 'updateStatus'])
+            ->name('updateStatus');
+    });
+
+    Route::prefix('wallets')->name('wallets.')->group(function () {
+        Route::get('/', [WalletController::class, 'index'])->name('index');
+        Route::get('/{wallet}', [WalletController::class, 'show'])->name('show');
     });
 
     // Route admin/categories
@@ -241,21 +266,58 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
             Route::put('/{id}', [AuthorController::class, 'update'])->name('update');
         });
     });
+//    Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
+//        Route::get('/', [AdminPaymentMethodController::class, 'index'])->name('index');
+//        Route::get('/create', [AdminPaymentMethodController::class, 'create'])->name('create');
+//        Route::post('/', [AdminPaymentMethodController::class, 'store'])->name('store');
+//        Route::get('/{paymentMethod}/edit', [AdminPaymentMethodController::class, 'edit'])->name('edit');
+//        Route::put('/{paymentMethod}', [AdminPaymentMethodController::class, 'update'])->name('update');
+//        Route::delete('/{paymentMethod}', [AdminPaymentMethodController::class, 'destroy'])->name('destroy');
+//
+//        Route::get('/trash', [AdminPaymentMethodController::class, 'trash'])->name('trash');
+//        Route::put('/{paymentMethod}/restore', [AdminPaymentMethodController::class, 'restore'])->name('restore');
+//        Route::delete('/{paymentMethod}/force-delete', [AdminPaymentMethodController::class, 'forceDelete'])->name('force-delete');
+    // // Admin Payment Methods
+    // Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
+    //     Route::get('/', [PaymentMethodController::class, 'index'])->name('index');
+    //     Route::get('/create', [PaymentMethodController::class, 'create'])->name('create');
+    //     Route::post('/', [PaymentMethodController::class, 'store'])->name('store');
+    //     Route::get('/{paymentMethod}/edit', [PaymentMethodController::class, 'edit'])->name('edit');
+    //     Route::put('/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('update');
+    //     Route::delete('/{paymentMethod}', [PaymentMethodController::class, 'destroy'])->name('destroy');
+    //     // Thêm các route mới
+    //     Route::get('/trash', [PaymentMethodController::class, 'trash'])->name('trash');
+    //     Route::put('/{paymentMethod}/restore', [PaymentMethodController::class, 'restore'])->name('restore');
+    //     Route::delete('/{paymentMethod}/force-delete', [PaymentMethodController::class, 'forceDelete'])->name('force-delete');
+    // });
 
-    Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
-        Route::get('/', [AdminPaymentMethodController::class, 'index'])->name('index');
-        Route::get('/create', [AdminPaymentMethodController::class, 'create'])->name('create');
-        Route::post('/', [AdminPaymentMethodController::class, 'store'])->name('store');
-        Route::get('/{paymentMethod}/edit', [AdminPaymentMethodController::class, 'edit'])->name('edit');
-        Route::put('/{paymentMethod}', [AdminPaymentMethodController::class, 'update'])->name('update');
-        Route::delete('/{paymentMethod}', [AdminPaymentMethodController::class, 'destroy'])->name('destroy');
-
-        Route::get('/trash', [AdminPaymentMethodController::class, 'trash'])->name('trash');
-        Route::put('/{paymentMethod}/restore', [AdminPaymentMethodController::class, 'restore'])->name('restore');
-        Route::delete('/{paymentMethod}/force-delete', [AdminPaymentMethodController::class, 'forceDelete'])->name('force-delete');
-
-        Route::get('/history', [AdminPaymentMethodController::class, 'history'])->name('history');
-        Route::put('/{id}/status', [AdminPaymentMethodController::class, 'updateStatus'])->name('updateStatus');
+    // Route admin/categories
+    Route::prefix('categories')->name('categories.')->group(function () {
+        // Route::get('/', [CategoryController::class, 'index'])->name('index');
+        // Route admin/brand
+        Route::prefix('brands')->name('brands.')->group(function () {
+            Route::get('/', [CategoryController::class, 'brand'])->name('brand');
+            Route::get('/create', [CategoryController::class, 'BrandCreate'])->name('create');
+            Route::post('/', [CategoryController::class, 'BrandStore'])->name('store');
+            Route::get('/trash', [CategoryController::class, 'BrandTrash'])->name('trash');
+            Route::delete('/{author}', [CategoryController::class, 'BrandDestroy'])->name('destroy');
+            Route::put('/{id}/restore', [CategoryController::class, 'BrandRestore'])->name('restore');
+            Route::delete('/{id}/force', [CategoryController::class, 'BrandForceDelete'])->name('force-delete');
+            Route::get('/{id}/edit', [CategoryController::class, 'BrandEdit'])->name('edit');
+            Route::put('/{id}', [CategoryController::class, 'BrandUpdate'])->name('update');
+        });
+        // Route admin/authors
+        Route::prefix('authors')->name('authors.')->group(function () {
+            Route::get('/', [AuthorController::class, 'index'])->name('index');
+            Route::get('/create', [AuthorController::class, 'create'])->name('create');
+            Route::post('/', [AuthorController::class, 'store'])->name('store');
+            Route::get('/trash', [AuthorController::class, 'trash'])->name('trash');
+            Route::delete('/{author}', [AuthorController::class, 'destroy'])->name('destroy');
+            Route::put('/{id}/restore', [AuthorController::class, 'restore'])->name('restore');
+            Route::delete('/{id}/force', [AuthorController::class, 'forceDelete'])->name('force-delete');
+            Route::get('/{id}/edit', [AuthorController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [AuthorController::class, 'update'])->name('update');
+        });
     });
 
     // routes admin/reviews
@@ -338,5 +400,11 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/show/{id}', [OrderController::class, 'show'])->name('show');
         Route::get('/edit/{id}', [OrderController::class, 'edit'])->name('edit');
         Route::put('/update/{id}', [OrderController::class, 'update'])->name('update');
+    });
+
+    // Route admin/settings
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\SettingController::class, 'index'])->name('index');
+        Route::post('/update', [App\Http\Controllers\Admin\SettingController::class, 'update'])->name('update');
     });
 });

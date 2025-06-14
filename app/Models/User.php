@@ -56,7 +56,7 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    
+
     public function isAdmin()
     {
         return isset($this->role) && strtolower($this->role->name) === 'admin';
@@ -114,5 +114,20 @@ class User extends Authenticatable
     public function cart()
     {
         return $this->hasMany(Cart::class);
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        return $this->role->permissions->contains('slug', $permission);
+    }
+
+    public function hasAnyPermission(array $permissions): bool
+    {
+        return $this->role->permissions->whereIn('slug', $permissions)->isNotEmpty();
+    }
+
+    public function hasAllPermissions(array $permissions): bool
+    {
+        return $this->role->permissions->whereIn('slug', $permissions)->count() === count($permissions);
     }
 }
