@@ -133,6 +133,11 @@ class OrderController extends Controller
                 'string',
                 'max:20'
             ],
+            'new_email' => [
+                'required',
+                'string',
+                'max:50'
+            ],
             'new_address_city_name' => [
                 'required_without:address_id',
                 'nullable',
@@ -251,6 +256,7 @@ class OrderController extends Controller
                     'address_id' => $addressIdToUse,
                     'recipient_name' => $request->new_recipient_name,
                     'recipient_phone' => $request->new_phone,
+                    'recipient_email' => $request->new_email,
                     'payment_method_id' => $request->payment_method_id,
                     'voucher_id' => $voucherId ?? null,
                     'note' => $request->note,
@@ -371,6 +377,7 @@ class OrderController extends Controller
                 return $this->vnpay_payment($vnpayData);
             }
             $finalTotalAmount = $subtotal + $request->shipping_fee_applied - $actualDiscountAmount;
+//            dd($request->new_email);
             $order = Order::create([
                 'id' => (string) Str::uuid(),
                 'user_id' => $user->id,
@@ -378,6 +385,7 @@ class OrderController extends Controller
                 'address_id' => $addressIdToUse,
                 'recipient_name' => $request->new_recipient_name,
                 'recipient_phone' => $request->new_phone,
+                'recipient_email' => $request->new_email,
                 // 'shipping_method' => $request->shipping_method,
                 'payment_method_id' => $request->payment_method_id,
                 'voucher_id' => $voucherId ?? null, // Changed to voucher_id
@@ -388,6 +396,7 @@ class OrderController extends Controller
                 'shipping_fee' => $request->shipping_fee_applied,
                 'discount_amount' => (int) $actualDiscountAmount,
             ]);
+//            dd($order->recipient_email);
 
             // Create OrderItems
             foreach ($cartItems as $cartItem) {
@@ -476,6 +485,7 @@ class OrderController extends Controller
                 $qrDataLines[] = "--- Thông tin giao hàng ---";
                 $qrDataLines[] = "Người nhận: " . $order->recipient_name;
                 $qrDataLines[] = "Điện thoại: " . $order->recipient_phone;
+                $qrDataLines[] = "Email: " . $order->recipient_email;
                 $qrDataLines[] = "Địa chỉ: " . $order->address->ward . ', ' . $order->address->district . ', ' . $order->address->city . ($order->address->address_detail ? ', ' . $order->address->address_detail : '');
 
                 $qrDataLines[] = "--- Thanh toán ---";
@@ -509,7 +519,7 @@ class OrderController extends Controller
             $successMessage = 'Đặt hàng thành công!';
 
             // Clear the user's cart after successful order
-            $user->cart()->delete();
+//            $user->cart()->delete();
 
             Toastr::success($successMessage);
             if ($newAddressCreated) {

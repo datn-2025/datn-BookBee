@@ -28,7 +28,8 @@ class Order extends Model
         'discount_amount',
         'recipient_name',
         'recipient_phone',
-        
+        'recipient_email',
+
     ];
 
     protected $casts = [
@@ -103,7 +104,7 @@ class Order extends Model
             }
         });
     }
-    
+
     public function reviews()
     {
         return $this->hasMany(Review::class);

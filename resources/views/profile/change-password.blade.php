@@ -1,9 +1,14 @@
-@extends('layouts.client')
+@extends('layouts.app')
 
 @section('title', 'Đổi mật khẩu - BookBee')
 
 @section('content')
 <style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f0f2f5;
+        min-height: 100vh;
+    }
     .sidebar {
         min-width: 250px;
         background: white;
@@ -11,7 +16,7 @@
         border-radius: 16px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         position: sticky;
-        top: 100px;
+        top: 60px;
     }
     .sidebar a {
         display: flex;
@@ -62,6 +67,10 @@
         box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         animation: fadeIn 0.5s ease;
     }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
     .form-control {
         border-radius: 10px;
         border: 1.5px solid #e5e7eb;
@@ -72,6 +81,18 @@
         border-color: #6366f1;
         box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         transform: translateY(-1px);
+    }
+    .form-label {
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .form-label i {
+        color: #6366f1;
+        font-size: 0.9em;
     }
     .btn-save {
         background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
@@ -122,6 +143,18 @@
         background-color: #f3f4f6;
         color: #4f46e5;
     }
+    @media (max-width: 768px) {
+        .container {
+            padding: 15px;
+        }
+        .sidebar {
+            margin-bottom: 20px;
+            position: static;
+        }
+        .main-content {
+            padding: 25px;
+        }
+    }
 </style>
 
 <!-- Thêm CSS cho Toastr -->
@@ -142,7 +175,7 @@
         toastr.success("{{ Session::get('success') }}", "Thành công!");
     @endif
 </script>
-<div class="container">
+<div class="container" style="padding-top: 40px; padding-bottom: 60px;">
     <div class="row g-4">
         <!-- Sidebar -->
         <div class="col-md-3">
@@ -165,13 +198,19 @@
         <!-- Main Content -->
         <div class="col-md-9">
             <div class="main-content">
-                <h2 class="mb-3">Đổi mật khẩu</h2>
+                <h2 class="mb-3">
+                    <i class="fas fa-lock text-primary me-2"></i>
+                    Đổi mật khẩu
+                </h2>
                 <p class="text-muted mb-4">Để bảo mật tài khoản, vui lòng không chia sẻ mật khẩu cho người khác</p>
-                    <form method="POST" action="{{ route('account.password.change') }}">
+                    <form method="POST" action="{{ route('account.password.update') }}">
                         @csrf
 
                         <div class="form-group mb-3">
-                            <label for="current_password" class="form-label">Mật khẩu hiện tại</label>
+                            <label for="current_password" class="form-label">
+                                <i class="fas fa-lock text-primary me-1"></i>
+                                Mật khẩu hiện tại
+                            </label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-lock"></i></span>
                                 <input id="current_password" type="password" 
@@ -187,7 +226,10 @@
                         </div>
 
                         <div class="form-group mb-3">
-                            <label for="password" class="form-label">Mật khẩu mới</label>
+                            <label for="password" class="form-label">
+                                <i class="fas fa-key text-primary me-1"></i>
+                                Mật khẩu mới
+                            </label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-key"></i></span>
                                 <input id="password" type="password" 
@@ -203,7 +245,10 @@
                         </div>
 
                         <div class="form-group mb-4">
-                            <label for="password_confirmation" class="form-label">Xác nhận mật khẩu mới</label>
+                            <label for="password_confirmation" class="form-label">
+                                <i class="fas fa-check-circle text-primary me-1"></i>
+                                Xác nhận mật khẩu mới
+                            </label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-check-circle"></i></span>
                                 <input id="password_confirmation" type="password" 

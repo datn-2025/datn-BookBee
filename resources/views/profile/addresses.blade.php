@@ -1,9 +1,14 @@
-@extends('layouts.client')
+@extends('layouts.app')
 
 @section('title', 'Quản lý địa chỉ - BookBee')
 
 @section('content')
 <style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f0f2f5;
+        min-height: 100vh;
+    }
     .sidebar {
         min-width: 250px;
         background: white;
@@ -11,7 +16,7 @@
         border-radius: 16px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         position: sticky;
-        top: 100px;
+        top: 60px;
     }
     .sidebar a {
         display: flex;
@@ -197,7 +202,7 @@
     @endif
 </script>
 
-<div class="container">
+<div class="container" style="padding-top: 40px; padding-bottom: 60px;">
     <div class="row g-4">
         <!-- Sidebar -->
         <div class="col-md-3">

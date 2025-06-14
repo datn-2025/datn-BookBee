@@ -27,7 +27,7 @@
                 Default, JS will update --}}
                 {{-- Khu vực nhập địa chỉ mới --}}
                 <div id="new-address-form" class="mt-6 pt-6 border-t border-gray-200">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
                             <label for="new_recipient_name" class="block text-sm font-medium text-gray-700 mb-1">Tên
                                 người nhận:</label>
@@ -44,6 +44,13 @@
                                 class="w-full border rounded-lg px-3 py-2 bg-white focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="09xxxxxxxx" value="{{ old('new_phone') }}">
                             @error('new_phone') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label for="new_email" class="block text-sm font-medium text-gray-700 mb-1">Email:</label>
+                            <input type="text" name="new_email" id="new_email"
+                                class="w-full border rounded-lg px-3 py-2 bg-white focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="abc@gmail.com" value="{{ old('new_email') }}">
+                            @error('new_email') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
                     <div class="mb-6">

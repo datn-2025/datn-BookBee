@@ -21,17 +21,20 @@ class CartSeeder extends Seeder
         // Lấy một số sách và định dạng ngẫu nhiên
         $books = Book::take(3)->get();
         $formats = BookFormat::take(2)->get();
-
+        $attributes = Attribute::take(3)->get();
         // Tạo giỏ hàng cho user
         foreach ($books as $book) {
             foreach ($formats as $format) {
-                Cart::create([
-                    'user_id' => $user->id,
-                    'book_id' => $book->id,
-                    'book_format_id' => $format->id,
-                    'quantity' => rand(1, 3),
-                    'price' => $format->price
-                ]);
+                foreach ($attributes as $attribute) {
+                    Cart::create([
+                        'user_id' => $user->id,
+                        'book_id' => $book->id,
+                        'book_format_id' => $format->id,
+                        'attribute_value_ids' => $attribute->id,
+                        'quantity' => rand(1, 3),
+                        'price' => $format->price
+                    ]);
+                }
             }
         }
 

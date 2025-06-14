@@ -8,13 +8,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="Premium Multipurpose Admin & Dashboard Template" name="description" />
     <meta content="Themesbrand" name="author" />
-    <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
+    <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/themesbrand/velzon/favicon.ico">
 
-    {{-- Styles --}}
-    @foreach (['bootstrap.min.css', 'icons.min.css', 'app.min.css', 'custom.min.css'] as $css)
-        <link href="{{ asset("assets/css/$css") }}" rel="stylesheet">
-    @endforeach
-    <script src="{{ asset('assets/js/layout.js') }}"></script>
+    {{-- Styles - CDN Links --}}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@themesbrand/velzon/css/app.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@themesbrand/velzon/css/custom.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@themesbrand/velzon/js/layout.js"></script>
 
     <!-- Toastr CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
@@ -141,10 +142,16 @@
         </footer>
     </div>
 
-    <!-- Scripts -->
-    @foreach (['libs/bootstrap/js/bootstrap.bundle.min.js', 'libs/simplebar/simplebar.min.js', 'libs/node-waves/waves.min.js', 'libs/feather-icons/feather.min.js', 'js/pages/plugins/lord-icon-2.1.0.js', 'js/plugins.js', 'libs/particles.js/particles.js', 'js/pages/particles.app.js', 'js/pages/password-addon.init.js'] as $js)
-        <script src="{{ asset("assets/$js") }}"></script>
-    @endforeach
+    <!-- Scripts - CDN Links -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simplebar@6.2.5/dist/simplebar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/node-waves@0.7.6/dist/waves.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.29.0/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lordicon-element@2.1.0/dist/lordicon-element.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@themesbrand/velzon/js/plugins.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@themesbrand/velzon/js/pages/particles.app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@themesbrand/velzon/js/pages/password-addon.init.js"></script>
     {!! Toastr::message() !!}
 </body>
 

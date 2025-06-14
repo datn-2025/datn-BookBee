@@ -45,27 +45,29 @@
                                     <h5 class="text-muted mb-3">Thông tin khách hàng</h5>
                                     <div class="card border shadow-none mb-2">
                                         <div class="card-body">
-                                            <div class="d-flex mb-3">
-                                                <div class="flex-shrink-0">
-                                                    <img src="{{ asset('assets/images/users/avatar-1.jpg') }}" alt="" class="avatar-sm rounded">
-                                                </div>
-                                                <div class="flex-grow-1 ms-3">
-                                                    <h6 class="fs-15 mb-1">{{ $order->user->name ?? 'N/A' }}</h6>
-                                                    <p class="text-muted mb-0">Người Đặt</p>
-                                                </div>
-                                            </div>
-                                            <ul class="list-unstyled mb-0 vstack gap-2">
-                                                <li>
-                                                    <div class="d-flex">
-                                                        <div class="flex-shrink-0 text-muted">
-                                                            <i class="ri-mail-line me-1 fs-16 align-middle"></i>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <span>{{ $order->user->email ?? 'N/A' }}</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            </ul>
+                                           <a href="{{route('admin.users.show' , $order->user_id)}}" style="text-decoration: none; color: #0a0c0d">
+                                               <div class="d-flex mb-3">
+                                                   <div class="flex-shrink-0">
+                                                       <img src="{{ asset('assets/images/users/avatar-1.jpg') }}" alt="" class="avatar-sm rounded">
+                                                   </div>
+                                                   <div class="flex-grow-1 ms-3">
+                                                       <h6 class="fs-15 mb-1">{{ $order->user->name ?? 'N/A' }}</h6>
+                                                       <p class="text-muted mb-0">Người Đặt</p>
+                                                   </div>
+                                               </div>
+                                               <ul class="list-unstyled mb-0 vstack gap-2">
+                                                   <li>
+                                                       <div class="d-flex">
+                                                           <div class="flex-shrink-0 text-muted">
+                                                               <i class="ri-mail-line me-1 fs-16 align-middle"></i>
+                                                           </div>
+                                                           <div class="flex-grow-1">
+                                                               <span>{{ $order->user->email ?? 'N/A' }}</span>
+                                                           </div>
+                                                       </div>
+                                                   </li>
+                                               </ul>
+                                           </a>
                                         </div>
                                     </div>
                                     <div class="card border shadow-none mb-3">
@@ -171,12 +173,12 @@
                                             <div class="flex-grow-1 ms-3">
                                                 <h6 class="mb-1">Trạng thái đơn hàng</h6>
                                                 <p class="text-muted mb-0">
-                                                <span class="badge rounded-pill 
-                                                    @if($order->orderStatus->name == 'Đã giao thành công') bg-success 
+                                                <span class="badge rounded-pill
+                                                    @if($order->orderStatus->name == 'Đã giao thành công') bg-success
                                                     @elseif($order->orderStatus->name == 'Đang xử lý') bg-warning text-dark
-                                                    @elseif($order->orderStatus->name == 'Đang giao hàng') bg-info 
-                                                    @elseif($order->orderStatus->name == 'Giao thất bại') bg-danger 
-                                                    @elseif($order->orderStatus->name == 'Chờ xác nhận') bg-secondary 
+                                                    @elseif($order->orderStatus->name == 'Đang giao hàng') bg-info
+                                                    @elseif($order->orderStatus->name == 'Giao thất bại') bg-danger
+                                                    @elseif($order->orderStatus->name == 'Chờ xác nhận') bg-secondary
                                                     @else bg-dark  @endif">
                                                     {{ $order->orderStatus->name ?? 'N/A' }}
                                                 </span>
@@ -198,10 +200,10 @@
                                             <div class="flex-grow-1 ms-3">
                                                 <h6 class="mb-1">Trạng thái thanh toán</h6>
                                                 <p class="text-muted mb-0">
-                                                <span class="badge rounded-pill 
-                                                    @if($order->paymentStatus->name == 'Đã Thanh Toán') bg-success 
+                                                <span class="badge rounded-pill
+                                                    @if($order->paymentStatus->name == 'Đã Thanh Toán') bg-success
                                                     @elseif($order->paymentStatus->name == 'Chưa Thanh Toán') bg-warning text-dark
-                                                    @elseif($order->paymentStatus->name == 'Thất Bại') bg-danger 
+                                                    @elseif($order->paymentStatus->name == 'Thất Bại') bg-danger
                                                     @else bg-secondary  @endif">
                                                     {{ $order->paymentStatus->name ?? 'N/A' }}
                                                 </span>
@@ -232,7 +234,7 @@
                                         @php $total = 0; @endphp
                                         @if(isset($orderItems) && $orderItems->count() > 0)
                                             @foreach($orderItems as $index => $item)
-                                                @php 
+                                                @php
                                                     $subtotal = $item->price * $item->quantity;
                                                     $total += $subtotal;
                                                     $book = $item->book;
@@ -241,21 +243,24 @@
                                                 <tr>
                                                     <td>{{ $index + 1 }}</td>
                                                     <td>
-                                                        @if($book)
-                                                            <div class="d-flex align-items-center">
-                                                                @if($book->cover_image)
-                                                                    <img src="{{ asset('storage/' . $book->cover_image) }}" 
-                                                                        alt="{{ $book->title }}" class="me-2" 
-                                                                        style="width: 40px; height: 50px; object-fit: cover;">
-                                                                @endif
-                                                                <div>
-                                                                    <h6 class="mb-0">{{ $book->title }}</h6>
-                                                                    <small class="text-muted">ISBN: {{ $book->isbn ?? 'N/A' }}</small>
-                                                                </div>
-                                                            </div>
-                                                        @else
-                                                            {{ $item->book_id ?? 'Sản phẩm không tồn tại' }}
-                                                        @endif
+                                                       <a href="{{route('admin.books.show', [$book->id, $book->slug])}}" style="text-decoration: none; color: #0a0c0d">
+{{--                                                            Hiển thị thông tin sách--}}
+                                                           @if($book)
+                                                               <div class="d-flex align-items-center">
+                                                                   @if($book->cover_image)
+                                                                       <img src="{{ asset('storage/' . $book->cover_image) }}"
+                                                                            alt="{{ $book->title }}" class="me-2"
+                                                                            style="width: 40px; height: 50px; object-fit: cover;">
+                                                                   @endif
+                                                                   <div>
+                                                                       <h6 class="mb-0">{{ $book->title }}</h6>
+                                                                       <small class="text-muted">ISBN: {{ $book->isbn ?? 'N/A' }}</small>
+                                                                   </div>
+                                                               </div>
+                                                           @else
+                                                               {{ $item->book_id ?? 'Sản phẩm không tồn tại' }}
+                                                           @endif
+                                                       </a>
                                                     </td>
                                                     <td>
                                                         @if($bookFormat)
@@ -264,7 +269,7 @@
                                                             <span class="text-muted">N/A</span>
                                                         @endif
                                                     </td>
-                                                    <td>    
+                                                    <td>
                                                         @if($item->attributeValues && $item->attributeValues->count() > 0)
                                                             @foreach($item->attributeValues as $attrValue)
                                                                 <span class="badge bg-light text-dark">{{ $attrValue->attribute->name }}: {{ $attrValue->value }}</span>
@@ -280,7 +285,7 @@
                                             @endforeach
                                         @elseif(isset($order->invoice) && $order->invoice->items->count() > 0)
                                             @foreach($order->invoice->items as $index => $item)
-                                                @php 
+                                                @php
                                                     $subtotal = $item->price * $item->quantity;
                                                     $total += $subtotal;
                                                     $book = $item->book;
@@ -292,8 +297,8 @@
                                                         @if($book)
                                                             <div class="d-flex align-items-center">
                                                                 @if($book->cover_image)
-                                                                    <img src="{{ asset('storage/' . $book->cover_image) }}" 
-                                                                        alt="{{ $book->title }}" class="me-2" 
+                                                                    <img src="{{ asset('storage/' . $book->cover_image) }}"
+                                                                        alt="{{ $book->title }}" class="me-2"
                                                                         style="width: 40px; height: 50px; object-fit: cover;">
                                                                 @endif
                                                                 <div>
@@ -404,7 +409,7 @@
                                         @endif
                                     </div>
                                     <div class="flex-shrink-0">
-                                        <span class="badge 
+                                        <span class="badge
                                             @if($payment->status == 'Thành công') bg-success
                                             @elseif($payment->status == 'Đang xử lý') bg-warning
                                             @elseif($payment->status == 'Thất bại') bg-danger
@@ -417,7 +422,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         @if($order->invoice)
                         <div class="mb-4">
                             <div class="d-flex mb-2">
@@ -435,7 +440,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         <div class="mb-4">
                             <div class="d-flex mb-2">
                                 <div class="flex-shrink-0">

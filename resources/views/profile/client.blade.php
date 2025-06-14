@@ -368,7 +368,7 @@
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.05);
       position: sticky;
-      top: 100px;
+      top: 60px;
     }
     .sidebar a {
       display: flex;
@@ -455,27 +455,358 @@
     }
     .avatar {
       position: relative;
-      padding: 20px;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
-      border-radius: 16px;
+      padding: 12px;
+      background: 
+        linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.1) 100%),
+        linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(15px);
+      box-shadow: 
+        0 3px 12px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
     }
-    .avatar img {
-      width: 150px;
-      height: 150px;
+    .avatar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
+      transition: left 0.8s ease;
+    }
+    .avatar:hover::before {
+      left: 100%;
+    }
+    .avatar:hover {
+      transform: translateY(-6px);
+      box-shadow: 
+        0 15px 35px rgba(99, 102, 241, 0.2),
+        0 8px 16px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    .avatar-container {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+    .avatar-container::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      right: -6px;
+      bottom: -6px;
+      background: linear-gradient(45deg, #6366f1, #a855f7, #10b981, #f59e0b);
+      border-radius: 50%;
+      z-index: -1;
+      animation: rotate 10s linear infinite;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .avatar-container:hover::before {
+      opacity: 0.5;
+    }
+    @keyframes rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .avatar-image {
+      width: 110px;
+      height: 110px;
       object-fit: cover;
       border-radius: 50%;
-      border: 3px solid #6366f1;
+      border: 3px solid #fff;
       padding: 3px;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 
+        0 6px 20px rgba(99, 102, 241, 0.2),
+        0 2px 6px rgba(0, 0, 0, 0.06),
+        inset 0 0 0 1px rgba(99, 102, 241, 0.08);
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      position: relative;
+      z-index: 2;
+    }
+    .avatar-image::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      right: -6px;
+      bottom: -6px;
+      background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%);
+      border-radius: 50%;
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .avatar-image:hover::before {
+      opacity: 1;
+      animation: shine 1.5s ease-in-out;
+    }
+    @keyframes shine {
+      0% { transform: scale(0.8) rotate(0deg); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: scale(1.2) rotate(180deg); opacity: 0; }
+    }
+    .avatar-image:hover {
+      transform: scale(1.05) rotateZ(3deg);
+      box-shadow: 
+        0 12px 32px rgba(99, 102, 241, 0.3),
+        0 6px 12px rgba(0, 0, 0, 0.12),
+        inset 0 0 0 2px rgba(99, 102, 241, 0.15);
+    }
+    .avatar-badge {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      width: 26px;
+      height: 26px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-radius: 50%;
+      border: 2px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 
+        0 3px 10px rgba(16, 185, 129, 0.25),
+        0 0 0 1px rgba(16, 185, 129, 0.08);
+      animation: heartbeat 2s infinite;
+      z-index: 3;
       transition: all 0.3s ease;
-      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
     }
-    .avatar img:hover {
-      transform: scale(1.05) rotate(5deg);
+    .avatar-badge::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      right: -6px;
+      bottom: -6px;
+      background: linear-gradient(45deg, #10b981, #059669);
+      border-radius: 50%;
+      z-index: -1;
+      opacity: 0;
+      animation: pulse-ring 2s infinite;
     }
-    .avatar .upload-btn {
+    .avatar-badge i {
+      color: white;
+      font-size: 10px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    @keyframes heartbeat {
+      0%, 40%, 80%, 100% { transform: scale(1); }
+      20%, 60% { transform: scale(1.15); }
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(2); opacity: 0; }
+    }
+    .upload-section {
       margin-top: 15px;
+      padding: 15px;
+      background: 
+        linear-gradient(145deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.1) 100%),
+        linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+      border-radius: 12px;
+      border: 2px dashed rgba(99, 102, 241, 0.3);
+      backdrop-filter: blur(8px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .upload-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
       width: 100%;
-      max-width: 200px;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(99, 102, 241, 0.1),
+        transparent
+      );
+      transition: left 0.6s ease;
+    }
+    .upload-section:hover::before {
+      left: 100%;
+    }
+    .upload-section:hover {
+      border-color: rgba(99, 102, 241, 0.6);
+      background: 
+        linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.2) 100%),
+        linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(99, 102, 241, 0.12);
+    }
+    .upload-section.dragover {
+      border-color: #6366f1;
+      background: 
+        linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.3) 100%),
+        linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%);
+      transform: scale(1.01) translateY(-3px);
+      box-shadow: 
+        0 10px 25px rgba(99, 102, 241, 0.18),
+        inset 0 0 0 1px rgba(99, 102, 241, 0.15);
+    }
+    .upload-btn {
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 12px;
+    }
+    .upload-btn input[type="file"] {
+      position: absolute;
+      left: -9999px;
+      opacity: 0;
+    }
+    .upload-btn-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+      color: white;
+      border-radius: 10px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .upload-btn-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+      );
+      transition: left 0.6s ease;
+    }
+    .upload-btn:hover .upload-btn-content::before {
+      left: 100%;
+    }
+    .upload-btn:hover .upload-btn-content {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 
+        0 8px 20px rgba(99, 102, 241, 0.3),
+        0 4px 8px rgba(0, 0, 0, 0.08);
+      background: linear-gradient(135deg, #4f46e5 0%, #9333ea 50%, #e11d48 100%);
+    }
+    .upload-btn-content i {
+      font-size: 16px;
+      animation: bounce 2s infinite;
+    }
+    .upload-btn-content span {
+      font-weight: 600;
+      font-size: 12px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-5px); }
+      60% { transform: translateY(-2px); }
+    }
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .particles::before,
+    .particles::after {
+      content: '';
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: linear-gradient(45deg, #6366f1, #a855f7);
+      border-radius: 50%;
+      animation: float-particles 6s infinite linear;
+    }
+    .particles::before {
+      top: 20%;
+      left: 10%;
+      animation-delay: 0s;
+    }
+    .particles::after {
+      top: 60%;
+      right: 15%;
+      animation-delay: 3s;
+    }
+    @keyframes float-particles {
+      0%, 100% { opacity: 0; transform: translateY(0) scale(0); }
+      50% { opacity: 1; transform: translateY(-50px) scale(1); }
+    }
+    .avatar-glow {
+      position: absolute;
+      top: -20px;
+      left: -20px;
+      right: -20px;
+      bottom: -20px;
+      background: linear-gradient(45deg, #6366f1, #a855f7, #ec4899, #10b981);
+      border-radius: 50%;
+      z-index: -1;
+      opacity: 0;
+      filter: blur(20px);
+      animation: glow-pulse 4s ease-in-out infinite;
+    }
+    @keyframes glow-pulse {
+      0%, 100% { opacity: 0; transform: scale(0.8); }
+      50% { opacity: 0.6; transform: scale(1.2); }
+    }
+    .avatar-ring {
+      position: absolute;
+      top: -15px;
+      left: -15px;
+      right: -15px;
+      bottom: -15px;
+      border: 2px solid transparent;
+      border-radius: 50%;
+      background: linear-gradient(45deg, #6366f1, #a855f7) border-box;
+      mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      animation: spin-ring 8s linear infinite;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .avatar-container:hover .avatar-ring {
+      opacity: 1;
+    }
+    @keyframes spin-ring {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .upload-info {
+      text-align: center;
+      margin-top: 10px;
+      position: relative;
+    }
+    .upload-info .text-muted {
+      font-size: 10px;
+      color: #6b7280;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 4px 8px;
+      border-radius: 12px;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(99, 102, 241, 0.08);
     }
     .btn-save {
       background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
@@ -520,14 +851,14 @@
         padding: 15px;
       }
       .sidebar {
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         position: static;
       }
       .main-content {
-        padding: 25px;
+        padding: 20px;
       }
       .avatar {
-        margin-top: 20px;
+        margin-top: 15px;
       }
       .navbar-custom {
         padding: 0.5rem 0;
@@ -576,7 +907,7 @@
 
 <body>
   <div class="progress-bar" style="width: 0%"></div>
-  <div class="container">
+  <div class="container" style="padding-top: 40px; padding-bottom: 60px;">
     <div class="row g-4">
       <div class="col-md-3">
         <div class="sidebar">
@@ -598,6 +929,37 @@
             @method('PUT') <!-- Đặt phương thức PUT để update -->
 
             <div class="row">
+                <!-- Avatar hiển thị -->
+                <div class="col-md-4 text-center avatar">
+                    <div class="particles"></div>
+                    <div class="avatar-container">
+                        <div class="avatar-glow"></div>
+                        <img src="{{ Auth::user()->avatar ? asset('storage/' . Auth::user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=6366f1&color=fff&size=200' }}" 
+                             alt="Avatar" class="avatar-image">
+                        <div class="avatar-badge">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="avatar-ring"></div>
+                    </div>
+                    
+                    <!-- Upload ảnh mới -->
+                    <div class="upload-section">
+                        <div class="upload-btn" onclick="document.getElementById('avatar-input').click()">
+                            <input type="file" name="avatar" id="avatar-input" accept="image/jpeg,image/png" style="display: none;">
+                            <div class="upload-btn-content">
+                                <i class="fas fa-camera"></i>
+                                <span>Chọn ảnh</span>
+                            </div>
+                        </div>
+                        <div class="upload-info">
+                            <p class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Tối đa 1MB. Định dạng: .JPEG, .PNG
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-md-8">
                 <!-- Tên đăng nhập -->
                 <div class="mb-4">
@@ -610,30 +972,16 @@
                     <input type="email" class="form-control" name="email" value="{{ Auth::user()->email }}" required>
                 </div>
 
-
                 <!-- Số điện thoại -->
                 <div class="mb-4">
                     <label class="form-label">Số điện thoại</label>
                     <input type="tel" class="form-control" name="phone" value="{{ Auth::user()->phone }}">
                 </div>
 
-                <div class="mb-4 text-center">
-                    <label class="form-label">Ảnh đại diện (avatar)</label>
-                   <input type="file" name="avatar" class="form-control" accept="image/jpeg,image/png">
-                    <p class="text-muted mt-2 small">Tối đa 1MB. Định dạng: .JPEG, .PNG</p>
-                </div>
-
-
                 <!-- Nút lưu -->
                 <button type="submit" class="btn btn-save">
                     <i class="fas fa-save me-2"></i>Lưu thay đổi
                 </button>
-                </div>
-
-                <!-- Avatar hiển thị -->
-                <div class="col-md-4 text-center avatar">
-                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="Avatar" class="mb-3 shadow"
-                             style="width: 150px; height: 150px; object-fit: cover;">
                 </div>
 
             </div>
@@ -766,19 +1114,129 @@
       });
     });
 
-    // Image preview
-    const imageInput = document.querySelector('input[type="file"]');
-    const previewImage = document.querySelector('.avatar img');
+    // Create floating particles
+    function createParticles() {
+      const avatarContainer = document.querySelector('.avatar');
+      if (!avatarContainer) return;
+      
+      const particles = avatarContainer.querySelector('.particles');
+      
+      for (let i = 0; i < 8; i++) {
+        const particle = document.createElement('div');
+        particle.style.cssText = `
+          position: absolute;
+          width: ${Math.random() * 6 + 2}px;
+          height: ${Math.random() * 6 + 2}px;
+          background: linear-gradient(45deg, #6366f1, #a855f7);
+          border-radius: 50%;
+          left: ${Math.random() * 100}%;
+          top: ${Math.random() * 100}%;
+          animation: float-particles ${Math.random() * 4 + 4}s infinite linear;
+          animation-delay: ${Math.random() * 2}s;
+          opacity: 0;
+        `;
+        particles.appendChild(particle);
+      }
+    }
+
+    // Initialize particles when page loads
+    document.addEventListener('DOMContentLoaded', createParticles);
+
+    // Image preview with enhanced functionality
+    const imageInput = document.getElementById('avatar-input');
+    const previewImage = document.querySelector('.avatar-image');
+    const uploadSection = document.querySelector('.upload-section');
+    const avatarContainer = document.querySelector('.avatar-container');
     
+    // File input change handler
     imageInput.addEventListener('change', function() {
       const file = this.files[0];
       if (file) {
+        // Validate file size (1MB = 1048576 bytes)
+        if (file.size > 1048576) {
+          Swal.fire({
+            icon: 'error',
+            title: 'File quá lớn!',
+            text: 'Vui lòng chọn file có kích thước nhỏ hơn 1MB',
+            confirmButtonColor: '#6366f1'
+          });
+          this.value = '';
+          return;
+        }
+        
+        // Validate file type
+        if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Định dạng không hợp lệ!',
+            text: 'Chỉ chấp nhận file .JPEG, .JPG, .PNG',
+            confirmButtonColor: '#6366f1'
+          });
+          this.value = '';
+          return;
+        }
+        
         const reader = new FileReader();
         reader.onload = function(e) {
           previewImage.src = e.target.result;
-          previewImage.classList.add('animate__animated', 'animate__bounceIn');
-        }
+          
+          // Add loading effect
+          previewImage.style.opacity = '0.5';
+          previewImage.style.transform = 'scale(0.9)';
+          
+          setTimeout(() => {
+            previewImage.style.opacity = '1';
+            previewImage.style.transform = 'scale(1.05)';
+            
+            // Add success effect
+            avatarContainer.style.animation = 'none';
+            avatarContainer.offsetHeight; // Trigger reflow
+            avatarContainer.style.animation = 'success-bounce 0.6s ease';
+            
+            setTimeout(() => {
+              previewImage.style.transform = 'scale(1)';
+            }, 300);
+          }, 200);
+          
+          // Show success toast
+          showToast('✨ Ảnh đã được chọn! Nhấn "Lưu thay đổi" để cập nhật.');
+        };
         reader.readAsDataURL(file);
+      }
+    });
+
+    // Add success animation keyframes
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes success-bounce {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1) rotateZ(5deg); }
+        100% { transform: scale(1) rotateZ(0deg); }
+      }
+    `;
+    document.head.appendChild(style);
+      }
+    });
+
+    // Drag and drop functionality
+    uploadSection.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      this.classList.add('dragover');
+    });
+
+    uploadSection.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      this.classList.remove('dragover');
+    });
+
+    uploadSection.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('dragover');
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        imageInput.files = files;
+        imageInput.dispatchEvent(new Event('change'));
       }
     });
 

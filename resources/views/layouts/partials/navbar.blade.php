@@ -4,7 +4,7 @@
         {{-- Trái: Logo --}}
         <div class="flex items-center justify-between md:justify-start gap-3">
             <a href="#">
-                <img src="{{ asset('images/logo-bookbee-2.png') }}" alt="Logo" class="h-32 w-auto]">
+                <img src="{{ asset('storage/' . (get_setting() ? get_setting()->logo : 'default_logo.png')) }}" alt="Logo" class="h-32 w-auto" />
             </a>
         </div>
         {{-- Giữa: Menu chính --}}

@@ -6,6 +6,8 @@ use App\Models\Payment;
 use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
 use App\Models\User;
+use App\Models\Wallet;
+use App\Models\WalletTransaction;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -45,6 +47,8 @@ class DatabaseSeeder extends Seeder
             OrderSeeder::class,
             InvoiceSeeder::class,
             InvoiceItemSeeder::class,
+            WalletSeeder::class,
+            WalletTransactionSeeder::class
         ]);
     }
 }
