@@ -101,5 +101,15 @@ class Book extends Model
     {
         return $this->reviews()->avg('rating') ?? 0;
     }
+
+    public function summary()
+    {
+        return $this->hasOne(BookSummary::class);
+    }
+
+    public function hasSummary()
+    {
+        return $this->summary()->exists();
+    }
     
 }
