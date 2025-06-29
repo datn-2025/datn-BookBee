@@ -521,7 +521,11 @@ class AISummaryManager {
                 body: JSON.stringify({ message: message })
             });
 
+            console.log('Chat API response status:', response.status);
+            console.log('Chat API response headers:', response.headers);
+
             const result = await response.json();
+            console.log('Chat API result:', result);
             
             // Remove typing indicator
             this.removeTypingIndicator(typingId);
@@ -536,10 +540,15 @@ class AISummaryManager {
                     }
                 }
             } else {
+                console.error('Chat API error:', result);
                 // Xử lý các loại lỗi khác nhau
                 if (response.status === 429) {
                     this.addChatMessage(chatMessages, result.message || 'Bạn đã gửi quá nhiều tin nhắn. Vui lòng đợi một chút.', 'warning');
                     this.showNotification('Rate limit exceeded', 'warning');
+                } else if (response.status === 422) {
+                    // Validation error
+                    this.addChatMessage(chatMessages, result.message || 'Tin nhắn không hợp lệ. Vui lòng kiểm tra lại.', 'error');
+                    this.showNotification('Validation error', 'error');
                 } else {
                     this.addChatMessage(chatMessages, result.message || 'Lỗi khi gửi tin nhắn', 'error');
                 }
@@ -547,6 +556,15 @@ class AISummaryManager {
 
         } catch (error) {
             console.error('Error sending chat message:', error);
+            console.error('Error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+                bookId: bookId,
+                message: message,
+                timestamp: new Date().toISOString()
+            });
+            
             this.removeTypingIndicator(typingId);
             this.addChatMessage(chatMessages, 'Lỗi kết nối. Vui lòng thử lại sau.', 'error');
             this.showNotification('Lỗi kết nối', 'error');
