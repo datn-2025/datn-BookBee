@@ -146,12 +146,31 @@ class AISummaryController extends Controller
     public function chatWithAI(Request $request, $bookId): JsonResponse
     {
         $request->validate([
-            'message' => 'required|string|min:3|max:300'
+            'message' => [
+                'required',
+                'string',
+                'min:3',
+                'max:300',
+                function ($attribute, $value, $fail) {
+                    // Kiểm tra UTF-8 hợp lệ
+                    if (!mb_check_encoding($value, 'UTF-8')) {
+                        $fail('Tin nhắn chứa ký tự không hợp lệ.');
+                    }
+                    
+                    // Kiểm tra không chỉ chứa whitespace
+                    if (trim($value) === '') {
+                        $fail('Tin nhắn không được để trống.');
+                    }
+                }
+            ]
         ]);
 
         try {
             $book = Book::with(['author', 'category', 'summary'])->findOrFail($bookId);
             $userMessage = trim($request->input('message'));
+
+            // Làm sạch UTF-8 encoding cho user message
+            $userMessage = mb_convert_encoding($userMessage, 'UTF-8', 'UTF-8');
 
             // Kiểm tra rate limiting đơn giản (có thể cải thiện với Redis)
             $sessionKey = 'chat_' . $bookId . '_' . session()->getId();
@@ -209,6 +228,16 @@ class AISummaryController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            // Log chi tiết lỗi để debug
+            Log::error('Chat with AI Controller Error', [
+                'book_id' => $bookId,
+                'user_message' => $request->input('message'),
+                'error_message' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString(),
+                'user_agent' => $request->userAgent(),
+                'ip' => $request->ip()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Lỗi khi chat với AI. Vui lòng thử lại sau.'
