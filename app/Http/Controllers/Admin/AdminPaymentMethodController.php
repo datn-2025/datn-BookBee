@@ -7,11 +7,9 @@ use App\Mail\EbookPurchaseConfirmation;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
-use App\Models\BookFormat;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class AdminPaymentMethodController extends Controller
