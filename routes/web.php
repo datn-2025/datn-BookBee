@@ -362,3 +362,12 @@ Route::controller(GoogleController::class)->group(function(){
     Route::get('auth/google', 'redirectToGoogle')->name('auth.google');
     Route::get('auth/google/callback', 'handleGoogleCallback');
 });
+
+// AI Summary routes
+Route::prefix('ai-summary')->name('ai-summary.')->group(function() {
+    Route::post('/generate/{book}', [App\Http\Controllers\AISummaryController::class, 'generateSummary'])->name('generate');
+    Route::get('/get/{book}', [App\Http\Controllers\AISummaryController::class, 'getSummary'])->name('get');
+    Route::post('/regenerate/{book}', [App\Http\Controllers\AISummaryController::class, 'regenerateSummary'])->name('regenerate');
+    Route::get('/status/{book}', [App\Http\Controllers\AISummaryController::class, 'checkStatus'])->name('status');
+    Route::post('/chat/{book}', [App\Http\Controllers\AISummaryController::class, 'chatWithAI'])->name('chat');
+});
