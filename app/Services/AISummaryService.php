@@ -152,13 +152,20 @@ class AISummaryService
             $bookContext = $this->buildBookContext($book);
             $prompt = $this->buildChatPrompt($book, $bookContext, $userMessage);
 
+            // Làm sạch UTF-8 encoding trước khi gửi request
+            $cleanPrompt = mb_convert_encoding($prompt, 'UTF-8', 'UTF-8');
+            
             // Gọi API Gemini
-            $response = Http::timeout(30)->post($this->apiUrl . '?key=' . $this->apiKey, [
+            $response = Http::timeout(30)
+                ->withHeaders([
+                    'Content-Type' => 'application/json; charset=utf-8'
+                ])
+                ->post($this->apiUrl . '?key=' . $this->apiKey, [
                 'contents' => [
                     [
                         'parts' => [
                             [
-                                'text' => $prompt
+                                'text' => $cleanPrompt
                             ]
                         ]
                     ]
@@ -175,8 +182,9 @@ class AISummaryService
                 $data = $response->json();
                 $content = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
                 
-                // Làm sạch response
-                return trim($content);
+                // Làm sạch response và đảm bảo UTF-8 hợp lệ
+                $cleanContent = mb_convert_encoding(trim($content), 'UTF-8', 'UTF-8');
+                return $cleanContent;
             } else {
                 throw new Exception('API Error: ' . $response->body());
             }
@@ -184,8 +192,14 @@ class AISummaryService
         } catch (Exception $e) {
             Log::error('AI Chat Failed', [
                 'book_id' => $book->id,
+                'book_title' => $book->title,
                 'user_message' => $userMessage,
-                'error' => $e->getMessage()
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'api_key_exists' => !empty($this->apiKey),
+                'api_url' => $this->apiUrl
             ]);
 
             // Fallback response
@@ -196,12 +210,13 @@ class AISummaryService
     private function buildBookContext(Book $book)
     {
         $context = "Thông tin sách:\n";
-        $context .= "- Tiêu đề: {$book->title}\n";
-        $context .= "- Tác giả: {$book->author->name}\n";
-        $context .= "- Thể loại: {$book->category->name}\n";
+        $context .= "- Tiêu đề: " . mb_convert_encoding($book->title, 'UTF-8', 'UTF-8') . "\n";
+        $context .= "- Tác giả: " . mb_convert_encoding($book->author->name, 'UTF-8', 'UTF-8') . "\n";
+        $context .= "- Thể loại: " . mb_convert_encoding($book->category->name, 'UTF-8', 'UTF-8') . "\n";
         
         if ($book->description) {
-            $context .= "- Mô tả: " . substr($book->description, 0, 300) . "\n";
+            $cleanDescription = mb_convert_encoding(substr($book->description, 0, 300), 'UTF-8', 'UTF-8');
+            $context .= "- Mô tả: " . $cleanDescription . "\n";
         }
         
         if ($book->page_count) {
@@ -210,7 +225,8 @@ class AISummaryService
 
         // Thêm thông tin từ tóm tắt nếu có
         if ($book->summary && $book->summary->summary) {
-            $context .= "- Tóm tắt: " . substr($book->summary->summary, 0, 200) . "\n";
+            $cleanSummary = mb_convert_encoding(substr($book->summary->summary, 0, 200), 'UTF-8', 'UTF-8');
+            $context .= "- Tóm tắt: " . $cleanSummary . "\n";
         }
 
         return $context;
@@ -218,9 +234,14 @@ class AISummaryService
 
     private function buildChatPrompt(Book $book, string $bookContext, string $userMessage)
     {
+        // Làm sạch UTF-8 cho tất cả dữ liệu đầu vào
+        $cleanBookTitle = mb_convert_encoding($book->title, 'UTF-8', 'UTF-8');
+        $cleanAuthorName = mb_convert_encoding($book->author->name, 'UTF-8', 'UTF-8');
+        $cleanUserMessage = mb_convert_encoding($userMessage, 'UTF-8', 'UTF-8');
+        
         $prompt = "Bạn là một trợ lý AI chuyên về phân tích sách và văn học. ";
         $prompt .= "QUAN TRỌNG - QUY TẮC CHAT:\n";
-        $prompt .= "1. Bạn CHỈ được trả lời về cuốn sách '{$book->title}' của tác giả {$book->author->name}\n";
+        $prompt .= "1. Bạn CHỈ được trả lời về cuốn sách '{$cleanBookTitle}' của tác giả {$cleanAuthorName}\n";
         $prompt .= "2. TUYỆT ĐỐI KHÔNG trả lời về: chính trị, tôn giáo, thời tiết, y tế, lập trình, tài chính, hay bất kỳ chủ đề nào khác\n";
         $prompt .= "3. Nếu câu hỏi không liên quan đến sách này, hãy từ chối lịch sự và yêu cầu hỏi về sách\n";
         $prompt .= "4. Nếu câu hỏi mơ hồ, hãy yêu cầu làm rõ trong bối cảnh của cuốn sách\n";
@@ -228,9 +249,9 @@ class AISummaryService
         
         $prompt .= $bookContext . "\n";
         
-        $prompt .= "Câu hỏi của người dùng: \"{$userMessage}\"\n\n";
+        $prompt .= "Câu hỏi của người dùng: \"{$cleanUserMessage}\"\n\n";
         
-        $prompt .= "KIỂM TRA: Câu hỏi này có thực sự về cuốn sách '{$book->title}' không?\n";
+        $prompt .= "KIỂM TRA: Câu hỏi này có thực sự về cuốn sách '{$cleanBookTitle}' không?\n";
         $prompt .= "- Nếu KHÔNG: Từ chối lịch sự và yêu cầu hỏi về sách\n";
         $prompt .= "- Nếu CÓ: Trả lời chi tiết và hữu ích về sách\n\n";
         
@@ -241,32 +262,37 @@ class AISummaryService
 
     private function generateFallbackChatResponse(Book $book, string $userMessage)
     {
+        // Làm sạch UTF-8 cho dữ liệu sách
+        $cleanBookTitle = mb_convert_encoding($book->title, 'UTF-8', 'UTF-8');
+        $cleanAuthorName = mb_convert_encoding($book->author->name, 'UTF-8', 'UTF-8');
+        $cleanCategoryName = mb_convert_encoding($book->category->name, 'UTF-8', 'UTF-8');
+        
         // Kiểm tra xem câu hỏi có liên quan đến sách không ngay trong fallback
         $lowerMessage = strtolower($userMessage);
-        $bookTitle = strtolower($book->title);
-        $authorName = strtolower($book->author->name);
+        $bookTitle = strtolower($cleanBookTitle);
+        $authorName = strtolower($cleanAuthorName);
         
         // Phản hồi cụ thể hơn dựa trên nội dung câu hỏi
         if (strpos($lowerMessage, 'tóm tắt') !== false || strpos($lowerMessage, 'nội dung') !== false) {
-            return "Cuốn sách '{$book->title}' của tác giả {$book->author->name} thuộc thể loại {$book->category->name}. " .
+            return "Cuốn sách '{$cleanBookTitle}' của tác giả {$cleanAuthorName} thuộc thể loại {$cleanCategoryName}. " .
                    "Tôi đang gặp sự cố kỹ thuật nên không thể cung cấp tóm tắt chi tiết lúc này. Vui lòng thử lại sau.";
         }
         
         if (strpos($lowerMessage, 'tác giả') !== false || strpos($lowerMessage, $authorName) !== false) {
-            return "Tác giả của cuốn sách này là {$book->author->name}. " .
+            return "Tác giả của cuốn sách này là {$cleanAuthorName}. " .
                    "Tôi đang gặp vấn đề kỹ thuật nên không thể cung cấp thêm thông tin về tác giả lúc này.";
         }
         
         if (strpos($lowerMessage, 'thể loại') !== false || strpos($lowerMessage, 'genre') !== false) {
-            return "'{$book->title}' thuộc thể loại {$book->category->name}. " .
+            return "'{$cleanBookTitle}' thuộc thể loại {$cleanCategoryName}. " .
                    "Tôi đang gặp sự cố nên không thể phân tích sâu hơn về thể loại này.";
         }
         
         // Phản hồi chung khi API lỗi
         $responses = [
-            "Tôi hiểu bạn muốn biết về cuốn sách '{$book->title}'. Tuy nhiên, tôi đang gặp sự cố kỹ thuật. Vui lòng thử lại sau.",
-            "Xin lỗi, tôi đang không thể phân tích chi tiết về '{$book->title}' lúc này. Hệ thống đang được bảo trì.",
-            "Tôi muốn giúp bạn tìm hiểu về '{$book->title}', nhưng đang gặp vấn đề kỹ thuật. Vui lòng thử lại trong ít phút."
+            "Tôi hiểu bạn muốn biết về cuốn sách '{$cleanBookTitle}'. Tuy nhiên, tôi đang gặp sự cố kỹ thuật. Vui lòng thử lại sau.",
+            "Xin lỗi, tôi đang không thể phân tích chi tiết về '{$cleanBookTitle}' lúc này. Hệ thống đang được bảo trì.",
+            "Tôi muốn giúp bạn tìm hiểu về '{$cleanBookTitle}', nhưng đang gặp vấn đề kỹ thuật. Vui lòng thử lại trong ít phút."
         ];
 
         return $responses[array_rand($responses)];
