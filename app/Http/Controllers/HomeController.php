@@ -69,7 +69,7 @@ class HomeController extends Controller
     public function show($slug)
 {
     $book = Book::with([
-        'author', 'category', 'brand', 'formats', 'images', 'reviews.user', 'attributeValues.attribute'
+        'author', 'category', 'brand', 'formats', 'images', 'reviews.user', 'attributeValues.attribute', 'summary'
     ])->where('slug', $slug)->firstOrFail();
 
     $relatedBooks = Book::where('category_id', $book->category_id)
