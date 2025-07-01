@@ -180,6 +180,13 @@ Route::middleware('guest.admin')->group(function () {
 Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
+    // Admin Profile Management
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AdminProfileController::class, 'index'])->name('index');
+        Route::put('/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updateProfile'])->name('update');
+        Route::put('/password/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('password.update');
+    });
+
     Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard');
     Route::get('/revenue-report', RevenueReport::class)->name('revenue-report');
     Route::get('/balance-chart', BalanceChart::class)->name('balance-chart');
