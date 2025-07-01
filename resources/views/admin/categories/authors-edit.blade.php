@@ -40,7 +40,17 @@
                             <label for="image" class="form-label">Hình ảnh</label>
                             @if($author->image)
                                 <div class="mb-2">
+                                    <label class="form-label">Ảnh hiện tại:</label>
+                                    <div>
                                     <img src="{{ asset($author->image) }}" alt="{{ $author->name }}" style="width:80px; height:80px; object-fit:cover;" class="rounded">
+                                    </div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" name="remove_image"
+                                               id="remove_image" value="1">
+                                        <label class="form-check-label" for="remove_image">
+                                            Xóa ảnh hiện tại
+                                        </label>
+                                    </div>
                                 </div>
                             @endif
                             <input type="file" class="form-control @error('image') is-invalid @enderror" id="image" name="image" accept="image/*">
@@ -48,6 +58,9 @@
                             @error('image')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                            <img id="preview" src="#" alt="Xem trước ảnh"
+                                 class="mt-3 border rounded"
+                                 style="display: none; max-height: 120px;" />
                         </div>
                         <div class="text-end">
                             <a href="{{ route('admin.categories.authors.index') }}" class="btn btn-secondary me-2">Hủy</a>
@@ -60,3 +73,38 @@
     </div>
 </div>
 @endsection
+@push('scripts')
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Xem trước ảnh
+        const input = document.getElementById("image");
+        const preview = document.getElementById("preview");
+
+        input?.addEventListener("change", e => {
+            const file = e.target.files?.[0];
+            if (file?.type.startsWith("image/")) {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    preview.src = ev.target.result;
+                    preview.style.display = "block";
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = "none";
+            }
+        });
+
+        // Ngăn submit nhiều lần
+        document.querySelectorAll("form[onsubmit]").forEach(form => {
+            form.onsubmit = () => {
+                const btn = form.querySelector("button[type=submit]");
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Đang xử lý...`;
+                }
+                return true;
+            };
+        });
+    });
+</script>
+@endpush
