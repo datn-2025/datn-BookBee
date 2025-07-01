@@ -13,28 +13,34 @@ use Illuminate\Support\Facades\Mail;
 class UserController extends Controller
 {
     public function index(Request $request)
-    {
-        $query = User::with('role')->select('id', 'name', 'avatar', 'email', 'phone', 'role_id', 'status');
+{
+    $query = User::with('role')
+        ->select('id', 'name', 'avatar', 'email', 'phone', 'role_id', 'status')
+        ->whereHas('role', function ($q) {
+            $q->whereIn('name', ['User', 'Staff']);
+        })
+        ->orderByDesc('created_at'); // Sắp xếp người dùng mới nhất lên đầu
 
-        // Tìm kiếm theo text
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                    ->orWhere('email', 'like', "%$search%")
-                    ->orWhere('phone', 'like', "%$search%");
-            });
-        }
-
-        // Lọc theo trạng thái
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $users = $query->paginate(10)->appends($request->only(['search', 'status']));
-
-        return view('admin.users.index', compact('users'));
+    // Tìm kiếm theo text
+    if ($request->filled('search')) {
+        $search = $request->input('search');
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%")
+                ->orWhere('phone', 'like', "%$search%");
+        });
     }
+
+    // Lọc theo trạng thái
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    $users = $query->paginate(10)->appends($request->only(['search', 'status']));
+
+    return view('admin.users.index', compact('users'));
+}
+
 
     public function show($id)
     {
@@ -107,6 +113,6 @@ class UserController extends Controller
         }
 
         return redirect()->route('admin.users.index', $user->id)
-            ->with('success', 'Cập nhật thành công');
+            ->with('success', 'Cập nhật người dùng thành công');
     }
 }
