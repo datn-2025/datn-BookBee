@@ -78,6 +78,7 @@
                                     <tr>
                                         <th scope="col">STT</th>
                                         <th scope="col">Tên Phương Thức</th>
+                                        <th scope="col">Mô Tả</th>
                                         <th scope="col">Ngày Tạo</th>
                                         <th scope="col">Trạng Thái</th>
                                         <th scope="col">Thao Tác</th>
