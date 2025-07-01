@@ -39,7 +39,7 @@
                 <div class="flex justify-between text-base font-bold text-black border-t pt-2 mt-2"><span>Tổng cộng:</span><span>{{ number_format($order->total_amount, 0, ',', '.') }} đ</span></div>
             </div>
         </div>
-        <form action="{{ route('account.review.store') }}" method="POST" class="space-y-5">
+        <form action="{{ route('account.reviews.store') }}" method="POST" class="space-y-5">
             @csrf
             <input type="hidden" name="order_id" value="{{ $order->id }}">
             <input type="hidden" name="book_id" value="{{ $item->book->id }}">
