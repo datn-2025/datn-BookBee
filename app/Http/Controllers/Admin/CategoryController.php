@@ -7,6 +7,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\FacadesLog;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -39,13 +40,20 @@ class CategoryController extends Controller
     public function BrandStore(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:brands,name',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:brands,name',
+                'not_regex:/<.*?>/i'
+            ],
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ], [
             'name.required' => 'Vui lòng nhập tên thương hiệu',
             'name.unique' => 'Tên thương hiệu đã tồn tại',
             'name.max' => 'Tên thương hiệu không được vượt quá 255 ký tự',
+            'name.not_regex'    => 'Tên thương hiệu không được chứa thẻ HTML.',
             'image.image' => 'File phải là hình ảnh',
             'image.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif',
             'image.max' => 'Kích thước hình ảnh không được vượt quá 2MB'
@@ -130,13 +138,14 @@ class CategoryController extends Controller
     {
         $brand = Brand::findOrFail($id);
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:brands,name,' . $brand->id,
+            'name' => 'required|string|max:255|not_regex:/<.*?>/i|unique:brands,name,' . $brand->id,
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ], [
             'name.required' => 'Vui lòng nhập tên thương hiệu',
             'name.unique' => 'Tên thương hiệu đã tồn tại',
             'name.max' => 'Tên thương hiệu không được vượt quá 255 ký tự',
+            'name.not_regex' => 'Tên thương hiệu không được chứa thẻ HTML.',
             'image.image' => 'File phải là hình ảnh',
             'image.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif',
             'image.max' => 'Kích thước hình ảnh không được vượt quá 2MB'
@@ -159,6 +168,14 @@ class CategoryController extends Controller
             $image->storeAs('brands', $filename, 'public');
             $data['image'] = '/storage/brands/' . $filename;
         }
+        // Kiểm tra thay đổi
+            $original = $brand->only(['name', 'description', 'image']);
+            $incoming = array_merge($original, Arr::only($data, ['name', 'description', 'image']));
+
+            if ($original === $incoming) {
+                toastr()->info('Không có thay đổi nào cho danh mục sách.');
+                return redirect()->route('admin.categories.brands.brand');
+            }
 
         $brand->update($data);
         toastr()->success('Cập nhật thương hiệu thành công!');
