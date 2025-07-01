@@ -172,7 +172,6 @@
                                         <th scope="col">Địa chỉ</th>
                                         <th scope="col">Tổng tiền</th>
                                         <th scope="col">Trạng thái đơn hàng</th>
-                                        <th scope="col">QR</th>
                                         <th scope="col">Ngày Tạo</th>
                                         <th scope="col">Thao tác</th>
                                     </tr>
@@ -234,14 +233,6 @@
                                                 {{ $order->orderStatus->name ?? 'N/A' }}
                                             </span>
                                         </td>
-
-                                        <td class="text-center">
-                                            @if ($order->qr_code_path)
-                                                <a href="{{ route('admin.orders.show', $order->id) }}" title="Xem QR Code">
-                                                    <i class="ri-qr-code-line fs-16"></i>
-                                                </a>
-                                            @endif
-                                        </td>
                                         <td>{{ $order->created_at->format('d/m/Y') }}</td>
                                         <td>
                                             <div class="dropdown d-inline-block">
@@ -264,13 +255,13 @@
                                                             Cập nhật
                                                         </a>
                                                     </li>
-                                                    <li class="dropdown-divider"></li>
+                                                    <!-- <li class="dropdown-divider"></li>
                                                     <li>
-                                                        <a href="#" class="dropdown-item">
+                                                        <a href="{{ route('admin.invoices.show', $order->id) }}" class="dropdown-item">
                                                             <i class="ri-printer-fill align-bottom me-2 text-muted"></i>
                                                             In hóa đơn
                                                         </a>
-                                                    </li>
+                                                    </li> -->
                                                 </ul>
                                             </div>
                                         </td>

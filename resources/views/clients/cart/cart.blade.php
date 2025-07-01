@@ -79,7 +79,13 @@
                 </div>
                 <div class="adidas-cart-products-list">
                 @foreach($cart as $item)
-                    <div class="adidas-cart-product-card cart-item" data-book-id="{{ $item->book_id }}" data-price="{{ $item->price ?? 0 }}" data-stock="{{ $item->stock ?? 0 }}">
+                    <div class="adidas-cart-product-card cart-item" 
+                         data-book-id="{{ $item->book_id }}" 
+                         data-book-format-id="{{ $item->book_format_id }}"
+                         data-attribute-value-ids="{{ $item->attribute_value_ids }}"
+                         data-price="{{ $item->price ?? 0 }}" 
+                         data-stock="{{ $item->stock ?? 0 }}"
+                         data-format-name="{{ $item->format_name ?? '' }}">
                         <div class="adidas-cart-product-img-wrap">
                             @if($item->image)
                                 <img class="adidas-cart-product-img" src="{{ asset($item->image) }}" alt="{{ $item->title ?? 'Book image' }}">
@@ -98,7 +104,7 @@
                             </div>
                             <div class="adidas-cart-product-meta">
                                 <span><i class="fas fa-user"></i> {{ $item->author_name ?? 'Chưa cập nhật' }}</span>
-                                <span><i class="fas fa-bookmark"></i> {{ $item->format_name ?? 'Chưa cập nhật' }}</span>
+                                <span class="format-name"><i class="fas fa-bookmark"></i> {{ $item->format_name ?? 'Chưa cập nhật' }}</span>
                             </div>
                             @if($item->attribute_value_ids && $item->attribute_value_ids !== '[]')
                                 @php
