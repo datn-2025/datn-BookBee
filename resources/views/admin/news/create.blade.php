@@ -34,7 +34,7 @@
                                         <label for="title" class="form-label">Tiêu đề <span
                                                 class="text-danger">*</span></label>
                                         <input placeholder="Nhập tiêu đề" type="text" class="form-control @error('title') is-invalid @enderror"
-                                            id="title" name="title" value="{{ old('title') }}" required>
+                                            id="title" name="title" value="{{ old('title') }}" >
                                         @error('title')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -44,7 +44,7 @@
                                         <label for="summary" class="form-label">Tóm tắt <span
                                                 class="text-danger">*</span></label>
                                         <textarea placeholder="Nhập mô tả ngắn, tối đa 300 ký tự." class="form-control @error('summary') is-invalid @enderror" id="summary"
-                                            name="summary" rows="4" required>{{ old('summary') }}</textarea>
+                                            name="summary" rows="4" >{{ old('summary') }}</textarea>
                                         @error('summary')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -67,7 +67,7 @@
                                         <label for="category" class="form-label">Danh mục <span
                                                 class="text-danger">*</span></label>
                                         <select class="form-select @error('category') is-invalid @enderror" id="category"
-                                            name="category" required>
+                                            name="category" >
                                             <option value="">Chọn danh mục</option>
                                             <option value="Sách" {{ old('category') == 'Sách' ? 'selected' : '' }}>Sách
                                             </option>
@@ -84,7 +84,7 @@
                                         <label for="thumbnail" class="form-label">Ảnh đại diện <span
                                                 class="text-danger">*</span></label>
                                         <input type="file" class="form-control @error('thumbnail') is-invalid @enderror"
-                                            id="thumbnail" name="thumbnail" accept="image/*" required>
+                                            id="thumbnail" name="thumbnail" accept="image/*" >
                                         <div class="mt-2">
                                             <img id="thumbnail-preview" src="" alt=""
                                                 style="max-width: 100%; display: none;">
