@@ -102,7 +102,14 @@
                             </table>
                         </div>
                         <div class="d-flex justify-content-center mt-4">
-                            {{ $brands->links('pagination::bootstrap-5') }}
+                            <div class="text-muted">
+                                Hiển thị <strong>{{ $brands->firstItem() }}</strong> đến
+                                <strong>{{ $brands->lastItem() }}</strong> trong tổng số
+                                <strong>{{ $brands->total() }}</strong> danh mục
+                            </div>
+                            <div>
+                                {{ $brands->links('pagination::bootstrap-5') }}
+                            </div>
                         </div>
                     </div>
                 </div>
