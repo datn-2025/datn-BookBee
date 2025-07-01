@@ -98,7 +98,7 @@
                                 </div>
 
                                 <div class="d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary">
+                                    <button type="submit" class="btn btn-primary" id="submit-btn">
                                         <i class="ri-save-line align-bottom me-1"></i> Cập nhật
                                     </button>
                                     <a href="{{ route('admin.news.index') }}" class="btn btn-light">
@@ -114,3 +114,20 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Tìm chính xác form cập nhật tin tức (dựa theo action)
+    const form = document.querySelector('form[action="{{ route('admin.news.update', $article) }}"]');
+    const submitBtn = form ? form.querySelector('#submit-btn') : null;
+
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e){
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang xử lý...';
+        });
+    }
+});
+</script>
+@endpush
