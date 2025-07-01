@@ -96,14 +96,22 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($articles as $index => $article)
+                                    @forelse($articles as $index => $article)
                                         <tr>
                                             <td class="text-center">{{ $articles->firstItem() + $index }}</td>
                                             <td>
-                                                <img src="{{ Storage::url($article->thumbnail) }}" alt="{{ $article->title }}"
-                                                    class="avatar-sm rounded object-fit-cover">
+                                                @if ($article->thumbnail)
+                                                    <img src="{{ asset('storage/' . $article->thumbnail) }}"
+                                                        alt="{{ $article->title }}"
+                                                        class="avatar-sm rounded object-fit-cover"
+                                                        onerror="this.onerror=null;this.src='https://via.placeholder.com/80x80?text=No+Image';">
+                                                @else
+                                                    <span class="text-muted">Không có ảnh</span>
+                                                @endif
                                             </td>
-                                           <td style="max-width: 250px; white-space: normal; word-break: break-word;">
+
+
+                                            <td style="max-width: 250px; white-space: normal; word-break: break-word;">
                                                 <h6 class="mb-0">{{ $article->title }}</h6>
                                             </td>
                                             <td>{{ $article->category }}</td>
@@ -137,7 +145,13 @@
                                                 </div>
                                             </td>
                                         </tr>
-                                    @endforeach
+                                        @empty
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">
+                                                Không có tin tức nào.
+                                            </td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
