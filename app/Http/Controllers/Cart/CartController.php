@@ -29,7 +29,8 @@ class CartController extends Controller
         $cart = DB::table('carts')
             ->join('books', 'carts.book_id', '=', 'books.id')
             ->leftJoin('book_formats', 'carts.book_format_id', '=', 'book_formats.id')
-            ->leftJoin('authors', 'books.author_id', '=', 'authors.id')
+            ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
+            ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
             ->where('carts.user_id', $user->id)
             ->select(
                 'carts.id',
@@ -339,7 +340,8 @@ class CartController extends Controller
                     $join->on('books.id', '=', 'book_formats.book_id')
                          ->where('book_formats.id', '=', $cartItem->book_format_id);
                 })
-                ->leftJoin('authors', 'books.author_id', '=', 'authors.id')
+                ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
+                ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
                 ->where('books.id', $bookId)
                 ->select(
                     'books.*',

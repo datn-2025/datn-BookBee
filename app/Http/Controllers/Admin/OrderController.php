@@ -26,23 +26,27 @@ class OrderController extends Controller
         $orderStatuses = OrderStatus::query()->get();
         $paymentStatuses = PaymentStatus::query()->get();
         // tìm kiếm đơn hàng
-        // dd($request->all());
-        if ($request->has('search') ) {
-            $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%');
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('order_code', 'like', "%$search%")
+                  ->orWhereHas('user', function ($q2) use ($search) {
+                      $q2->where('name', 'like', "%$search%")
+                         ->orWhere('email', 'like', "%$search%");
+                  });
             });
         }
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->whereHas('orderStatus', function ($q) use ($request) {
                 $q->where('name', $request->status);
             });
         }
-        if ($request->has('payment')) {
+        if ($request->filled('payment')) {
             $query->whereHas('paymentStatus', function ($q) use ($request) {
                 $q->where('name', $request->payment);
             });
         }
-        if ($request->has('date')) {
+        if ($request->filled('date')) {
             $query->whereDate('created_at', $request->date);
         }
 

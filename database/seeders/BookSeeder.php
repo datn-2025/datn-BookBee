@@ -37,7 +37,6 @@ class BookSeeder extends Seeder
                     'slug' => 'sach-' . ($i + 1) . '-' . Str::random(4),
                     'description' => 'Mô tả sách ' . ($i + 1),
                     'category_id' => $category->id,
-                    'author_id' => $authors->random()->id,
                     'brand_id' => $brands->random()->id,
                     'status' => 'available',
                     'cover_image' => 'https://picsum.photos/200/300',
@@ -47,6 +46,8 @@ class BookSeeder extends Seeder
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+                // Gán tác giả cho sách (many-to-many)
+                $book->authors()->sync($authors->random(rand(1,3))->pluck('id')->toArray());
 
                 // 70% sách có bản bìa cứng
                 if (fake()->boolean(30)) {

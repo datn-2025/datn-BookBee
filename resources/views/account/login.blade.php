@@ -273,7 +273,7 @@
             <div class="content-wrapper">
                 <h1>Xin chào!</h1>
                 <p>Nhập thông tin của bạn và bắt đầu hành trình với chúng tôi</p>
-                <a href="{{ route('account.register') }}" class="btn btn-outline">ĐĂNG KÝ</a>
+                <a href="{{ route('register') }}" class="btn btn-outline">ĐĂNG KÝ</a>
             </div>
         </div>
         <div class="right-section">
