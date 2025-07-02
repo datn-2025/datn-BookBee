@@ -11,10 +11,6 @@ use App\Models\Role;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ActivationMail;
-
-use App\Mail\PasswordChangeMail;
-use Illuminate\Support\Facades\Log;
-
 use App\Mail\ResetPasswordMail;
 use Illuminate\Support\Str;
 
@@ -60,8 +56,6 @@ class LoginController extends Controller
 
         // Kiểm tra trạng thái tài khoản trước khi đăng nhập
         $user = User::where('email', $request->email)->first();
-        // dd($user);
-
 
         if ($user) {
             // Kiểm tra nếu tài khoản bị khóa
@@ -88,18 +82,16 @@ class LoginController extends Controller
             }
         }
 
-        // Thực hiện đăng nhập
+        // Kiểm tra mật khẩu
         $credentials = $request->only('email', 'password');
-        // dd($credentials);
-
         if (Auth::attempt($credentials, $request->has('remember'))) {
             $request->session()->regenerate();
-            // Xóa đếm số lần đăng nhập sai
+            // Xóa đếm số lần đăng nhập sai nếu đăng nhập thành công
             if (isset($user)) {
                 session()->forget('login_attempts_' . $user->id);
             }
 
-            // Kiểm tra nếu là admin thì chuyển hướng về trang admin
+            // Kiểm tra quyền admin
             if (Auth::user()->isAdmin()) {
                 return redirect()->intended(route('admin.dashboard'));
             }
