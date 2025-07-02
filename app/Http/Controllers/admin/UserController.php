@@ -7,6 +7,7 @@ use App\Mail\UserStatusUpdated;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -14,7 +15,8 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with('role')->select('id', 'name', 'avatar', 'email', 'phone', 'role_id', 'status');
+        $query = User::with('role')->select('id', 'name', 'avatar', 'email', 'phone', 'role_id', 'status')
+            ->where('id', '!=', Auth::id()); // Loại bỏ tài khoản đang đăng nhập
 
         // Tìm kiếm theo text
         if ($request->filled('search')) {
