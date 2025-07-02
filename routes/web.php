@@ -328,11 +328,11 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::prefix('news')->name('news.')->group(function () {
         Route::get('/', [NewsArticleController::class, 'index'])->name('index');
         Route::get('/create', [NewsArticleController::class, 'create'])->name('create');
-        Route::post('/', [NewsArticleController::class, 'store'])->name('store');
-        Route::get('/{article}', [NewsArticleController::class, 'show'])->name('show');
-        Route::get('/{article}/edit', [NewsArticleController::class, 'edit'])->name('edit');
-        Route::put('/{article}', [NewsArticleController::class, 'update'])->name('update');
-        Route::delete('/{article}', [NewsArticleController::class, 'destroy'])->name('destroy');
+        Route::post('/store', [NewsArticleController::class, 'store'])->name('store');
+        Route::get('/show/{article}', [NewsArticleController::class, 'show'])->name('show');
+        Route::get('/edit/{article}', [NewsArticleController::class, 'edit'])->name('edit');
+        Route::put('/update/{article}', [NewsArticleController::class, 'update'])->name('update');
+        Route::delete('/delete/{article}', [NewsArticleController::class, 'destroy'])->name('destroy');
     });
 
     // Route admin/orders

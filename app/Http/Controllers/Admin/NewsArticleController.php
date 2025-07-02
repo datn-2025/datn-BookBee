@@ -46,12 +46,23 @@ class NewsArticleController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'required|string|max:255|unique:news_articles,title',
             'category' => 'required|string|max:50',
             'summary' => 'required|string|max:200',
             'content' => 'required|string',
-            'thumbnail' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'thumbnail' => 'required|image|max:2048',
             'is_featured' => 'boolean'
+        ], [
+            'title.required' => 'Tiêu đề bài viết là bắt buộc.',
+            'title.unique' => 'Tiêu đề bài viết đã tồn tại.',
+            'title.max' => 'Tiêu đề không được vượt quá 255 ký tự.',
+            'category.required' => 'Danh mục là bắt buộc.',
+            'summary.required' => 'Tóm tắt bài viết là bắt buộc.',
+            'summary.max' => 'Tóm tắt không được vượt quá 200 ký tự.',
+            'content.required' => 'Nội dung bài viết là bắt buộc.',
+            'thumbnail.required' => 'Ảnh đại diện là bắt buộc.',
+            'thumbnail.image' => 'Tệp tải lên phải là ảnh hợp lệ (jpeg, png, bmp, gif, svg hoặc webp).',
+            'thumbnail.max' => 'Ảnh không được vượt quá 2MB.'
         ]);
 
         try {
@@ -87,48 +98,55 @@ class NewsArticleController extends Controller
     public function update(Request $request, NewsArticle $article)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'required|string|max:255|unique:news_articles,title,' . $article->id,
             'category' => 'required|string|max:50',
             'summary' => 'required|string|max:200',
             'content' => 'required|string',
-            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'thumbnail' => 'nullable|image|max:2048',
             'is_featured' => 'boolean'
+        ], [
+            'title.required' => 'Tiêu đề bài viết là bắt buộc.',
+            'title.unique' => 'Tiêu đề bài viết đã tồn tại.',
+            'title.max' => 'Tiêu đề không được vượt quá 255 ký tự.',
+            'category.required' => 'Danh mục là bắt buộc.',
+            'summary.required' => 'Tóm tắt bài viết là bắt buộc.',
+            'summary.max' => 'Tóm tắt không được vượt quá 200 ký tự.',
+            'content.required' => 'Nội dung bài viết là bắt buộc.',
+            'thumbnail.image' => 'Tệp tải lên phải là ảnh hợp lệ (jpeg, png, bmp, gif, svg hoặc webp).',
+            'thumbnail.max' => 'Ảnh không được vượt quá 2MB.'
         ]);
 
         try {
             $hasFile = $request->hasFile('thumbnail');
 
-            // Nếu có file ảnh mới, xử lý riêng trước để so sánh đúng
+            // Nếu có ảnh mới thì lưu lại
             if ($hasFile) {
+                // Xóa ảnh cũ nếu có
+                if ($article->thumbnail) {
+                    Storage::disk('public')->delete($article->thumbnail);
+                }
+
                 $thumbnailPath = $request->file('thumbnail')->store('articles', 'public');
                 $validated['thumbnail'] = $thumbnailPath;
             }
 
-            // Gán dữ liệu vào model để kiểm tra thay đổi
+            // Kiểm tra xem có sự thay đổi hay không
             $article->fill($validated);
+            $isUpdated = $article->isDirty(); // Kiểm tra xem có thay đổi không
 
-            // Nếu không có gì thay đổi
-            if (!$article->isDirty()) {
-                // Xóa ảnh vừa upload nếu có nhưng không có thay đổi nào khác
-                if ($hasFile ?? false) {
-                    Storage::disk('public')->delete($thumbnailPath);
-                }
+            if ($isUpdated) {
+                // Nếu có thay đổi, lưu lại
+                $article->save();
 
+                Toastr::success('Tin tức đã được cập nhật thành công!');
+            } else {
+                // Nếu không có thay đổi
                 Toastr::info('Không có thay đổi nào được thực hiện.');
-                return redirect()->route('admin.news.index');
             }
 
-            // Nếu có ảnh mới và model có ảnh cũ → xóa ảnh cũ
-            if ($hasFile && $article->getOriginal('thumbnail')) {
-                Storage::disk('public')->delete($article->getOriginal('thumbnail'));
-            }
-
-            // Lưu thay đổi
-            $article->save();
-
-            Toastr::success('Tin tức đã được cập nhật thành công!');
             return redirect()->route('admin.news.index');
         } catch (\Exception $e) {
+            // Nếu có lỗi xảy ra, xóa ảnh đã tải lên (nếu có)
             if (isset($thumbnailPath)) {
                 Storage::disk('public')->delete($thumbnailPath);
             }
@@ -137,7 +155,6 @@ class NewsArticleController extends Controller
             return back()->withInput();
         }
     }
-
 
     public function destroy(NewsArticle $article)
     {
