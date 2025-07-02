@@ -58,6 +58,10 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/books/{slug?}', [BookController::class, 'index'])->name('books.index');
 Route::get('/book/{slug}', [HomeController::class, 'show'])->name('books.show');
 Route::get('/books/{categoryId?}', [BookController::class, 'index'])->name('books.index');
+
+// Tìm kiếm sách
+Route::get('/search', [BookController::class, 'search'])->name('books.search');
+
 Route::get('/contact', [ContactController::class, 'showForm'])->name('contact.form');
 Route::post('/contact', [ContactController::class, 'submitForm'])->name('contact.submit');
 
