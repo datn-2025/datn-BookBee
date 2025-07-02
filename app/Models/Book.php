@@ -99,7 +99,7 @@ class Book extends Model
     {
         return $this->hasMany(BookGift::class);
     }
-    public function author()
+    public function authors()
     {
         return $this->belongsToMany(Author::class, 'author_books');
     }
