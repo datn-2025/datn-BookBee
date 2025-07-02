@@ -43,18 +43,30 @@ class ContactController extends Controller
     {
         $contact = Contact::findOrFail($id);
 
+        // Lưu trạng thái và ghi chú cũ để so sánh
+        $oldStatus = $contact->status;
+        $oldNote = $contact->note;
+
+        // Xác thực dữ liệu từ form
         $request->validate([
             'status' => 'required|in:new,processing,replied,closed',
             'note' => 'nullable|string',
         ]);
 
+        // Cập nhật thông tin nếu có thay đổi
         $contact->status = $request->status;
         $contact->note = $request->note;
-        $contact->save();
-        Toastr::success('Cập nhật trạng thái thành công!');
 
-        return redirect()->route('admin.contacts.index', $contact->id)->with('success', 'Cập nhật trạng thái thành công');
+        // Kiểm tra xem có thay đổi không
+        if ($contact->isDirty()) {
+            $contact->save();
+            Toastr::success('Cập nhật trạng thái thành công!');
+        } else {
+            Toastr::info('Không có thay đổi nào được thực hiện.');
+        }
+        return redirect()->route('admin.contacts.index')->with('success', 'Cập nhật trạng thái thành công');
     }
+
     public function sendReply(Request $request, Contact $contact)
     {
         $request->validate([
@@ -69,6 +81,7 @@ class ContactController extends Controller
         $contact->admin_reply = $request->message;
         $contact->save();
 
+        Toastr::success('Đã gửi email phản hồi thành công!');
         return redirect()->route('admin.contacts.index')->with('success', 'Đã gửi email phản hồi thành công.');
     }
 
