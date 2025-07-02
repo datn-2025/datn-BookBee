@@ -264,12 +264,10 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
 
     // routes admin/reviews
     Route::prefix('reviews')->name('reviews.')->group(function () {
-        Route::get('/', [AdminReviewController::class, 'index'])->name('index');
-        Route::patch('/{review}/status', [AdminReviewController::class, 'updateStatus'])->name('update-status');
-        Route::post('/{review}/response', [AdminReviewController::class, 'updateResponse'])->name('response');
-        Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('destroy');
-        Route::get('/{review}/response', [AdminReviewController::class, 'showResponseForm'])->name('response');
-        Route::post('/{review}/response', [AdminReviewController::class, 'storeResponse'])->name('response.store');
+        Route::get('/', [AdminReviewController::class, 'index'])->name('index'); // Hiển thị danh sách
+        Route::post('/{review}/response', [AdminReviewController::class, 'storeResponse'])->name('response.store'); // Lưu phản hồi
+        Route::patch('/{review}/update-status', [AdminReviewController::class, 'updateStatus'])->name('update-status'); // Cập nhật trạng thái hiển thị/ẩn
+        Route::get('/{review}/response', [AdminReviewController::class, 'showResponseForm'])->name('response'); // Hiển thị form phản hồi
     });
 
     // Route admin/users

@@ -582,13 +582,13 @@
         </div>
     </div>
 
-    <div class="customizer-setting d-none d-md-block">
+    {{-- <div class="customizer-setting d-none d-md-block">
         <button type="button" class="btn btn-info btn-icon btn-lg rounded-pill shadow-lg p-2"
             data-bs-toggle="offcanvas" data-bs-target="#theme-settings-offcanvas"
             aria-controls="theme-settings-offcanvas" title="Tùy chỉnh giao diện">
             <i class="mdi mdi-cog-outline mdi-spin fs-22"></i>
         </button>
-    </div>
+    </div> --}}
 
     {{-- <!-- Theme Settings -->
     <div class="offcanvas offcanvas-end border-0" tabindex="-1" id="theme-settings-offcanvas">
