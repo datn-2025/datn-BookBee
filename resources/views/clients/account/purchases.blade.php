@@ -40,7 +40,7 @@
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <h4 class="text-lg font-bold text-black mb-1">{{ $item->book->title }}</h4>
-                                        <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Tác giả:</span> {{ $item->book->author->name ?? 'Không rõ' }}</div>
+                                        <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Tác giả:</span> {{ $item->book->authors->first()->name ?? 'Không rõ' }}</div>
                                         <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Nhà xuất bản:</span> {{ $item->book->brand->name ?? 'Không rõ' }}</div>
                                         <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Số lượng:</span> {{ $item->quantity }}</div>
                                     </div>
