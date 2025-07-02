@@ -7,11 +7,32 @@ use Livewire\Component;
 
 class BookCategoryChart extends Component
 {
-      public $categoryStats = [];
+    public $categoryStats = [];
 
     public function mount()
     {
-        $this->categoryStats = Category::withCount('books')->get();
+        $topN = 6;
+        $sorted = Category::withCount('books')->get()->sortByDesc('books_count');
+
+        $topCategories = $sorted->take($topN)->map(function ($cat) {
+            return [
+                'name' => $cat->name,
+                'books_count' => $cat->books_count
+            ];
+        });
+
+        $otherTotal = $sorted->skip($topN)->sum('books_count');
+
+        $finalStats = $topCategories->values();
+
+        if ($otherTotal > 0) {
+            $finalStats->push([
+                'name' => 'Khác',
+                'books_count' => $otherTotal
+            ]);
+        }
+
+        $this->categoryStats = $finalStats;
     }
 
     public function render()

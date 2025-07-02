@@ -40,7 +40,7 @@
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <h4 class="text-lg font-bold text-black mb-1">{{ $item->book->title }}</h4>
-                                        <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Tác giả:</span> {{ $item->book->author->name ?? 'Không rõ' }}</div>
+                                        <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Tác giả:</span> {{ $item->book->authors->first()->name ?? 'Không rõ' }}</div>
                                         <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Nhà xuất bản:</span> {{ $item->book->brand->name ?? 'Không rõ' }}</div>
                                         <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Số lượng:</span> {{ $item->quantity }}</div>
                                     </div>
@@ -68,7 +68,7 @@
                                                 </div>
                                             </div>
                                         @else
-                                            <form action="{{ route('account.review.store') }}" method="POST" class="flex items-center gap-2 mb-2 quick-review-form">
+                                            <form action="{{ route('account.reviews.store') }}" method="POST" class="flex items-center gap-2 mb-2 quick-review-form">
                                                 @csrf
                                                 <input type="hidden" name="order_id" value="{{ $order->id }}">
                                                 <input type="hidden" name="book_id" value="{{ $item->book_id }}">
@@ -80,7 +80,7 @@
                                                 </div>
                                                 <button type="submit" class="px-3 py-1 bg-black text-white text-xs font-medium rounded-none hover:bg-gray-900 transition-colors duration-150">Gửi nhanh</button>
                                             </form>
-                                            <a href="{{ route('account.review.create', ['orderId' => $order->id, 'bookId' => $item->book_id]) }}" class="px-3 py-1 bg-gray-200 text-black text-xs font-medium rounded-none hover:bg-gray-300 transition-colors duration-150">Đánh giá chi tiết</a>
+                                            <a href="{{ route('account.reviews.create', ['orderId' => $order->id, 'bookId' => $item->book_id]) }}" class="px-3 py-1 bg-gray-200 text-black text-xs font-medium rounded-none hover:bg-gray-300 transition-colors duration-150">Đánh giá chi tiết</a>
                                         @endif
                                     </div>
                                 </div>

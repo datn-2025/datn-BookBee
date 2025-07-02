@@ -27,6 +27,11 @@
                     <div class="card-body">
                         <form action="{{ route('admin.news.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
+                            @php
+                                $form_token = uniqid('news_', true);
+                                session(['news_form_token' => $form_token]);
+                            @endphp
+                            <input type="hidden" name="news_form_token" value="{{ $form_token }}">
 
                             <div class="row mb-3">
                                 <div class="col-lg-8">
@@ -43,7 +48,7 @@
                                     <div class="mb-3">
                                         <label for="summary" class="form-label">Tóm tắt <span
                                                 class="text-danger">*</span></label>
-                                        <textarea placeholder="Nhập mô tả ngắn, tối đa 300 ký tự." class="form-control @error('summary') is-invalid @enderror" id="summary"
+                                        <textarea placeholder="Nhập mô tả ngắn, tối đa 200 ký tự." class="form-control @error('summary') is-invalid @enderror" id="summary"
                                             name="summary" rows="4" >{{ old('summary') }}</textarea>
                                         @error('summary')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -103,8 +108,8 @@
                                     </div>
 
                                     <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="ri-save-line align-bottom me-1"></i> Lưu
+                                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                                            <i class="ri-save-line align-bottom me-1"></i> Thêm mới
                                         </button>
                                         <a href="{{ route('admin.news.index') }}" class="btn btn-light">
                                             <i class="ri-arrow-go-back-line align-bottom me-1"></i> Quay lại
@@ -119,3 +124,20 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Tìm chính xác form thêm tin tức (dựa theo action)
+    const form = document.querySelector('form[action="{{ route('admin.news.store') }}"]');
+    const submitBtn = form ? form.querySelector('#submit-btn') : null;
+
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e){
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang xử lý...';
+        });
+    }
+});
+</script>
+@endpush

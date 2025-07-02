@@ -58,6 +58,10 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/books/{slug?}', [BookController::class, 'index'])->name('books.index');
 Route::get('/book/{slug}', [HomeController::class, 'show'])->name('books.show');
 Route::get('/books/{categoryId?}', [BookController::class, 'index'])->name('books.index');
+
+// Tìm kiếm sách
+Route::get('/search', [BookController::class, 'search'])->name('books.search');
+
 Route::get('/contact', [ContactController::class, 'showForm'])->name('contact.form');
 Route::post('/contact', [ContactController::class, 'submitForm'])->name('contact.submit');
 
@@ -274,12 +278,10 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
 
     // routes admin/reviews
     Route::prefix('reviews')->name('reviews.')->group(function () {
-        Route::get('/', [AdminReviewController::class, 'index'])->name('index');
-        Route::patch('/{review}/status', [AdminReviewController::class, 'updateStatus'])->name('update-status');
-        Route::post('/{review}/response', [AdminReviewController::class, 'updateResponse'])->name('response');
-        Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('destroy');
-        Route::get('/{review}/response', [AdminReviewController::class, 'showResponseForm'])->name('response');
-        Route::post('/{review}/response', [AdminReviewController::class, 'storeResponse'])->name('response.store');
+        Route::get('/', [AdminReviewController::class, 'index'])->name('index'); // Hiển thị danh sách
+        Route::post('/{review}/response', [AdminReviewController::class, 'storeResponse'])->name('response.store'); // Lưu phản hồi
+        Route::patch('/{review}/update-status', [AdminReviewController::class, 'updateStatus'])->name('update-status'); // Cập nhật trạng thái hiển thị/ẩn
+        Route::get('/{review}/response', [AdminReviewController::class, 'showResponseForm'])->name('response'); // Hiển thị form phản hồi
     });
 
     // Route admin/users
@@ -340,11 +342,11 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::prefix('news')->name('news.')->group(function () {
         Route::get('/', [NewsArticleController::class, 'index'])->name('index');
         Route::get('/create', [NewsArticleController::class, 'create'])->name('create');
-        Route::post('/', [NewsArticleController::class, 'store'])->name('store');
-        Route::get('/{article}', [NewsArticleController::class, 'show'])->name('show');
-        Route::get('/{article}/edit', [NewsArticleController::class, 'edit'])->name('edit');
-        Route::put('/{article}', [NewsArticleController::class, 'update'])->name('update');
-        Route::delete('/{article}', [NewsArticleController::class, 'destroy'])->name('destroy');
+        Route::post('/store', [NewsArticleController::class, 'store'])->name('store');
+        Route::get('/show/{article}', [NewsArticleController::class, 'show'])->name('show');
+        Route::get('/edit/{article}', [NewsArticleController::class, 'edit'])->name('edit');
+        Route::put('/update/{article}', [NewsArticleController::class, 'update'])->name('update');
+        Route::delete('/delete/{article}', [NewsArticleController::class, 'destroy'])->name('destroy');
     });
 
     // Route admin/orders
