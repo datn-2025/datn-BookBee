@@ -10,7 +10,7 @@
             <img src="{{ $item->book->cover_image_url }}" alt="{{ $item->book->title }}" class="w-24 h-32 object-cover border border-slate-300 shadow-sm rounded-none">
             <div class="flex-1 w-full">
                 <div class="font-semibold text-lg text-black mb-1">{{ $item->book->title }}</div>
-                <div class="text-xs text-gray-500 mb-1">Tác giả: <span class="font-medium text-black">{{ $item->book->author->name ?? 'N/A' }}</span></div>
+                <div class="text-xs text-gray-500 mb-1">Tác giả: <span class="font-medium text-black">{{ $item->book->authors->first()->name ?? 'N/A' }}</span></div>
                 <div class="text-xs text-gray-500 mb-1">Nhà xuất bản: <span class="font-medium text-black">{{ $item->book->brand->name ?? 'N/A' }}</span></div>
                 <div class="text-xs text-gray-500 mb-1">Danh mục: <span class="font-medium text-black">{{ $item->book->category->name ?? 'N/A' }}</span></div>
                 <div class="text-xs text-gray-500 mb-1">Định dạng sách: <span class="font-medium text-black">{{ $item->book->is_ebook ? 'Ebook' : 'Sách vật lý' }}</span></div>
