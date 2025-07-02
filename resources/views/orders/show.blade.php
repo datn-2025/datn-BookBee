@@ -151,7 +151,7 @@
                                             </div>
                                             <div class="ml-4">
                                                 <div class="text-sm font-medium text-gray-900">{{ $item->book->title ?? 'Tên sản phẩm' }}</div>
-                                                <div class="text-xs text-gray-500">{{ $item->book->author->name ?? 'Tác giả' }}</div>
+                                                <div class="text-xs text-gray-500">{{ $item->book->authors->first()->name ?? 'Tác giả' }}</div>
                                                 <div class="text-xs text-gray-500">{{ $item->bookFormat->format_name ?? 'Nhà xuất bản' }}</div>
                                                 {{-- You can add SKU or other details here if available --}}
                                                 {{-- <div class="text-xs text-gray-500">SKU: {{ $item->book->sku ?? 'N/A' }}</div> --}}
