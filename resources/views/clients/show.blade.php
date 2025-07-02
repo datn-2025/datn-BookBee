@@ -529,8 +529,12 @@
                         <div class="relative">
                             <select id="bookFormatSelect" class="adidas-select w-full px-6 py-4 text-lg font-semibold appearance-none bg-white border-2 border-gray-300 focus:border-black rounded-none transition-colors duration-300">
                                 @foreach ($book->formats as $i => $format)
-                                    <option value="{{ $format->id }}" data-price="{{ $format->price }}"
-                                        data-stock="{{ $format->stock }}" data-discount="{{ $format->discount }}"
+                                    <option value="{{ $format->id }}"
+                                        data-price="{{ $format->price }}"
+                                        data-stock="{{ $format->stock }}"
+                                        data-discount="{{ $format->discount }}"
+                                        data-sample-url="{{ $format->sample_file_url ? asset('storage/' . $format->sample_file_url) : '' }}"
+                                        data-allow-sample="{{ $format->allow_sample_read ? '1' : '0' }}"
                                         {{ $i === 0 ? 'selected' : '' }}>
                                         {{ $format->format_name }}
                                     </option>
@@ -540,35 +544,46 @@
                                 <i class="fas fa-chevron-down text-black"></i>
                             </div>
                         </div>
+                        <!-- Preview Button for Ebook -->
+                        <div id="previewSection" class="@if(!$isEbook) hidden @endif mt-4">
+                            <a href="#" class="adidas-btn w-full h-12 bg-blue-600 text-white font-bold text-sm uppercase tracking-wider transition-all duration-300 flex items-center justify-center hover:bg-blue-700">
+                                <i class="fas fa-book-reader mr-2"></i>
+                                ĐỌC THỬ
+                            </a>
+                            <p class="text-sm text-gray-600 mt-2">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Bạn có thể đọc thử một phần nội dung của sách
+                            </p>
+                        </div>
                     </div>
                 @endif
                 <!-- Enhanced Attributes -->
-                @if ($book->attributeValues->count())
-                    <div class="attributes-section space-y-6">
-                        @foreach ($book->attributeValues->unique('attribute_id') as $attrVal)
-                            <div class="attribute-group space-y-3">
+                 {{-- Thuộc tính --}}
+                @if($book->attributeValues->count())
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                        @foreach($book->attributeValues->unique('attribute_id') as $attrVal)
+                            <div class="col-span-1">
                                 <label for="attribute_{{ $attrVal->id }}" class="block text-sm font-bold text-black uppercase tracking-wider">
                                     {{ $attrVal->attribute->name ?? 'Không rõ' }}
                                 </label>
-                                <div class="relative">
-                                    <select name="attributes[{{ $attrVal->id }}]" id="attribute_{{ $attrVal->id }}"
-                                        onchange="updatePriceAndStock()" class="adidas-select w-full px-6 py-4 text-lg font-semibold appearance-none bg-white border-2 border-gray-300 focus:border-black rounded-none transition-colors duration-300">
-                                        @foreach ($attrVal->attribute->values as $value)
-                                            @php
-                                                $bookAttrValue = \App\Models\BookAttributeValue::where('book_id', $book->id)
-                                                    ->where('attribute_value_id', $value->id)
-                                                    ->first();
-                                                $extraPrice = $bookAttrValue ? $bookAttrValue->extra_price : 0;
-                                            @endphp
-                                            <option value="{{ $value->id }}" data-price="{{ $extraPrice }}">
-                                                {{ $value->value }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
-                                        <i class="fas fa-chevron-down text-black"></i>
-                                    </div>
-                                </div>
+                                @php
+                                    $filteredValues = \App\Models\BookAttributeValue::with('attributeValue')
+                                        ->where('book_id', $book->id)
+                                        ->whereHas('attributeValue', function ($q) use ($attrVal) {
+                                            $q->where('attribute_id', $attrVal->attribute_id);
+                                        })
+                                        ->get();
+                                @endphp
+                                <select name="attributes[{{ $attrVal->id }}]"
+                                        id="attribute_{{ $attrVal->id }}"
+                                        class="w-full border rounded-lg p-2.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mt-2">
+                                    @foreach($filteredValues as $bookAttrVal)
+                                        <option value="{{ $bookAttrVal->attribute_value_id }}"
+                                                data-price="{{ $bookAttrVal->extra_price ?? 0 }}">
+                                            {{ $bookAttrVal->attributeValue->value ?? 'Không rõ' }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                         @endforeach
                     </div>
@@ -923,6 +938,27 @@
     </section>
 </div>
 @endsection
+
+<!-- Modal Đọc Thử Ebook -->
+<div id="previewModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
+    <div class="bg-white rounded-lg shadow-lg max-w-5xl w-[90vw] max-h-[95vh] flex flex-col relative overflow-hidden">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-8 py-4 border-b border-gray-200 bg-gray-50">
+            <h3 class="text-xl font-bold text-black">Đọc thử sách</h3>
+            <button id="closePreviewModal" class="text-gray-500 hover:text-black text-3xl font-bold focus:outline-none">&times;</button>
+        </div>
+        <!-- Nội dung đọc thử -->
+        <div id="previewContent" class="flex-1 overflow-y-auto px-0 py-0 relative" style="scroll-behavior:smooth;">
+            <div id="previewPages">
+                <!-- Nội dung đọc thử sẽ được load ở đây -->
+                <iframe id="previewIframe" src="{{ asset('storage/book/book_' . $book->id . '.pdf') }}" class="w-full h-[80vh] border-none"></iframe>
+            </div>
+            <div id="previewLimitNotice" class="hidden absolute bottom-4 left-0 right-0 text-center bg-yellow-100 text-yellow-800 font-semibold py-2 rounded mx-8">
+                Hãy mua để tận hưởng trọn bộ!
+            </div>
+        </div>
+    </div>
+</div>
 
 @push('scripts')
 <script>
@@ -1479,6 +1515,64 @@
             // Restore button
             button.disabled = false;
             button.innerHTML = originalText;
+        });
+    }
+
+    // Xử lý hiển thị nút đọc thử cho ebook
+    document.getElementById('bookFormatSelect').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const formatName = selectedOption.text.toLowerCase();
+        const previewSection = document.getElementById('previewSection');
+        
+        if (formatName.includes('ebook')) {
+            previewSection.classList.remove('hidden');
+        } else {
+            previewSection.classList.add('hidden');
+        }
+    });
+
+    // Xử lý modal đọc thử lấy đúng file sample_file_url
+    const previewBtn = document.querySelector('#previewSection a');
+    const previewModal = document.getElementById('previewModal');
+    const closePreviewModal = document.getElementById('closePreviewModal');
+    const previewContent = document.getElementById('previewContent');
+    const previewLimitNotice = document.getElementById('previewLimitNotice');
+    const previewIframe = document.getElementById('previewIframe');
+    const formatSelect = document.getElementById('bookFormatSelect');
+
+    if (previewBtn && previewModal && closePreviewModal && formatSelect && previewIframe) {
+        previewBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const selectedOption = formatSelect.options[formatSelect.selectedIndex];
+            const sampleUrl = selectedOption.getAttribute('data-sample-url');
+            const allowSample = selectedOption.getAttribute('data-allow-sample') === '1';
+            if (allowSample && sampleUrl) {
+                previewIframe.src = sampleUrl;
+                previewModal.classList.remove('hidden');
+                previewLimitNotice.classList.add('hidden');
+                previewContent.scrollTop = 0;
+            } else {
+                alert('Không có file đọc thử cho định dạng này!');
+            }
+        });
+        closePreviewModal.addEventListener('click', function() {
+            previewModal.classList.add('hidden');
+            previewIframe.src = '';
+        });
+        previewModal.addEventListener('click', function(e) {
+            if (e.target === previewModal) {
+                previewModal.classList.add('hidden');
+                previewIframe.src = '';
+            }
+        });
+        previewContent.addEventListener('scroll', function() {
+            const scrollBottom = previewContent.scrollTop + previewContent.clientHeight;
+            const scrollHeight = previewContent.scrollHeight;
+            if (scrollBottom >= scrollHeight - 10) {
+                previewLimitNotice.classList.remove('hidden');
+            } else {
+                previewLimitNotice.classList.add('hidden');
+            }
         });
     }
 </script>
