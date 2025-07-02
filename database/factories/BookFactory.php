@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Book;
-use App\Models\Author;
 use App\Models\Brand;
 use App\Models\Category;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,7 +17,6 @@ class BookFactory extends Factory
         $title = $this->faker->unique()->sentence(4);
         
         // Lấy ID có sẵn từ các bảng liên quan
-        $authorId = Author::pluck('id')->random();
         $brandId = Brand::pluck('id')->random();
         $categoryId = Category::pluck('id')->random();
         
@@ -26,7 +24,6 @@ class BookFactory extends Factory
             'title' => $title,
             'slug' => Str::slug($title),
             'description' => $this->faker->paragraphs(3, true),
-            'author_id' => $authorId,
             'brand_id' => $brandId,
             'category_id' => $categoryId,
             'status' => $this->faker->randomElement(['Còn Hàng', 'Hết Hàng Tồn Kho', 'Sắp Ra Mắt', 'Ngừng Kinh Doanh']),

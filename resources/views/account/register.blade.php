@@ -58,7 +58,7 @@
                 </div>
                 @endif
 
-                <form method="POST" action="{{ route('account.register.submit') }}">
+                <form method="POST" action="{{ route('register.submit') }}">
                     @csrf
                     <div class="form-group">
                         <input type="text" name="name" class="form-control" placeholder="Họ và tên" required

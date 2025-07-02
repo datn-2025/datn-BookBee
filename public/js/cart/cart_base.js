@@ -113,6 +113,9 @@ const CartBase = {
             
             return {
                 bookId: cartItem.dataset.bookId,
+                bookFormatId: cartItem.dataset.bookFormatId,
+                attributeValueIds: cartItem.dataset.attributeValueIds,
+                formatName: cartItem.dataset.formatName,
                 price: parseFloat(cartItem.dataset.price) || 0,
                 stock: parseInt(cartItem.dataset.stock) || 0,
                 element: cartItem

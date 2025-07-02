@@ -139,9 +139,51 @@ class CartEnhancedUX {
         itemElement.style.opacity = '0';
         
         setTimeout(() => {
-            // Call original remove function
-            if (window.cartProducts && window.cartProducts.removeFromCart) {
-                window.cartProducts.removeFromCart(bookId);
+            // Call original remove function using the proper CartProducts method
+            if (window.CartProducts && typeof window.CartProducts.removeItem === 'function') {
+                // Find the remove button for this item
+                const removeButton = itemElement.querySelector('.adidas-cart-product-remove');
+                if (removeButton) {
+                    window.CartProducts.removeItem(removeButton);
+                }
+            } else {
+                // Fallback: direct API call with proper data
+                const bookFormatId = itemElement.dataset.bookFormatId || null;
+                const attributeValueIds = itemElement.dataset.attributeValueIds || null;
+                
+                $.ajax({
+                    url: '/cart/remove',
+                    method: 'POST',
+                    data: {
+                        book_id: bookId,
+                        book_format_id: bookFormatId,
+                        attribute_value_ids: attributeValueIds,
+                        _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    success: (response) => {
+                        if (response.success) {
+                            // Show success message
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success(response.success);
+                            }
+                            
+                            // Reload page to update all cart data
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        }
+                    },
+                    error: (xhr) => {
+                        console.error('Remove error:', xhr);
+                        const response = xhr.responseJSON;
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(response?.error || 'Có lỗi xảy ra khi xóa sản phẩm');
+                        }
+                        // Reset item state on error
+                        itemElement.style.transform = '';
+                        itemElement.style.opacity = '';
+                    }
+                });
             }
             
             // Show undo toast

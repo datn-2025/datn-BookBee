@@ -30,7 +30,7 @@
                                 <div class="form-group">
                                     <label for="code">Mã Voucher <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control @error('code') is-invalid @enderror"
-                                           id="code" name="code" value="{{ old('code') }}" required>
+                                           id="code" name="code" value="{{ old('code') }}" >
                                     @error('code')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
@@ -54,7 +54,7 @@
                                     <label for="discount_percent">Phần trăm giảm (%) <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control @error('discount_percent') is-invalid @enderror"
                                            id="discount_percent" name="discount_percent" value="{{ old('discount_percent') }}"
-                                           min="0" max="100" step="0.01" required>
+                                           min="0" max="100" step="0.01" >
                                     @error('discount_percent')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
@@ -64,7 +64,7 @@
                                 <div class="form-group">
                                     <label for="max_discount">Giảm tối đa (VNĐ) <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control @error('max_discount') is-invalid @enderror"
-                                           id="max_discount" name="max_discount" value="{{ old('max_discount') }}" min="0" step="0.01" required>
+                                           id="max_discount" name="max_discount" value="{{ old('max_discount') }}" min="0" step="0.01" >
                                     @error('max_discount')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
@@ -74,7 +74,7 @@
                                 <div class="form-group">
                                     <label for="min_order_value">Đơn tối thiểu (VNĐ) <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control @error('min_order_value') is-invalid @enderror"
-                                           id="min_order_value" name="min_order_value" value="{{ old('min_order_value') }}" min="0" step="0.01" required>
+                                           id="min_order_value" name="min_order_value" value="{{ old('min_order_value') }}" min="0" step="0.01" >
                                     @error('min_order_value')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
@@ -87,7 +87,7 @@
                                 <div class="form-group">
                                     <label for="quantity">Số lượng <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control @error('quantity') is-invalid @enderror"
-                                           id="quantity" name="quantity" value="{{ old('quantity') }}" min="1" required>
+                                           id="quantity" name="quantity" value="{{ old('quantity') }}" min="1" >
                                     @error('quantity')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
@@ -97,7 +97,7 @@
                                 <div class="form-group">
                                     <label for="valid_from">Ngày bắt đầu <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control @error('valid_from') is-invalid @enderror"
-                                           id="valid_from" name="valid_from" value="{{ old('valid_from') }}" required>
+                                           id="valid_from" name="valid_from" value="{{ old('valid_from') }}" >
                                     @error('valid_from')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
@@ -107,7 +107,7 @@
                                 <div class="form-group">
                                     <label for="valid_to">Ngày kết thúc <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control @error('valid_to') is-invalid @enderror"
-                                           id="valid_to" name="valid_to" value="{{ old('valid_to') }}" required>
+                                           id="valid_to" name="valid_to" value="{{ old('valid_to') }}" >
                                     @error('valid_to')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
@@ -120,7 +120,7 @@
                                 <div class="form-group">
                                     <label for="status">Trạng thái <span class="text-danger">*</span></label>
                                     <select class="form-control @error('status') is-invalid @enderror"
-                                            id="status" name="status" required style="width: auto; min-width: 150px;">
+                                            id="status" name="status"  style="width: auto; min-width: 150px;">
                                         <option value="active" {{ old('status', 'active') == 'active' ? 'selected' : '' }}>Hoạt động</option>
                                         <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Không hoạt động</option>
                                     </select>
@@ -133,7 +133,7 @@
                                 <div class="form-group">
                                     <label for="condition_type">Loại điều kiện áp dụng <span class="text-danger">*</span></label>
                                     <select class="form-control @error('condition_type') is-invalid @enderror"
-                                            id="condition_type" name="condition_type" required>
+                                            id="condition_type" name="condition_type" >
                                         <option value="">-- Chọn --</option>
                                         <option value="all" {{ old('condition_type') == 'all' ? 'selected' : '' }}>Tất cả sản phẩm</option>
                                         <option value="category" {{ old('condition_type') == 'category' ? 'selected' : '' }}>Theo danh mục</option>

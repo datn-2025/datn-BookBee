@@ -29,7 +29,8 @@ class CartController extends Controller
         $cart = DB::table('carts')
             ->join('books', 'carts.book_id', '=', 'books.id')
             ->leftJoin('book_formats', 'carts.book_format_id', '=', 'book_formats.id')
-            ->leftJoin('authors', 'books.author_id', '=', 'authors.id')
+            ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
+            ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
             ->where('carts.user_id', $user->id)
             ->select(
                 'carts.id',
@@ -309,34 +310,42 @@ class CartController extends Controller
             }
 
             $bookId = $request->book_id;
+            $bookFormatId = $request->book_format_id; // Thêm để xác định chính xác item cần update
+            $attributeValueIds = $request->attribute_value_ids; // Thêm để xác định chính xác item
             $quantity = (int)$request->quantity;
 
-            // Get the cart item first to get the book_format_id
-            $cartItem = DB::table('carts')
+            // Get the specific cart item with all identification data
+            $cartItemQuery = DB::table('carts')
                 ->where('user_id', Auth::id())
-                ->where('book_id', $bookId)
-                ->first();
+                ->where('book_id', $bookId);
+
+            // Add specific format and attribute constraints if provided
+            if ($bookFormatId) {
+                $cartItemQuery->where('book_format_id', $bookFormatId);
+            }
+
+            if ($attributeValueIds) {
+                $cartItemQuery->where('attribute_value_ids', $attributeValueIds);
+            }
+
+            $cartItem = $cartItemQuery->first();
 
             if (!$cartItem) {
                 return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
             }
 
-            // Kiểm tra tồn kho và thông tin sách
+            // Kiểm tra tồn kho và thông tin sách với format cụ thể
             $bookInfo = DB::table('books')
-                ->join('book_formats', function($join) use ($cartItem) {
+                ->leftJoin('book_formats', function($join) use ($cartItem) {
                     $join->on('books.id', '=', 'book_formats.book_id')
                          ->where('book_formats.id', '=', $cartItem->book_format_id);
                 })
-                ->leftJoin('authors', 'books.author_id', '=', 'authors.id')
+                ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
+                ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
                 ->where('books.id', $bookId)
                 ->select(
-                    'books.id',
-                    'books.title',
+                    'books.*',
                     'book_formats.id as format_id',
-                    'book_formats.format_name',
-                    'book_formats.stock',
-                    'book_formats.price',
-                    'authors.name as author_name',
                     DB::raw('COALESCE(book_formats.format_name, "Bản thường") as format_name'),
                     DB::raw('COALESCE(authors.name, "Chưa cập nhật") as author_name'),
                     DB::raw('COALESCE(book_formats.stock, 0) as stock'),
@@ -348,60 +357,98 @@ class CartController extends Controller
                 return response()->json(['error' => 'Không tìm thấy sách hoặc định dạng sách'], 404);
             }
 
-            // Kiểm tra ebook
+            // Kiểm tra loại sách (ebook hay sách vật lý)
             $isEbook = false;
             if (isset($bookInfo->format_name)) {
                 $isEbook = stripos($bookInfo->format_name, 'ebook') !== false;
             }
-            // Nếu là ebook: luôn giữ số lượng là 1, không cho update số lượng
+
+            // Logic tách biệt cho ebook và sách vật lý
             if ($isEbook) {
-                DB::table('carts')
+                // EBOOK: Luôn giữ số lượng = 1, không cho phép thay đổi
+                $updateQuery = DB::table('carts')
                     ->where('user_id', Auth::id())
                     ->where('book_id', $bookId)
-                    ->update([
-                        'quantity' => 1,
-                        'updated_at' => now()
-                    ]);
-                return response()->json([
-                    'success' => 'Số lượng sách điện tử luôn là 1',
-                    'data' => []
+                    ->where('book_format_id', $cartItem->book_format_id);
+
+                if ($cartItem->attribute_value_ids) {
+                    $updateQuery->where('attribute_value_ids', $cartItem->attribute_value_ids);
+                }
+
+                $updateQuery->update([
+                    'quantity' => 1,
+                    'updated_at' => now()
                 ]);
-            }
 
-            if ($quantity > $bookInfo->stock) {
                 return response()->json([
-                    'error' => "Số lượng yêu cầu vượt quá số lượng tồn kho. Tồn kho hiện tại: {$bookInfo->stock}",
-                    'available_stock' => $bookInfo->stock
-                ], 422);
-            }
-
-            if ($quantity > 0) {
-                DB::table('carts')
-                    ->where('user_id', Auth::id())
-                    ->where('book_id', $bookId)
-                    ->update([
-                        'quantity' => $quantity,
-                        'updated_at' => now()
-                    ]);
-                return response()->json([
-                    'success' => 'Đã cập nhật số lượng sản phẩm',
+                    'success' => 'Sách điện tử luôn có số lượng cố định là 1',
                     'data' => [
-                        'stock' => $bookInfo->stock,
+                        'stock' => 999, // Ebook không giới hạn tồn kho
                         'price' => $bookInfo->price,
-                        'quantity' => $quantity
+                        'quantity' => 1,
+                        'is_ebook' => true
                     ]
                 ]);
             } else {
-                DB::table('carts')
-                    ->where('user_id', Auth::id())
-                    ->where('book_id', $bookId)
-                    ->delete();
-                return response()->json(['success' => 'Đã xóa sản phẩm khỏi giỏ hàng']);
+                // SÁCH VẬT LÝ: Kiểm tra tồn kho và cho phép thay đổi số lượng
+                if ($quantity > $bookInfo->stock) {
+                    return response()->json([
+                        'error' => "Số lượng yêu cầu vượt quá số lượng tồn kho. Tồn kho hiện tại: {$bookInfo->stock}",
+                        'available_stock' => $bookInfo->stock,
+                        'is_ebook' => false
+                    ], 422);
+                }
+
+                if ($quantity > 0) {
+                    // Cập nhật số lượng cho sách vật lý
+                    $updateQuery = DB::table('carts')
+                        ->where('user_id', Auth::id())
+                        ->where('book_id', $bookId)
+                        ->where('book_format_id', $cartItem->book_format_id);
+
+                    if ($cartItem->attribute_value_ids) {
+                        $updateQuery->where('attribute_value_ids', $cartItem->attribute_value_ids);
+                    }
+
+                    $updateQuery->update([
+                        'quantity' => $quantity,
+                        'updated_at' => now()
+                    ]);
+
+                    return response()->json([
+                        'success' => 'Đã cập nhật số lượng sản phẩm',
+                        'data' => [
+                            'stock' => $bookInfo->stock,
+                            'price' => $bookInfo->price,
+                            'quantity' => $quantity,
+                            'is_ebook' => false
+                        ]
+                    ]);
+                } else {
+                    // Xóa sản phẩm khi số lượng = 0
+                    $deleteQuery = DB::table('carts')
+                        ->where('user_id', Auth::id())
+                        ->where('book_id', $bookId)
+                        ->where('book_format_id', $cartItem->book_format_id);
+
+                    if ($cartItem->attribute_value_ids) {
+                        $deleteQuery->where('attribute_value_ids', $cartItem->attribute_value_ids);
+                    }
+
+                    $deletedCount = $deleteQuery->delete();
+
+                    if ($deletedCount > 0) {
+                        return response()->json(['success' => 'Đã xóa sản phẩm khỏi giỏ hàng']);
+                    } else {
+                        return response()->json(['error' => 'Không tìm thấy sản phẩm để xóa'], 404);
+                    }
+                }
             }
         } catch (\Exception $e) {
             Log::error('Error in updateCart:', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
             ]);
             return response()->json(['error' => 'Có lỗi xảy ra khi cập nhật giỏ hàng: ' . $e->getMessage()], 500);
         }
@@ -415,14 +462,48 @@ class CartController extends Controller
             }
 
             $bookId = $request->book_id;
+            $bookFormatId = $request->book_format_id;
+            $attributeValueIds = $request->attribute_value_ids;
 
-            DB::table('carts')
+            Log::info('Removing cart item:', [
+                'user_id' => Auth::id(),
+                'book_id' => $bookId,
+                'book_format_id' => $bookFormatId,
+                'attribute_value_ids' => $attributeValueIds
+            ]);
+
+            // Tìm cart item cụ thể để xóa
+            $query = DB::table('carts')
                 ->where('user_id', Auth::id())
-                ->where('book_id', $bookId)
-                ->delete();
+                ->where('book_id', $bookId);
 
-            return response()->json(['success' => 'Đã xóa sản phẩm khỏi giỏ hàng']);
+            // Nếu có book_format_id, thêm vào điều kiện
+            if ($bookFormatId) {
+                $query->where('book_format_id', $bookFormatId);
+            }
+
+            // Nếu có attribute_value_ids, thêm vào điều kiện
+            if ($attributeValueIds) {
+                $query->where('attribute_value_ids', $attributeValueIds);
+            }
+
+            $deletedCount = $query->delete();
+
+            if ($deletedCount > 0) {
+                Log::info('Cart item removed successfully:', [
+                    'deleted_count' => $deletedCount
+                ]);
+                return response()->json(['success' => 'Đã xóa sản phẩm khỏi giỏ hàng']);
+            } else {
+                Log::warning('No cart item found to delete');
+                return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
+            }
+
         } catch (\Exception $e) {
+            Log::error('Error in removeFromCart:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['error' => 'Có lỗi xảy ra khi xóa sản phẩm'], 500);
         }
     }
