@@ -66,11 +66,24 @@ class WalletController extends Controller
                 ->where('created_at', '<', $transaction->created_at)
                 ->sum('amount');
             $previousBalances[$transaction->id] = $sumBefore;
-            // Số dư sau giao dịch: nếu là rút và đã duyệt thì trừ, nếu là nạp thì cộng, nếu chưa duyệt thì giữ nguyên
-            if ($transaction->type === 'Rut' && $transaction->status === 'success') {
-                $afterBalances[$transaction->id] = $sumBefore - $transaction->amount;
+            
+            // Số dư sau giao dịch: 
+            // - Nếu là nạp tiền (Nap) và đã duyệt: cộng vào số dư
+            // - Nếu là rút tiền (Rut) và đã duyệt: không ảnh hưởng số dư (vì đã trừ khi tạo yêu cầu)
+            // - Nếu là thanh toán (payment): trừ khỏi số dư
+            if ($transaction->status === 'success') {
+                if ($transaction->type === 'Nap') {
+                    $afterBalances[$transaction->id] = $sumBefore + $transaction->amount;
+                } elseif ($transaction->type === 'Rut') {
+                    // Rút tiền: số dư không thay đổi vì đã trừ khi tạo yêu cầu
+                    $afterBalances[$transaction->id] = $sumBefore;
+                } else {
+                    // Payment hoặc các loại khác: trừ từ số dư
+                    $afterBalances[$transaction->id] = $sumBefore - abs($transaction->amount);
+                }
             } else {
-                $afterBalances[$transaction->id] = $sumBefore + $transaction->amount;
+                // Giao dịch chưa duyệt hoặc thất bại: không ảnh hưởng số dư
+                $afterBalances[$transaction->id] = $sumBefore;
             }
         }
 
@@ -173,8 +186,20 @@ class WalletController extends Controller
         if ($transaction->status !== 'pending') {
             return back()->with('error', 'Chỉ có thể từ chối giao dịch đang chờ duyệt!');
         }
-        $transaction->status = 'failed';
-        $transaction->save();
+        
+        DB::transaction(function () use ($transaction) {
+            $transaction->status = 'failed';
+            $transaction->save();
+            
+            if ($transaction->type === 'Rut') {
+                $user = $transaction->wallet->user;
+                $user->wallet_lock = max(0, ($user->wallet_lock ?? 0) - $transaction->amount);
+                $user->save();
+                
+                $transaction->wallet->increment('balance', $transaction->amount);
+            }
+        });
+        
         return back()->with('success', 'Từ chối giao dịch thành công!');
     }
 
