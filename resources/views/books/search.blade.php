@@ -558,6 +558,322 @@
             justify-content: space-between;
         }
     }
+    
+    /* Compact Filter Styles */
+    .filter-header {
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 0.75rem;
+        margin-bottom: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-header:hover {
+        background-color: #f8f9fa;
+        margin: -1rem -1rem 0 -1rem;
+        padding: 1rem 1rem 0.75rem 1rem;
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .filter-content {
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .filter-select {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.6rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .filter-select option {
+        padding: 0.5rem;
+    }
+    
+    /* Icon rotation animation */
+    #filter-toggle-icon {
+        transition: transform 0.3s ease;
+        color: #6c757d;
+    }
+    
+    /* Active filter indication */
+    .filter-select:not([value=""]):valid {
+        border-left: 3px solid #28a745;
+        background-color: #f8fff9;
+    }
+    
+    /* Button improvements */
+    .btn-sm {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    /* Compact spacing */
+    .filter-card {
+        margin-bottom: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        transition: box-shadow 0.3s ease;
+    }
+    
+    .filter-card:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    /* Adidas Style Filter Button */
+    .adidas-filter-btn {
+        background: white;
+        border: 1px solid #000;
+        color: #000;
+        padding: 12px 24px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 180px;
+    }
+
+    .adidas-filter-btn:hover {
+        background: #000;
+        color: white;
+    }
+
+    /* Adidas Style Overlay */
+    .adidas-filter-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .adidas-filter-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Adidas Style Sidebar */
+    .adidas-filter-sidebar {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 100%;
+        max-width: 400px;
+        height: 100vh;
+        background: white;
+        z-index: 9999;
+        transition: right 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        display: flex;
+        flex-direction: column;
+        box-shadow: -2px 0 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .adidas-filter-sidebar.show {
+        right: 0;
+    }
+
+    /* Header */
+    .adidas-filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid #e5e5e5;
+        background: #f5f5f5;
+    }
+
+    .adidas-filter-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #000;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0;
+    }
+
+    .adidas-close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #000;
+        cursor: pointer;
+        padding: 8px;
+        transition: transform 0.2s ease;
+    }
+
+    .adidas-close-btn:hover {
+        transform: scale(1.1);
+    }
+
+    /* Content */
+    .adidas-filter-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+    }
+
+    /* Filter Groups */
+    .adidas-filter-group {
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .adidas-filter-group-header {
+        width: 100%;
+        background: none;
+        border: none;
+        padding: 20px 24px;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 14px;
+        color: #000;
+    }
+
+    .adidas-filter-group-header:hover {
+        background: #f5f5f5;
+    }
+
+    .adidas-filter-group-header i {
+        transition: transform 0.3s ease;
+        font-size: 12px;
+        color: #666;
+    }
+
+    .adidas-filter-group-header.active i {
+        transform: rotate(180deg);
+    }
+
+    /* Filter Group Content */
+    .adidas-filter-group-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        background: #fafafa;
+    }
+
+    .adidas-filter-group-content.show {
+        max-height: 400px;
+    }
+
+    /* Filter Options */
+    .adidas-filter-option {
+        padding: 16px 48px 16px 24px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        color: #666;
+        border-bottom: 1px solid #f0f0f0;
+        position: relative;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .adidas-filter-option:hover {
+        background: #f0f0f0;
+        color: #000;
+    }
+
+    .adidas-filter-option.active {
+        background: #000;
+        color: white;
+        font-weight: 600;
+    }
+
+    .adidas-filter-option.active::after {
+        content: '✓';
+        position: absolute;
+        right: 24px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-weight: bold;
+    }
+
+    /* Price Inputs */
+    .adidas-price-inputs {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 24px;
+    }
+
+    .adidas-price-input {
+        flex: 1;
+        border: 1px solid #ddd;
+        padding: 12px 16px;
+        font-size: 14px;
+        text-align: center;
+        outline: none;
+        transition: border-color 0.2s ease;
+    }
+
+    .adidas-price-input:focus {
+        border-color: #000;
+    }
+
+    .adidas-price-separator {
+        color: #666;
+        font-weight: bold;
+    }
+
+    /* Footer */
+    .adidas-filter-footer {
+        padding: 24px;
+        border-top: 1px solid #e5e5e5;
+        background: #f5f5f5;
+    }
+
+    .adidas-apply-btn {
+        width: 100%;
+        background: #000;
+        color: white;
+        border: none;
+        padding: 16px 24px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .adidas-apply-btn:hover {
+        background: #333;
+        transform: translateY(-1px);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .adidas-filter-sidebar {
+            max-width: 100%;
+        }
+        
+        .adidas-filter-title {
+            font-size: 16px;
+        }
+        
+        .adidas-filter-option {
+            padding: 14px 40px 14px 20px;
+            font-size: 13px;
+        }
+        
+        .adidas-price-inputs {
+            padding: 12px 20px;
+        }
+    }
 </style>
 @endpush
 
@@ -583,8 +899,8 @@
             </nav>
 
             <div class="row">
-                <!-- Search Results - Di chuyển sang bên trái -->
-                <div class="col-lg-9 mb-4">
+                <!-- Search Results - Full width -->
+                <div class="col-12 mb-4">
                     <!-- Results Header with Filter Button -->
                     <div class="results-header">
                         <div class="results-count">
@@ -601,32 +917,11 @@
                         </div>
                         
                         <div class="filter-sort-controls">
-                            <!-- Filter & Sort Button for Mobile/Tablet -->
-                            <button class="filter-sort-btn" onclick="toggleFilterSidebar()">
-                                <i class="fas fa-sliders-h"></i>
-                                LỌC & SẮP XẾP
+                            <!-- Filter & Sort Button - Adidas Style -->
+                            <button class="adidas-filter-btn" onclick="toggleFilterSidebar()">
+                                <span>LỌC & SẮP XẾP</span>
+                                <i class="fas fa-bars ms-2"></i>
                             </button>
-                            
-                            <!-- Sort Options for Desktop -->
-                            <div class="desktop-sort d-none d-lg-block">
-                                <form method="GET" action="{{ route('books.search') }}" class="d-inline">
-                                    <input type="hidden" name="search" value="{{ $searchTerm }}">
-                                    <input type="hidden" name="category" value="{{ $filters['category'] }}">
-                                    <input type="hidden" name="author" value="{{ $filters['author'] }}">
-                                    <input type="hidden" name="brand" value="{{ $filters['brand'] }}">
-                                    <input type="hidden" name="min_price" value="{{ $filters['min_price'] }}">
-                                    <input type="hidden" name="max_price" value="{{ $filters['max_price'] }}">
-                                    
-                                    <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto; display: inline-block;">
-                                        <option value="newest" {{ $filters['sort'] == 'newest' ? 'selected' : '' }}>Mới nhất</option>
-                                        <option value="oldest" {{ $filters['sort'] == 'oldest' ? 'selected' : '' }}>Cũ nhất</option>
-                                        <option value="price_asc" {{ $filters['sort'] == 'price_asc' ? 'selected' : '' }}>Giá thấp → cao</option>
-                                        <option value="price_desc" {{ $filters['sort'] == 'price_desc' ? 'selected' : '' }}>Giá cao → thấp</option>
-                                        <option value="name_asc" {{ $filters['sort'] == 'name_asc' ? 'selected' : '' }}>Tên A → Z</option>
-                                        <option value="name_desc" {{ $filters['sort'] == 'name_desc' ? 'selected' : '' }}>Tên Z → A</option>
-                                    </select>
-                                </form>
-                            </div>
                         </div>
                     </div>
                     
@@ -685,7 +980,7 @@
                     @if($books->count() > 0)
                         <div class="row g-4">
                             @foreach($books as $book)
-                                <div class="col-md-6 col-lg-4">
+                                <div class="col-md-6 col-lg-3">
                                     <div class="book-card">
                                         <div class="book-image">
                                             <a href="{{ route('books.show', $book->slug) }}">
@@ -845,239 +1140,117 @@
                         </div>
                     @endif
                 </div>
-
-                <!-- Filters Sidebar - Di chuyển sang bên phải -->
-                <div class="col-lg-3 mb-4 desktop-filters">
-                    <div class="sticky-top" style="top: 100px;">
-                        <h5 class="fw-bold mb-3" style="font-size: 1rem; color: #111827;">
-                            <i class="fas fa-filter me-2" style="font-size: 0.9rem;"></i>
-                            BỘ LỌC TÌM KIẾM
-                        </h5>
-
-                        <!-- Category Filter -->
-                        <div class="filter-card">
-                            <h6 class="filter-title">Danh mục</h6>
-                            <form method="GET" action="{{ route('books.search') }}">
-                                <input type="hidden" name="search" value="{{ $searchTerm }}">
-                                <input type="hidden" name="author" value="{{ $filters['author'] }}">
-                                <input type="hidden" name="brand" value="{{ $filters['brand'] }}">
-                                <input type="hidden" name="min_price" value="{{ $filters['min_price'] }}">
-                                <input type="hidden" name="max_price" value="{{ $filters['max_price'] }}">
-                                <input type="hidden" name="sort" value="{{ $filters['sort'] }}">
-                                
-                                <select name="category" class="filter-select" onchange="this.form.submit()">
-                                    <option value="">Tất cả danh mục</option>
-                                    @foreach($categories as $category)
-                                        <option value="{{ $category->id }}" 
-                                                {{ $filters['category'] == $category->id ? 'selected' : '' }}>
-                                            {{ $category->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </form>
-                        </div>
-
-                        <!-- Author Filter -->
-                        <div class="filter-card">
-                            <h6 class="filter-title">Tác giả</h6>
-                            <form method="GET" action="{{ route('books.search') }}">
-                                <input type="hidden" name="search" value="{{ $searchTerm }}">
-                                <input type="hidden" name="category" value="{{ $filters['category'] }}">
-                                <input type="hidden" name="brand" value="{{ $filters['brand'] }}">
-                                <input type="hidden" name="min_price" value="{{ $filters['min_price'] }}">
-                                <input type="hidden" name="max_price" value="{{ $filters['max_price'] }}">
-                                <input type="hidden" name="sort" value="{{ $filters['sort'] }}">
-                                
-                                <select name="author" class="filter-select" onchange="this.form.submit()">
-                                    <option value="">Tất cả tác giả</option>
-                                    @foreach($authors as $author)
-                                        <option value="{{ $author->id }}" 
-                                                {{ $filters['author'] == $author->id ? 'selected' : '' }}>
-                                            {{ $author->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </form>
-                        </div>
-
-                        <!-- Brand Filter -->
-                        <div class="filter-card">
-                            <h6 class="filter-title">Thương hiệu</h6>
-                            <form method="GET" action="{{ route('books.search') }}">
-                                <input type="hidden" name="search" value="{{ $searchTerm }}">
-                                <input type="hidden" name="category" value="{{ $filters['category'] }}">
-                                <input type="hidden" name="author" value="{{ $filters['author'] }}">
-                                <input type="hidden" name="min_price" value="{{ $filters['min_price'] }}">
-                                <input type="hidden" name="max_price" value="{{ $filters['max_price'] }}">
-                                <input type="hidden" name="sort" value="{{ $filters['sort'] }}">
-                                
-                                <select name="brand" class="filter-select" onchange="this.form.submit()">
-                                    <option value="">Tất cả thương hiệu</option>
-                                    @foreach($brands as $brand)
-                                        <option value="{{ $brand->id }}" 
-                                                {{ $filters['brand'] == $brand->id ? 'selected' : '' }}>
-                                            {{ $brand->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </form>
-                        </div>
-
-                        <!-- Price Filter -->
-                        <div class="filter-card">
-                            <h6 class="filter-title">Khoảng giá</h6>
-                            <form method="GET" action="{{ route('books.search') }}">
-                                <input type="hidden" name="search" value="{{ $searchTerm }}">
-                                <input type="hidden" name="category" value="{{ $filters['category'] }}">
-                                <input type="hidden" name="author" value="{{ $filters['author'] }}">
-                                <input type="hidden" name="brand" value="{{ $filters['brand'] }}">
-                                <input type="hidden" name="sort" value="{{ $filters['sort'] }}">
-                                
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <input type="number" 
-                                               name="min_price" 
-                                               class="filter-select" 
-                                               placeholder="Giá từ"
-                                               value="{{ $filters['min_price'] }}">
-                                    </div>
-                                    <div class="col-6">
-                                        <input type="number" 
-                                               name="max_price" 
-                                               class="filter-select" 
-                                               placeholder="Giá đến"
-                                               value="{{ $filters['max_price'] }}">
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn btn-primary btn-sm mt-2 w-100">
-                                    <i class="fas fa-filter me-1"></i>
-                                    Áp dụng
-                                </button>
-                            </form>
-                        </div>
-
-                        <!-- Clear Filters -->
-                        <div class="filter-card">
-                            <a href="{{ route('books.search', ['search' => $searchTerm]) }}" 
-                               class="btn btn-outline-secondary w-100">
-                                <i class="fas fa-times me-2"></i>
-                                Xóa bộ lọc
-                            </a>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </section>
 </div>
 
-<!-- Mobile Filter Sidebar -->
-<div class="filter-overlay" onclick="closeFilterSidebar()"></div>
-<div class="filter-sidebar-mobile">
-    <div class="filter-sidebar-header">
-        <h5 class="mb-0 fw-bold" style="font-size: 1rem;">
-            Lọc & Sắp xếp
-        </h5>
-        <button class="filter-close-btn" onclick="closeFilterSidebar()">
+<!-- Adidas Style Filter Sidebar -->
+<div class="adidas-filter-overlay" onclick="closeFilterSidebar()"></div>
+<div class="adidas-filter-sidebar">
+    <!-- Header -->
+    <div class="adidas-filter-header">
+        <h3 class="adidas-filter-title">Lọc & Sắp xếp</h3>
+        <button class="adidas-close-btn" onclick="closeFilterSidebar()">
             <i class="fas fa-times"></i>
         </button>
     </div>
     
-    <!-- Sort By Section -->
-    <div class="mobile-filter-section">
-        <button class="mobile-filter-header" onclick="toggleFilterSection('sort-section')">
-            SORT BY
-            <i class="fas fa-chevron-down chevron-icon" id="sort-chevron"></i>
-        </button>
-        <div class="mobile-filter-content" id="sort-section">
-            <div class="mobile-filter-option {{ $filters['sort'] == 'price_asc' ? 'active' : '' }}" onclick="applySort('price_asc')">
-                GIÁ (THẤP - CAO)
-            </div>
-            <div class="mobile-filter-option {{ $filters['sort'] == 'newest' ? 'active' : '' }}" onclick="applySort('newest')">
-                MỚI NHẤT TRƯỚC
-            </div>
-            <div class="mobile-filter-option {{ $filters['sort'] == 'oldest' ? 'active' : '' }}" onclick="applySort('oldest')">
-                BÁN CHẠY NHẤT
-            </div>
-            <div class="mobile-filter-option {{ $filters['sort'] == 'price_desc' ? 'active' : '' }}" onclick="applySort('price_desc')">
-                GIÁ (CAO - THẤP)
-            </div>
-        </div>
-    </div>
-
-    <!-- Category Section -->
-    <div class="mobile-filter-section">
-        <button class="mobile-filter-header" onclick="toggleFilterSection('category-section')">
-            DANH MỤC
-            <i class="fas fa-chevron-down chevron-icon" id="category-chevron"></i>
-        </button>
-        <div class="mobile-filter-content" id="category-section">
-            <div class="mobile-filter-option {{ !$filters['category'] ? 'active' : '' }}" onclick="applyFilter('category', '')">
-                Tất cả danh mục
-            </div>
-            @foreach($categories as $category)
-                <div class="mobile-filter-option {{ $filters['category'] == $category->id ? 'active' : '' }}" onclick="applyFilter('category', '{{ $category->id }}')">
-                    {{ strtoupper($category->name) }}
+    <!-- Content -->
+    <div class="adidas-filter-content">
+        <!-- Sort By Section -->
+        <div class="adidas-filter-group">
+            <button class="adidas-filter-group-header" onclick="toggleAdidasSection('adidas-sort')">
+                <span>SORT BY</span>
+                <i class="fas fa-chevron-down" id="adidas-sort-icon"></i>
+            </button>
+            <div class="adidas-filter-group-content" id="adidas-sort">
+                <div class="adidas-filter-option {{ $filters['sort'] == 'price_asc' ? 'active' : '' }}" onclick="selectSort('price_asc')">
+                    GIÁ (THẤP - CAO)
                 </div>
-            @endforeach
-        </div>
-    </div>
-
-    <!-- Author Section -->
-    <div class="mobile-filter-section">
-        <button class="mobile-filter-header" onclick="toggleFilterSection('author-section')">
-            TÁC GIẢ
-            <i class="fas fa-chevron-down chevron-icon" id="author-chevron"></i>
-        </button>
-        <div class="mobile-filter-content" id="author-section">
-            <div class="mobile-filter-option {{ !$filters['author'] ? 'active' : '' }}" onclick="applyFilter('author', '')">
-                Tất cả tác giả
-            </div>
-            @foreach($authors as $author)
-                <div class="mobile-filter-option {{ $filters['author'] == $author->id ? 'active' : '' }}" onclick="applyFilter('author', '{{ $author->id }}')">
-                    {{ strtoupper($author->name) }}
+                <div class="adidas-filter-option {{ $filters['sort'] == 'newest' ? 'active' : '' }}" onclick="selectSort('newest')">
+                    MỚI NHẤT TRƯỚC
                 </div>
-            @endforeach
-        </div>
-    </div>
-
-    <!-- Brand Section -->
-    <div class="mobile-filter-section">
-        <button class="mobile-filter-header" onclick="toggleFilterSection('brand-section')">
-            THƯƠNG HIỆU
-            <i class="fas fa-chevron-down chevron-icon" id="brand-chevron"></i>
-        </button>
-        <div class="mobile-filter-content" id="brand-section">
-            <div class="mobile-filter-option {{ !$filters['brand'] ? 'active' : '' }}" onclick="applyFilter('brand', '')">
-                Tất cả thương hiệu
-            </div>
-            @foreach($brands as $brand)
-                <div class="mobile-filter-option {{ $filters['brand'] == $brand->id ? 'active' : '' }}" onclick="applyFilter('brand', '{{ $brand->id }}')">
-                    {{ strtoupper($brand->name) }}
+                <div class="adidas-filter-option {{ $filters['sort'] == 'oldest' ? 'active' : '' }}" onclick="selectSort('oldest')">
+                    BÁN CHẠY NHẤT
                 </div>
-            @endforeach
+                <div class="adidas-filter-option {{ $filters['sort'] == 'price_desc' ? 'active' : '' }}" onclick="selectSort('price_desc')">
+                    GIÁ (CAO - THẤP)
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- Price Range Section -->
-    <div class="mobile-filter-section">
-        <button class="mobile-filter-header" onclick="toggleFilterSection('price-section')">
-            KHOẢNG GIÁ
-            <i class="fas fa-chevron-down chevron-icon" id="price-chevron"></i>
-        </button>
-        <div class="mobile-filter-content" id="price-section">
-            <div class="row g-2">
-                <div class="col-6">
+        <!-- Danh mục Section -->
+        <div class="adidas-filter-group">
+            <button class="adidas-filter-group-header" onclick="toggleAdidasSection('adidas-category')">
+                <span>DANH MỤC</span>
+                <i class="fas fa-chevron-down" id="adidas-category-icon"></i>
+            </button>
+            <div class="adidas-filter-group-content" id="adidas-category">
+                <div class="adidas-filter-option {{ !$filters['category'] ? 'active' : '' }}" onclick="selectFilter('category', '')">
+                    TẤT CẢ DANH MỤC
+                </div>
+                @foreach($categories as $category)
+                    <div class="adidas-filter-option {{ $filters['category'] == $category->id ? 'active' : '' }}" onclick="selectFilter('category', '{{ $category->id }}')">
+                        {{ strtoupper($category->name) }}
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <!-- Tác giả Section -->
+        <div class="adidas-filter-group">
+            <button class="adidas-filter-group-header" onclick="toggleAdidasSection('adidas-author')">
+                <span>TÁC GIẢ</span>
+                <i class="fas fa-chevron-down" id="adidas-author-icon"></i>
+            </button>
+            <div class="adidas-filter-group-content" id="adidas-author">
+                <div class="adidas-filter-option {{ !$filters['author'] ? 'active' : '' }}" onclick="selectFilter('author', '')">
+                    TẤT CẢ TÁC GIẢ
+                </div>
+                @foreach($authors as $author)
+                    <div class="adidas-filter-option {{ $filters['author'] == $author->id ? 'active' : '' }}" onclick="selectFilter('author', '{{ $author->id }}')">
+                        {{ strtoupper($author->name) }}
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <!-- Nhà xuất bản Section -->
+        <div class="adidas-filter-group">
+            <button class="adidas-filter-group-header" onclick="toggleAdidasSection('adidas-brand')">
+                <span>NHÀ XUẤT BẢN</span>
+                <i class="fas fa-chevron-down" id="adidas-brand-icon"></i>
+            </button>
+            <div class="adidas-filter-group-content" id="adidas-brand">
+                <div class="adidas-filter-option {{ !$filters['brand'] ? 'active' : '' }}" onclick="selectFilter('brand', '')">
+                    TẤT CẢ NXB
+                </div>
+                @foreach($brands as $brand)
+                    <div class="adidas-filter-option {{ $filters['brand'] == $brand->id ? 'active' : '' }}" onclick="selectFilter('brand', '{{ $brand->id }}')">
+                        {{ strtoupper($brand->name) }}
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <!-- Khoảng giá Section -->
+        <div class="adidas-filter-group">
+            <button class="adidas-filter-group-header" onclick="toggleAdidasSection('adidas-price')">
+                <span>KHOẢNG GIÁ</span>
+                <i class="fas fa-chevron-down" id="adidas-price-icon"></i>
+            </button>
+            <div class="adidas-filter-group-content" id="adidas-price">
+                <div class="adidas-price-inputs">
                     <input type="number" 
-                           id="mobile-min-price" 
-                           class="filter-select" 
+                           id="adidas-min-price" 
+                           class="adidas-price-input" 
                            placeholder="Giá từ"
                            value="{{ $filters['min_price'] }}">
-                </div>
-                <div class="col-6">
+                    <span class="adidas-price-separator">-</span>
                     <input type="number" 
-                           id="mobile-max-price" 
-                           class="filter-select" 
+                           id="adidas-max-price" 
+                           class="adidas-price-input" 
                            placeholder="Giá đến"
                            value="{{ $filters['max_price'] }}">
                 </div>
@@ -1086,14 +1259,16 @@
     </div>
 
     <!-- Apply Button -->
-    <button class="mobile-apply-btn" onclick="applyAllFilters()">
-        ÁP DỤNG ({{ $books->count() }})
-    </button>
+    <div class="adidas-filter-footer">
+        <button class="adidas-apply-btn" onclick="applyAdidasFilters()">
+            ÁP DỤNG ({{ $books->count() }})
+        </button>
+    </div>
 </div>
 
 <script>
-// Global variables để lưu filter state
-let tempFilters = {
+// Adidas Filter State
+let adidasFilters = {
     sort: '{{ $filters["sort"] ?? "newest" }}',
     category: '{{ $filters["category"] ?? "" }}',
     author: '{{ $filters["author"] ?? "" }}',
@@ -1102,110 +1277,106 @@ let tempFilters = {
     max_price: '{{ $filters["max_price"] ?? "" }}'
 };
 
-// Auto-open first section on load and when sidebar opens
-document.addEventListener('DOMContentLoaded', function() {
-    // Do nothing on page load
-});
-
-// Modify the toggleFilterSidebar function to auto-open first section
+// Toggle Adidas Filter Sidebar
 function toggleFilterSidebar() {
-    const sidebar = document.querySelector('.filter-sidebar-mobile');
-    const overlay = document.querySelector('.filter-overlay');
-    const btn = document.querySelector('.filter-sort-btn');
+    const sidebar = document.querySelector('.adidas-filter-sidebar');
+    const overlay = document.querySelector('.adidas-filter-overlay');
     
     sidebar.classList.toggle('show');
     overlay.classList.toggle('show');
-    btn.classList.toggle('active');
     
     // Prevent body scroll when sidebar is open
     if (sidebar.classList.contains('show')) {
         document.body.style.overflow = 'hidden';
-        // Auto-open first section when sidebar opens
+        // Auto-open first section (Sort By)
         setTimeout(() => {
-            const firstSection = document.getElementById('sort-section');
-            const firstChevron = document.getElementById('sort-chevron');
-            const firstHeader = firstSection.previousElementSibling;
-            
-            firstSection.classList.add('show');
-            firstChevron.classList.add('rotate');
-            firstHeader.classList.add('active');
-        }, 100);
+            toggleAdidasSection('adidas-sort');
+        }, 300);
     } else {
         document.body.style.overflow = '';
     }
 }
 
+// Close Adidas Filter Sidebar
 function closeFilterSidebar() {
-    const sidebar = document.querySelector('.filter-sidebar-mobile');
-    const overlay = document.querySelector('.filter-overlay');
-    const btn = document.querySelector('.filter-sort-btn');
+    const sidebar = document.querySelector('.adidas-filter-sidebar');
+    const overlay = document.querySelector('.adidas-filter-overlay');
     
     sidebar.classList.remove('show');
     overlay.classList.remove('show');
-    btn.classList.remove('active');
     document.body.style.overflow = '';
 }
 
-function toggleFilterSection(sectionId) {
+// Toggle Adidas Filter Section
+function toggleAdidasSection(sectionId) {
     const content = document.getElementById(sectionId);
-    const chevronId = sectionId.replace('-section', '-chevron');
-    const chevron = document.getElementById(chevronId);
+    const icon = document.getElementById(sectionId + '-icon');
     const header = content.previousElementSibling;
     
-    // Close all other sections first
-    document.querySelectorAll('.mobile-filter-content').forEach(section => {
+    // Close all other sections
+    document.querySelectorAll('.adidas-filter-group-content').forEach(section => {
         if (section.id !== sectionId) {
             section.classList.remove('show');
-            const otherChevronId = section.id.replace('-section', '-chevron');
-            const otherChevron = document.getElementById(otherChevronId);
+            const otherIcon = document.getElementById(section.id + '-icon');
             const otherHeader = section.previousElementSibling;
-            if (otherChevron) otherChevron.classList.remove('rotate');
+            if (otherIcon) otherIcon.classList.remove('rotate');
             if (otherHeader) otherHeader.classList.remove('active');
         }
     });
     
     // Toggle current section
+    const isOpen = content.classList.contains('show');
     content.classList.toggle('show');
-    if (chevron) chevron.classList.toggle('rotate');
-    if (header) header.classList.toggle('active');
+    header.classList.toggle('active');
+    
+    if (icon) {
+        if (isOpen) {
+            icon.style.transform = 'rotate(0deg)';
+        } else {
+            icon.style.transform = 'rotate(180deg)';
+        }
+    }
 }
 
-function applySort(sortValue) {
-    tempFilters.sort = sortValue;
+// Select Sort Option
+function selectSort(sortValue) {
+    adidasFilters.sort = sortValue;
     
-    // Update active state
-    document.querySelectorAll('#sort-section .mobile-filter-option').forEach(el => {
+    // Update active states
+    document.querySelectorAll('#adidas-sort .adidas-filter-option').forEach(el => {
         el.classList.remove('active');
     });
     event.target.classList.add('active');
 }
 
-function applyFilter(filterType, filterValue) {
-    tempFilters[filterType] = filterValue;
+// Select Filter Option
+function selectFilter(filterType, filterValue) {
+    adidasFilters[filterType] = filterValue;
     
-    // Update active state
-    const sectionId = filterType + '-section';
-    document.querySelectorAll('#' + sectionId + ' .mobile-filter-option').forEach(el => {
+    // Update active states
+    const sectionId = 'adidas-' + filterType;
+    document.querySelectorAll('#' + sectionId + ' .adidas-filter-option').forEach(el => {
         el.classList.remove('active');
     });
     event.target.classList.add('active');
 }
 
-function applyAllFilters() {
+// Apply All Adidas Filters
+function applyAdidasFilters() {
     // Get price values
-    const minPrice = document.getElementById('mobile-min-price').value;
-    const maxPrice = document.getElementById('mobile-max-price').value;
+    const minPrice = document.getElementById('adidas-min-price')?.value || '';
+    const maxPrice = document.getElementById('adidas-max-price')?.value || '';
     
-    tempFilters.min_price = minPrice;
-    tempFilters.max_price = maxPrice;
+    adidasFilters.min_price = minPrice;
+    adidasFilters.max_price = maxPrice;
     
     // Build URL with all filters
     const params = new URLSearchParams();
     params.append('search', '{{ $searchTerm }}');
     
-    Object.keys(tempFilters).forEach(key => {
-        if (tempFilters[key] && tempFilters[key] !== '') {
-            params.append(key, tempFilters[key]);
+    Object.keys(adidasFilters).forEach(key => {
+        if (adidasFilters[key] && adidasFilters[key] !== '') {
+            params.append(key, adidasFilters[key]);
         }
     });
     
@@ -1218,6 +1389,23 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeFilterSidebar();
     }
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Set initial active states based on current filters
+    Object.keys(adidasFilters).forEach(filterType => {
+        const value = adidasFilters[filterType];
+        if (value) {
+            if (filterType === 'sort') {
+                const sortOption = document.querySelector(`#adidas-sort .adidas-filter-option[onclick*="${value}"]`);
+                if (sortOption) sortOption.classList.add('active');
+            } else {
+                const filterOption = document.querySelector(`#adidas-${filterType} .adidas-filter-option[onclick*="${value}"]`);
+                if (filterOption) filterOption.classList.add('active');
+            }
+        }
+    });
 });
 </script>
 @endsection
