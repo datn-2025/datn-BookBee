@@ -81,7 +81,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($contacts as $index => $contact)
+                                    @forelse($contacts as $index => $contact)
                                         <tr>
                                             <td class="text-center">{{ $contacts->firstItem() + $index }}</td>
                                             <td class="fw-semibold">{{ $contact->name }}</td>
@@ -158,7 +158,7 @@
                                                         </div>
                                                         <div class="modal-footer">
                                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                                            <button type="submit" class="btn btn-success">Lưu thay đổi</button>
+                                                            <button type="submit" class="btn btn-success submit-btn">Lưu thay đổi</button>
                                                         </div>
                                                     </form>
                                                 </div>
@@ -186,14 +186,20 @@
                                                             </div>
                                                         </div>
                                                         <div class="modal-footer">
-                                                            <button type="submit" class="btn btn-success">Gửi</button>
+                                                            <button type="submit" class="btn btn-success submit-btn">Gửi</button>
                                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                                                         </div>
                                                     </div>
                                                 </form>
                                             </div>
                                         </div>
-                                    @endforeach
+                                        @empty
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted">
+                                                Không có liên hệ nào.
+                                            </td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -208,3 +214,22 @@
 
     </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.modal form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            // Ưu tiên dùng event.submitter nếu trình duyệt hỗ trợ
+            var btn = e.submitter || form.querySelector('.submit-btn');
+            if (btn) {
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang xử lý...';
+                setTimeout(function() {
+                    btn.disabled = true;
+                }, 10); // Đảm bảo innerHTML cập nhật trước khi disable
+            }
+        });
+    });
+});
+</script>
+@endpush
