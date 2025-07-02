@@ -332,8 +332,20 @@
                     </h3>
 
                     <!-- Author -->
-                    <p class="text-adidas-gray text-sm font-semibold uppercase tracking-wider mb-4">
+                    <p class="text-adidas-gray text-sm font-semibold uppercase tracking-wider mb-2">
                       BY {{ strtoupper($book->author_name ?? 'Unknown Author') }}
+                    </p>
+                    
+                    <!-- Publisher/Brand -->
+                    <p class="text-adidas-gray text-xs font-medium mb-2">
+                      <i class="fas fa-building me-1"></i>
+                      NXB: {{ $book->brand_name ?? 'Chưa rõ' }}
+                    </p>
+                    
+                    <!-- Category -->
+                    <p class="text-adidas-gray text-xs font-medium mb-4">
+                      <i class="fas fa-folder me-1"></i>
+                      Danh mục: {{ $book->category_name ?? 'Chưa phân loại' }}
                     </p>
 
                     <!-- Rating -->
@@ -355,21 +367,41 @@
                         @php
                           $physicalStock = $book->physical_stock ?? 0;
                           $hasEbook = $book->has_ebook ?? 0;
+                          $bookStatus = $book->status ?? 'Không rõ';
                         @endphp
                         
-                        @if($physicalStock > 0)
-                          {{-- Có sách vật lý --}}
-                          <span class="w-2 h-2 bg-adidas-green rounded-full"></span>
-                          <span class="text-xs text-adidas-gray font-medium">Còn {{ $physicalStock }} cuốn</span>
-                        @elseif($hasEbook)
-                          {{-- Hết sách vật lý nhưng còn ebook --}}
-                          <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-                          <span class="text-xs text-blue-600 font-medium">Ebook có sẵn</span>
-                        @else
-                          {{-- Hết hàng hoàn toàn --}}
-                          <span class="w-2 h-2 bg-adidas-red rounded-full"></span>
-                          <span class="text-xs text-adidas-red font-medium">Hết hàng</span>
-                        @endif
+                        @switch($bookStatus)
+                          @case('Còn Hàng')
+                            <span class="w-2 h-2 bg-adidas-green rounded-full"></span>
+                            <span class="text-xs text-adidas-green font-medium">Còn hàng</span>
+                            @break
+                          @case('Hết Hàng Tồn Kho')
+                            <span class="w-2 h-2 bg-adidas-red rounded-full"></span>
+                            <span class="text-xs text-adidas-red font-medium">Hết hàng</span>
+                            @break
+                          @case('Sắp Ra Mắt')
+                            <span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                            <span class="text-xs text-yellow-600 font-medium">Sắp ra mắt</span>
+                            @break
+                          @case('Ngừng Kinh Doanh')
+                            <span class="w-2 h-2 bg-gray-500 rounded-full"></span>
+                            <span class="text-xs text-gray-600 font-medium">Ngừng kinh doanh</span>
+                            @break
+                          @default
+                            @if($physicalStock > 0)
+                              {{-- Fallback dựa trên stock nếu status không rõ --}}
+                              <span class="w-2 h-2 bg-adidas-green rounded-full"></span>
+                              <span class="text-xs text-adidas-gray font-medium">Còn {{ $physicalStock }} cuốn</span>
+                            @elseif($hasEbook)
+                              {{-- Hết sách vật lý nhưng còn ebook --}}
+                              <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                              <span class="text-xs text-blue-600 font-medium">Ebook có sẵn</span>
+                            @else
+                              {{-- Hết hàng hoàn toàn --}}
+                              <span class="w-2 h-2 bg-adidas-red rounded-full"></span>
+                              <span class="text-xs text-adidas-red font-medium">Hết hàng</span>
+                            @endif
+                        @endswitch
                       </div>
                     </div>
 
@@ -461,7 +493,7 @@
                   <input 
                     name="search" 
                     type="search" 
-                    placeholder="Search by title or author..." 
+                    placeholder="Tìm kiếm sách, tác giả, NXB, danh mục..." 
                     aria-label="Search"
                     value="{{ request('search') ?? '' }}"                          class="w-full px-4 py-3 pr-12 border-2 border-adidas-light-gray rounded-lg focus:border-adidas-black focus:outline-none transition-colors duration-100">
                       <button type="submit" 
