@@ -198,7 +198,7 @@
                                             <div>
                                                 <h6 class="mb-1">{{ $item->book->title }}</h6>
                                                 <p class="text-muted small mb-0">
-                                                    Tác giả: {{ $item->book->author->name ?? 'N/A' }}
+                                                    Tác giả: {{ $item->book->authors->first()->name ?? 'N/A' }}
                                                 </p>
                                             </div>
                                         </div>
