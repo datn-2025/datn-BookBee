@@ -11,9 +11,7 @@
     <nav class="sidebar-nav-list">
         @foreach ([
             ['route' => 'account.profile', 'icon' => 'fas fa-user', 'title' => 'Thông tin cá nhân'],
-            ['route' => 'account.orders.index', 'icon' => 'fas fa-shopping-bag', 'title' => 'Đơn hàng'],
             ['route' => 'account.purchase', 'icon' => 'fas fa-star', 'title' => 'Đánh giá'],
-            ['route' => 'home', 'icon' => 'fas fa-home', 'title' => 'Trang chủ'],
         ] as $item)
             <a href="{{ route($item['route']) }}" class="sidebar-link{{ request()->routeIs($item['route']) ? ' active' : '' }}">
                 <i class="{{ $item['icon'] }}"></i>

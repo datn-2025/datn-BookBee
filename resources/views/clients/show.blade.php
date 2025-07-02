@@ -422,7 +422,7 @@
                         <div class="space-y-3">
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600 font-medium">TÁC GIẢ</span>
-                                <span class="text-black font-semibold">{{ $book->author->name ?? 'Không rõ' }}</span>
+                                <span class="text-black font-semibold">{{ $book->authors->first()->name ?? 'Không rõ' }}</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600 font-medium">THƯƠNG HIỆU</span>
@@ -858,7 +858,7 @@
                                     </a>
                                 </h3>
                                 <p class="text-sm text-gray-600 uppercase tracking-wide font-medium">
-                                    {{ $related->author->name ?? 'KHÔNG RÕ TÁC GIẢ' }}
+                                    {{ $related->authors->first()->name ?? 'KHÔNG RÕ TÁC GIẢ' }}
                                 </p>
                             </div>
 

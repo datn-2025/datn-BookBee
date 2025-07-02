@@ -43,8 +43,10 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <p><strong>Bình luận:</strong></p>
-                                    <div class="border p-3 rounded bg-light">{{ $review->comment }}</div>
+
+                                    <p><strong>Sản phẩm:</strong> {{ $review->book->title ?? 'Đã xóa' }}</p>
+                                    <p><strong>Tác giả:</strong> {{ $review->book->authors->first()->name ?? 'N/A' }}</p>
+
                                 </div>
                             </div>
                         </div>

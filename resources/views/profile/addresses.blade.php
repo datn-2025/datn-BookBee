@@ -359,12 +359,23 @@
     let editId = null;
 
     $(document).ready(function() {
-        // Lấy tỉnh thành
-        $.getJSON('https://provinces.open-api.vn/api/p/', function(provinces) {
-            provinces.forEach(function(province) {
-                $("#tinh").append(`<option value="${province.code}">${province.name}</option>`);
+        // Function to load provinces
+        function loadProvinces() {
+            $.getJSON('https://provinces.open-api.vn/api/p/', function(provinces) {
+                $("#tinh").html('<option value="">Chọn Tỉnh/Thành phố</option>');
+                provinces.forEach(function(province) {
+                    $("#tinh").append(`<option value="${province.code}">${province.name}</option>`);
+                });
+            }).fail(function() {
+                console.error('Không thể tải dữ liệu tỉnh thành');
+                toastr.error('Không thể tải dữ liệu tỉnh thành. Vui lòng thử lại!');
             });
-        });        // Xử lý khi chọn tỉnh
+        }
+        
+        // Lấy tỉnh thành khi trang load
+        loadProvinces();
+        
+        // Xử lý khi chọn tỉnh
         $("#tinh").change(function() {
             const provinceCode = $(this).val();
             const provinceName = $(this).find("option:selected").text();
@@ -410,7 +421,9 @@
         $("#phuong").change(function() {
             const wardName = $(this).find("option:selected").text();
             $("#ten_phuong").val(wardName);
-        });        // Submit form
+        });
+        
+        // Submit form
         $('#addressForm').on('submit', function(e) {
             e.preventDefault();
             
@@ -488,6 +501,9 @@
             provinces.forEach(function(province) {
                 $("#tinh").append(`<option value="${province.code}">${province.name}</option>`);
             });
+        }).fail(function() {
+            console.error('Không thể tải dữ liệu tỉnh thành');
+            toastr.error('Không thể tải dữ liệu tỉnh thành. Vui lòng thử lại!');
         });
         
         $('#addressModal').modal('show');

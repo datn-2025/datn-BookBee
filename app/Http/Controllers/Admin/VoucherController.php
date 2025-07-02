@@ -386,11 +386,11 @@ class VoucherController extends Controller
                 case 'book':
                     try {
                         $options = Book::select('id', 'title')
-                            ->with(['author', 'brand'])
+                            ->with(['authors', 'brand'])
                             ->orderBy('title')
                             ->get()
                             ->map(function ($item) {
-                                $authorInfo = $item->author ? " - " . $item->author->name : "";
+                                $authorInfo = $item->authors->first() ? " - " . $item->authors->first()->name : "";
                                 $brandInfo = $item->brand ? " (" . $item->brand->name . ")" : "";
                                 return [
                                     'id' => $item->id,

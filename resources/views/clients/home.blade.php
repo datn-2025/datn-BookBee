@@ -491,7 +491,7 @@
                                 <h3 class="text-3xl md:text-4xl font-bold mt-2 mb-4 leading-tight">
                                     {{ $featuredBooks->first()?->title ?? 'Sách nổi bật' }}
                                 </h3>
-                                <p class="text-white/90 mb-6">{{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
+                                <p class="text-white/90 mb-6">{{ $featuredBooks->first()?->authors && $featuredBooks->first()?->authors->count() ? $featuredBooks->first()?->authors->pluck('name')->join(', ') : 'N/A' }}
                                 </p>
                                 <p class="text-2xl font-bold text-white">
                                     {{ number_format($featuredBooks->first()?->formats->first()?->price ?? 0, 0, ',', '.') }}₫
@@ -531,7 +531,7 @@
                                                 class="font-semibold text-sm text-black group-hover:text-gray-600 transition-colors">
                                                 {{ Str::limit($book->title, 40) }}
                                             </h4>
-                                            <p class="text-xs text-gray-500 mt-1">{{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
+                                            <p class="text-xs text-gray-500 mt-1">{{ $book->authorssss && $book->authorssss->count() ? $book->authorssss->pluck('name')->join(', ') : 'N/A' }}
                                             </p>
                                             <p class="text-sm font-bold text-black mt-1">
                                                 {{ number_format($book->formats->first()->price ?? 0, 0, ',', '.') }}₫
@@ -563,7 +563,7 @@
                                                 class="font-semibold text-sm text-black group-hover:text-gray-600 transition-colors">
                                                 {{ Str::limit($book->title, 40) }}
                                             </h4>
-                                            <p class="text-xs text-gray-500 mt-1">{{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
+                                            <p class="text-xs text-gray-500 mt-1">{{ $book->authorssss && $book->authorssss->count() ? $book->authorssss->pluck('name')->join(', ') : 'N/A' }}
                                             </p>
                                             <div class="flex items-center gap-2 mt-1">
                                                 <div class="flex text-yellow-400 text-xs">
@@ -622,7 +622,7 @@
                                             alt="{{ $book->title }}" class="w-16 h-20 object-cover">
                                         <div class="flex-1">
                                             <h4 class="font-semibold text-sm mb-1">{{ Str::limit($book->title, 30) }}</h4>
-                                            <p class="text-xs text-white/80 mb-2">{{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
+                                            <p class="text-xs text-white/80 mb-2">{{ $book->authorssss && $book->authorssss->count() ? $book->authorssss->pluck('name')->join(', ') : 'N/A' }}
                                             </p>
                                             <div class="flex items-center gap-2">
                                                 <span class="line-through text-white/60 text-sm">
@@ -723,7 +723,7 @@
                         </div>
                         <div class="p-4 bg-white flex flex-col flex-1 justify-between h-[180px]">
                             <h3 class="text-base font-semibold text-gray-800">{{ $book->title }}</h3>
-                            <p class="text-sm text-gray-500">{{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
+                            <p class="text-sm text-gray-500">{{ $book->authorssss && $book->authorssss->count() ? $book->authorssss->pluck('name')->join(', ') : 'N/A' }}
                             <p class="text-red-500 font-bold">
                                 Giá tiền {{ number_format($book->formats->first()->price ?? 0, 0, ',', '.') }}₫
                             </p>
@@ -740,7 +740,7 @@
                                 {{ $book->title }}
                             </h3>
                             <p class="text-sm text-gray-500 uppercase tracking-wide">
-                                {{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
+                                {{ $book->authorsss && $book->authorsss->count() ? $book->authorsss->pluck('name')->join(', ') : 'N/A' }}
                             </p>
                             <div class="flex items-center justify-between">
                                 <p class="text-xl font-bold text-black">

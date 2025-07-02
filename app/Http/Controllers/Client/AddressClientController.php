@@ -20,7 +20,6 @@ class AddressClientController extends Controller
         // Lấy tất cả địa chỉ của người dùng, sắp xếp theo mặc định trước, sau đó theo thời gian tạo
         $addresses = Auth::user()->addresses()->orderBy('is_default', 'desc')->orderBy('created_at', 'desc')->get();
 
-        dd($addresses);  // Dùng dd() để kiểm tra dữ liệu trả về
         // Kiểm tra xem có địa chỉ nào không
         if ($addresses->isEmpty()) {
             Log::info('No addresses found for the user.');
@@ -29,7 +28,7 @@ class AddressClientController extends Controller
         }
 
         // Trả về view và truyền dữ liệu $addresses
-        return view('clients.profile.profile', compact('addresses'));  // Chắc chắn rằng $addresses được truyền vào view
+        return view('profile.addresses', compact('addresses'));
     }
 
     public function store(Request $request)
@@ -43,13 +42,16 @@ class AddressClientController extends Controller
             'district' => 'required|string|max:255',
             'ward' => 'required|string|max:255',
             'address_detail' => 'required|string|max:500',
-            'is_default' => 'sometimes|boolean'
+            'is_default' => 'sometimes|in:1,0,true,false'
         ]);
 
         DB::beginTransaction();
         try {
+            // Xử lý is_default - convert to boolean
+            $isDefault = $request->has('is_default') && ($request->is_default == '1' || $request->is_default == 'true');
+            
             // Nếu đặt làm mặc định, bỏ mặc định của các địa chỉ khác
-            if ($request->is_default) {
+            if ($isDefault) {
                 Auth::user()->addresses()->update(['is_default' => false]);
             }
 
@@ -62,7 +64,7 @@ class AddressClientController extends Controller
                 'district' => $request->district,
                 'ward' => $request->ward,
                 'address_detail' => $request->address_detail,
-                'is_default' => $request->is_default || $isFirstAddress
+                'is_default' => $isDefault || $isFirstAddress
             ]);
 
             Log::info('Address created successfully:', $address->toArray());
@@ -100,15 +102,18 @@ class AddressClientController extends Controller
             'district' => 'required|string|max:255',
             'ward' => 'required|string|max:255',
             'address_detail' => 'required|string|max:500',
-            'is_default' => 'sometimes|boolean'
+            'is_default' => 'sometimes|in:1,0,true,false'
         ]);
 
         DB::beginTransaction();
         try {
             $address = Auth::user()->addresses()->findOrFail($id);
 
+            // Xử lý is_default - convert to boolean
+            $isDefault = $request->has('is_default') && ($request->is_default == '1' || $request->is_default == 'true');
+
             // Nếu đặt làm mặc định, bỏ mặc định của các địa chỉ khác
-            if ($request->is_default) {
+            if ($isDefault) {
                 Auth::user()->addresses()->where('id', '!=', $id)->update(['is_default' => false]);
             }
 
@@ -117,7 +122,7 @@ class AddressClientController extends Controller
                 'district' => $request->district,
                 'ward' => $request->ward,
                 'address_detail' => $request->address_detail,
-                'is_default' => $request->is_default ?: $address->is_default
+                'is_default' => $isDefault ?: $address->is_default
             ]);
 
             DB::commit();

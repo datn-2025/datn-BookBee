@@ -39,18 +39,21 @@ class BookController extends Controller
 
         // Tạo query lấy sách
         $booksQuery = DB::table('books')
-            ->join('author_books', 'books.id', '=', 'author_books.book_id')
-            ->join('authors', 'author_books.author_id', '=', 'authors.id')
-            ->join('brands', 'books.brand_id', '=', 'brands.id')
-            ->join('book_formats', 'books.id', '=', 'book_formats.book_id')
+            ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
+            ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
+            ->leftJoin('brands', 'books.brand_id', '=', 'brands.id')
+            ->leftJoin('categories', 'books.category_id', '=', 'categories.id')
+            ->leftJoin('book_formats', 'books.id', '=', 'book_formats.book_id')
             ->leftJoin('reviews', 'books.id', '=', 'reviews.book_id')
             ->select(
                 'books.id',
                 'books.title',
                 'books.slug',
                 'books.cover_image',
-                'authors.name as author_name',
+                'books.status',
+                DB::raw('GROUP_CONCAT(DISTINCT authors.name SEPARATOR ", ") as author_name'),
                 'brands.name as brand_name',
+                'categories.name as category_name',
                 DB::raw('MIN(book_formats.price) as min_price'),
                 DB::raw('MAX(book_formats.price) as max_price'),
                 DB::raw('SUM(CASE WHEN book_formats.format_name NOT LIKE "%ebook%" AND book_formats.stock IS NOT NULL THEN book_formats.stock ELSE 0 END) as physical_stock'),
@@ -58,10 +61,15 @@ class BookController extends Controller
                 DB::raw('AVG(reviews.rating) as avg_rating')
             )
             ->when($category, fn($query) => $query->where('books.category_id', $category->id))
-            ->groupBy('books.id', 'books.title', 'books.slug', 'books.cover_image', 'authors.name', 'brands.name');
+            ->groupBy('books.id', 'books.title', 'books.slug', 'books.cover_image', 'books.status', 'brands.name', 'categories.name');
 
         if (!empty($authorIds)) {
-            $booksQuery->whereIn('author_books.author_id', $authorIds);
+            $booksQuery->whereExists(function($query) use ($authorIds) {
+                $query->select(DB::raw(1))
+                      ->from('author_books as ab')
+                      ->whereRaw('ab.book_id = books.id')
+                      ->whereIn('ab.author_id', $authorIds);
+            });
         }
 
         if (!empty($brandIds)) {
@@ -99,9 +107,21 @@ class BookController extends Controller
         }
 
         if ($search = $request->input('search')) {
-            $booksQuery->where(function ($q) use ($search) {
-                $q->where('books.title', 'like', "%$search%")
-                    ->orWhere('authors.name', 'like', "%$search%");
+            $booksQuery->where(function($mainQuery) use ($search) {
+                $mainQuery->where(function ($q) use ($search) {
+                    $q->where('books.title', 'like', "%$search%")
+                        ->orWhere('books.description', 'like', "%$search%")
+                        ->orWhere('books.isbn', 'like', "%$search%")
+                        ->orWhere('brands.name', 'like', "%$search%")
+                        ->orWhere('categories.name', 'like', "%$search%");
+                })
+                ->orWhereExists(function($query) use ($search) {
+                    $query->select(DB::raw(1))
+                          ->from('author_books as ab')
+                          ->join('authors as a', 'ab.author_id', '=', 'a.id')
+                          ->whereRaw('ab.book_id = books.id')
+                          ->where('a.name', 'like', "%$search%");
+                });
             });
         }
 
@@ -153,6 +173,162 @@ class BookController extends Controller
                 'min_price' => $minPrice,
                 'max_price' => $maxPrice,
                 'min_rating' => $minRating,
+                'sort' => $sort,
+            ],
+        ]);
+    }
+
+    public function search(Request $request)
+    {
+        $searchTerm = $request->input('search', '');
+        $authorFilter = $request->input('author');
+        $brandFilter = $request->input('brand');
+        $categoryFilter = $request->input('category');
+        $minPrice = $request->input('min_price');
+        $maxPrice = $request->input('max_price');
+        $sort = $request->input('sort', 'newest');
+
+        // Kiểm tra có sách nào trong database không
+        $totalBooks = DB::table('books')->count();
+        if ($totalBooks == 0) {
+            // Không có sách nào, trả về kết quả rỗng
+            $books = collect([]);
+            $categories = collect([]);
+            $authors = collect([]);
+            $brands = collect([]);
+        } else {
+            // Tạo query tìm kiếm sách
+            $booksQuery = DB::table('books')
+                ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
+                ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
+                ->leftJoin('brands', 'books.brand_id', '=', 'brands.id')
+                ->leftJoin('categories', 'books.category_id', '=', 'categories.id')
+                ->leftJoin('book_formats', 'books.id', '=', 'book_formats.book_id')
+                ->leftJoin('reviews', 'books.id', '=', 'reviews.book_id')
+                ->select(
+                    'books.id',
+                    'books.title',
+                    'books.slug',
+                    'books.cover_image',
+                    'books.description',
+                    'books.status',
+                    DB::raw('GROUP_CONCAT(DISTINCT authors.name SEPARATOR ", ") as author_name'),
+                    'brands.name as brand_name',
+                    'categories.name as category_name',
+                    DB::raw('MIN(book_formats.price) as min_price'),
+                    DB::raw('MAX(book_formats.price) as max_price'),
+                    DB::raw('MIN(CASE WHEN book_formats.discount > 0 THEN book_formats.price * (1 - book_formats.discount / 100) ELSE book_formats.price END) as min_sale_price'),
+                    DB::raw('MAX(CASE WHEN book_formats.discount > 0 THEN book_formats.price * (1 - book_formats.discount / 100) ELSE book_formats.price END) as max_sale_price'),
+                    DB::raw('MIN(book_formats.discount) as min_discount'),
+                    DB::raw('MAX(book_formats.discount) as max_discount'),
+                    DB::raw('SUM(CASE WHEN book_formats.format_name NOT LIKE "%ebook%" AND book_formats.stock IS NOT NULL THEN book_formats.stock ELSE 0 END) as physical_stock'),
+                    DB::raw('MAX(CASE WHEN book_formats.format_name LIKE "%ebook%" THEN 1 ELSE 0 END) as has_ebook'),
+                    DB::raw('AVG(reviews.rating) as avg_rating')
+                )
+                ->groupBy(
+                    'books.id', 
+                    'books.title', 
+                    'books.slug', 
+                    'books.cover_image', 
+                    'books.description',
+                    'books.status',
+                    'brands.name',
+                    'categories.name'
+                );
+
+            // Nếu có từ khóa tìm kiếm
+            if (!empty($searchTerm)) {
+                $booksQuery->where(function($mainQuery) use ($searchTerm) {
+                    $mainQuery->where(function($query) use ($searchTerm) {
+                        $query->where('books.title', 'like', "%$searchTerm%")
+                              ->orWhere('books.description', 'like', "%$searchTerm%")
+                              ->orWhere('books.isbn', 'like', "%$searchTerm%")
+                              ->orWhere('brands.name', 'like', "%$searchTerm%")
+                              ->orWhere('categories.name', 'like', "%$searchTerm%");
+                    })
+                    ->orWhereExists(function($query) use ($searchTerm) {
+                        $query->select(DB::raw(1))
+                              ->from('author_books as ab')
+                              ->join('authors as a', 'ab.author_id', '=', 'a.id')
+                              ->whereRaw('ab.book_id = books.id')
+                              ->where('a.name', 'like', "%$searchTerm%");
+                    });
+                });
+            }
+
+            // Áp dụng filters
+            if ($categoryFilter) {
+                $booksQuery->where('books.category_id', $categoryFilter);
+            }
+
+            if ($brandFilter) {
+                $booksQuery->where('brands.id', $brandFilter);
+            }
+
+            // Filter theo author - cần thực hiện sau GROUP BY
+            if ($authorFilter) {
+                $booksQuery->whereExists(function($query) use ($authorFilter) {
+                    $query->select(DB::raw(1))
+                          ->from('author_books as ab')
+                          ->whereRaw('ab.book_id = books.id')
+                          ->where('ab.author_id', $authorFilter);
+                });
+            }
+
+            // Filter theo giá
+            if ($minPrice) {
+                $booksQuery->having(DB::raw('MIN(book_formats.price)'), '>=', $minPrice);
+            }
+
+            if ($maxPrice) {
+                $booksQuery->having(DB::raw('MAX(book_formats.price)'), '<=', $maxPrice);
+            }
+
+            // Sắp xếp
+            switch ($sort) {
+                case 'price_asc':
+                    $booksQuery->orderByRaw('MIN(book_formats.price) ASC');
+                    break;
+                case 'price_desc':
+                    $booksQuery->orderByRaw('MAX(book_formats.price) DESC');
+                    break;
+                case 'name_asc':
+                    $booksQuery->orderBy('books.title', 'ASC');
+                    break;
+                case 'name_desc':
+                    $booksQuery->orderBy('books.title', 'DESC');
+                    break;
+                case 'oldest':
+                    $booksQuery->orderBy('books.created_at', 'ASC');
+                    break;
+                case 'newest':
+                default:
+                    $booksQuery->orderBy('books.created_at', 'DESC');
+                    break;
+            }
+
+            // Lấy tất cả sách phù hợp với điều kiện tìm kiếm
+            // Giới hạn 1000 sách để tránh vấn đề hiệu suất
+            $books = $booksQuery->limit(1000)->get();
+
+            // Lấy dữ liệu cho filters
+            $categories = DB::table('categories')->orderBy('name')->get();
+            $authors = DB::table('authors')->orderBy('name')->get();
+            $brands = DB::table('brands')->orderBy('name')->get();
+        }
+
+        return view('books.search', [
+            'books' => $books,
+            'categories' => $categories,
+            'authors' => $authors,
+            'brands' => $brands,
+            'searchTerm' => $searchTerm,
+            'filters' => [
+                'author' => $authorFilter,
+                'brand' => $brandFilter,
+                'category' => $categoryFilter,
+                'min_price' => $minPrice,
+                'max_price' => $maxPrice,
                 'sort' => $sort,
             ],
         ]);
