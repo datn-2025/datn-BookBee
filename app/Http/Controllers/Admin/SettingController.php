@@ -27,6 +27,10 @@ class SettingController extends Controller
             'address' => 'nullable|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'favicon' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            // validate bank_setting fields
+            'bank_name' => 'nullable|string|max:255',
+            'bank_number' => 'nullable|string|max:255',
+            'customer_name' => 'nullable|string|max:255',
         ]);
 
         DB::beginTransaction();
@@ -41,6 +45,13 @@ class SettingController extends Controller
             $setting->email = $request->email;
             $setting->phone = $request->phone;
             $setting->address = $request->address;
+
+            // Lưu cấu hình ngân hàng
+            $setting->bank_setting = json_encode([
+                'bank_name' => $request->bank_name,
+                'bank_number' => $request->bank_number,
+                'customer_name' => $request->customer_name,
+            ]);
 
             // Xử lý logo
             if ($request->hasFile('logo')) {
