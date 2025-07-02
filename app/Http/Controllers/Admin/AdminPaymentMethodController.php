@@ -100,39 +100,49 @@ class AdminPaymentMethodController extends Controller
             return redirect()->back()->with('error', 'Trạng thái không hợp lệ');
         }
 
+        $paymentMethodName = strtolower($payment->paymentMethod->name);
+        $isCod = $paymentMethodName === 'thanh toán khi nhận hàng';
+
+        /**
+         * Trường hợp KH không phải COD mà admin cố tình để "Chờ Xử Lý" thì chặn lại
+         */
+        if (!$isCod && mb_strtolower($status->name, 'UTF-8') === 'chờ xử lý') {
+            Toastr::warning('Đơn thanh toán trước không thể về trạng thái Chờ Xử Lý!');
+            return redirect()->back();
+        }
+
+        // Ngược lại cho phép cập nhật
         $payment->payment_status_id = $status->id;
 
-        // Nếu trạng thái là "Đã Thanh Toán" thì cập nhật ngày thanh toán và gửi email
         if (mb_strtolower($status->name, 'UTF-8') === 'đã thanh toán') {
             $payment->paid_at = now();
-            
-            // Kiểm tra nếu đơn hàng có sách ebook
-            $order = $payment->order;
-            $hasEbook = $order->orderItems()
-                ->whereHas('book.formats', function($query) {
-                    $query->where('format_name', 'Ebook');
-                })
-                ->exists();
 
-            if ($hasEbook) {
-                // Gửi email xác nhận mua ebook
-                Mail::to($order->user->email)
-                    ->send(new EbookPurchaseConfirmation($order));
+            // Gửi mail nếu có Ebook
+            $order = $payment->order;
+            if ($order) {
+                $hasEbook = $order->orderItems()
+                    ->whereHas('book.formats', function ($query) {
+                        $query->where('format_name', 'Ebook');
+                    })
+                    ->exists();
+
+                if ($hasEbook) {
+                    Mail::to($order->user->email)->send(new EbookPurchaseConfirmation($order));
+                }
             }
         }
 
         $payment->save();
 
-        // Cập nhật trạng thái cho đơn hàng
         if ($payment->order) {
-            $payment->order->payment_status_id = $status->id;
+            $payment->order->payment_status_id = $payment->payment_status_id;
             $payment->order->save();
         }
 
         Toastr::success('Cập nhật trạng thái thanh toán thành công!');
-
-        return redirect()->back()->with('success', 'Cập nhật trạng thái thanh toán thành công');
+        return redirect()->back();
     }
+
     public function destroy(PaymentMethod $paymentMethod)
     {
         if ($paymentMethod->payments()->exists()) {
@@ -207,13 +217,13 @@ class AdminPaymentMethodController extends Controller
                 $query->where('name', $request->payment_status);
             });
         }
-        // Ẩn các phương thức "Thanh toán khi nhận hàng"
-        $payments->whereHas('paymentMethod', function ($query) {
-            $query->where('name', '!=', 'Thanh toán khi nhận hàng');
-        });
+        // // Ẩn các phương thức "Thanh toán khi nhận hàng"
+        // $payments->whereHas('paymentMethod', function ($query) {
+        //     $query->where('name', '!=', 'Thanh toán khi nhận hàng');
+        // });
 
 
-        $payments = $payments->latest()->paginate(10);
+        $payments = $payments->latest()->paginate(10)->withQueryString();
 
         return view('admin.payment-methods.history', compact('payments'));
     }
