@@ -30,7 +30,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <p><strong>Sản phẩm:</strong> {{ $review->book->title ?? 'Đã xóa' }}</p>
-                                    <p><strong>Tác giả:</strong> {{ $review->book->author->name ?? 'N/A' }}</p>
+                                    <p><strong>Tác giả:</strong> {{ $review->book->authors->first()->name ?? 'N/A' }}</p>
                                 </div>
                             </div>
                             <div class="mt-3">
