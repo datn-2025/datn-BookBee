@@ -395,7 +395,7 @@
                                 </div>
                             </div>
                         </div>
-                        @if(isset($order->payments) && count($order->payments) > 0 && $order->paymentStatus->name == 'Đã thanh toán')
+                        @if(isset($order->payments) && count($order->payments) > 0 && $order->paymentStatus->name == 'Đã Thanh Toán')
                         <div class="mb-4">
                             <h6 class="mb-2">Lịch sử thanh toán</h6>
                             <div class="border rounded p-3">

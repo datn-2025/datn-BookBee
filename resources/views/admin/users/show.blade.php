@@ -123,7 +123,7 @@
                                                                                         @php
                                                                                             $paymentStatusClass = match($donHang->paymentStatus->name) {
                                                                                                 'Chưa thanh toán' => 'bg-warning',
-                                                                                                'Đã thanh toán' => 'bg-success',
+                                                                                                'Đã Thanh Toán' => 'bg-success',
                                                                                                 'Đã hoàn tiền' => 'bg-info',
                                                                                                 'Thanh toán thất bại' => 'bg-danger',
                                                                                                 'Đang xử lý' => 'bg-primary',
