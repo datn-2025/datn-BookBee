@@ -26,11 +26,13 @@ class Book extends Model
         'cover_image',
         'isbn',
         'publication_date',
-        'page_count'
+        'page_count',
+        'release_date'
     ];
 
     protected $casts = [
         'publication_date' => 'date',
+        'release_date' => 'date',
         'page_count' => 'integer'
     ];
 
