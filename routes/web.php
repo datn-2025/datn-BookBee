@@ -378,4 +378,3 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::delete('collections/{id}/force', [CollectionController::class, 'forceDelete'])->name('collections.forceDelete');
     Route::get('collections-trash', [CollectionController::class, 'trash'])->name('collections.trash');
     Route::post('collections/{id}/restore', [CollectionController::class, 'restore'])->name('collections.restore');
-});
