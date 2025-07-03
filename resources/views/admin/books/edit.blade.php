@@ -285,6 +285,12 @@
                                     <input type="date" name="publication_date" class="form-control"
                                         id="publication_date" value="{{ old('publication_date', $book->publication_date ? $book->publication_date->format('Y-m-d') : '') }}">
                                 </div>
+                                <div class="mb-3">
+                                    <label for="release_date" class="form-label">Ngày ra mắt</label>
+                                    <input type="date" name="release_date" class="form-control"
+                                        id="release_date" value="{{ old('release_date', $book->release_date ? $book->release_date->format('Y-m-d') : '') }}">
+                                    <small class="text-muted">Ngày sách chính thức ra mắt thị trường</small>
+                                </div>
                             </div>
                         </div>
 
