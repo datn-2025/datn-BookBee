@@ -332,9 +332,30 @@
                     </h3>
 
                     <!-- Author -->
-                    <p class="text-adidas-gray text-sm font-semibold uppercase tracking-wider mb-4">
+                    <p class="text-adidas-gray text-sm font-semibold uppercase tracking-wider mb-3">
                       BY {{ strtoupper($book->author_name ?? 'Unknown Author') }}
                     </p>
+
+                    <!-- Release Date -->
+                    @if($book->release_date)
+                    <div class="mb-3">
+                      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-r-lg p-3">
+                        <div class="flex items-center space-x-3">
+                          <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                              </svg>
+                            </div>
+                          </div>
+                          <div class="flex-1">
+                            <p class="text-xs text-blue-600 font-medium uppercase tracking-wide">Ngày ra mắt</p>
+                            <p class="text-sm text-blue-800 font-bold">{{ $book->release_date->format('d/m/Y') }}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    @endif
 
                     <!-- Rating -->
                     <div class="flex items-center justify-between mb-6">
