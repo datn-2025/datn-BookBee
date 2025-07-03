@@ -542,8 +542,13 @@ class OrderController extends Controller
                 DB::rollBack();
                 return redirect()->back()->with('error', 'Lỗi hệ thống khi hủy đơn hàng.');
             }
-            $order->order_status_id = $cancelledStatus->id;
-            $order->save();
+            
+            // Cập nhật đơn hàng với thông tin hủy
+            $order->update([
+                'order_status_id' => $cancelledStatus->id,
+                'cancelled_at' => now(),
+                'cancellation_reason' => implode(", ", $selectedReasons)
+            ]);
 
             DB::commit();
 
@@ -708,7 +713,9 @@ class OrderController extends Controller
                 // Cập nhật trạng thái đơn hàng thành "Đã hủy"
                 $order->update([
                     'order_status_id' => $cancelledStatus->id,
-                    'payment_status_id' => $failedPaymentStatus->id
+                    'payment_status_id' => $failedPaymentStatus->id,
+                    'cancelled_at' => now(),
+                    'cancellation_reason' => 'Thanh toán VNPay thất bại - Mã lỗi: ' . $vnp_ResponseCode
                 ]);
 
                 // Tạo bản ghi hủy đơn hàng
