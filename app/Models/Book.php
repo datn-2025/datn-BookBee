@@ -101,6 +101,12 @@ class Book extends Model
     {
         return $this->hasMany(BookGift::class);
     }
+    // Để tương thích với các đoạn code sử dụng authors() thay vì author()
+    public function authors()
+    {
+        return $this->author();
+    }
+    // Để tương thích với các đoạn code sử dụng author (không phải authors)
     public function author()
     {
         return $this->belongsToMany(Author::class, 'author_books');
