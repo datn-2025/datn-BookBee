@@ -148,6 +148,7 @@ class BookController extends Controller
             'author_id' => 'required|exists:authors,id',
             'brand_id' => 'required|exists:brands,id',
             'publication_date' => 'nullable|date',
+            'release_date' => 'nullable|date',
             'cover_image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ], [
@@ -182,16 +183,23 @@ class BookController extends Controller
             'status',
             'isbn',
             'publication_date',
+            'release_date',
             'page_count'
         ]);
 
-        // dd($request->hasFile('cover_image'));
+        // Tự động cập nhật trạng thái dựa vào ngày ra mắt
+        if (!empty($data['release_date'])) {
+            $releaseDate = \Carbon\Carbon::parse($data['release_date']);
+            if ($releaseDate->greaterThan(now())) {
+                $data['status'] = 'Sắp Ra Mắt';
+            } else {
+                $data['status'] = 'Còn Hàng';
+            }
+        }
 
         $slug = Str::slug($data['title']);
         $data['slug'] = $slug;
 
-        
-        
         $book = Book::create($data);
         // Xử lý ảnh chính
         if ($request->hasFile('cover_image')) {
@@ -365,6 +373,7 @@ class BookController extends Controller
             'author_id' => 'required|exists:authors,id',
             'brand_id' => 'required|exists:brands,id',
             'publication_date' => 'nullable|date',
+            'release_date' => 'nullable|date',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ], [
@@ -388,6 +397,7 @@ class BookController extends Controller
             ]);
         }
 
+
         $data = $request->only([
             'title',
             'description',
@@ -397,8 +407,19 @@ class BookController extends Controller
             'status',
             'isbn',
             'publication_date',
+            'release_date',
             'page_count'
         ]);
+
+        // Tự động cập nhật trạng thái dựa vào ngày ra mắt
+        if (!empty($data['release_date'])) {
+            $releaseDate = \Carbon\Carbon::parse($data['release_date']);
+            if ($releaseDate->greaterThan(now())) {
+                $data['status'] = 'Sắp Ra Mắt';
+            } else {
+                $data['status'] = 'Còn Hàng';
+            }
+        }
 
         // Kiểm tra slug trùng lặp trước khi validate
         $title = $request->input('title');
