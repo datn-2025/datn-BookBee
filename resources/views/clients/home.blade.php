@@ -491,7 +491,12 @@
                                 <h3 class="text-3xl md:text-4xl font-bold mt-2 mb-4 leading-tight">
                                     {{ $featuredBooks->first()?->title ?? 'Sách nổi bật' }}
                                 </h3>
-                                <p class="text-white/90 mb-6">{{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
+                                @php
+                                    $authorDisplay = $book->author instanceof \Illuminate\Support\Collection
+                                        ? $book->author->pluck('name')->join(', ')
+                                        : ($book->author?->name ?? 'N/A');
+                                @endphp
+                                <p class="text-white/90 mb-6">{{ $authorDisplay }}</p>
                                 </p>
                                 <p class="text-2xl font-bold text-white">
                                     {{ number_format($featuredBooks->first()?->formats->first()?->price ?? 0, 0, ',', '.') }}₫
@@ -522,6 +527,11 @@
 
                             <div class="space-y-4">
                                 @foreach ($latestBooks->take(3) as $book)
+                                    @php
+                                        $authorDisplay = $book->author instanceof \Illuminate\Support\Collection
+                                            ? $book->author->pluck('name')->join(', ')
+                                            : ($book->author?->name ?? 'N/A');
+                                    @endphp
                                     <div onclick="window.location='{{ route('books.show', ['slug' => $book->slug]) }}'"
                                         class="flex items-center gap-4 p-3 hover:bg-gray-50 transition-colors duration-200 cursor-pointer group">
                                         <img src="{{ asset('storage/' . ($book->images->first()->image_url ?? 'default.jpg')) }}"
@@ -531,8 +541,7 @@
                                                 class="font-semibold text-sm text-black group-hover:text-gray-600 transition-colors">
                                                 {{ Str::limit($book->title, 40) }}
                                             </h4>
-                                            <p class="text-xs text-gray-500 mt-1">{{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
-                                            </p>
+                                            <p class="text-xs text-gray-500 mt-1">{{ $authorDisplay }}</p>
                                             <p class="text-sm font-bold text-black mt-1">
                                                 {{ number_format($book->formats->first()->price ?? 0, 0, ',', '.') }}₫
                                             </p>
@@ -563,8 +572,12 @@
                                                 class="font-semibold text-sm text-black group-hover:text-gray-600 transition-colors">
                                                 {{ Str::limit($book->title, 40) }}
                                             </h4>
-                                            <p class="text-xs text-gray-500 mt-1">{{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
-                                            </p>
+                                            @php
+                                                $authorDisplay = $book->author instanceof \Illuminate\Support\Collection
+                                                    ? $book->author->pluck('name')->join(', ')
+                                                    : ($book->author?->name ?? 'N/A');
+                                            @endphp
+                                            <p class="text-xs text-gray-500 mt-1">{{ $authorDisplay }}</p>
                                             <div class="flex items-center gap-2 mt-1">
                                                 <div class="flex text-yellow-400 text-xs">
                                                     @for ($i = 0; $i < 5; $i++)
@@ -622,8 +635,12 @@
                                             alt="{{ $book->title }}" class="w-16 h-20 object-cover">
                                         <div class="flex-1">
                                             <h4 class="font-semibold text-sm mb-1">{{ Str::limit($book->title, 30) }}</h4>
-                                            <p class="text-xs text-white/80 mb-2">{{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
-                                            </p>
+                                            @php
+                                                $authorDisplay = $book->author instanceof \Illuminate\Support\Collection
+                                                    ? $book->author->pluck('name')->join(', ')
+                                                    : ($book->author?->name ?? 'N/A');
+                                            @endphp
+                                            <p class="text-xs text-white/80 mb-2">{{ $authorDisplay }}</p>
                                             <div class="flex items-center gap-2">
                                                 <span class="line-through text-white/60 text-sm">
                                                     {{ number_format($oldPrice, 0, ',', '.') }}₫
@@ -723,7 +740,12 @@
                         </div>
                         <div class="p-4 bg-white flex flex-col flex-1 justify-between h-[180px]">
                             <h3 class="text-base font-semibold text-gray-800">{{ $book->title }}</h3>
-                            <p class="text-sm text-gray-500">{{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
+                            @php
+                                $authorDisplay = $book->author instanceof \Illuminate\Support\Collection
+                                    ? $book->author->pluck('name')->join(', ')
+                                    : ($book->author?->name ?? 'N/A');
+                            @endphp
+                            <p class="text-sm text-gray-500">{{ $authorDisplay }}
                             <p class="text-red-500 font-bold">
                                 Giá tiền {{ number_format($book->formats->first()->price ?? 0, 0, ',', '.') }}₫
                             </p>
@@ -740,7 +762,7 @@
                                 {{ $book->title }}
                             </h3>
                             <p class="text-sm text-gray-500 uppercase tracking-wide">
-                                {{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
+                                {{ $authorDisplay }}
                             </p>
                             <div class="flex items-center justify-between">
                                 <p class="text-xl font-bold text-black">
@@ -785,8 +807,7 @@
             <div
                 class="absolute top-1/2 left-1/2 w-2 h-32 bg-white/10 transform -translate-x-1/2 -translate-y-1/2 rotate-45">
             </div>
-        @endif
-    </div>
+        </div>
 </section>
 
 <!-- SÁCH SẮP RA MẮT Section -->
@@ -852,8 +873,13 @@
                         <h3 class="font-bold text-lg text-black group-hover:opacity-70 transition-opacity line-clamp-2">
                             {{$book->title}}
                         </h3>
+                        @php
+                            $authorDisplay = $book->author instanceof \Illuminate\Support\Collection
+                                ? $book->author->pluck('name')->join(', ')
+                                : ($book->author?->name ?? 'Không rõ');
+                        @endphp
                         <p class="text-sm text-gray-500 uppercase tracking-wide">
-                            {{$book->author?->name ?? 'Không rõ'}}
+                            {{ $authorDisplay }}
                         </p>
                         @if($book->release_date)
                             <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-r-lg p-2">
