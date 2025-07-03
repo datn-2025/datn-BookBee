@@ -438,6 +438,12 @@
                                 <span class="text-gray-600 font-medium">XUẤT BẢN</span>
                                 <span class="text-black font-semibold">{{ $book->publication_date }}</span>
                             </div>
+                            @if($book->release_date)
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-blue-600 font-medium">RA MẮT</span>
+                                    <span class="text-blue-600 font-bold">{{ $book->release_date->format('d/m/Y') }}</span>
+                                </div>
+                            @endif
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600 font-medium">SỐ TRANG</span>
                                 <span class="text-black font-semibold">{{ $book->page_count }}</span>
