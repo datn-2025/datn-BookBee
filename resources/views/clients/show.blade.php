@@ -422,7 +422,12 @@
                         <div class="space-y-3">
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600 font-medium">TÁC GIẢ</span>
-                                <span class="text-black font-semibold">{{ $book->author->name ?? 'Không rõ' }}</span>
+                                @php
+                                    $authorDisplay = $book->author instanceof \Illuminate\Support\Collection
+                                        ? $book->author->pluck('name')->join(', ')
+                                        : ($book->author?->name ?? 'Không rõ');
+                                @endphp
+                                <span class="text-black font-semibold">{{ $authorDisplay }}</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600 font-medium">THƯƠNG HIỆU</span>
@@ -871,7 +876,12 @@
                                     </a>
                                 </h3>
                                 <p class="text-sm text-gray-600 uppercase tracking-wide font-medium">
-                                    {{ $related->author->name ?? 'KHÔNG RÕ TÁC GIẢ' }}
+                                    @php
+                                        $authorDisplay = $related->author instanceof \Illuminate\Support\Collection
+                                            ? $related->author->pluck('name')->join(', ')
+                                            : ($related->author?->name ?? 'KHÔNG RÕ TÁC GIẢ');
+                                    @endphp
+                                    {{ $authorDisplay }}
                                 </p>
                             </div>
 
@@ -1026,7 +1036,12 @@
                                         <h4 id="preorder_book_title" class="font-bold text-lg text-black mb-2">{{ $book->title }}</h4>
                                         <p class="text-sm text-gray-600">
                                             <span class="font-semibold">Tác giả:</span> 
-                                            <span id="preorder_book_author">{{ $book->author->name ?? 'Không rõ' }}</span>
+                                            @php
+                                                $authorDisplay = $book->author instanceof \Illuminate\Support\Collection
+                                                    ? $book->author->pluck('name')->join(', ')
+                                                    : ($book->author?->name ?? 'Không rõ');
+                                            @endphp
+                                            <span id="preorder_book_author">{{ $authorDisplay }}</span>
                                         </p>
                                         <p class="text-sm text-gray-600">
                                             <span class="font-semibold">Nhà xuất bản:</span> 
