@@ -56,6 +56,13 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
+        // Lấy sách sắp ra mắt
+        $upcomingBooks = Book::with(['author', 'images', 'formats'])
+            ->where('status', 'Sắp Ra Mắt')
+            ->orderBy('publication_date', 'desc')
+            ->take(4)
+            ->get();
+
         // Lấy 10 đánh giá mới nhất
         $reviews = Review::with('user', 'book')
             ->orderBy('rating', 'desc')
@@ -63,7 +70,7 @@ class HomeController extends Controller
             ->take(10)
             ->get();
         $articles = NewsArticle::latest()->take(4)->get();
-        return view('clients.home', compact('books', 'categories', 'featuredBooks', 'latestBooks', 'bestReviewedBooks', 'saleBooks', 'reviews', 'articles'));
+        return view('clients.home', compact('books', 'categories', 'featuredBooks', 'latestBooks', 'bestReviewedBooks', 'saleBooks', 'upcomingBooks', 'reviews', 'articles'));
     }
 
     public function show($slug)

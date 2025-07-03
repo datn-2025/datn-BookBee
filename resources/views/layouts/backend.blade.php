@@ -463,6 +463,20 @@
                             </div>
                         </li>
 
+                        <!-- Quản lý đặt trước -->
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="#sidebarPreorders" data-bs-toggle="collapse"
+                                aria-expanded="false">
+                                <i class="ri-bookmark-line"></i> <span data-key="t-preorders">Quản lý đặt trước</span>
+                            </a>
+                            <div class="collapse menu-dropdown" id="sidebarPreorders">
+                                <ul class="nav nav-sm flex-column">
+                                    <li><a href="{{ route('admin.preorders.index') }}" class="nav-link">Danh sách đặt trước</a></li>
+                                    <li><a href="{{ route('admin.preorders.export') }}" class="nav-link">Xuất báo cáo</a></li>
+                                </ul>
+                            </div>
+                        </li>
+
                         <!-- Khuyến mãi -->
                         <li class="nav-item">
                             <a class="nav-link menu-link" href="#sidebarAdvanceUI" data-bs-toggle="collapse"

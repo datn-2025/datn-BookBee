@@ -607,10 +607,17 @@
                     </div>
                     <!-- Enhanced Add to Cart Button -->
                     <div class="space-y-4">
-                        <button id="addToCartBtn" class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center">
-                            <i class="fas fa-shopping-bag mr-3"></i>
-                            THÊM VÀO GIỎ HÀNG 
-                        </button>
+                        @if($book->status === 'Sắp Ra Mắt')
+                            <button id="preOrderBtn" class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center">
+                                <i class="fas fa-clock mr-3"></i>
+                                ĐẶT SÁCH TRƯỚC
+                            </button>
+                        @else
+                            <button id="addToCartBtn" class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center">
+                                <i class="fas fa-shopping-bag mr-3"></i>
+                                THÊM VÀO GIỎ HÀNG 
+                            </button>
+                        @endif
                         
                         <!-- Wishlist Button -->
                         <button class="wishlist-btn w-full h-14 border-2 border-black text-black font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center">
@@ -936,6 +943,228 @@
             </div>
         </div>
     </section>
+
+    <!-- Pre-order Modal -->
+    <div id="preOrderModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 class="text-2xl font-bold text-black uppercase tracking-wider">ĐẶT SÁCH TRƯỚC</h2>
+                <button onclick="closePreOrderForm()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6">
+                <form id="preOrderForm">
+                    @csrf
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Left Side - Customer Information -->
+                        <div class="space-y-6">
+                            <h3 class="text-lg font-bold text-black uppercase tracking-wide border-b border-gray-200 pb-2">
+                                THÔNG TIN KHÁCH HÀNG
+                            </h3>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="customer_name" class="block text-sm font-bold text-black uppercase tracking-wider mb-2">
+                                        Họ và tên <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="customer_name" name="customer_name" required
+                                           class="w-full px-4 py-3 border-2 border-gray-300 focus:border-black transition-colors duration-300 rounded-none"
+                                           placeholder="Nhập họ và tên">
+                                </div>
+
+                                <div>
+                                    <label for="customer_email" class="block text-sm font-bold text-black uppercase tracking-wider mb-2">
+                                        Email <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="email" id="customer_email" name="customer_email" required
+                                           class="w-full px-4 py-3 border-2 border-gray-300 focus:border-black transition-colors duration-300 rounded-none"
+                                           placeholder="Nhập địa chỉ email">
+                                </div>
+
+                                <div>
+                                    <label for="customer_phone" class="block text-sm font-bold text-black uppercase tracking-wider mb-2">
+                                        Số điện thoại <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="tel" id="customer_phone" name="customer_phone" required
+                                           class="w-full px-4 py-3 border-2 border-gray-300 focus:border-black transition-colors duration-300 rounded-none"
+                                           placeholder="Nhập số điện thoại">
+                                </div>
+
+                                <div>
+                                    <label for="customer_address" class="block text-sm font-bold text-black uppercase tracking-wider mb-2">
+                                        Địa chỉ <span class="text-red-500">*</span>
+                                    </label>
+                                    <textarea id="customer_address" name="customer_address" required rows="3"
+                                              class="w-full px-4 py-3 border-2 border-gray-300 focus:border-black transition-colors duration-300 rounded-none resize-none"
+                                              placeholder="Nhập địa chỉ chi tiết"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Side - Book Information -->
+                        <div class="space-y-6">
+                            <h3 class="text-lg font-bold text-black uppercase tracking-wide border-b border-gray-200 pb-2">
+                                THÔNG TIN SÁCH
+                            </h3>
+                            
+                            <div class="bg-gray-50 p-4 rounded">
+                                <!-- Book Image and Title -->
+                                <div class="flex items-start space-x-4 mb-4">
+                                    <img id="preorder_book_image" src="{{ asset('storage/images/' . $book->image) }}" 
+                                         alt="{{ $book->title }}" class="w-20 h-28 object-cover border">
+                                    <div class="flex-1">
+                                        <h4 id="preorder_book_title" class="font-bold text-lg text-black mb-2">{{ $book->title }}</h4>
+                                        <p class="text-sm text-gray-600">
+                                            <span class="font-semibold">Tác giả:</span> 
+                                            <span id="preorder_book_author">{{ $book->author->name ?? 'Không rõ' }}</span>
+                                        </p>
+                                        <p class="text-sm text-gray-600">
+                                            <span class="font-semibold">Nhà xuất bản:</span> 
+                                            <span id="preorder_book_publisher">{{ $book->publisher->name ?? 'Không rõ' }}</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Book Product Variants -->
+                                <div class="space-y-4 mb-4 pt-4 border-t border-gray-200">
+                                    <!-- Book Format Selection -->
+                                    <div>
+                                        <label for="modal_book_format" class="block text-sm font-semibold text-black mb-2">Định dạng sách:</label>
+                                        <select id="modal_book_format" name="book_format_id" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-black transition-colors duration-300">
+                                            @foreach ($book->formats as $format)
+                                                <option value="{{ $format->id }}" data-price="{{ $format->price }}" data-stock="{{ $format->stock }}" data-discount="{{ $format->discount ?? 0 }}">
+                                                    {{ $format->format_name }}
+                                                    @if($format->discount > 0) (Giảm {{ $format->discount }}%) @endif
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Dynamic Attributes from Database -->
+                                    @if ($book->attributeValues->count())
+                                        @php
+                                            $groupedAttributes = $book->attributeValues->groupBy(function($item) {
+                                                return $item->attributeValue->attribute_id ?? null;
+                                            })->filter();
+                                        @endphp
+                                        @foreach ($groupedAttributes as $attributeId => $attributeValues)
+                                            @php
+                                                $attribute = $attributeValues->first()->attributeValue->attribute ?? null;
+                                            @endphp
+                                            @if($attribute)
+                                                <div>
+                                                    <label for="modal_attribute_{{ $attributeId }}" class="block text-sm font-semibold text-black mb-2">
+                                                        {{ $attribute->name }}:
+                                                    </label>
+                                                    <select name="modal_attributes[{{ $attributeId }}]" id="modal_attribute_{{ $attributeId }}" 
+                                                            class="modal-attribute-select w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-black transition-colors duration-300">
+                                                        @foreach ($attributeValues as $attrVal)
+                                                            @if($attrVal->attributeValue)
+                                                                <option value="{{ $attrVal->attributeValue->id }}" data-price="{{ $attrVal->extra_price ?? 0 }}">
+                                                                    {{ $attrVal->attributeValue->value }}
+                                                                    @if($attrVal->extra_price > 0) (+{{ number_format($attrVal->extra_price, 0, ',', '.') }}₫) @endif
+                                                                </option>
+                                                            @endif
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    @endif
+
+                                    <!-- Always Show Common Static Attributes -->
+                                    <div class="grid grid-cols-1 gap-3">
+                                        <div>
+                                            <label for="modal_book_size" class="block text-sm font-semibold text-black mb-2">Kích thước:</label>
+                                            <select id="modal_book_size" name="book_size" class="modal-attribute-select w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-black transition-colors duration-300">
+                                                <option value="14x20cm" data-price="0">14x20cm (Tiêu chuẩn)</option>
+                                                <option value="16x24cm" data-price="5000">16x24cm (+5,000₫)</option>
+                                                <option value="19x27cm" data-price="10000">19x27cm (+10,000₫)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="modal_book_language" class="block text-sm font-semibold text-black mb-2">Ngôn ngữ:</label>
+                                            <select id="modal_book_language" name="book_language" class="modal-attribute-select w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-black transition-colors duration-300">
+                                                <option value="vietnamese" data-price="0">Tiếng Việt</option>
+                                                <option value="english" data-price="0">Tiếng Anh</option>
+                                                <option value="bilingual" data-price="15000">Song ngữ (+15,000₫)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="modal_book_cover" class="block text-sm font-semibold text-black mb-2">Loại bìa:</label>
+                                            <select id="modal_book_cover" name="book_cover" class="modal-attribute-select w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-black transition-colors duration-300">
+                                                <option value="soft" data-price="0">Bìa mềm</option>
+                                                <option value="hard" data-price="20000">Bìa cứng (+20,000₫)</option>
+                                                <option value="special" data-price="35000">Bìa đặc biệt (+35,000₫)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Quantity -->
+                                <div class="mb-4">
+                                    <label for="preorder_quantity" class="block text-sm font-bold text-black uppercase tracking-wider mb-2">
+                                        Số lượng
+                                    </label>
+                                    <div class="flex items-center border-2 border-gray-300 w-fit">
+                                        <button type="button" onclick="changePreorderQuantity(-1)" 
+                                                class="w-12 h-12 border-r border-gray-300 flex items-center justify-center font-bold text-lg hover:bg-gray-100">−</button>
+                                        <input type="number" id="preorder_quantity" name="quantity" value="1" min="1" max="10"
+                                               class="w-16 h-12 text-center text-lg font-bold border-none outline-none">
+                                        <button type="button" onclick="changePreorderQuantity(1)"
+                                                class="w-12 h-12 border-l border-gray-300 flex items-center justify-center font-bold text-lg hover:bg-gray-100">+</button>
+                                    </div>
+                                </div>
+
+                                <!-- Price -->
+                                <div class="border-t border-gray-200 pt-4">
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-600">Giá sách:</span>
+                                            <span id="preorder_book_price" class="text-lg font-bold text-black">
+                                                {{ number_format($book->formats->first()->price ?? 0, 0, ',', '.') }}₫
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-600">Phí vận chuyển:</span>
+                                            <span id="preorder_shipping_fee" class="text-lg font-bold text-black">30,000₫</span>
+                                        </div>
+                                        <div class="border-t border-gray-200 pt-3">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-lg font-bold text-black">Tổng tiền:</span>
+                                                <span id="preorder_total_price" class="text-2xl font-bold text-red-600">
+                                                    {{ number_format(($book->formats->first()->price ?? 0) + 30000, 0, ',', '.') }}₫
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="preorder_unit_price" value="{{ $book->formats->first()->price ?? 0 }}">
+                                    <input type="hidden" id="preorder_shipping_cost" value="30000">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex items-center justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                        <button type="button" onclick="closePreOrderForm()" 
+                                class="px-6 py-3 border-2 border-gray-300 text-gray-700 font-bold uppercase tracking-wider hover:bg-gray-100 transition-colors duration-300">
+                            HỦY
+                        </button>
+                        <button type="submit" 
+                                class="px-8 py-3 bg-black text-white font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors duration-300">
+                            XÁC NHẬN ĐẶT TRƯỚC
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </div>
 @endsection
 
@@ -1206,6 +1435,14 @@
             });
         }
 
+        // Handle pre-order button
+        const preOrderBtn = document.getElementById('preOrderBtn');
+        if (preOrderBtn) {
+            preOrderBtn.addEventListener('click', function() {
+                showPreOrderForm();
+            });
+        }
+
         // Enhanced show more description functionality
         const showMoreBtn = document.getElementById('showMoreBtn');
         const descriptionDiv = document.getElementById('bookDescription');
@@ -1243,6 +1480,16 @@
 
         // Initialize price and stock on page load
         updatePriceAndStock();
+
+        // Check if URL has #preorder hash to auto-open modal
+        if (window.location.hash === '#preorder') {
+            // Wait a bit for page to fully load
+            setTimeout(() => {
+                showPreOrderForm();
+                // Clear the hash from URL
+                history.replaceState(null, null, ' ');
+            }, 500);
+        }
     });
 
     // Add to cart function
@@ -1518,60 +1765,339 @@
         });
     }
 
-    // Xử lý hiển thị nút đọc thử cho ebook
-    document.getElementById('bookFormatSelect').addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const formatName = selectedOption.text.toLowerCase();
-        const previewSection = document.getElementById('previewSection');
+    // Show pre-order form modal
+    function showPreOrderForm() {
+        const modal = document.getElementById('preOrderModal');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
         
-        if (formatName.includes('ebook')) {
-            previewSection.classList.remove('hidden');
+        // Pre-fill user information if logged in
+        @auth
+            document.getElementById('customer_name').value = '{{ auth()->user()->name ?? "" }}';
+            document.getElementById('customer_email').value = '{{ auth()->user()->email ?? "" }}';
+            document.getElementById('customer_phone').value = '{{ auth()->user()->phone ?? "" }}';
+        @endauth
+        
+        // Wait a moment for modal to be fully displayed
+        setTimeout(() => {
+            // Sync selections from main form to modal
+            syncSelectionsToModal();
+            
+            // Set up modal event listeners
+            setupModalEventListeners();
+            
+            // Update initial price based on synced selections
+            updateModalPrice();
+        }, 100);
+    }
+
+    // Sync selections from main form to modal
+    function syncSelectionsToModal() {
+        // Sync format selection
+        const mainFormatSelect = document.getElementById('bookFormatSelect');
+        const modalFormatSelect = document.getElementById('modal_book_format');
+        
+        if (mainFormatSelect && modalFormatSelect && mainFormatSelect.value) {
+            modalFormatSelect.value = mainFormatSelect.value;
+        }
+        
+        // Sync attribute selections
+        const mainAttributeSelects = document.querySelectorAll('[name^="attributes["]');
+        mainAttributeSelects.forEach(mainSelect => {
+            if (mainSelect.value) {
+                // Extract attribute ID from name like "attributes[123]"
+                const attributeMatch = mainSelect.name.match(/attributes\[(\d+)\]/);
+                if (attributeMatch) {
+                    const attributeId = attributeMatch[1];
+                    const modalSelect = document.getElementById(`modal_attribute_${attributeId}`);
+                    
+                    if (modalSelect) {
+                        // Try to find the exact value match first
+                        const exactMatch = Array.from(modalSelect.options).find(option => 
+                            option.value === mainSelect.value
+                        );
+                        
+                        if (exactMatch) {
+                            modalSelect.value = mainSelect.value;
+                        }
+                    }
+                }
+            }
+        });
+        
+        // For static attributes, set default values
+        const staticSelects = document.querySelectorAll('.modal-attribute-select[name^="book_"]');
+        staticSelects.forEach(select => {
+            if (select.options.length > 0 && !select.value) {
+                select.selectedIndex = 0;
+            }
+        });
+    }
+
+    // Setup event listeners for modal selects
+    function setupModalEventListeners() {
+        // Modal format change
+        const modalFormatSelect = document.getElementById('modal_book_format');
+        if (modalFormatSelect) {
+            modalFormatSelect.addEventListener('change', updateModalPrice);
+        }
+        
+        // Modal attribute changes
+        const modalAttributeSelects = document.querySelectorAll('.modal-attribute-select');
+        modalAttributeSelects.forEach(select => {
+            select.addEventListener('change', updateModalPrice);
+        });
+    }
+
+    // Update modal price based on selections
+    function updateModalPrice() {
+        let finalPrice = 0;
+        
+        // Get base price from format
+        const modalFormatSelect = document.getElementById('modal_book_format');
+        if (modalFormatSelect && modalFormatSelect.selectedOptions[0]) {
+            const basePrice = parseFloat(modalFormatSelect.selectedOptions[0].dataset.price) || 0;
+            const discount = parseFloat(modalFormatSelect.selectedOptions[0].dataset.discount) || 0;
+            
+            // Apply discount if any
+            if (discount > 0) {
+                finalPrice = basePrice * (1 - discount / 100);
+            } else {
+                finalPrice = basePrice;
+            }
         } else {
-            previewSection.classList.add('hidden');
+            // Use default format price
+            finalPrice = {{ $book->formats->first()->price ?? 0 }};
+        }
+        
+        // Add attribute extra costs
+        const modalAttributeSelects = document.querySelectorAll('.modal-attribute-select');
+        modalAttributeSelects.forEach(select => {
+            if (select.selectedOptions[0]) {
+                const extraPrice = parseFloat(select.selectedOptions[0].dataset.price) || 0;
+                finalPrice += extraPrice;
+            }
+        });
+        
+        // Update unit price
+        document.getElementById('preorder_unit_price').value = Math.round(finalPrice);
+        
+        // Update total
+        updatePreorderTotal();
+    }
+
+    // Close pre-order form modal
+    function closePreOrderForm() {
+        const modal = document.getElementById('preOrderModal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        
+        // Reset form
+        document.getElementById('preOrderForm').reset();
+        document.getElementById('preorder_quantity').value = 1;
+        updatePreorderTotal();
+    }
+
+    // Change preorder quantity
+    function changePreorderQuantity(change) {
+        const quantityInput = document.getElementById('preorder_quantity');
+        const currentValue = parseInt(quantityInput.value) || 1;
+        const newValue = Math.max(1, Math.min(10, currentValue + change));
+        quantityInput.value = newValue;
+        updatePreorderTotal();
+    }
+
+    // Update preorder total price
+    function updatePreorderTotal() {
+        const quantity = parseInt(document.getElementById('preorder_quantity').value) || 1;
+        const unitPrice = parseInt(document.getElementById('preorder_unit_price').value) || 0;
+        const shippingCost = parseInt(document.getElementById('preorder_shipping_cost').value) || 30000;
+        
+        const bookTotal = quantity * unitPrice;
+        const totalPrice = bookTotal + shippingCost;
+        
+        // Update book price display
+        document.getElementById('preorder_book_price').textContent = 
+            new Intl.NumberFormat('vi-VN').format(bookTotal) + '₫';
+            
+        // Update total price display
+        document.getElementById('preorder_total_price').textContent = 
+            new Intl.NumberFormat('vi-VN').format(totalPrice) + '₫';
+    }
+
+    // Handle preorder form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const preOrderForm = document.getElementById('preOrderForm');
+        if (preOrderForm) {
+            preOrderForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitPreOrder();
+            });
+        }
+
+        // Add event listener for quantity input
+        const quantityInput = document.getElementById('preorder_quantity');
+        if (quantityInput) {
+            quantityInput.addEventListener('input', updatePreorderTotal);
+        }
+
+        // Close modal when clicking outside
+        const modal = document.getElementById('preOrderModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closePreOrderForm();
+                }
+            });
         }
     });
 
-    // Xử lý modal đọc thử lấy đúng file sample_file_url
-    const previewBtn = document.querySelector('#previewSection a');
-    const previewModal = document.getElementById('previewModal');
-    const closePreviewModal = document.getElementById('closePreviewModal');
-    const previewContent = document.getElementById('previewContent');
-    const previewLimitNotice = document.getElementById('previewLimitNotice');
-    const previewIframe = document.getElementById('previewIframe');
-    const formatSelect = document.getElementById('bookFormatSelect');
+    // Submit pre-order
+    function submitPreOrder() {
+        const form = document.getElementById('preOrderForm');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'ĐANG XỬ LÝ...';
 
-    if (previewBtn && previewModal && closePreviewModal && formatSelect && previewIframe) {
-        previewBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const selectedOption = formatSelect.options[formatSelect.selectedIndex];
-            const sampleUrl = selectedOption.getAttribute('data-sample-url');
-            const allowSample = selectedOption.getAttribute('data-allow-sample') === '1';
-            if (allowSample && sampleUrl) {
-                previewIframe.src = sampleUrl;
-                previewModal.classList.remove('hidden');
-                previewLimitNotice.classList.add('hidden');
-                previewContent.scrollTop = 0;
-            } else {
-                alert('Không có file đọc thử cho định dạng này!');
+        // Get selected format
+        const modalFormatSelect = document.getElementById('modal_book_format');
+        const selectedFormat = modalFormatSelect ? modalFormatSelect.value : null;
+        const selectedFormatName = modalFormatSelect ? modalFormatSelect.selectedOptions[0]?.textContent.trim() : '';
+        
+        // Get selected attributes
+        const selectedAttributes = {};
+        const selectedAttributesDisplay = {};
+        
+        // Get database attributes
+        const modalAttributeSelects = document.querySelectorAll('.modal-attribute-select[name^="modal_attributes["]');
+        modalAttributeSelects.forEach(select => {
+            if (select.value) {
+                const attributeId = select.name.match(/\[(\d+)\]/)?.[1];
+                selectedAttributes[attributeId] = select.value;
+                selectedAttributesDisplay[select.previousElementSibling.textContent.replace(':', '')] = 
+                    select.selectedOptions[0]?.textContent.trim() || '';
             }
         });
-        closePreviewModal.addEventListener('click', function() {
-            previewModal.classList.add('hidden');
-            previewIframe.src = '';
-        });
-        previewModal.addEventListener('click', function(e) {
-            if (e.target === previewModal) {
-                previewModal.classList.add('hidden');
-                previewIframe.src = '';
+        
+        // Get static attributes
+        const staticAttributeSelects = document.querySelectorAll('.modal-attribute-select[name^="book_"]');
+        staticAttributeSelects.forEach(select => {
+            if (select.value) {
+                const attributeName = select.name.replace('book_', '').replace('_', ' ');
+                const displayName = attributeName.charAt(0).toUpperCase() + attributeName.slice(1);
+                selectedAttributesDisplay[displayName] = select.selectedOptions[0]?.textContent.trim() || '';
             }
         });
-        previewContent.addEventListener('scroll', function() {
-            const scrollBottom = previewContent.scrollTop + previewContent.clientHeight;
-            const scrollHeight = previewContent.scrollHeight;
-            if (scrollBottom >= scrollHeight - 10) {
-                previewLimitNotice.classList.remove('hidden');
+
+        // Get form data
+        const formData = {
+            book_id: '{{ $book->id }}',
+            book_title: '{{ $book->title }}',
+            customer_name: document.getElementById('customer_name').value,
+            customer_email: document.getElementById('customer_email').value,
+            customer_phone: document.getElementById('customer_phone').value,
+            customer_address: document.getElementById('customer_address').value,
+            quantity: parseInt(document.getElementById('preorder_quantity').value),
+            unit_price: parseInt(document.getElementById('preorder_unit_price').value),
+            shipping_cost: parseInt(document.getElementById('preorder_shipping_cost').value),
+            book_format_id: selectedFormat,
+            book_format_name: selectedFormatName,
+            attributes: selectedAttributes,
+            attributes_display: selectedAttributesDisplay,
+            book_total: parseInt(document.getElementById('preorder_quantity').value) * 
+                       parseInt(document.getElementById('preorder_unit_price').value),
+            total_price: (parseInt(document.getElementById('preorder_quantity').value) * 
+                         parseInt(document.getElementById('preorder_unit_price').value)) +
+                        parseInt(document.getElementById('preorder_shipping_cost').value)
+        };
+
+        // Log form data for debugging
+        console.log('Pre-order data:', formData);
+
+        // Send to server
+        fetch('{{ route("preorder.store") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Restore button
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            
+            if (data.success) {
+                let successMessage = `Đặt sách trước thành công!<br>
+                    <strong>Sách:</strong> ${formData.book_title}<br>
+                    <strong>Định dạng:</strong> ${formData.book_format_name}<br>`;
+                
+                if (Object.keys(formData.attributes_display).length > 0) {
+                    successMessage += '<strong>Thuộc tính đã chọn:</strong><br>';
+                    Object.entries(formData.attributes_display).forEach(([key, value]) => {
+                        successMessage += `• ${key}: ${value}<br>`;
+                    });
+                }
+                
+                successMessage += `<strong>Số lượng:</strong> ${formData.quantity}<br>
+                    <strong>Tổng tiền:</strong> ${new Intl.NumberFormat('vi-VN').format(formData.total_price)}₫<br>
+                    <br>Chúng tôi sẽ liên hệ với bạn khi sách có sẵn.`;
+                
+                if (typeof toastr !== 'undefined') {
+                    toastr.success(successMessage, 'Đặt trước thành công!', {
+                        timeOut: 10000,
+                        positionClass: 'toast-top-right',
+                        closeButton: true,
+                        progressBar: true,
+                        allowHtml: true
+                    });
+                } else {
+                    alert(data.message || 'Đặt sách trước thành công! Chúng tôi sẽ liên hệ với bạn khi sách có sẵn.');
+                }
+                
+                closePreOrderForm();
             } else {
-                previewLimitNotice.classList.add('hidden');
+                // Handle validation errors
+                if (data.errors) {
+                    let errorMessage = 'Vui lòng kiểm tra lại thông tin:<br>';
+                    Object.entries(data.errors).forEach(([field, messages]) => {
+                        errorMessage += `• ${messages.join('<br>• ')}<br>`;
+                    });
+                    
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(errorMessage, 'Dữ liệu không hợp lệ', {
+                            timeOut: 8000,
+                            allowHtml: true
+                        });
+                    } else {
+                        alert('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.');
+                    }
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(data.message || 'Có lỗi xảy ra khi đặt sách trước.', 'Lỗi');
+                    } else {
+                        alert(data.message || 'Có lỗi xảy ra khi đặt sách trước.');
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            
+            // Restore button
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Có lỗi kết nối. Vui lòng thử lại sau.', 'Lỗi kết nối');
+            } else {
+                alert('Có lỗi kết nối. Vui lòng thử lại sau.');
+
             }
         });
     }

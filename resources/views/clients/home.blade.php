@@ -785,336 +785,137 @@
             <div
                 class="absolute top-1/2 left-1/2 w-2 h-32 bg-white/10 transform -translate-x-1/2 -translate-y-1/2 rotate-45">
             </div>
-        </div>
+        @endif
+    </div>
+</section>
 
-        <div class="relative z-10 max-w-7xl mx-auto px-4">
-            <!-- Header Section -->
-            <div class="text-center mb-16">
-                <div class="inline-block mb-4">
-                    <span class="bg-white text-black px-4 py-1 text-xs font-bold uppercase tracking-wider">
-                        CUSTOMER FEEDBACK
-                    </span>
+<!-- SÁCH SẮP RA MẮT Section -->
+<section class="bg-white py-20">
+    <div class="max-w-7xl mx-auto px-4">
+        <!-- Header Section -->
+        <div class="mb-16">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-4xl md:text-5xl font-bold text-black uppercase tracking-tight mb-2">
+                        SÁCH SẮP RA MẮT
+                    </h2>
+                    <div class="w-20 h-1 bg-black"></div>
                 </div>
-                <h2 class="text-4xl md:text-6xl font-bold uppercase tracking-tight mb-6">
-                    KHÁCH HÀNG NÓI GÌ?
-                </h2>
-                <div class="w-20 h-1 bg-white mx-auto mb-6"></div>
-                <p class="text-xl text-white/80 max-w-2xl mx-auto">
-                    Trải nghiệm thực tế từ những độc giả đã tin tưởng BookBee
-                </p>
-            </div>
-
-            <!-- Reviews Swiper -->
-            <div class="swiper reviewSwiper">
-                <div class="swiper-wrapper pb-12">
-                    @foreach ($reviews as $review)
-                        <div class="swiper-slide">
-                            <div
-                                class="bg-white text-black p-8 relative group hover:bg-gray-50 transition-all duration-300 min-h-[400px] flex flex-col">
-                                <!-- Quote Icon -->
-                                <div class="absolute top-6 left-6 text-6xl text-gray-200 font-serif">"</div>
-
-                                <!-- Content -->
-                                <div class="relative z-10 flex flex-col h-full pt-8">
-                                    <!-- Book Info -->
-                                    <div class="mb-6">
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <div class="w-2 h-2 bg-black"></div>
-                                            <span class="text-xs uppercase tracking-wider font-bold text-gray-500">
-                                                ĐÁNH GIÁ SẢN PHẨM
-                                            </span>
-                                        </div>
-                                        <h4 class="font-bold text-lg text-black mb-1">
-                                            {{ $review->book->title ?? 'Không xác định' }}
-                                        </h4>
-                                        <p class="text-sm text-gray-500">
-                                            {{ $review->created_at->format('d/m/Y') }}
-                                        </p>
-                                    </div>
-
-                                    <!-- Review Content -->
-                                    <div class="flex-grow mb-6">
-                                        <p class="text-gray-700 leading-relaxed text-lg font-medium">
-                                            "{{ $review->comment ?? 'Sản phẩm tuyệt vời, rất hài lòng với chất lượng.' }}"
-                                        </p>
-                                    </div>
-
-                                    <!-- Rating -->
-                                    <div class="mb-6">
-                                        <div class="flex items-center gap-1 mb-2">
-                                            @for ($i = 0; $i < 5; $i++)
-                                                <span
-                                                    class="text-2xl {{ $i < $review->rating ? 'text-yellow-400' : 'text-gray-300' }}">
-                                                    ★
-                                                </span>
-                                            @endfor
-                                        </div>
-                                        <span class="text-sm font-bold text-black">
-                                            {{ $review->rating }}/5 STARS
-                                        </span>
-                                    </div>
-
-                                    <!-- Customer Info -->
-                                    <div class="border-t border-gray-200 pt-6">
-                                        <div class="flex items-center justify-between">
-                                            <div>
-                                                <p class="font-bold text-black text-lg uppercase tracking-wide">
-                                                    {{ $review->user->name ?? 'Anonymous' }}
-                                                </p>
-                                                <p class="text-sm text-gray-500 uppercase tracking-wider">
-                                                    Verified Customer
-                                                </p>
-                                            </div>
-                                            <div
-                                                class="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center font-bold text-lg">
-                                                {{ strtoupper(substr($review->user->name ?? 'A', 0, 1)) }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Accent Line -->
-                                <div
-                                    class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-black to-gray-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300">
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-
-                <!-- Custom Pagination -->
-                <div class="swiper-pagination-custom flex justify-center items-center gap-4 mt-12">
-                    <button
-                        class="swiper-prev-custom w-12 h-12 bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition-all duration-300 group">
-                        <span class="transform group-hover:-translate-x-1 transition-transform">←</span>
-                    </button>
-
-                    <div class="swiper-pagination-bullets flex gap-2"></div>
-
-                    <button
-                        class="swiper-next-custom w-12 h-12 bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition-all duration-300 group">
-                        <span class="transform group-hover:translate-x-1 transition-transform">→</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Stats Section -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 pt-16 border-t border-white/20">
-                <div class="text-center">
-                    <div class="text-4xl md:text-5xl font-bold mb-2">4.8</div>
-                    <div class="text-white/80 uppercase tracking-wider text-sm">Average Rating</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-4xl md:text-5xl font-bold mb-2">{{ $reviews->count() }}+</div>
-                    <div class="text-white/80 uppercase tracking-wider text-sm">Customer Reviews</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-4xl md:text-5xl font-bold mb-2">98%</div>
-                    <div class="text-white/80 uppercase tracking-wider text-sm">Satisfaction Rate</div>
-                </div>
-            </div>
-
-            <!-- CTA Button -->
-            <div class="text-center mt-16">
-                <a href="#"
-                    class="inline-flex items-center gap-3 bg-white text-black px-10 py-4 font-bold text-sm uppercase tracking-wider hover:bg-gray-100 transition-all duration-300 group">
-                    <span>XEM TẤT CẢ ĐÁNH GIÁ</span>
+                <a href="#" 
+                   class="group flex items-center gap-2 text-black font-bold text-sm uppercase tracking-wider hover:opacity-70 transition-opacity">
+                    Xem tất cả
                     <span class="transform group-hover:translate-x-1 transition-transform">→</span>
                 </a>
             </div>
+            <p class="text-lg text-gray-600 max-w-xl">
+                Khám phá những cuốn sách mới nhất sắp được phát hành
+            </p>
         </div>
-    </section>
 
-    <section class="bg-white py-20">
-        <div class="max-w-7xl mx-auto px-4">
-            <!-- Header Section -->
-            <div class="mb-16">
-                <div class="flex items-center justify-between mb-8">
-                    <div>
-                        <h2 class="text-4xl md:text-5xl font-bold text-black uppercase tracking-tight mb-2">
-                            TIN TỨC & SỰ KIỆN
-                        </h2>
-                        <div class="w-20 h-1 bg-black"></div>
-                    </div>
-                    <a href="#"
-                        class="group flex items-center gap-2 text-black font-bold text-sm uppercase tracking-wider hover:opacity-70 transition-opacity">
-                        Xem tất cả
-                        <span class="transform group-hover:translate-x-1 transition-transform">→</span>
-                    </a>
-                </div>
-                <p class="text-lg text-gray-600 max-w-xl">
-                    Cập nhật những tin tức mới nhất về sách, tác giả và sự kiện văn học
-                </p>
-            </div>
-
-            <!-- Articles Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                @forelse($articles->take(4) as $index => $article)
-                    <article class="group cursor-pointer {{ $index === 0 ? 'md:col-span-2 lg:col-span-2' : '' }}"
-                        onclick="window.location='#'">
-
-                        <!-- Image Container với height thống nhất -->
-                        <div
-                            class="relative overflow-hidden bg-gray-100 mb-6 {{ $index === 0 ? 'h-64 md:h-80' : 'h-48' }}">
-                            <img src="{{ asset('storage/' . $article->thumbnail) }}" alt="{{ $article->title }}"
-                                class="w-full h-full object-cover transition-all duration-500 group-hover:scale-105">
-
-                            <!-- Overlay -->
-                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300">
-                            </div>
-
-                            <!-- Category Badge -->
-                            <div class="absolute top-4 left-4">
-                                <span class="bg-black text-white px-3 py-1 text-xs font-bold uppercase tracking-wide">
-                                    {{ $article->category ?? 'Tin tức' }}
-                                </span>
-                            </div>
-
-                            <!-- Featured Badge (for first article) -->
-                            @if ($index === 0)
-                                <div class="absolute top-4 right-4">
-                                    <span
-                                        class="bg-red-500 text-white px-3 py-1 text-xs font-bold uppercase tracking-wide">
-                                        Nổi bật
-                                    </span>
-                                </div>
-                            @endif
-
-                            <!-- Reading Time -->
-                            <div class="absolute bottom-4 right-4">
-                                <span class="bg-white/90 text-black px-2 py-1 text-xs font-semibold rounded">
-                                    {{ rand(2, 8) }} phút đọc
-                                </span>
+        <!-- Products Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            @forelse($upcomingBooks as $book)
+                <div class="group cursor-pointer" onclick="window.location='{{ route('books.show', ['slug' => $book->slug]) }}'">
+                    <!-- Product Image -->
+                    <div class="relative aspect-[3/4] bg-gray-100 overflow-hidden mb-4">
+                        <img src="{{asset('storage/images/' . $book->image)}}"
+                             class="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
+                             alt="{{$book->title}}">
+                        
+                        <!-- Overlay Actions -->
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300">
+                            <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <button class="bg-white/90 hover:bg-white text-black p-3 rounded-full shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-110">
+                                    <i class="far fa-heart text-lg"></i>
+                                </button>
                             </div>
                         </div>
 
-                        <!-- Content -->
-                        <div class="space-y-3">
-                            <!-- Date & Author -->
-                            <div class="flex items-center justify-between text-sm text-gray-500 uppercase tracking-wider">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-2 h-2 bg-black rounded-full"></div>
-                                    <span>{{ $article->created_at->format('d.m.Y') }}</span>
-                                </div>
-                                <span class="text-xs">{{ $article->author ?? 'BookBee' }}</span>
-                            </div>
+                        <!-- Quick Pre-order -->
+                        <div class="absolute bottom-0 left-0 right-0 bg-black text-white py-3 px-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                            <button onclick="event.stopPropagation(); preOrderFromHome('{{ $book->id }}', '{{ $book->title }}', '{{ $book->slug }}')" 
+                                    class="w-full text-center font-bold text-sm uppercase tracking-wider hover:opacity-80 transition-opacity">
+                                Đặt sách trước
+                            </button>
+                        </div>
 
-                            <!-- Title -->
-                            <h3
-                                class="font-bold {{ $index === 0 ? 'text-xl md:text-2xl' : 'text-lg' }} text-black leading-tight group-hover:opacity-70 transition-opacity">
-                                {{ $article->title }}
-                            </h3>
+                        <!-- New Badge -->
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-black text-white px-3 py-1 text-xs font-bold uppercase tracking-wide">
+                                Sắp có
+                            </span>
+                        </div>
+                    </div>
 
-                            <!-- Summary -->
-                            <p class="text-gray-600 leading-relaxed {{ $index === 0 ? 'text-base' : 'text-sm' }}">
-                                {{ Str::limit($article->summary, $index === 0 ? 150 : 80) }}
+                    <!-- Product Info -->
+                    <div class="space-y-2">
+                        <h3 class="font-bold text-lg text-black group-hover:opacity-70 transition-opacity line-clamp-2">
+                            {{$book->title}}
+                        </h3>
+                        <p class="text-sm text-gray-500 uppercase tracking-wide">
+                            {{$book->author?->name ?? 'Không rõ'}}
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <p class="text-xl font-bold text-black">
+                                {{number_format($book->formats->first()->price ?? 0, 0, ',', '.')}}₫
                             </p>
-
-                            <!-- Tags (chỉ cho bài nổi bật) -->
-                            @if ($index === 0)
-                                <div class="flex flex-wrap gap-2">
-                                    <span
-                                        class="bg-gray-100 text-gray-700 px-2 py-1 text-xs font-medium uppercase tracking-wide">Văn
-                                        học</span>
-                                    <span
-                                        class="bg-gray-100 text-gray-700 px-2 py-1 text-xs font-medium uppercase tracking-wide">Bestseller</span>
-                                </div>
-                            @endif
-
-                            <!-- Read More -->
-                            <div
-                                class="flex items-center gap-2 text-black font-bold text-sm uppercase tracking-wider group/link">
-                                <span class="group-hover/link:opacity-70 transition-opacity">Đọc thêm</span>
-                                <span class="transform group-hover/link:translate-x-1 transition-transform">→</span>
+                            <div class="flex items-center text-yellow-400 text-sm">
+                                <span class="mr-1">★</span>
+                                <span class="text-gray-500">4.5</span>
                             </div>
                         </div>
-                    </article>
-                @empty
-                    <!-- Empty state -->
-                    <div class="col-span-full flex flex-col items-center justify-center py-20 text-center">
-                        <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                            <i class="fas fa-newspaper text-gray-400 text-2xl"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-2">Chưa có tin tức nào</h3>
-                        <p class="text-gray-500">Hãy quay lại sau để cập nhật những tin tức mới nhất</p>
-                    </div>
-                @endforelse
-            </div>
-
-            <!-- More Articles Section -->
-            @if ($articles->count() > 3)
-                <div class="mt-20 pt-16 border-t border-gray-200">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        @foreach ($articles->skip(3)->take(3) as $article)
-                            <article class="group cursor-pointer" onclick="window.location='#'">
-                                <!-- Compact Layout -->
-                                <div class="flex gap-4 p-6 hover:bg-gray-50 transition-colors duration-300">
-                                    <!-- Small Image -->
-                                    <div class="flex-shrink-0">
-                                        <img src="{{ asset('storage/' . $article->thumbnail) }}"
-                                            alt="{{ $article->title }}" class="w-20 h-20 object-cover">
-                                    </div>
-
-                                    <!-- Content -->
-                                    <div class="flex-1 space-y-2">
-                                        <span class="text-xs text-gray-500 uppercase tracking-wider font-medium">
-                                            {{ $article->created_at->format('d/m/Y') }}
-                                        </span>
-                                        <h4
-                                            class="font-bold text-sm text-black leading-tight group-hover:opacity-70 transition-opacity line-clamp-2">
-                                            {{ $article->title }}
-                                        </h4>
-                                        <div
-                                            class="flex items-center gap-1 text-black font-bold text-xs uppercase tracking-wider">
-                                            <span>Đọc →</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </article>
-                        @endforeach
                     </div>
                 </div>
-            @endif
-
-            <!-- Newsletter Subscription -->
-            <div class="mt-20 bg-black text-white p-8 relative overflow-hidden">
-                <!-- Background Elements -->
-                <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12">
+            @empty
+                <div class="col-span-full flex flex-col items-center justify-center py-20 text-center">
+                    <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-book text-gray-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Chưa có sách sắp ra mắt</h3>
+                    <p class="text-gray-500">Hãy quay lại sau để cập nhật những cuốn sách mới nhất</p>
                 </div>
-
-                <div class="relative z-10 text-center max-w-2xl mx-auto">
-                    <h3 class="text-2xl md:text-3xl font-bold uppercase tracking-wide mb-4">
-                        ĐĂNG KÝ NHẬN TIN
-                    </h3>
-                    <p class="text-white/80 mb-8 text-lg">
-                        Nhận thông tin mới nhất về sách, tác giả và ưu đãi đặc biệt
-                    </p>
-
-                    <form class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-                        <input type="email" placeholder="Nhập email của bạn"
-                            class="flex-1 px-6 py-4 bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:border-white/40 transition-colors">
-                        <button type="submit"
-                            class="bg-white text-black px-8 py-4 font-bold text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors duration-300 whitespace-nowrap">
-                            Đăng ký
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Bottom CTA -->
-            <div class="text-center mt-16">
-                <a href="#"
-                    class="bg-black text-white px-12 py-4 font-bold text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors duration-300 inline-block">
-                    Khám phá thêm tin tức
-                </a>
-            </div>
+            @endforelse
         </div>
-    </section>
 
-
+        <!-- Load More Button -->
+        @if($upcomingBooks->count() >= 8)
+            <div class="text-center mt-16">
+                <button class="bg-black text-white px-12 py-4 font-bold text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors duration-300 group">
+                    Xem thêm sản phẩm
+                    <span class="ml-2 transform group-hover:translate-x-1 transition-transform">→</span>
+                </button>
+            </div>
+        @endif
+    </div>
+</section>
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/home.js') }}"></script>
+<script src="{{ asset('js/home.js') }}"></script>
+<script>
+    // Pre-order from home page
+    function preOrderFromHome(bookId, bookTitle, bookSlug) {
+        // Check if user is logged in
+        @auth
+            // Redirect to book detail page with preorder hash for auto-open modal
+            window.location.href = `/books/${bookSlug}#preorder`;
+        @else
+            // Show login prompt
+            if (typeof toastr !== 'undefined') {
+                toastr.warning('Bạn cần đăng nhập để đặt sách trước', 'Chưa đăng nhập!', {
+                    timeOut: 3000,
+                    positionClass: 'toast-top-right',
+                    closeButton: true,
+                    progressBar: true
+                });
+            } else {
+                alert('Bạn cần đăng nhập để đặt sách trước');
+            }
+            setTimeout(() => {
+                window.location.href = '{{ route("login") }}';
+            }, 1500);
+        @endauth
+    }
+</script>
 @endpush
+

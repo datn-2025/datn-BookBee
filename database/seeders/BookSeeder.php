@@ -31,17 +31,28 @@ class BookSeeder extends Seeder
         foreach ($categories as $category) {
             // Tạo 5 sách cho mỗi danh mục
             for ($i = 0; $i < 5; $i++) {
+                // Tạo một số sách sắp ra mắt (20% chance)
+                $isUpcoming = fake()->boolean(20);
+                $status = $isUpcoming ? 'Sắp Ra Mắt' : 'available';
+                $publicationDate = $isUpcoming ? 
+                    fake()->dateTimeBetween('now', '+3 months') : 
+                    fake()->dateTimeBetween('-2 years', 'now');
+
                 $book = Book::create([
                     'id' => (string) Str::uuid(),
-                    'title' => 'Sách ' . ($i + 1),
+                    'title' => $isUpcoming ? 
+                        'Sách Sắp Ra Mắt ' . ($i + 1) : 
+                        'Sách ' . ($i + 1),
                     'slug' => 'sach-' . ($i + 1) . '-' . Str::random(4),
-                    'description' => 'Mô tả sách ' . ($i + 1),
+                    'description' => $isUpcoming ? 
+                        'Cuốn sách đặc biệt sắp được phát hành với nội dung hấp dẫn, đừng bỏ lỡ!' : 
+                        'Mô tả sách ' . ($i + 1),
                     'category_id' => $category->id,
                     'brand_id' => $brands->random()->id,
-                    'status' => 'available',
+                    'status' => $status,
                     'cover_image' => 'https://picsum.photos/200/300',
                     'isbn' => 'ISBN' . rand(100000, 999999),
-                    'publication_date' => now(),
+                    'publication_date' => $publicationDate,
                     'page_count' => rand(100, 500),
                     'created_at' => now(),
                     'updated_at' => now(),
