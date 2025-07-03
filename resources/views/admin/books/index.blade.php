@@ -169,8 +169,8 @@
                                     <div class="text-wrap" style="max-width: 270px;">
                                         <div class="fw-medium mb-1">{{ $book->title }}</div>
                                         <div class="text-muted small">
-                                            <div>Tác giả: {{ $book->author->name }}</div>
-                                            <div>NXB: {{ $book->brand->name }}</div>
+                                            <div>Tác giả: {{ $book->author?->name ?? 'Chưa có tác giả' }}</div>
+                                            <div>NXB: {{ $book->brand?->name ?? 'Chưa có NXB' }}</div>
                                         </div>
                                     </div>
                                 </td>
@@ -209,6 +209,7 @@
                                     @endforeach
                                     @endif
                                 </td>
+                              
                                 <td><span class="{{ $statusClass }}">{{ $statusText }}</span></td>
 
                                 <td class="text-center">
