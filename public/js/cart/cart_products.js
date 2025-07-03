@@ -77,12 +77,24 @@ const CartProducts = {
         // Add loading state
         CartBase.dom.addClass(cartItem, 'loading');
 
+        // Get additional item data for precise removal
+        const bookFormatId = cartItem.dataset.bookFormatId || null;
+        const attributeValueIds = cartItem.dataset.attributeValueIds || null;
+
+        console.log('Remove item data:', {
+            bookId,
+            bookFormatId,
+            attributeValueIds
+        });
+
         // Make AJAX request
         $.ajax({
             url: '/cart/remove',
             method: 'POST',
             data: {
                 book_id: bookId,
+                book_format_id: bookFormatId,
+                attribute_value_ids: attributeValueIds,
                 _token: CartBase.utils.getCSRFToken()
             },
             success: (response) => {
@@ -101,22 +113,11 @@ const CartProducts = {
         if (response.success) {
             CartBase.utils.showSuccess(response.success);
             
-            // Remove item from DOM
-            CartBase.dom.remove(cartItem);
+            // Always reload page after successful removal to update all cart data
+            setTimeout(() => {
+                location.reload();
+            }, 1500); // Delay to show success message
             
-            // Check if cart is empty
-            const remainingItems = CartBase.dom.getAll('.cart-item');
-            if (remainingItems.length === 0) {
-                // Reload page if no items left
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
-            } else {
-                // Update cart totals
-                if (window.CartSummary && typeof window.CartSummary.updateCartTotal === 'function') {
-                    window.CartSummary.updateCartTotal();
-                }
-            }
         } else if (response.error) {
             CartBase.utils.showError(response.error);
             this.resetItemControls(cartItem);

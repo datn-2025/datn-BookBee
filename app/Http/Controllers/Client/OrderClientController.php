@@ -7,7 +7,7 @@ use App\Models\OrderStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class ClientOrderController extends Controller
+class OrderClientController extends Controller
 {
     public function index(Request $request)
     {

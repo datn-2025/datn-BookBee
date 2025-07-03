@@ -39,7 +39,8 @@ class BookController extends Controller
 
         // Tạo query lấy sách
         $booksQuery = DB::table('books')
-            ->join('authors', 'books.author_id', '=', 'authors.id')
+            ->join('author_books', 'books.id', '=', 'author_books.book_id')
+            ->join('authors', 'author_books.author_id', '=', 'authors.id')
             ->join('brands', 'books.brand_id', '=', 'brands.id')
             ->join('book_formats', 'books.id', '=', 'book_formats.book_id')
             ->leftJoin('reviews', 'books.id', '=', 'reviews.book_id')
@@ -60,7 +61,7 @@ class BookController extends Controller
             ->groupBy('books.id', 'books.title', 'books.slug', 'books.cover_image', 'authors.name', 'brands.name');
 
         if (!empty($authorIds)) {
-            $booksQuery->whereIn('books.author_id', $authorIds);
+            $booksQuery->whereIn('author_books.author_id', $authorIds);
         }
 
         if (!empty($brandIds)) {
@@ -126,7 +127,8 @@ class BookController extends Controller
         $books = $booksQuery->paginate(6)->withQueryString();
 
         $authors = DB::table('authors')
-            ->join('books', 'authors.id', '=', 'books.author_id')
+            ->join('author_books', 'authors.id', '=', 'author_books.author_id')
+            ->join('books', 'author_books.book_id', '=', 'books.id')
             ->when($category, fn($query) => $query->where('books.category_id', $category->id))
             ->select('authors.id', 'authors.name')
             ->distinct()

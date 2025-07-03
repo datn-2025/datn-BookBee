@@ -316,25 +316,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Add loading state
                 cartItem.classList.add('loading');
 
+                // Get additional item data for precise removal
+                const bookFormatId = cartItem.dataset.bookFormatId || null;
+                const attributeValueIds = cartItem.dataset.attributeValueIds || null;
+
                 $.ajax({
                     url: '/cart/remove',
                     method: 'POST',
                     data: {
                         book_id: bookId,
+                        book_format_id: bookFormatId,
+                        attribute_value_ids: attributeValueIds,
                         _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     success: function(response) {
                         if (response.success) {
                             toastr.success(response.success);
-                            cartItem.remove();
                             
-                            // Kiểm tra số lượng cart item còn lại
-                            const remainingItems = document.querySelectorAll('.cart-item');
-                            if (remainingItems.length === 0) {
+                            // Always reload page to update all cart data
+                            setTimeout(() => {
                                 location.reload();
-                            } else {
-                                updateCartTotal();
-                            }
+                            }, 1500);
+                            
                         } else if (response.error) {
                             toastr.error(response.error);
                             // Enable controls back

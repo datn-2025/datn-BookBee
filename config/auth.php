@@ -76,7 +76,7 @@ return [
 
         'admins' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class, // hoặc App\Models\Admin nếu bạn có model riêng
+            'model' => App\Models\User::class,
         ],
     ],
 
