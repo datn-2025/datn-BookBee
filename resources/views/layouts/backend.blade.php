@@ -402,7 +402,7 @@
                                     </li>
                                     <li><a href="{{ route('admin.attributes.index') }}" class="nav-link">Thuộc
                                             tính</a></li>
-                                    <li><a href="{{ route('admin.collections.index') }}" class="nav-link">Combo sách</a></li>
+                                    {{-- <li><a href="{{ route('admin.collections.index') }}" class="nav-link">Combo sách</a></li> --}}
                                 </ul>
                             </div>
                         </li>
@@ -528,11 +528,11 @@
                                 <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Bình luận & Đánh giá</span>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="{{ route('admin.invoices.index') }}">
+                        {{-- <li class="nav-item">
+                            <a class="nav-link menu-link" href="#">
                                 <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Hóa Đơn</span>
                             </a>
-                        </li>
+                        </li> --}}
                         <li class="menu-title"><span data-key="t-menu">Cấu Hình</span></li>
                         <li class="nav-item">
                             <a class="nav-link menu-link" href="{{ route('admin.settings.index') }}">
