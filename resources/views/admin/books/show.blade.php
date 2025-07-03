@@ -96,6 +96,23 @@
                                         <h6>{{ $book->publication_date ? date('d/m/Y', strtotime($book->publication_date)) : 'N/A' }}</h6>
                                     </div>
                                     <div class="col-md-6 mb-3">
+                                        <div class="border border-primary rounded p-3" style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3">
+                                                    <div class="avatar-sm">
+                                                        <div class="avatar-title rounded-circle" style="background-color: #405189;">
+                                                            <i class="ri-calendar-2-line text-white"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p class="text-muted mb-1 small text-uppercase fw-semibold">Ngày ra mắt</p>
+                                                    <h6 class="mb-0 fw-bold" style="color: #405189;">{{ $book->release_date ? $book->release_date->format('d/m/Y') : 'N/A' }}</h6>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
                                         <p class="text-muted mb-1">Số trang:</p>
                                         <h6>{{ $book->page_count ?? 'N/A' }}</h6>
                                     </div>
