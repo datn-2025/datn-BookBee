@@ -287,6 +287,12 @@
                                     <input type="date" name="publication_date" class="form-control"
                                         id="publication_date" value="{{ old('publication_date') }}">
                                 </div>
+                                <div class="mb-3">
+                                    <label for="release_date" class="form-label">Ngày ra mắt</label>
+                                    <input type="date" name="release_date" class="form-control"
+                                        id="release_date" value="{{ old('release_date') }}">
+                                    <small class="text-muted">Ngày sách chính thức ra mắt thị trường</small>
+                                </div>
                             </div>
                         </div>
 
