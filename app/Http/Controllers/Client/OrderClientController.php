@@ -75,6 +75,10 @@ class OrderClientController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'cancellation_reason' => 'nullable|string|max:1000'
+        ]);
+
         $order = Order::where('user_id', Auth::id())
                     ->whereIn('order_status_id', function($query) {
                         $query->select('id')
@@ -87,7 +91,7 @@ class OrderClientController extends Controller
         $order->update([
             'order_status_id' => OrderStatus::where('name', 'Đã hủy')->first()->id,
             'cancelled_at' => now(),
-            'cancelled_by' => Auth::id()
+            'cancellation_reason' => $request->cancellation_reason ?? 'Khách hàng hủy đơn hàng'
         ]);
 
         return redirect()->route('account.orders.index')

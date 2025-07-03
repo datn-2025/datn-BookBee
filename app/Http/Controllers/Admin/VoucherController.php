@@ -192,10 +192,10 @@ class VoucherController extends Controller
 
         $books = Book::select('id', 'title')
             ->orderBy('title', 'asc')
-            ->with(['author:id,name', 'brand:id,name'])
+            ->with(['authors:id,name', 'brand:id,name'])
             ->get()
             ->map(function($book) {
-                $authorInfo = $book->author ? ' - ' . $book->author->name : '';
+                $authorInfo = $book->authors->isNotEmpty() ? ' - ' . $book->authors->first()->name : '';
                 $brandInfo = $book->brand ? ' (' . $book->brand->name . ')' : '';
                 return [
                     'id' => $book->id,

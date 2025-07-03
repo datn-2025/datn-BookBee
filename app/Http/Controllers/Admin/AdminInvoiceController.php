@@ -33,7 +33,7 @@ class AdminInvoiceController extends Controller
                 //   ->where('order_status_id', 'completed'); // Thêm điều kiện lọc đơn hàng đã hoàn thành
             },
             'items' => function($q) {
-                $q->with(['book', 'book.author']);
+                $q->with(['book', 'book.authors']);
             }
         ]);      
         // Gom các điều kiện tìm kiếm liên quan đến order và user
