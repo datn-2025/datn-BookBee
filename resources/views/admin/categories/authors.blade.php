@@ -89,9 +89,13 @@
                                         <tr>
                                             <td>{{ $authors->firstItem() + $key }}</td>
                                             <td>
-                                                <img src="{{ $author->image ? asset($author->image) : asset('images/default-author.png') }}"
-                                                    alt="{{ $author->name }}" class="rounded"
-                                                    style="width: 50px; height: 50px; object-fit: cover;">
+                                                @if ($author->image)
+                                                    <img src="{{ $author->image ? asset($author->image) : asset('images/default-author.png') }}"
+                                                        alt="{{ $author->name }}" class="rounded"
+                                                        style="width: 50px; height: 50px; object-fit: cover;">
+                                                @else
+                                                    <span class="text-muted">Không có ảnh</span>
+                                                @endif
                                             </td>
                                             <td>{{ $author->name }}</td>
                                             <td>{{ $author->books_count }} cuốn</td>
@@ -158,16 +162,16 @@
                                     @endforelse
                                 </tbody>
                             </table>
-                        </div>
-
-                        <div class="d-flex justify-content-center mt-4">
-                            <div class="text-muted">
-                                Hiển thị <strong>{{ $authors->firstItem() }}</strong> đến
-                                <strong>{{ $authors->lastItem() }}</strong> trong tổng số
-                                <strong>{{ $authors->total() }}</strong> danh mục
-                            </div>
-                            <div>
-                                {{ $authors->links('pagination::bootstrap-5') }}
+                            <!-- Phân trang -->
+                            <div class="d-flex justify-content-between align-items-center mt-3 px-3">
+                                <div class="text-muted">
+                                    Hiển thị <strong>{{ $authors->firstItem() }}</strong> đến
+                                    <strong>{{ $authors->lastItem() }}</strong> trong tổng số
+                                    <strong>{{ $authors->total() }}</strong> danh mục
+                                </div>
+                                <div>
+                                    {{ $authors->links('pagination::bootstrap-4') }}
+                                </div>
                             </div>
                         </div>
                     </div>

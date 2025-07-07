@@ -19,7 +19,7 @@
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-body">
-                    <form action="{{ route('admin.categories.authors.update', $author->id) }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('admin.categories.authors.update', $author->id) }}" method="POST" enctype="multipart/form-data" onsubmit="return disableSubmitOnce(this)">
                         @csrf
                         @method('PUT')
                         <div class="mb-3">
@@ -72,6 +72,7 @@
         </div>
     </div>
 </div>
+{!! Toastr::message() !!}
 @endsection
 @push('scripts')
 <script>
