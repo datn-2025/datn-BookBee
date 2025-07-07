@@ -7,7 +7,11 @@ use App\Mail\UserStatusUpdated;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
+<<<<<<< HEAD
 use Illuminate\Support\Arr;
+=======
+use Illuminate\Support\Facades\Auth;
+>>>>>>> master
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -15,12 +19,17 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
+<<<<<<< HEAD
         $query = User::with('role')
             ->select('id', 'name', 'avatar', 'email', 'phone', 'role_id', 'status')
             ->whereHas('role', function ($q) {
                 $q->whereIn('name', ['User', 'Staff']);
             })
             ->orderByDesc('created_at'); // Sắp xếp người dùng mới nhất lên đầu
+=======
+        $query = User::with('role')->select('id', 'name', 'avatar', 'email', 'phone', 'role_id', 'status')
+            ->where('id', '!=', Auth::id()); // Loại bỏ tài khoản đang đăng nhập
+>>>>>>> master
 
         // Tìm kiếm theo text
         if ($request->filled('search')) {

@@ -238,7 +238,7 @@
                         <tr>
                             <td>
                                 <div class="book-title">{{ $item->book->title }}</div>
-                                <div class="book-author">Tác giả: {{ $item->book->author->name }}</div>
+                                <div class="book-author">Tác giả: {{ $item->book->authors->first()->name }}</div>
                             </td>
                             <td>{{ number_format($item->price) }}</td>
                             <td class="text-center">{{ $item->quantity }}</td>

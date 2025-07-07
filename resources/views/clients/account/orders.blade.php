@@ -111,7 +111,7 @@
                                         </fieldset>
                                     @else
                                         <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                                            <form action="{{ route('account.review.store') }}" method="POST" class="space-y-4">
+                                            <form action="{{ route('account.reviews.store') }}" method="POST" class="space-y-4">
                                                 @csrf
                                                 <input type="hidden" name="order_id" value="{{ $order->id }}">
                                                 <input type="hidden" name="book_id" value="{{ $item->book_id }}">

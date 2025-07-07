@@ -103,23 +103,31 @@
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm theo email người dùng...">
+                                    <input type="text" class="form-control" id="searchInput" name="search" placeholder="Tìm kiếm theo email người dùng..." value="{{ request('search', $search ?? '') }}">
                                     <button class="btn btn-primary" type="button" id="searchButton">
                                         <i class="ri-search-line"></i>
                                     </button>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <select class="form-select" id="transactionTypeFilter">
-                                    <option value="">Tất cả giao dịch</option>
-                                    <option value="deposit">Nạp tiền</option>
-                                    <option value="withdrawal">Thanh toán</option>
-                                    <option value="refund">Hoàn tiền</option>
+                            <div class="col-md-2">
+                                <select class="form-select" id="transactionTypeFilter" name="type">
+                                    <option value="" {{ empty(request('type', $type ?? '')) ? 'selected' : '' }}>Tất cả giao dịch</option>
+                                    <option value="Nap" {{ (request('type', $type ?? '') == 'Nap') ? 'selected' : '' }}>Nạp tiền</option>
+                                    <option value="Rut" {{ (request('type', $type ?? '') == 'Rut') ? 'selected' : '' }}>Rút tiền</option>
+                                    <option value="HoanTien" {{ (request('type', $type ?? '') == 'HoanTien') ? 'selected' : '' }}>Hoàn tiền</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-2">
+                                <select class="form-select" id="statusFilter" name="status">
+                                    <option value="" {{ empty(request('status', $status ?? '')) ? 'selected' : '' }}>Tất cả trạng thái</option>
+                                    <option value="success" {{ (request('status', $status ?? '') == 'success') ? 'selected' : '' }}>Thành công</option>
+                                    <option value="pending" {{ (request('status', $status ?? '') == 'pending') ? 'selected' : '' }}>Chờ duyệt</option>
+                                    <option value="failed" {{ (request('status', $status ?? '') == 'failed') ? 'selected' : '' }}>Thất bại</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="dateRangeFilter" placeholder="Chọn khoảng thời gian">
+                                    <input type="text" class="form-control" id="dateRangeFilter" name="date_range" placeholder="Chọn khoảng thời gian" value="{{ request('date_range', $dateRange ?? '') }}">
                                     <button class="btn btn-soft-secondary" type="button">
                                         <i class="ri-calendar-2-line"></i>
                                     </button>
@@ -137,14 +145,13 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th scope="col">#</th>
-                                        <th scope="col">ID giao dịch</th>
                                         <th scope="col">Người dùng</th>
                                         <th scope="col">Loại giao dịch</th>
                                         <th scope="col">Số tiền</th>
-                                        <th scope="col">Mô tả</th>
-                                        <th scope="col">Đơn hàng liên quan</th>
+                                        <th scope="col">Số dư sau giao dịch</th>
                                         <th scope="col">Thời gian</th>
-                                        <th scope="col">Thao tác</th>
+                                        <th scope="col">Phương thức</th>
+                                        <th scope="col">In PDF</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -152,9 +159,6 @@
                                     <tr>
                                         <td>
                                             <span class="fw-medium">{{ ++$key }}</span>
-                                        </td>
-                                        <td>
-                                            <span class="fw-medium">{{ substr($transaction->id, 0, 8)  }}</span>
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -170,11 +174,11 @@
                                             </div>
                                         </td>
                                         <td>
-                                            @if($transaction->type == 'deposit')
+                                            @if($transaction->type == 'Nap')
                                                 <span class="badge bg-success">Nạp tiền</span>
-                                            @elseif($transaction->type == 'withdraw')
+                                            @elseif($transaction->type == 'Rut')
                                                 <span class="badge bg-danger">Rút Tiền</span>
-                                            @elseif($transaction->type == 'refund')
+                                            @elseif($transaction->type == 'HoanTien')
                                                 <span class="badge bg-info">Hoàn tiền</span>
                                             @else
                                                 <span class="badge bg-secondary">{{ $transaction->type }}</span>
@@ -188,16 +192,9 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <span class="text-muted">{{ $transaction->description }}</span>
-                                        </td>
-                                        <td>
-                                            @if($transaction->related_order_id)
-                                                <a href="{{ route('admin.orders.show', $transaction->related_order_id) }}" class="link-primary">
-                                                    Đơn #{{ substr($transaction->related_order_id, 0, 8) }}
-                                                </a>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
+                                            <span class="fw-medium">
+                                                {{ isset($afterBalances[$transaction->id]) ? number_format($afterBalances[$transaction->id], 0, ',', '.') . ' đ' : '-' }}
+                                            </span>
                                         </td>
                                         <td>
                                             <div class="text-muted">
@@ -206,31 +203,21 @@
                                             </div>
                                         </td>
                                         <td>
+                                            <h4 class="badge fw-medium text-black ">
+                                                @if($transaction->payment_method == 'bank_transfer')
+                                                    Chuyển khoản ngân hàng
+                                                @elseif($transaction->payment_method == 'vnpay')
+                                                    VNPay
+                                                @else
+                                                    Không xác định
+                                                @endif
+                                            </h4>
+                                        </td>
+                                        <td>
                                             <div class="dropdown">
-                                                <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="ri-more-fill align-middle"></i>
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end">
-                                                    <li>
-                                                        <a class="dropdown-item" href="{{ route('admin.wallets.show', $transaction->id) }}">
-                                                            <i class="ri-eye-fill align-bottom me-2 text-muted"></i> Xem chi tiết
-                                                        </a>
-                                                    </li>
-                                                    <li>
                                                         <a class="dropdown-item" href="">
                                                             <i class="ri-printer-fill align-bottom me-2 text-muted"></i> Xuất PDF
                                                         </a>
-                                                    </li>
-                                                    <li class="dropdown-divider"></li>
-                                                    <li>
-                                                        <a class="dropdown-item text-danger" href="#"
-                                                           data-bs-toggle="modal"
-                                                           data-bs-target="#deleteModal"
-                                                           data-transaction-id="{{ $transaction->id }}">
-                                                            <i class="ri-delete-bin-fill align-bottom me-2 text-danger"></i> Xóa
-                                                        </a>
-                                                    </li>
-                                                </ul>
                                             </div>
                                         </td>
                                     </tr>
@@ -291,6 +278,8 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -322,14 +311,16 @@
         document.getElementById('transactionTypeFilter').addEventListener('change', function() {
             applyFilters();
         });
-
+        document.getElementById('statusFilter').addEventListener('change', function() {
+            applyFilters();
+        });
         document.getElementById('searchButton').addEventListener('click', function() {
             applyFilters();
         });
-
         document.getElementById('resetFilter').addEventListener('click', function() {
             document.getElementById('searchInput').value = '';
             document.getElementById('transactionTypeFilter').selectedIndex = 0;
+            document.getElementById('statusFilter').selectedIndex = 0;
             if (typeof flatpickr !== 'undefined') {
                 const dateRangePicker = document.getElementById('dateRangeFilter')._flatpickr;
                 dateRangePicker.clear();
@@ -338,29 +329,28 @@
             }
             window.location.href = '{{ route("admin.wallets.index") }}';
         });
-
         function applyFilters() {
             const searchTerm = document.getElementById('searchInput').value;
             const transactionType = document.getElementById('transactionTypeFilter').value;
+            const status = document.getElementById('statusFilter').value;
             const dateRange = document.getElementById('dateRangeFilter').value;
-
             let url = new URL(window.location.href);
             url.searchParams.delete('search');
             url.searchParams.delete('type');
+            url.searchParams.delete('status');
             url.searchParams.delete('date_range');
-
             if (searchTerm) {
                 url.searchParams.append('search', searchTerm);
             }
-
             if (transactionType) {
                 url.searchParams.append('type', transactionType);
             }
-
+            if (status) {
+                url.searchParams.append('status', status);
+            }
             if (dateRange) {
                 url.searchParams.append('date_range', dateRange);
             }
-
             window.location.href = url.toString();
         }
     });

@@ -59,6 +59,10 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/books/{slug?}', [BookController::class, 'index'])->name('books.index');
 Route::get('/book/{slug}', [HomeController::class, 'show'])->name('books.show');
 Route::get('/books/{categoryId?}', [BookController::class, 'index'])->name('books.index');
+
+// Tìm kiếm sách
+Route::get('/search', [BookController::class, 'search'])->name('books.search');
+
 Route::get('/contact', [ContactController::class, 'showForm'])->name('contact.form');
 Route::post('/contact', [ContactController::class, 'submitForm'])->name('contact.submit');
 
@@ -181,6 +185,13 @@ Route::middleware('guest.admin')->group(function () {
 Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
+    // Admin Profile Management
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AdminProfileController::class, 'index'])->name('index');
+        Route::put('/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updateProfile'])->name('update');
+        Route::put('/password/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('password.update');
+    });
+
     Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard');
     Route::get('/revenue-report', RevenueReport::class)->name('revenue-report');
     Route::get('/balance-chart', BalanceChart::class)->name('balance-chart');
@@ -222,7 +233,10 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
 
     Route::prefix('wallets')->name('wallets.')->group(function () {
         Route::get('/', [WalletController::class, 'index'])->name('index');
-        Route::get('/{wallet}', [WalletController::class, 'show'])->name('show');
+        Route::get('/deposit-history', [\App\Http\Controllers\Admin\WalletController::class, 'depositHistory'])->name('depositHistory');
+        Route::get('/withdraw-history', [\App\Http\Controllers\Admin\WalletController::class, 'withdrawHistory'])->name('withdrawHistory');
+        Route::post('/approve/{id}', [WalletController::class, 'approveTransaction'])->name('approveTransaction');
+        Route::post('/reject/{id}', [WalletController::class, 'rejectTransaction'])->name('rejectTransaction');
     });
 
     // Route admin/categories
@@ -265,12 +279,10 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
 
     // routes admin/reviews
     Route::prefix('reviews')->name('reviews.')->group(function () {
-        Route::get('/', [AdminReviewController::class, 'index'])->name('index');
-        Route::patch('/{review}/status', [AdminReviewController::class, 'updateStatus'])->name('update-status');
-        Route::post('/{review}/response', [AdminReviewController::class, 'updateResponse'])->name('response');
-        Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('destroy');
-        Route::get('/{review}/response', [AdminReviewController::class, 'showResponseForm'])->name('response');
-        Route::post('/{review}/response', [AdminReviewController::class, 'storeResponse'])->name('response.store');
+        Route::get('/', [AdminReviewController::class, 'index'])->name('index'); // Hiển thị danh sách
+        Route::post('/{review}/response', [AdminReviewController::class, 'storeResponse'])->name('response.store'); // Lưu phản hồi
+        Route::patch('/{review}/update-status', [AdminReviewController::class, 'updateStatus'])->name('update-status'); // Cập nhật trạng thái hiển thị/ẩn
+        Route::get('/{review}/response', [AdminReviewController::class, 'showResponseForm'])->name('response'); // Hiển thị form phản hồi
     });
 
     // Route admin/users
@@ -331,11 +343,11 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::prefix('news')->name('news.')->group(function () {
         Route::get('/', [NewsArticleController::class, 'index'])->name('index');
         Route::get('/create', [NewsArticleController::class, 'create'])->name('create');
-        Route::post('/', [NewsArticleController::class, 'store'])->name('store');
-        Route::get('/{article}', [NewsArticleController::class, 'show'])->name('show');
-        Route::get('/{article}/edit', [NewsArticleController::class, 'edit'])->name('edit');
-        Route::put('/{article}', [NewsArticleController::class, 'update'])->name('update');
-        Route::delete('/{article}', [NewsArticleController::class, 'destroy'])->name('destroy');
+        Route::post('/store', [NewsArticleController::class, 'store'])->name('store');
+        Route::get('/show/{article}', [NewsArticleController::class, 'show'])->name('show');
+        Route::get('/edit/{article}', [NewsArticleController::class, 'edit'])->name('edit');
+        Route::put('/update/{article}', [NewsArticleController::class, 'update'])->name('update');
+        Route::delete('/delete/{article}', [NewsArticleController::class, 'destroy'])->name('destroy');
     });
 
     // Route admin/orders
@@ -372,4 +384,14 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::put('/update', [ProfileController::class, 'update'])->name('update');
     Route::put('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
     });
+});
+
+// Wallet user routes
+Route::middleware('auth')->prefix('wallet')->name('wallet.')->group(function () {
+    Route::get('/', [App\Http\Controllers\WalletController::class, 'index'])->name('index');
+    Route::get('/deposit', [App\Http\Controllers\WalletController::class, 'showDepositForm'])->name('deposit.form');
+    Route::post('/deposit', [App\Http\Controllers\WalletController::class, 'deposit'])->name('deposit');
+    Route::get('/withdraw', [App\Http\Controllers\WalletController::class, 'showWithdrawForm'])->name('withdraw.form');
+    Route::post('/withdraw', [App\Http\Controllers\WalletController::class, 'withdraw'])->name('withdraw');
+    Route::get('/vnpay-return', [App\Http\Controllers\WalletController::class, 'vnpayReturn'])->name('vnpayReturn');
 });

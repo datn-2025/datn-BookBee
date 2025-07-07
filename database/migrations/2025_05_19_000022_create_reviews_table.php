@@ -14,7 +14,7 @@ return new class extends Migration
             $table->uuid('book_id');
             $table->integer('rating');
             $table->text('comment')->nullable();
-            $table->string('status', 50)->default('pending');
+            $table->enum('status', ['visible', 'hidden'])->default('visible');
             $table->timestamps();
 
             // Foreign key constraints

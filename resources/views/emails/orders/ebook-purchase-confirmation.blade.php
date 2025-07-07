@@ -72,7 +72,7 @@
                 <div class="book-item">
                     <h4>{{ $item->book->title }}</h4>
                     <p>Định dạng: Ebook</p>
-                    <p>Tác giả: {{ $item->book->author->name }}</p>
+                    <p>Tác giả: {{ $item->book->authors->first()->name }}</p>
                     <a href="{{ asset('storage/' . $item->bookFormat->file_url) }}" class="button" target="_blank">
                         Tải Ebook
                     </a>

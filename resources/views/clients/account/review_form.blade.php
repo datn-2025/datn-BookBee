@@ -10,7 +10,7 @@
             <img src="{{ $item->book->cover_image_url }}" alt="{{ $item->book->title }}" class="w-24 h-32 object-cover border border-slate-300 shadow-sm rounded-none">
             <div class="flex-1 w-full">
                 <div class="font-semibold text-lg text-black mb-1">{{ $item->book->title }}</div>
-                <div class="text-xs text-gray-500 mb-1">Tác giả: <span class="font-medium text-black">{{ $item->book->author->name ?? 'N/A' }}</span></div>
+                <div class="text-xs text-gray-500 mb-1">Tác giả: <span class="font-medium text-black">{{ $item->book->authors->first()->name ?? 'N/A' }}</span></div>
                 <div class="text-xs text-gray-500 mb-1">Nhà xuất bản: <span class="font-medium text-black">{{ $item->book->brand->name ?? 'N/A' }}</span></div>
                 <div class="text-xs text-gray-500 mb-1">Danh mục: <span class="font-medium text-black">{{ $item->book->category->name ?? 'N/A' }}</span></div>
                 <div class="text-xs text-gray-500 mb-1">Định dạng sách: <span class="font-medium text-black">{{ $item->book->is_ebook ? 'Ebook' : 'Sách vật lý' }}</span></div>
@@ -39,7 +39,7 @@
                 <div class="flex justify-between text-base font-bold text-black border-t pt-2 mt-2"><span>Tổng cộng:</span><span>{{ number_format($order->total_amount, 0, ',', '.') }} đ</span></div>
             </div>
         </div>
-        <form action="{{ route('account.review.store') }}" method="POST" class="space-y-5">
+        <form action="{{ route('account.reviews.store') }}" method="POST" class="space-y-5">
             @csrf
             <input type="hidden" name="order_id" value="{{ $order->id }}">
             <input type="hidden" name="book_id" value="{{ $item->book->id }}">

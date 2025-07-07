@@ -16,7 +16,7 @@ class TopSellingBooksReport extends Component
             ->withSum('orderItems as total_sold', 'quantity')
             ->has('orderItems') // <-- Chỉ lấy sách đã từng được bán
             ->orderByDesc('total_sold')
-            ->limit(7)
+            ->limit(5)
             ->get();
     }
 
