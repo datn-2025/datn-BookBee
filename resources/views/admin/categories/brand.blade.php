@@ -100,16 +100,17 @@
 
                                 </tbody>
                             </table>
-                        </div>
-                        <div class="d-flex justify-content-center mt-4">
-                            <div class="text-muted">
-                                Hiển thị <strong>{{ $brands->firstItem() }}</strong> đến
-                                <strong>{{ $brands->lastItem() }}</strong> trong tổng số
-                                <strong>{{ $brands->total() }}</strong> danh mục
-                            </div>
-                            <div>
-                                {{ $brands->links('pagination::bootstrap-5') }}
-                            </div>
+                            <!-- Phân trang -->
+                                <div class="d-flex justify-content-between align-items-center mt-3 px-3">
+                                    <div class="text-muted">
+                                        Hiển thị <strong>{{ $brands->firstItem() }}</strong> đến
+                                        <strong>{{ $brands->lastItem() }}</strong> trong tổng số
+                                        <strong>{{ $brands->total() }}</strong> danh mục
+                                    </div>
+                                    <div>
+                                        {{ $brands->links('pagination::bootstrap-4') }}
+                                    </div>
+                                </div>
                         </div>
                     </div>
                 </div>

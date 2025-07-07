@@ -21,7 +21,7 @@
                 <div class="card">
                     <div class="card-body">
                         <form action="{{ route('admin.categories.brands.store') }}" method="POST"
-                            enctype="multipart/form-data">
+                            enctype="multipart/form-data" onsubmit="return disableSubmitOnce(this)">
                             @csrf
                             <div class="mb-3">
                                 <label for="name" class="form-label">Tên thương hiệu <span
