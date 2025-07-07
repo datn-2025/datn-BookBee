@@ -123,7 +123,7 @@
                                                         <td>
                                                             <a href="{{ route('admin.users.show', ['id' => $user->id]) }}"
                                                                 class="link-success fs-15">
-                                                                <i class="las la-eye"></i>
+                                                                <i class="ri-eye-fill align-bottom me-2 text-muted"></i>
                                                             </a>
 
                                                             <a href="{{ route('admin.users.edit', $user->id) }}"
@@ -142,6 +142,17 @@
                                         </tbody>
 
                                     </table>
+                                    <!-- Phân trang -->
+                                    <div class="d-flex justify-content-between align-items-center mt-3 px-3">
+                                        <div class="text-muted">
+                                            Hiển thị <strong>{{ $users->firstItem() }}</strong> đến
+                                            <strong>{{ $users->lastItem() }}</strong> trong tổng số
+                                            <strong>{{ $users->total() }}</strong> danh mục
+                                        </div>
+                                        <div>
+                                            {{ $users->links('pagination::bootstrap-4') }}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -154,7 +165,5 @@
         </div>
 
     </div>
-    <div class="d-flex justify-content-center mt-4">
-        {{ $users->links('pagination::bootstrap-5') }}
-    </div>
+    {!! Toastr::message() !!}
 @endsection
