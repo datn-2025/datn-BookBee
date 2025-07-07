@@ -7,39 +7,40 @@ use App\Mail\UserStatusUpdated;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class UserController extends Controller
 {
     public function index(Request $request)
-{
-    $query = User::with('role')
-        ->select('id', 'name', 'avatar', 'email', 'phone', 'role_id', 'status')
-        ->whereHas('role', function ($q) {
-            $q->whereIn('name', ['User', 'Staff']);
-        })
-        ->orderByDesc('created_at'); // Sắp xếp người dùng mới nhất lên đầu
+    {
+        $query = User::with('role')
+            ->select('id', 'name', 'avatar', 'email', 'phone', 'role_id', 'status')
+            ->whereHas('role', function ($q) {
+                $q->whereIn('name', ['User', 'Staff']);
+            })
+            ->orderByDesc('created_at'); // Sắp xếp người dùng mới nhất lên đầu
 
-    // Tìm kiếm theo text
-    if ($request->filled('search')) {
-        $search = $request->input('search');
-        $query->where(function ($q) use ($search) {
-            $q->where('name', 'like', "%$search%")
-                ->orWhere('email', 'like', "%$search%")
-                ->orWhere('phone', 'like', "%$search%");
-        });
+        // Tìm kiếm theo text
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%$search%")
+                    ->orWhere('email', 'like', "%$search%")
+                    ->orWhere('phone', 'like', "%$search%");
+            });
+        }
+
+        // Lọc theo trạng thái
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $users = $query->paginate(10)->appends($request->only(['search', 'status']));
+
+        return view('admin.users.index', compact('users'));
     }
-
-    // Lọc theo trạng thái
-    if ($request->filled('status')) {
-        $query->where('status', $request->status);
-    }
-
-    $users = $query->paginate(10)->appends($request->only(['search', 'status']));
-
-    return view('admin.users.index', compact('users'));
-}
 
 
     public function show($id)
@@ -88,6 +89,17 @@ class UserController extends Controller
         // Lưu thông tin cũ trước khi cập nhật
         $oldRole = $user->role ? $user->role->name : 'Chưa phân quyền';
         $oldStatus = $user->status;
+
+        // Kiểm tra thay đổi
+        $original = $user->only(['role_id', 'status']);
+        $incoming = [
+            'role_id' => $request->input('role_id'),
+            'status' => $request->input('status'),
+        ];
+        if ($original === $incoming) {
+            Toastr()->info('Không có thay đổi nào cho người dùng.');
+            return redirect()->route('admin.users.index');
+        }
 
         // Cập nhật thông tin
         $user->update([
