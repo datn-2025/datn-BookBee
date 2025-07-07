@@ -293,7 +293,9 @@
                                 title="Tài khoản">
                                 <span class="d-flex align-items-center">
                                     <img class="rounded-circle header-profile-user"
-                                        src="{{ asset('assets/images/users/avatar-1.jpg') }}" alt="Avatar">
+                                        src="{{ auth()->user()->avatar ?: 'https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png' }}"
+                                        alt="Avatar">
+
                                     <span class="text-start ms-xl-2">
                                         <span
                                             class="d-none d-xl-inline-block ms-1 fw-medium user-name-text">{{ auth()->user()->name }}</span>
@@ -306,7 +308,7 @@
                             <div class="dropdown-menu dropdown-menu-end">
                                 <h6 class="dropdown-header">Welcome {{ auth()->user()->name }}!</h6>
                                 <!-- item-->
-                                <a class="dropdown-item" href="pages-profile.html"><i
+                                <a class="dropdown-item" href="{{ route('admin.profile.edit')}}"><i
                                         class="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i> <span
                                         class="align-middle">Tài Khoản</span></a>
                                 <a class="dropdown-item" href="apps-chat.html"><i
@@ -402,7 +404,8 @@
                                     </li>
                                     <li><a href="{{ route('admin.attributes.index') }}" class="nav-link">Thuộc
                                             tính</a></li>
-                                    <li><a href="{{ route('admin.collections.index') }}" class="nav-link">Combo sách</a></li>
+                                    <li><a href="{{ route('admin.collections.index') }}" class="nav-link">Combo
+                                            sách</a></li>
                                 </ul>
                             </div>
                         </li>
@@ -511,7 +514,8 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link menu-link" href="{{ route('admin.reviews.index') }}">
-                                <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Bình luận & Đánh giá</span>
+                                <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Bình luận & Đánh
+                                    giá</span>
                             </a>
                         </li>
                         <li class="nav-item">
