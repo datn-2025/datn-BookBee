@@ -33,7 +33,7 @@
                 </div>
             </div>
         </div>
-        <!-- end page title --> 
+        <!-- end page title -->
         <div class="row">
             <div class="col">
                 <div class="card">
@@ -45,7 +45,7 @@
                             </a>
                             <a href="{{ route('admin.payment-methods.trash') }}" class="btn btn-danger btn-sm">
                                 <i class="ri-delete-bin-line me-1"></i> Thùng rác
-                                @if($trashCount > 0)
+                                @if ($trashCount > 0)
                                     <span class="badge bg-light text-danger ms-1">{{ $trashCount }}</span>
                                 @endif
                             </a>
@@ -56,8 +56,8 @@
                         <div class="d-flex justify-content-end">
                             <form action="{{ route('admin.payment-methods.index') }}" method="GET" class="d-flex gap-2">
                                 <div class="col-auto">
-                                    <input type="text" name="search" class="form-control form-control-sm" 
-                                           placeholder="Tìm kiếm theo tên" value="{{ request('search') }}">
+                                    <input type="text" name="search" class="form-control form-control-sm"
+                                        placeholder="Tìm kiếm theo tên" value="{{ request('search') }}">
                                 </div>
                                 <div class="col-auto">
                                     <button type="submit" class="btn btn-primary btn-sm">
@@ -72,66 +72,95 @@
                     </div>
                     <!-- Kết thúc Form tìm kiếm -->
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-nowrap align-middle mb-0">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">STT</th>
-                                        <th scope="col">Tên Phương Thức</th>
-                                        <th scope="col">Mô Tả</th>
-                                        <th scope="col">Ngày Tạo</th>
-                                        <th scope="col">Trạng Thái</th>
-                                        <th scope="col">Thao Tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($paymentMethods as $key => $method)
+                        @if ($paymentMethods->isEmpty())
+                            <div class="noresult text-center py-5">
+                                @if (filled(request()->get('search')))
+                                    <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop"
+                                        colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px">
+                                    </lord-icon>
+                                    <h5 class="mt-3 text-danger">Không tìm thấy phương thức thanh toán phù hợp</h5>
+                                    <p class="text-muted">
+                                        Không có phương thức nào khớp với từ khóa
+                                        <strong>"{{ request()->get('search') }}"</strong>.<br>
+                                        Vui lòng kiểm tra lại từ khóa hoặc thử lại với nội dung khác.
+                                    </p>
+                                @else
+                                    <lord-icon src="https://cdn.lordicon.com/nocovwne.json" trigger="loop"
+                                        colors="primary:#405189,secondary:#0ab39c" style="width:100px;height:100px">
+                                    </lord-icon>
+                                    <h5 class="mt-3 text-muted">Danh sách phương thức thanh toán hiện đang trống</h5>
+                                    <p class="text-muted">Nhấn <strong>“Thêm phương thức”</strong> để bắt đầu thiết lập hệ
+                                        thống thanh toán.</p>
+                                @endif
+                            </div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-striped table-nowrap align-middle mb-0">
+                                    <thead>
                                         <tr>
-                                            <td>{{ $paymentMethods->firstItem() + $key }}</td>
-                                            <td>{{ $method->name }}</td>
-                                            <td class="text-truncate" style="max-width: 300px;" title="{{ $method->description }}">
-                                                <!-- {{ $method->description ?: 'Không có mô tả' }} -->
-                                                {!! $method->description ?: '<span class="text-muted">Không có mô tả</span>' !!}
-                                            </td>
-                                            <td>{{ $method->created_at->format('d/m/Y H:i') }}</td>
-                                            <td>
-                                                @if($method->is_active)
-                                                    <span class="badge bg-success">Đang hoạt động</span>
-                                                @else
-                                                    <span class="badge bg-secondary">Ngừng hoạt động</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                <div class="btn-group">
-                                                    <a href="{{ route('admin.payment-methods.edit', $method) }}" 
-                                                       class="btn btn-sm btn-light" title="Chỉnh sửa">
-                                                        <i class="ri-pencil-fill align-bottom me-2 text-muted"></i>
-                                                    </a>
-                                                    <form action="{{ route('admin.payment-methods.destroy', $method) }}" 
-                                                          method="POST" class="d-inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm"
+                                            <th scope="col">STT</th>
+                                            <th scope="col">Tên Phương Thức</th>
+                                            <th scope="col">Mô Tả</th>
+                                            <th scope="col">Ngày Tạo</th>
+                                            <th scope="col">Trạng Thái</th>
+                                            <th scope="col">Thao Tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($paymentMethods as $key => $method)
+                                            <tr>
+                                                <td>{{ $paymentMethods->firstItem() + $key }}</td>
+                                                <td>{{ $method->name }}</td>
+                                                <td class="text-truncate" style="max-width: 300px;"
+                                                    title="{{ $method->description }}">
+                                                    <!-- {{ $method->description ?: 'Không có mô tả' }} -->
+                                                    {!! $method->description ?: '<span class="text-muted">Không có mô tả</span>' !!}
+                                                </td>
+                                                <td>{{ $method->created_at->format('d/m/Y H:i') }}</td>
+                                                <td>
+                                                    @if ($method->is_active)
+                                                        <span class="badge bg-success">Đang hoạt động</span>
+                                                    @else
+                                                        <span class="badge bg-secondary">Ngừng hoạt động</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <a href="{{ route('admin.payment-methods.edit', $method) }}"
+                                                            class="btn btn-sm btn-light" title="Chỉnh sửa">
+                                                            <i class="ri-pencil-fill align-bottom me-2 text-muted"></i>
+                                                        </a>
+                                                        <form
+                                                            action="{{ route('admin.payment-methods.destroy', $method) }}"
+                                                            method="POST" class="d-inline">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-sm"
                                                                 onclick="return confirm('Bạn có chắc muốn xóa phương thức thanh toán này?')"
                                                                 title="Xóa">
-                                                            <i class="ri-delete-bin-fill align-bottom me-2"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="5" class="text-center">Không có phương thức thanh toán nào</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
+                                                                <i class="ri-delete-bin-fill align-bottom me-2"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
 
-                        <div class="d-flex justify-content-center mt-4">
-                            {{ $paymentMethods->links('pagination::bootstrap-5') }}
-                        </div>
+                            <!-- Phân trang -->
+                            <div class="d-flex justify-content-between align-items-center mt-3 px-3">
+                                <div class="text-muted">
+                                    Hiển thị <strong>{{ $paymentMethods->firstItem() }}</strong> đến
+                                    <strong>{{ $paymentMethods->lastItem() }}</strong> trong tổng số
+                                    <strong>{{ $paymentMethods->total() }}</strong> phương thức thanh toán
+                                </div>
+                                <div>
+                                    {{ $paymentMethods->links('pagination::bootstrap-4') }}
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
