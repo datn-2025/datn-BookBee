@@ -26,11 +26,8 @@ class AdminCategoryController extends Controller
             $categories = $query->orderBy('created_at', 'desc')->paginate(10);
             $trashCount = Category::onlyTrashed()->count();
 
-            return view('admin.categories.index', [
-                'categories' => $categories,
-                'searchName' => $request['search_name_category'] ?? '',
-                'trashCount' => $trashCount
-            ]);
+           return view('admin.categories.index', compact('categories', 'search', 'trashCount'));
+           
         } catch (\Throwable $e) {
             Log::error('Lỗi khi lấy danh sách danh mục: ' . $e->getMessage());
             Toastr::error('Không thể truy vấn danh mục. Vui lòng thử lại sau.');
