@@ -1,5 +1,8 @@
 @extends('layouts.app')
-@section('title', $book->title)
+@php
+    use Carbon\Carbon;
+@endphp
+@section('title', isset($combo) ? $combo->name : ($book->title ?? 'Chi tiết'))
 @push('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link href="https://fonts.googleapis.com/css2?family=AdihausDIN:wght@400;700&family=TitilliumWeb:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -358,6 +361,300 @@
 @endpush
 @section('content')
 <div class="product-detail-page">
+@if(isset($combo))
+    {{-- Hiển thị phần thông tin combo ở đầu, giữ nguyên các section chi tiết phía dưới --}}
+    <div class="bg-gray-50 py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex items-center space-x-2 text-sm adidas-font">
+                <a href="/" class="breadcrumb-item hover:text-black transition-colors duration-300 flex items-center">
+                    <i class="fas fa-home mr-1"></i>
+                    <span>Trang chủ</span>
+                </a>
+                <span class="text-gray-400">/</span>
+                <a href="{{ route('home') }}" class="breadcrumb-item hover:text-black transition-colors duration-300">Combo Sách</a>
+                <span class="text-gray-400">/</span>
+                <span class="breadcrumb-item active">{{ $combo->name }}</span>
+            </nav>
+        </div>
+    </div>
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-12">
+            {{-- Ảnh combo --}}
+            <div class="space-y-6">
+                <div class="product-image-main relative group">
+                    <div class="aspect-square bg-white border border-gray-100 overflow-hidden">
+                        <img src="{{ $combo->cover_image ? asset('storage/'.$combo->cover_image) : 'https://via.placeholder.com/400x500?text=Combo+Sách' }}" alt="{{ $combo->name }}" class="product-image w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-8 adidas-font lg:pl-8">
+                <!-- Tiêu đề -->
+                <div class="space-y-4 pb-6 border-b border-gray-200">
+                    <div class="space-y-2">
+                        <h1 class="text-4xl lg:text-5xl font-bold text-black leading-tight tracking-tight">{{ isset($combo) ? $combo->name : ($book->title ?? '') }}</h1>
+                    </div>
+                
+                </div>
+                <!-- Thông tin nhanh -->
+                <div class="grid grid-cols-2 gap-4 mt-6">
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 font-medium">SỐ SÁCH</span>
+                            <span class="text-black font-semibold">{{ $combo->books->count() }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 font-medium">NGÀY BẮT ĐẦU</span>
+                            <span class="text-black font-semibold">{{ optional($combo->start_date)->format('d/m/Y') ?? '-' }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 font-medium">NGÀY KẾT THÚC</span>
+                            <span class="text-black font-semibold">{{ optional($combo->end_date)->format('d/m/Y') ?? '-' }}</span>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 font-medium">TRẠNG THÁI</span>
+                            @php
+                                $statusText = $combo->status === 'active' ? 'Đang mở bán' : 'Ngừng bán';
+                                $statusClass = $combo->status === 'active' ? 'status-in-stock' : 'status-out-of-stock';
+                            @endphp
+                            <span class="font-semibold {{ $statusClass }}">{{ $statusText }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 font-medium">GIÁ COMBO</span>
+                            <span class="text-black font-bold text-lg">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Khối giá và trạng thái -->
+                <div class="price-section space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <span class="text-4xl font-bold text-black">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
+                        @php
+                            $statusText = $combo->status === 'active' ? ($combo->combo_stock > 0 ? 'Còn hàng' : 'Hết hàng') : 'Ngừng bán';
+                            $statusClass = $combo->status === 'active' ? ($combo->combo_stock > 0 ? 'status-in-stock' : 'status-out-of-stock') : 'status-out-of-stock';
+                            $statusDot = $combo->status === 'active' ? ($combo->combo_stock > 0 ? 'bg-green-500' : 'bg-red-500') : 'bg-red-500';
+                        @endphp
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold {{ $combo->combo_stock > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' }} border">
+                            <span class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block"></span>{{ $statusText }}
+                        </span>
+                        @if($combo->combo_stock > 0)
+                            <span class="text-sm text-gray-600">(<span class="font-bold text-black">{{ $combo->combo_stock }}</span> combo còn lại)</span>
+                        @endif
+                    </div>
+                </div>
+                <!-- Form mua combo giống sách đơn -->
+                <form action="{{ route('cart.add') }}" method="POST" class="mt-6">
+                    @csrf
+                    <input type="hidden" name="combo_id" value="{{ $combo->id }}">
+                    <input type="hidden" name="type" value="combo">
+                    <!-- Danh sách sách trong combo (di chuyển lên trên) -->
+                    <div class="space-y-6 mb-6">
+                        <h2 class="text-xl font-bold text-black mb-2">Danh sách sách trong combo:</h2>
+                        <ul class="list-disc pl-6 space-y-2">
+                            @foreach($combo->books as $book)
+                                <li>
+                                    <a href="{{ route('books.show', $book->slug) }}" class="text-lg text-blue-600 hover:underline font-semibold">{{ $book->title }}</a>
+                                    <span class="text-gray-500">@if($book->authors->count()) - Tác giả: {{ $book->authors->pluck('name')->join(', ') }} @endif</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-black uppercase tracking-wider mb-2">Số lượng</label>
+                        <div class="flex items-center max-w-xs">
+                            <button type="button" class="quantity-btn px-4 py-2 border border-gray-300 bg-white text-xl font-bold" onclick="updateComboQty(-1)">-</button>
+                            <input type="number" name="quantity" id="comboQuantity" value="1" min="1" class="w-16 text-center border-t border-b border-gray-300 py-2 text-lg font-semibold" style="appearance: none;" />
+                            <button type="button" class="quantity-btn px-4 py-2 border border-gray-300 bg-white text-xl font-bold" onclick="updateComboQty(1)">+</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full block adidas-btn-enhanced px-8 py-4 bg-black text-white border-2 border-black font-bold uppercase tracking-wider hover:bg-white hover:text-black transition-all duration-300 flex items-center justify-center space-x-3 mb-3"
+                        @if($combo->status !== 'active') disabled style="opacity:0.6;pointer-events:none;" @endif>
+                        <i class="fas fa-shopping-bag mr-2"></i>
+                        <span>Thêm vào giỏ hàng</span>
+                    </button>
+                     <!-- Wishlist Button -->
+                        <button class="wishlist-btn w-full h-14 border-2 border-black text-black font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center">
+                            <i class="far fa-heart mr-3"></i>
+                            YÊU THÍCH
+                        </button>
+                    <!-- Enhanced Share Section -->
+                <div class="share-section pt-8 border-t border-gray-200">
+                    <h3 class="text-sm font-bold text-black uppercase tracking-wider mb-6">Chia sẻ sản phẩm</h3>
+                    <div class="flex space-x-4">
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}"
+                            target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="https://twitter.com/intent/tweet?url={{ urlencode(url()->current()) }}" 
+                           target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ urlencode(url()->current()) }}"
+                            target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                        <a href="https://api.whatsapp.com/send?text={{ urlencode(url()->current()) }}" 
+                           target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                        <a href="https://t.me/share/url?url={{ urlencode(url()->current()) }}" 
+                           target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                            <i class="fab fa-telegram-plane"></i>
+                        </a>
+                    </div>
+                </div>
+                </form>
+                <script>
+                    function updateComboQty(change) {
+                        const input = document.getElementById('comboQuantity');
+                        let val = parseInt(input.value) || 1;
+                        val += change;
+                        if (val < 1) val = 1;
+                        input.value = val;
+                    }
+                </script>
+            </div>
+        </div>
+    </section>
+    
+@endif
+
+{{-- Sau phần combo hoặc book info, luôn render các section chi tiết phía dưới --}}
+ @if(isset($relatedCombos) && $relatedCombos->count())
+             {{-- Enhanced Related Products Section - Adidas Style --}}
+              <div class="mt-16 bg-white/90 shadow-sm border border-gray-200 rounded-lg p-6">
+        <h2 class="text-2xl font-semibold mb-4 border-b border-gray-300 pb-2 text-gray-800 flex items-center">
+            <i class="fas fa-align-left mr-2 text-red-400"></i>Mô tả combo
+        </h2>
+        @php
+            $comboDesc = strip_tags($combo->description ?? '');
+            $showComboMore = \Illuminate\Support\Str::length($comboDesc) > 200;
+        @endphp
+        <div id="comboDescription" class="text-gray-700 text-base leading-relaxed text-center"
+             data-full="{{ e($comboDesc) }}"
+             data-short="{{ \Illuminate\Support\Str::limit($comboDesc, 200, '...') }}">
+            @if (empty($comboDesc))
+                <span class="italic text-gray-400">Không có mô tả nào</span>
+            @else
+                {{ $showComboMore ? \Illuminate\Support\Str::limit($comboDesc, 200, '...') : $comboDesc }}
+            @endif
+        </div>
+        @if($showComboMore)
+            <button id="showMoreComboBtn" class="text-blue-500 mt-2 text-sm hover:underline">Xem thêm</button>
+        @endif
+    </div>
+        <div class="mt-20 space-y-8">
+            <!-- Section Header with Adidas Style -->
+            <div class="relative">
+                <div class="flex items-center space-x-4 mb-8">
+                    <div class="w-1 h-12 bg-black"></div>
+                    <div>
+                        <h2 class="adidas-font text-3xl font-bold text-black uppercase tracking-wider">
+                            SẢN PHẨM LIÊN QUAN
+                        </h2>
+                        <p class="text-sm text-gray-600 uppercase tracking-wide font-medium mt-1">Có thể bạn sẽ thích</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Products Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                @foreach ($relatedCombos as $related)
+                    <div class="related-product-card bg-white border-2 border-gray-100 relative overflow-hidden group hover:border-black transition-all duration-500 p-2 cursor-pointer"
+                         onclick="window.location.href='{{ route('combos.show', $related->slug ?? $related->id) }}'">
+                        <!-- Product Image Container -->
+                        <div class="relative aspect-square bg-gray-50 overflow-hidden rounded-lg">
+                            <!-- Main Product Image -->
+                            <a href="{{ route('books.show', $related->slug ?? $related->id) }}" class="block w-full h-full">
+                                <img src="{{ asset('storage/' . ($related->cover_image ?? 'default.jpg')) }}"
+                                    alt="{{ $related->title }}" 
+                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out">
+                            </a>
+                            <!-- Premium Overlay -->
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duratyion-500"></div>
+                            <!-- Wishlist Button -->
+                            <div class="absolute top-2 right-2">
+                                <button class="w-9 h-9 bg-white bg-opacity-90 backdrop-blur-sm border border-gray-200 flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all duration-300 transform hover:scale-110 rounded-full"
+                                        onclick="event.stopPropagation()">
+                                    <i class="far fa-heart text-base"></i>
+                                </button>
+                            </div>
+                            <!-- Quick View Button (hover) -->
+                            <div class="absolute bottom-2 left-2 right-2 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out">
+                                <button onclick="event.stopPropagation(); window.location.href='{{ route('combos.show', $related->slug ?? $related->id) }}'"
+                                    class="w-full bg-black bg-opacity-90 backdrop-blur-sm text-white py-2 px-3 text-center font-bold uppercase tracking-wider text-xs hover:bg-white hover:text-black transition-all duration-300 block rounded">
+                                    XEM CHI TIẾT →
+                                </button>
+                            </div>
+                            <!-- Stock Badge -->
+                            @php $relatedStock = $related->combo_stock ?? 0; @endphp
+                            @if($relatedStock <= 0)
+                                <div class="absolute top-2 left-2">
+                                    <span class="bg-red-600 text-white text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                                        HẾT HÀNG
+                                    </span>
+                                </div>
+                            @endif
+                        </div>
+                        <!-- Product Info -->
+                        <div class="p-3 space-y-2 bg-white">
+                            <h3 class="font-bold text-black text-base leading-tight group-hover:text-gray-600 transition-colors duration-300 line-clamp-2 min-h-[40px]">
+                                <span class="hover:underline">{{ $related->name }}</span>
+                            </h3>
+                            <p class="text-xs text-gray-600 uppercase tracking-wide font-medium min-h-[18px]">
+                                {{ $related->books->pluck('authors')->flatten()->pluck('name')->unique()->join(', ') ?: 'KHÔNG RÕ TÁC GIẢ' }}
+                            </p>
+                            <div class="flex items-center space-x-2 pt-1">
+                                <span class="text-lg font-bold text-black">
+                                    {{ number_format($related->combo_price, 0, ',', '.') }}₫
+                                </span>
+                            </div>
+                            <div class="pt-1">
+                                <button onclick="event.stopPropagation(); addRelatedToCart('{{ $related->id }}')"
+                                        class="adidas-btn-enhanced w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center group/btn {{ $relatedStock <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800' }}"
+                                        {{ $relatedStock <= 0 ? 'disabled' : '' }}>
+                                    <span class="relative flex items-center space-x-1">
+                                        <i class="fas fa-shopping-cart text-xs"></i>
+                                        <span>{{ $relatedStock <= 0 ? 'HẾT HÀNG' : 'THÊM VÀO GIỎ' }}</span>
+                                        <i class="fas fa-arrow-right text-xs transform group-hover/btn:translate-x-1 transition-transform duration-300"></i>
+                                    </span>
+                                </button>
+                            </div>
+                            @if($related->reviews && $related->reviews->count() > 0)
+                                <div class="flex items-center space-x-1 pt-1 border-t border-gray-100 mt-1">
+                                    <div class="flex text-yellow-400 text-xs">
+                                        @php $avgRating = $related->reviews->avg('rating') @endphp
+                                        @for ($i = 1; $i <= 5; $i++)
+                                            @if ($i <= $avgRating)
+                                                ★
+                                            @else
+                                                ☆
+                                            @endif
+                                        @endfor
+                                    </div>
+                                    <span class="text-xs text-gray-500 font-medium">
+                                        ({{ $related->reviews->count() }})
+                                    </span>
+                                </div>
+                            @endif
+                        </div>
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-600 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div class="absolute top-0 right-0 w-0 h-0 border-l-[16px] border-l-transparent border-t-[16px] border-t-black opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- View All Button -->
+            <div class="flex justify-center pt-8">
+                <a href="{{ route('books.index') }}" class="adidas-btn-enhanced px-8 py-4 bg-white text-black border-2 border-black font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all duration-300 flex items-center space-x-3">
+                    <span>XEM TẤT CẢ SẢN PHẨM</span>
+                </a>
+            </div>
+        </div>
+        @endif
+
+@if(!isset($combo))
     {{-- Breadcrumb --}}
     <div class="bg-gray-50 py-4">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -383,8 +680,8 @@
                 <!-- Main Image with Enhanced Container -->
                 <div class="product-image-main relative group">
                     <div class="aspect-square bg-white border border-gray-100 overflow-hidden">
-                        <img src="{{ asset('storage/' . ($book->cover_image ?? 'images/default.jpg')) }}"
-                            alt="{{ $book->title }}" id="mainImage" 
+                        <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
+                            alt="{{ $book->title }}" id="mainImage"
                             class="product-image w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </div>
                     <!-- Zoom indicator -->
@@ -422,7 +719,13 @@
                         <div class="space-y-3">
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600 font-medium">TÁC GIẢ</span>
-                                <span class="text-black font-semibold">{{ $book->authors->first()->name ?? 'Không rõ' }}</span>
+                                <span class="text-black font-semibold">
+    @if($book->authors && $book->authors->count())
+        {{ $book->authors->pluck('name')->join(', ') }}
+    @else
+        Không rõ
+    @endif
+</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600 font-medium">THƯƠNG HIỆU</span>
@@ -464,6 +767,43 @@
                         <span id="bookPrice" data-base-price="{{ $defaultPrice }}" 
                               class="text-4xl font-bold text-black">
                             {{ number_format($finalPrice, 0, ',', '.') }}₫
+                    </div>
+                </div>
+                @if(isset($bookGifts) && $bookGifts->count())
+                    <div class="book-gifts-section mt-6">
+                        <h3 class="text-lg font-bold text-black mb-2 flex items-center"><span class="mr-2">🎁</span>Quà tặng kèm</h3>
+                        <ul class="space-y-3">
+                            @foreach($bookGifts as $gift)
+                                <li class="flex items-start space-x-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                    @if($gift->gift_image)
+                                        <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="{{ $gift->gift_name }}" class="w-16 h-16 object-cover rounded shadow">
+                                    @else
+                                        <span class="w-16 h-16 flex items-center justify-center bg-gray-200 rounded">🎁</span>
+                                    @endif
+                                    <div>
+                                        <div class="font-semibold text-black">{{ $gift->gift_name }}</div>
+                                        @if($gift->gift_description)
+                                            <div class="text-sm text-gray-600">{{ $gift->gift_description }}</div>
+                                        @endif
+                                        @if($gift->quantity > 0)
+                                            <div class="text-xs text-green-600 mt-1">Số lượng: {{ $gift->quantity }}</div>
+                                        @endif
+                                        @if($gift->start_date || $gift->end_date)
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                @if($gift->start_date)
+                                                    <span>Bắt đầu: {{ Carbon::parse($gift->start_date)->format('d/m/Y') }}</span>
+                                                @endif
+                                                @if($gift->end_date)
+                                                    <span class="ml-2">Kết thúc: {{ Carbon::parse($gift->end_date)->format('d/m/Y') }}</span>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
                         </span>
                         @if ($discount > 0)
                             <div class="flex items-center space-x-3">
@@ -648,6 +988,29 @@
                 </div>
             </div>
         </div>
+        @php
+            $bookDesc = strip_tags($book->description ?? '');
+            $showBookMore = \Illuminate\Support\Str::length($bookDesc) > 200;
+        @endphp
+        @if(isset($book))
+    <div class="mt-16 bg-white/90 shadow-sm border border-gray-200 rounded-lg p-6">
+        <h2 class="text-2xl font-semibold mb-4 border-b border-gray-300 pb-2 text-gray-800 flex items-center">
+            <i class="fas fa-align-left mr-2 text-red-400"></i>Mô tả sách
+        </h2>
+        <div id="bookDescription" class="text-gray-700 text-base leading-relaxed text-center"
+             data-full="{{ e($bookDesc) }}"
+             data-short="{{ \Illuminate\Support\Str::limit($bookDesc, 200, '...') }}">
+            @if (empty($bookDesc))
+                <span class="italic text-gray-400">Không có mô tả nào</span>
+            @else
+                {{ $showBookMore ? \Illuminate\Support\Str::limit($bookDesc, 200, '...') : $bookDesc }}
+            @endif
+        </div>
+        @if($showBookMore)
+            <button id="showMoreBtn" class="text-blue-500 mt-2 text-sm hover:underline">Xem thêm</button>
+        @endif
+    </div>
+@endif
 
         {{-- Enhanced Reviews Section - Adidas Style --}}
         <div class="mt-20 space-y-8">
@@ -922,7 +1285,7 @@
                         <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-600 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                         <!-- Corner accent -->
-                        <div class="absolute top-0 right-0 w-0 h-0 border-l-[20px] border-l-transparent border-t-[20px] border-t-black opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div class="absolute top-0 right-0 w-0 h-0 border-l-[16px] border-l-transparent border-t-[16px] border-t-black opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     </div>
                 @endforeach
             </div>
@@ -931,13 +1294,12 @@
             <div class="flex justify-center pt-8">
                 <a href="{{ route('books.index') }}" class="adidas-btn-enhanced px-8 py-4 bg-white text-black border-2 border-black font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all duration-300 flex items-center space-x-3">
                     <span>XEM TẤT CẢ SẢN PHẨM</span>
-                    <i class="fas fa-arrow-right transform hover:translate-x-1 transition-transform duration-300"></i>
                 </a>
             </div>
         </div>
-    </section>
+    </div>
 </div>
-@endsection
+@endif
 
 <!-- Modal Đọc Thử Ebook -->
 <div id="previewModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
@@ -1206,38 +1568,38 @@
             });
         }
 
-        // Enhanced show more description functionality
+        // Toggle for book description
         const showMoreBtn = document.getElementById('showMoreBtn');
-        const descriptionDiv = document.getElementById('bookDescription');
-        const fadeOverlay = document.getElementById('fadeOverlay');
-        const btnText = document.getElementById('btnText');
-        const btnIcon = document.getElementById('btnIcon');
-        
-        // Track expand state
-        let isExpanded = false;
-        
-        if (showMoreBtn && descriptionDiv) {
+        const bookDescriptionDiv = document.getElementById('bookDescription');
+        let isBookExpanded = false;
+        if (showMoreBtn && bookDescriptionDiv) {
             showMoreBtn.addEventListener('click', function() {
-                if (isExpanded) {
-                    // Currently expanded, so collapse it
-                    descriptionDiv.textContent = descriptionDiv.dataset.short;
-                    btnText.textContent = 'Xem thêm';
-                    btnIcon.className = 'fas fa-chevron-down transform group-hover/btn:rotate-180 transition-transform duration-300';
-                    if (fadeOverlay) fadeOverlay.style.opacity = '1';
-                    descriptionDiv.style.maxHeight = '200px';
-                    isExpanded = false;
+                if (isBookExpanded) {
+                    bookDescriptionDiv.innerHTML = bookDescriptionDiv.dataset.short;
+                    showMoreBtn.textContent = 'Xem thêm';
+                    isBookExpanded = false;
                 } else {
-                    // Currently collapsed, so expand it
-                    descriptionDiv.textContent = descriptionDiv.dataset.full;
-                    btnText.textContent = 'Thu gọn';
-                    btnIcon.className = 'fas fa-chevron-up transform group-hover/btn:rotate-180 transition-transform duration-300';
-                    if (fadeOverlay) fadeOverlay.style.opacity = '0';
-                    descriptionDiv.style.maxHeight = 'none';
-                    isExpanded = true;
+                    bookDescriptionDiv.innerHTML = bookDescriptionDiv.dataset.full;
+                    showMoreBtn.textContent = 'Thu gọn';
+                    isBookExpanded = true;
                 }
-                
-                // Add smooth animation
-                descriptionDiv.style.transition = 'all 0.5s ease-in-out';
+            });
+        }
+        // Toggle for combo description
+        const showMoreComboBtn = document.getElementById('showMoreComboBtn');
+        const comboDescriptionDiv = document.getElementById('comboDescription');
+        let isComboExpanded = false;
+        if (showMoreComboBtn && comboDescriptionDiv) {
+            showMoreComboBtn.addEventListener('click', function() {
+                if (isComboExpanded) {
+                    comboDescriptionDiv.innerHTML = comboDescriptionDiv.dataset.short;
+                    showMoreComboBtn.textContent = 'Xem thêm';
+                    isComboExpanded = false;
+                } else {
+                    comboDescriptionDiv.innerHTML = comboDescriptionDiv.dataset.full;
+                    showMoreComboBtn.textContent = 'Thu gọn';
+                    isComboExpanded = true;
+                }
             });
         }
 
@@ -1577,3 +1939,4 @@
     }
 </script>
 @endpush
+@endsection
