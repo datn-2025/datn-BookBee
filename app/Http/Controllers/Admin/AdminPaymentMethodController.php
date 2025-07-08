@@ -102,8 +102,8 @@ class AdminPaymentMethodController extends Controller
 
         $paymentMethod->update($validated);
 
-        return redirect()->route('admin.payment-methods.index')
-            ->with('success', 'Phương thức thanh toán đã được cập nhật');
+        Toastr::success('Phương thức thanh toán đã được cập nhật thành công');
+        return redirect()->route('admin.payment-methods.index');
     }
 
     public function updateStatus(Request $request, $id)
