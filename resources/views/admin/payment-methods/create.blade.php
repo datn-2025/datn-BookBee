@@ -25,7 +25,7 @@
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-body">
-                        <form action="{{ route('admin.payment-methods.store') }}" method="POST">
+                        <form action="{{ route('admin.payment-methods.store') }}" method="POST" onsubmit="return handleSubmit(this)">
                             @csrf
                             <div class="mb-3">
                                 <label for="name" class="form-label">Tên phương thức <span class="text-danger">*</span></label>
@@ -73,3 +73,15 @@
         </div>
     </div>
 @endsection
+@push('scripts')
+<script>
+    function handleSubmit(form) {
+        const btn = form.querySelector("button[type=submit]");
+        if (btn && !btn.disabled) {
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Đang xử lý...`;
+        }
+        return true;
+    }
+</script>
+@endpush
