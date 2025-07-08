@@ -43,12 +43,16 @@
                             </div>
 
                             <div class="col-md-6">
-                                <form method="GET" action="{{ route('admin.payment-methods.index') }}" class="d-flex justify-content-md-end align-items-center gap-2">
-                                    <input type="text" name="search" value="{{ old('search', $search ?? '') }}" class="form-control" placeholder="Tìm theo tên phương thức thanh toán" value="{{ request('search') }}" style="width: 300px;">
+                                <form method="GET" action="{{ route('admin.payment-methods.index') }}"
+                                    class="d-flex justify-content-md-end align-items-center gap-2">
+                                    <input type="text" name="search" value="{{ old('search', $search ?? '') }}"
+                                        class="form-control" placeholder="Tìm theo tên phương thức thanh toán"
+                                        value="{{ request('search') }}" style="width: 300px;">
                                     <button type="submit" class="btn btn-primary px-4">
                                         <i class="ri-search-2-line"></i> Tìm kiếm
                                     </button>
-                                    <a href="{{ route('admin.payment-methods.index') }}" class="btn btn-outline-secondary px-4">
+                                    <a href="{{ route('admin.payment-methods.index') }}"
+                                        class="btn btn-outline-secondary px-4">
                                         <i class="ri-refresh-line"></i> Làm mới
                                     </a>
                                 </form>
@@ -60,13 +64,21 @@
                             @if ($paymentMethods->isEmpty())
                                 <div class="noresult text-center py-5">
                                     @if (filled(request()->get('search')))
-                                        <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>
+                                        <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop"
+                                            colors="primary:#121331,secondary:#08a88a"
+                                            style="width:75px;height:75px"></lord-icon>
                                         <h5 class="mt-3 text-danger">Không tìm thấy phương thức thanh toán phù hợp</h5>
-                                        <p class="text-muted">Không có phương thức nào khớp với từ khóa <strong>"{{ request()->get('search') }}"</strong>.<br>Vui lòng kiểm tra lại từ khóa hoặc thử lại với nội dung khác.</p>
+                                        <p class="text-muted">Không có phương thức nào khớp với từ khóa
+                                            <strong>"{{ request()->get('search') }}"</strong>.<br>Vui lòng kiểm tra lại từ
+                                            khóa hoặc thử lại với nội dung khác.
+                                        </p>
                                     @else
-                                        <lord-icon src="https://cdn.lordicon.com/nocovwne.json" trigger="loop" colors="primary:#405189,secondary:#0ab39c" style="width:100px;height:100px"></lord-icon>
+                                        <lord-icon src="https://cdn.lordicon.com/nocovwne.json" trigger="loop"
+                                            colors="primary:#405189,secondary:#0ab39c"
+                                            style="width:100px;height:100px"></lord-icon>
                                         <h5 class="mt-3 text-muted">Danh sách phương thức thanh toán hiện đang trống</h5>
-                                        <p class="text-muted">Nhấn <strong>“Thêm phương thức”</strong> để bắt đầu thiết lập hệ thống thanh toán.</p>
+                                        <p class="text-muted">Nhấn <strong>“Thêm phương thức”</strong> để bắt đầu thiết lập
+                                            hệ thống thanh toán.</p>
                                     @endif
                                 </div>
                             @else
@@ -86,9 +98,10 @@
                                             <tr>
                                                 <td>{{ $paymentMethods->firstItem() + $key }}</td>
                                                 <td>{{ $method->name }}</td>
-                                                <td class="text-truncate" style="max-width: 260px;" title="{{ $method->description }}">
+                                                <td class="text-truncate" style="max-width: 260px;"
+                                                    title="{{ $method->description }}">
                                                     {!! $method->description ?: '<span class="text-muted">Không có mô tả</span>' !!}
-                                                </td> 
+                                                </td>
                                                 <td>{{ $method->created_at->format('d/m/Y H:i') }}</td>
                                                 <td>
                                                     @if ($method->is_active)
@@ -99,13 +112,18 @@
                                                 </td>
                                                 <td>
                                                     <div class="btn-group gap-2">
-                                                        <a href="{{ route('admin.payment-methods.edit', $method) }}" class="btn btn-sm btn-warning" title="Chỉnh sửa">
+                                                        <a href="{{ route('admin.payment-methods.edit', $method) }}"
+                                                            class="btn btn-sm btn-warning" title="Chỉnh sửa">
                                                             <i class="ri-edit-2-line"></i>
                                                         </a>
-                                                        <form action="{{ route('admin.payment-methods.destroy', $method) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa phương thức thanh toán này?')">
+                                                        <form
+                                                            action="{{ route('admin.payment-methods.destroy', $method) }}"
+                                                            method="POST" class="d-inline"
+                                                            onsubmit="return confirm('{{ $method->payments()->exists() ? 'Phương thức này đang được sử dụng trong các đơn hàng. Bạn có chắc chắn muốn xóa không?' : 'Bạn có chắc chắn muốn xóa phương thức thanh toán này không?' }}')">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button type="submit" class="btn btn-sm btn-danger" title="Xóa tạm thời">
+                                                            <button type="submit" class="btn btn-sm btn-danger"
+                                                                title="Xóa tạm thời">
                                                                 <i class="ri-delete-bin-fill"></i>
                                                             </button>
                                                         </form>
