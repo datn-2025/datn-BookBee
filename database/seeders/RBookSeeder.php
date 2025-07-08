@@ -79,7 +79,7 @@ class RBookSeeder extends Seeder
                 'slug' => $item['slug'],
                 'description' => $item['description'],
                 'category_id' => $category->id,
-                'author_id' => $author->id,
+                // 'author_id' => $author->id,
                 'brand_id' => $brand->id,
                 'status' => 'available',
                 'cover_image' => $item['cover_image'],
