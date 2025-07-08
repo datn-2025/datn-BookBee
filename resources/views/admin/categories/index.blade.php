@@ -47,7 +47,7 @@
                                 <form method="GET" action="{{ route('admin.categories.index') }}"
                                     class="d-flex justify-content-md-end align-items-center gap-2">
                                     <input type="text" name="search_name_category" class="form-control"
-                                        placeholder="Tìm theo tên danh mục" value="{{ $searchName ?? '' }}"
+                                        placeholder="Tìm theo tên danh mục" value="{{ old('searchName', $searchName ?? '') }}"
                                         style="width: 220px;">
                                     <button type="submit" class="btn btn-primary px-4">
                                         <i class="ri-search-2-line"></i> Tìm kiếm
@@ -142,7 +142,7 @@
                                         <strong>{{ $categories->total() }}</strong> danh mục
                                     </div>
                                     <div>
-                                        {{ $categories->links('pagination::bootstrap-4') }}
+                                        {{ $categories->withQueryString()->links('pagination::bootstrap-4') }}
                                     </div>
                                 </div>
                             @endif
