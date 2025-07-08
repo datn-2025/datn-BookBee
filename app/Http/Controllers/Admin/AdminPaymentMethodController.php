@@ -9,6 +9,7 @@ use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
@@ -16,23 +17,28 @@ class AdminPaymentMethodController extends Controller
 {
     public function index(Request $request)
     {
-        $search = $request->input('search');
+        try {
+            $search = $request->input('search');
 
-        $query = PaymentMethod::query();
+            $query = PaymentMethod::query();
 
-        if ($search) {
-            $query->where('name', 'like', "%{$search}%");
+            if (!empty($search)) {
+                $query->where('name', 'like', '%' . $search . '%');
+            }
+
+            $paymentMethods = $query->latest()->paginate(2);
+            $trashCount = PaymentMethod::onlyTrashed()->count();
+
+            return view('admin.payment-methods.index', [
+                'paymentMethods' => $paymentMethods,
+                'trashCount' => $trashCount,
+                'search' => $search,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Lỗi khi truy vấn phương thức thanh toán: ' . $e->getMessage());
+            Toastr::error('Không thể truy vấn dữ liệu. Vui lòng thử lại sau.');
+            return back();
         }
-
-        $paymentMethods = $query->latest()->paginate(10);
-        $trashCount = PaymentMethod::onlyTrashed()->count();
-
-        // Giữ lại tham số tìm kiếm khi phân trang
-        if ($request->has('search')) {
-            $paymentMethods->appends(['search' => $search]);
-        }
-
-        return view('admin.payment-methods.index', compact('paymentMethods', 'trashCount'));
     }
     public function create()
     {
