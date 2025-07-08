@@ -44,7 +44,7 @@
 
                             <div class="col-md-6">
                                 <form method="GET" action="{{ route('admin.payment-methods.index') }}" class="d-flex justify-content-md-end align-items-center gap-2">
-                                    <input type="text" name="search" class="form-control" placeholder="Tìm theo tên phương thức thanh toán" value="{{ request('search') }}" style="width: 300px;">
+                                    <input type="text" name="search" value="{{ old('search', $search ?? '') }}" class="form-control" placeholder="Tìm theo tên phương thức thanh toán" value="{{ request('search') }}" style="width: 300px;">
                                     <button type="submit" class="btn btn-primary px-4">
                                         <i class="ri-search-2-line"></i> Tìm kiếm
                                     </button>
@@ -124,7 +124,7 @@
                                         <strong>{{ $paymentMethods->total() }}</strong> phương thức thanh toán
                                     </div>
                                     <div>
-                                        {{ $paymentMethods->links('pagination::bootstrap-4') }}
+                                        {{ $paymentMethods->withQueryString()->links('pagination::bootstrap-4') }}
                                     </div>
                                 </div>
                             @endif
