@@ -28,9 +28,6 @@
                     </div>
 
                     <div class="card-body">
-                        @if (session('error'))
-                            <div class="alert alert-danger">{{ session('error') }}</div>
-                        @endif
 
                         <!-- Thanh công cụ -->
                         <div class="row g-4 mb-3">
