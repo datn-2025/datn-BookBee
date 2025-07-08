@@ -26,7 +26,7 @@ class AdminPaymentMethodController extends Controller
                 $query->where('name', 'like', '%' . $search . '%');
             }
 
-            $paymentMethods = $query->latest()->paginate(2);
+            $paymentMethods = $query->latest()->paginate(10);
             $trashCount = PaymentMethod::onlyTrashed()->count();
 
             return view('admin.payment-methods.index', compact('paymentMethods', 'trashCount', 'search'));
@@ -37,7 +37,7 @@ class AdminPaymentMethodController extends Controller
             return back();
         }
     }
-    
+
     public function create()
     {
         return view('admin.payment-methods.create');
@@ -46,9 +46,9 @@ class AdminPaymentMethodController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:100|unique:payment_methods|not_regex:/<.*?>/i',
+            'name' => 'required|string|max:100|unique:payment_methods,name|not_regex:/<.*?>/i',
             'description' => 'nullable|string|max:800',
-            'is_active' => 'boolean'
+            'is_active' => 'sometimes|boolean'
         ], [
             'name.required' => 'Tên phương thức thanh toán là bắt buộc',
             'name.string' => 'Tên phương thức thanh toán phải là chuỗi',
@@ -81,11 +81,23 @@ class AdminPaymentMethodController extends Controller
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('payment_methods')->ignore($paymentMethod->id)
+                'not_regex:/<.*?>/i',
+                Rule::unique('payment_methods', 'name')->ignore($paymentMethod->id)
             ],
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:800',
             'is_active' => 'sometimes|boolean'
-        ]);
+        ], [
+            'name.required' => 'Tên phương thức thanh toán là bắt buộc',
+            'name.string' => 'Tên phương thức thanh toán phải là chuỗi',
+            'name.unique' => 'Tên phương thức thanh toán đã tồn tại',
+            'name.max' => 'Tên phương thức thanh toán không được vượt quá 100 ký tự',
+            'name.not_regex' => 'Tên phương thức thanh toán không được chứa thẻ HTML',
+            'description.string' => 'Mô tả phải là chuỗi',
+            'description.max' => 'Mô tả không được vượt quá 800 ký tự',
+            'is_active.sometimes' => 'Trạng thái là bắt buộc',
+            'is_active.boolean' => 'Trạng thái không hợp lệ',
+        ]);           
+        
         $validated['is_active'] = $request->has('is_active');
 
         $paymentMethod->update($validated);
