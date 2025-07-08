@@ -37,6 +37,7 @@ class AdminPaymentMethodController extends Controller
             return back();
         }
     }
+    
     public function create()
     {
         return view('admin.payment-methods.create');
@@ -92,6 +93,7 @@ class AdminPaymentMethodController extends Controller
         return redirect()->route('admin.payment-methods.index')
             ->with('success', 'Phương thức thanh toán đã được cập nhật');
     }
+
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
