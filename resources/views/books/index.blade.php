@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="vi" class="scroll-smooth">
 <head>
-  <title>BookBee - Premium Bookstore</title>
+  <title>BookBee - Cửa hàng sách cao cấp</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="csrf-token" content="{{ csrf_token() }}" />
@@ -108,8 +108,37 @@
       60% { transform: translateY(-1px); }
     }
     
+    @keyframes giftPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
     .adidas-loading {
       animation: adidasPulse 1s infinite;
+    }
+    
+    .combo-badge {
+      background: linear-gradient(135deg, #7c3aed, #5b21b6);
+      box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+      transition: all 0.3s ease;
+    }
+    
+    .combo-badge:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+    }
+    
+    .gift-badge {
+      background: linear-gradient(135deg, #ec4899, #be185d);
+      box-shadow: 0 2px 8px rgba(236, 72, 153, 0.3);
+      animation: giftPulse 2s infinite;
+      transition: all 0.3s ease;
+    }
+    
+    .gift-badge:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);
+      animation: none;
     }
   </style>
 </head>
@@ -141,26 +170,26 @@
           </p>
           
           <p class="text-lg md:text-xl text-adidas-silver mb-10 max-w-2xl mx-auto animate-slide-in" style="animation-delay: 0.4s;">
-            Discover the world's best books. Premium collection for passionate readers.
+            Khám phá những cuốn sách hay nhất thế giới. Bộ sưu tập cao cấp dành cho độc giả đam mê.
           </p>
           
           <!-- Call to Action Buttons -->
           <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12 animate-slide-in" style="animation-delay: 0.5s;">
             <button class="adidas-btn ripple bg-adidas-white text-adidas-black px-8 py-4 rounded-lg font-bold uppercase tracking-wide hover:bg-adidas-gray hover:text-adidas-white transition-all duration-150 neon-glow">
-              Shop Now
+              Mua ngay
             </button>
             <button class="adidas-btn ripple border-2 border-adidas-white text-adidas-white px-8 py-4 rounded-lg font-bold uppercase tracking-wide hover:bg-adidas-white hover:text-adidas-black transition-all duration-150">
-              Explore Categories
+              Khám phá danh mục
             </button>
           </div>
           
           <!-- Breadcrumb -->
           <div class="flex justify-center items-center space-x-3 text-sm uppercase tracking-wider animate-slide-in" style="animation-delay: 0.6s;">
-            <a href="/" class="text-adidas-gray hover:text-adidas-white transition-colors duration-100 hover:underline">Home</a>
+            <a href="/" class="text-adidas-gray hover:text-adidas-white transition-colors duration-100 hover:underline">Trang chủ</a>
             <svg class="w-4 h-4 text-adidas-gray">
               <use xlink:href="#alt-arrow-right-outline"></use>
             </svg>
-            <span class="text-adidas-white font-semibold">Shop</span>
+            <span class="text-adidas-white font-semibold">Cửa hàng</span>
           </div>
         </div>
       </div>
@@ -179,28 +208,30 @@
     <!-- Adidas-Style Stats Section -->
     <section class="bg-adidas-light-gray py-12">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">              <div class="text-center group">                <div class="bg-adidas-white p-6 rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-75 transform group-hover:-translate-y-1">
-                  <div class="text-3xl font-black text-adidas-black mb-2">10K+</div>
-                  <div class="text-sm text-adidas-gray uppercase tracking-wide">Books Available</div>
-                </div>
-              </div>
-              <div class="text-center group">
-                <div class="bg-adidas-white p-6 rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-75 transform group-hover:-translate-y-1">
-                  <div class="text-3xl font-black text-adidas-black mb-2">5K+</div>
-                  <div class="text-sm text-adidas-gray uppercase tracking-wide">Happy Customers</div>
-                </div>
-              </div>
-              <div class="text-center group">
-                <div class="bg-adidas-white p-6 rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-75 transform group-hover:-translate-y-1">
-                  <div class="text-3xl font-black text-adidas-black mb-2">500+</div>
-                  <div class="text-sm text-adidas-gray uppercase tracking-wide">Authors</div>
-                </div>
-              </div>
-              <div class="text-center group">
-                <div class="bg-adidas-white p-6 rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-75 transform group-hover:-translate-y-1">
-                  <div class="text-3xl font-black text-adidas-black mb-2">24/7</div>
-                  <div class="text-sm text-adidas-gray uppercase tracking-wide">Support</div>
-                </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div class="text-center group">
+            <div class="bg-adidas-white p-6 rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-75 transform group-hover:-translate-y-1">
+              <div class="text-3xl font-black text-adidas-black mb-2">10K+</div>
+              <div class="text-sm text-adidas-gray uppercase tracking-wide">Sách có sẵn</div>
+            </div>
+          </div>
+          <div class="text-center group">
+            <div class="bg-adidas-white p-6 rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-75 transform group-hover:-translate-y-1">
+              <div class="text-3xl font-black text-adidas-black mb-2">5K+</div>
+              <div class="text-sm text-adidas-gray uppercase tracking-wide">Khách hàng hài lòng</div>
+            </div>
+          </div>
+          <div class="text-center group">
+            <div class="bg-adidas-white p-6 rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-75 transform group-hover:-translate-y-1">
+              <div class="text-3xl font-black text-adidas-black mb-2">500+</div>
+              <div class="text-sm text-adidas-gray uppercase tracking-wide">Tác giả</div>
+            </div>
+          </div>
+          <div class="text-center group">
+            <div class="bg-adidas-white p-6 rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-75 transform group-hover:-translate-y-1">
+              <div class="text-3xl font-black text-adidas-black mb-2">24/7</div>
+              <div class="text-sm text-adidas-gray uppercase tracking-wide">Hỗ trợ</div>
+            </div>
           </div>
         </div>
       </div>
@@ -218,7 +249,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                   <div class="flex items-center space-x-6">
                     <h2 class="text-3xl font-black text-adidas-black tracking-tight">
-                      BOOKS <span class="adidas-gradient-text">COLLECTION</span>
+                      BỘ SƯU TẬP <span class="adidas-gradient-text">SÁCH</span>
                     </h2>
                     <div class="h-8 w-px bg-gradient-to-b from-adidas-black to-adidas-gray"></div>
                     <div class="bg-adidas-black text-adidas-white px-4 py-2 rounded-full text-sm font-bold">
@@ -226,25 +257,25 @@
                     </div>
                   </div>
                   <div class="flex items-center space-x-6">
-                    <span class="text-sm font-bold text-adidas-gray uppercase tracking-wider">Sort by:</span>
+                    <span class="text-sm font-bold text-adidas-gray uppercase tracking-wider">Sắp xếp theo:</span>
                     <select onchange="location = this.value;" 
                             class="bg-adidas-white border-2 border-adidas-light-gray rounded-xl px-6 py-3 text-adidas-black font-semibold focus:border-adidas-black focus:outline-none transition-all duration-100 shadow-sm">
-                      <option value="">Featured</option>
-                      <option value="name_asc">Name A-Z</option>
-                      <option value="name_desc">Name Z-A</option>
-                      <option value="price_asc">Price Low to High</option>
-                      <option value="price_desc">Price High to Low</option>
-                      <option value="rating_desc">Best Rating</option>
-                      <option value="rating_asc">Lowest Rating</option>
+                      <option value="">Nổi bật</option>
+                      <option value="name_asc">Tên A-Z</option>
+                      <option value="name_desc">Tên Z-A</option>
+                      <option value="price_asc">Giá thấp đến cao</option>
+                      <option value="price_desc">Giá cao đến thấp</option>
+                      <option value="rating_desc">Đánh giá cao nhất</option>
+                      <option value="rating_asc">Đánh giá thấp nhất</option>
                     </select>
                   </div>
                 </div>
                 
                 <!-- Results info -->
                 <div class="mt-4 flex items-center justify-between text-sm text-adidas-gray">
-                  <span>Showing {{ $books->firstItem() }}–{{ $books->lastItem() }} of {{ $books->total() }} results</span>
+                  <span>Hiển thị {{ $books->firstItem() }}–{{ $books->lastItem() }} của {{ $books->total() }} kết quả</span>
                   <div class="flex items-center space-x-2">
-                    <span>View:</span>
+                    <span>Xem:</span>
                     <button class="p-2 bg-adidas-black text-adidas-white rounded-lg">
                       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3 3h6v6H3V3zm8 0h6v6h-6V3zM3 11h6v6H3v-6zm8 0h6v6h-6v-6z"/>
@@ -264,12 +295,29 @@
                 @foreach($books as $book)
                 <div class="book-card bg-adidas-white rounded-2xl overflow-hidden group cursor-pointer shadow-lg">
                   <div class="relative overflow-hidden">
-                    <!-- Premium Badge -->
-                    <div class="absolute top-4 left-4 z-20">
-                      <span class="bg-gradient-to-r from-adidas-black to-adidas-dark-gray text-adidas-white px-3 py-1 text-xs font-black uppercase rounded-full shadow-lg">
-                        Premium
-                      </span>
+                    <!-- Combo Badge -->
+                    @if(!empty($book->has_combo) && $book->has_combo > 0)
+                    <div class="absolute top-4 left-4 z-30" title="Combo: {{ $book->combo_names ?? 'Sách có combo khuyến mãi' }}">
+                      <div class="flex items-center space-x-1 bg-gradient-to-r from-purple-600 to-purple-800 text-white px-3 py-1 rounded-full shadow-lg hover:shadow-xl transition-all duration-200">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                        </svg>
+                        <span class="text-xs font-black uppercase tracking-wide">COMBO</span>
+                      </div>
                     </div>
+                    @endif
+
+                    <!-- Gift Badge -->
+                    @if(!empty($book->has_gift) && $book->has_gift > 0)
+                    <div class="absolute top-4 {{ !empty($book->has_combo) && $book->has_combo > 0 ? 'left-20' : 'left-4' }} z-30" title="Quà tặng: {{ $book->gift_names ?? 'Sách có quà tặng kèm theo' }}">
+                      <div class="flex items-center space-x-1 bg-gradient-to-r from-pink-500 to-pink-700 text-white px-3 py-1 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 animate-pulse">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.236 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.764A3.001 3.001 0 015 5zm2.764 0a1 1 0 012 0H7.764zM11 12a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-xs font-black uppercase tracking-wide">QUÀ TẶNG</span>
+                      </div>
+                    </div>
+                    @endif
                     
                     <!-- Discount Badge -->
                     @if(!empty($book->discount))
@@ -320,7 +368,7 @@
                     <!-- Category Tag -->
                     <div class="mb-3">
                       <span class="inline-block bg-adidas-light-gray text-adidas-black px-3 py-1 text-xs font-bold uppercase rounded-full">
-                        Fiction
+                        {{ $book->category_name ?? 'Chưa phân loại' }}
                       </span>
                     </div>
                     
@@ -333,7 +381,7 @@
 
                     <!-- Author -->
                     <p class="text-adidas-gray text-sm font-semibold uppercase tracking-wider mb-2">
-                      BY {{ strtoupper($book->author_name ?? 'Unknown Author') }}
+                      TÁC GIẢ: {{ strtoupper($book->author_name ?? 'Chưa rõ tác giả') }}
                     </p>
                     
                     <!-- Publisher/Brand -->
@@ -347,6 +395,29 @@
                       <i class="fas fa-folder me-1"></i>
                       Danh mục: {{ $book->category_name ?? 'Chưa phân loại' }}
                     </p>
+
+                    <!-- Combo and Gift Info -->
+                    @if((!empty($book->has_combo) && $book->has_combo > 0) || (!empty($book->has_gift) && $book->has_gift > 0))
+                    <div class="space-y-2 mb-4">
+                      @if(!empty($book->has_combo) && $book->has_combo > 0)
+                      <div class="flex items-center space-x-2">
+                        <div class="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <span class="text-xs text-purple-600 font-medium">
+                          Combo: {{ $book->combo_names ? (strlen($book->combo_names) > 30 ? substr($book->combo_names, 0, 30) . '...' : $book->combo_names) : 'Có sẵn' }}
+                        </span>
+                      </div>
+                      @endif
+                      
+                      @if(!empty($book->has_gift) && $book->has_gift > 0)
+                      <div class="flex items-center space-x-2">
+                        <div class="w-2 h-2 bg-pink-500 rounded-full"></div>
+                        <span class="text-xs text-pink-600 font-medium">
+                          Quà tặng: {{ $book->gift_names ? (strlen($book->gift_names) > 30 ? substr($book->gift_names, 0, 30) . '...' : $book->gift_names) : 'Có sẵn' }}
+                        </span>
+                      </div>
+                      @endif
+                    </div>
+                    @endif
 
                     <!-- Rating -->
                     <div class="flex items-center justify-between mb-6">
@@ -474,7 +545,7 @@
                   
                   <!-- Page info -->
                   <div class="text-center mt-4 text-sm text-adidas-gray">
-                    Page {{ $books->currentPage() }} of {{ $books->lastPage() }}
+                    Trang {{ $books->currentPage() }} / {{ $books->lastPage() }}
                   </div>
                 </div>
               </nav>
@@ -487,7 +558,7 @@
               <!-- Search Section -->
               <div class="mb-8">
                 <h3 class="text-lg font-bold text-adidas-black mb-4 uppercase tracking-wide border-b-2 border-adidas-light-gray pb-2">
-                  Search Books
+                  Tìm kiếm sách
                 </h3>
                 <form method="GET" action="{{ url()->current() }}" role="search" class="relative">
                   <input 
@@ -508,15 +579,15 @@
               <!-- Categories Filter -->
               <div class="mb-8">
                 <h3 class="text-lg font-bold text-adidas-black mb-4 uppercase tracking-wide border-b-2 border-adidas-light-gray pb-2">
-                  Categories
+                  Danh mục
                 </h3>
                 <select
-                  aria-label="Select category"
+                  aria-label="Chọn danh mục"
                   onchange="location = this.value;"
                   class="w-full px-4 py-3 border-2 border-adidas-light-gray rounded-lg focus:border-adidas-black focus:outline-none transition-colors duration-100 bg-adidas-white">
                   <option value="{{ url('/books') . '?' . http_build_query(request()->except('category')) }}"
                     {{ request()->segment(2) === null ? 'selected' : '' }}>
-                    All Categories
+                    Tất cả danh mục
                   </option>
                   @foreach($categories as $cat)
                     <option value="{{ url('/books/' . $cat->slug) . '?' . http_build_query(request()->except('authors', 'brands')) }}"
@@ -530,14 +601,14 @@
               <!-- Authors Filter -->
               <div class="mb-8">
                 <h3 class="text-lg font-bold text-adidas-black mb-4 uppercase tracking-wide border-b-2 border-adidas-light-gray pb-2">
-                  Authors
+                  Tác giả
                 </h3>
                 <select
-                  aria-label="Select author"
+                  aria-label="Chọn tác giả"
                   onchange="location = this.value;"
                   class="w-full px-4 py-3 border-2 border-adidas-light-gray rounded-lg focus:border-adidas-black focus:outline-none transition-colors duration-100 bg-adidas-white">
                   <option value="{{ url()->current() . '?' . http_build_query(request()->except('authors')) }}">
-                    All Authors
+                    Tất cả tác giả
                   </option>
                   @foreach ($authors as $author)
                     <option value="{{ url()->current() }}?authors={{ $author->id }}"
@@ -551,14 +622,14 @@
               <!-- Publishers Filter -->
               <div class="mb-8">
                 <h3 class="text-lg font-bold text-adidas-black mb-4 uppercase tracking-wide border-b-2 border-adidas-light-gray pb-2">
-                  Publishers
+                  Nhà xuất bản
                 </h3>
                 <select
-                  aria-label="Select publisher"
+                  aria-label="Chọn nhà xuất bản"
                   onchange="location = this.value;"
                   class="w-full px-4 py-3 border-2 border-adidas-light-gray rounded-lg focus:border-adidas-black focus:outline-none transition-colors duration-100 bg-adidas-white">
                   <option value="{{ url()->current() . '?' . http_build_query(request()->except('brands')) }}">
-                    All Publishers
+                    Tất cả nhà xuất bản
                   </option>
                   @foreach ($brands as $brand)
                     <option value="{{ url()->current() }}?brands={{ $brand->id }}"
@@ -572,7 +643,7 @@
               <!-- Price Filter -->
               <div class="mb-8">
                 <h3 class="text-lg font-bold text-adidas-black mb-4 uppercase tracking-wide border-b-2 border-adidas-light-gray pb-2">
-                  Price Range
+                  Khoảng giá
                 </h3>
                 <form method="GET" action="{{ url()->current() }}">
                   <div class="space-y-3">
@@ -598,12 +669,12 @@
                       <input type="radio" name="price_range" value="100+" 
                              {{ request('price_range') == '100+' ? 'checked' : '' }}
                              class="w-4 h-4 text-adidas-black focus:ring-adidas-black">
-                      <span class="text-adidas-gray group-hover:text-adidas-black transition-colors duration-100">Over 100,000 ₫</span>
+                      <span class="text-adidas-gray group-hover:text-adidas-black transition-colors duration-100">Trên 100,000 ₫</span>
                     </label>
                   </div>
                   <button type="submit" 
                           class="adidas-btn w-full mt-4 bg-adidas-black text-adidas-white py-3 rounded-lg font-semibold uppercase tracking-wide hover:bg-adidas-blue transition-colors duration-100">
-                    Apply Filter
+                    Áp dụng bộ lọc
                   </button>
                 </form>
               </div>
@@ -612,7 +683,7 @@
               <div class="pt-6 border-t border-adidas-light-gray">
                 <a href="{{ url('/books') }}" 
                    class="adidas-btn w-full block text-center bg-adidas-light-gray text-adidas-black py-3 rounded-lg font-semibold uppercase tracking-wide hover:bg-adidas-gray hover:text-adidas-white transition-colors duration-100">
-                  Reset All Filters
+                  Xóa tất cả bộ lọc
                 </a>
               </div>
 
@@ -654,17 +725,17 @@
             if (data.success) {
               button.classList.add('bg-adidas-red', 'text-adidas-white');
               button.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>';
-              showToast('Added to wishlist successfully!', 'success');
+              showToast('Đã thêm vào danh sách yêu thích!', 'success');
             } else {
               button.innerHTML = originalHTML;
               button.disabled = false;
-              showToast(data.message || 'Error adding to wishlist!', 'error');
+              showToast(data.message || 'Lỗi khi thêm vào danh sách yêu thích!', 'error');
             }
           })
           .catch(() => {
             button.innerHTML = originalHTML;
             button.disabled = false;
-            showToast('Connection error!', 'error');
+            showToast('Lỗi kết nối!', 'error');
           });
         });
       });
