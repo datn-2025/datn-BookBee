@@ -63,7 +63,7 @@
                             </div>
 
                             <div class="text-end">
-                                <a href="{{ route('admin.payment-methods.index') }}" class="btn btn-secondary me-2">Hủy</a>
+                                <a href="{{ route('admin.payment-methods.index') }}" class="btn btn-secondary me-2">Quay lại</a>
                                 <button type="submit" class="btn btn-primary">Thêm mới</button>
                             </div>
                         </form>
