@@ -45,14 +45,18 @@ class AdminPaymentMethodController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:100|unique:payment_methods',
-            'description' => 'nullable|string',
+            'name' => 'required|string|max:100|unique:payment_methods|not_regex:/<.*?>/i',
+            'description' => 'nullable|string|max:800',
             'is_active' => 'boolean'
         ], [
             'name.required' => 'Tên phương thức thanh toán là bắt buộc',
             'name.string' => 'Tên phương thức thanh toán phải là chuỗi',
-            'name.max' => 'Tên phương thức thanh toán không được vượt quá 100 ký tự',
             'name.unique' => 'Tên phương thức thanh toán đã tồn tại',
+            'name.max' => 'Tên phương thức thanh toán không được vượt quá 100 ký tự',
+            'name.not_regex' => 'Tên phương thức thanh toán không được chứa thẻ HTML',
+            'description.string' => 'Mô tả phải là chuỗi',
+            'description.max' => 'Mô tả không được vượt quá 800 ký tự',
+            'is_active.required' => 'Trạng thái là bắt buộc',
             'is_active.boolean' => 'Trạng thái không hợp lệ'
         ]);
 
@@ -60,8 +64,8 @@ class AdminPaymentMethodController extends Controller
             'is_active' => $request->has('is_active')
         ]));
 
-        return redirect()->route('admin.payment-methods.index')
-            ->with('success', 'Phương thức thanh toán đã được thêm thành công');
+        Toastr::success('Phương thức thanh toán đã được tạo thành công');
+        return redirect()->route('admin.payment-methods.index');
     }
 
     public function edit(PaymentMethod $paymentMethod)
