@@ -179,8 +179,8 @@ class AdminPaymentMethodController extends Controller
 
         $paymentMethod->delete();
 
-        return redirect()->route('admin.payment-methods.index')
-            ->with('success', 'Phương thức thanh toán đã được xóa');
+        Toastr::success('Đã xóa phương thức thanh toán thành công');
+        return redirect()->route('admin.payment-methods.index');
     }
 
     public function trash()
