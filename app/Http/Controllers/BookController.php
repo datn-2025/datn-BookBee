@@ -45,6 +45,21 @@ class BookController extends Controller
             ->leftJoin('categories', 'books.category_id', '=', 'categories.id')
             ->leftJoin('book_formats', 'books.id', '=', 'book_formats.book_id')
             ->leftJoin('reviews', 'books.id', '=', 'reviews.book_id')
+            ->leftJoin('book_collections', 'books.id', '=', 'book_collections.book_id')
+            ->leftJoin('collections', function($join) {
+                $join->on('book_collections.collection_id', '=', 'collections.id')
+                     ->where('collections.combo_price', '>', 0)
+                     ->whereNull('collections.deleted_at')
+                     ->where(function($query) {
+                         $query->whereNull('collections.start_date')
+                               ->orWhere('collections.start_date', '<=', now());
+                     })
+                     ->where(function($query) {
+                         $query->whereNull('collections.end_date')
+                               ->orWhere('collections.end_date', '>=', now());
+                     });
+            })
+            ->leftJoin('book_gifts', 'books.id', '=', 'book_gifts.book_id')
             ->select(
                 'books.id',
                 'books.title',
@@ -58,7 +73,11 @@ class BookController extends Controller
                 DB::raw('MAX(book_formats.price) as max_price'),
                 DB::raw('SUM(CASE WHEN book_formats.format_name NOT LIKE "%ebook%" AND book_formats.stock IS NOT NULL THEN book_formats.stock ELSE 0 END) as physical_stock'),
                 DB::raw('MAX(CASE WHEN book_formats.format_name LIKE "%ebook%" THEN 1 ELSE 0 END) as has_ebook'),
-                DB::raw('AVG(reviews.rating) as avg_rating')
+                DB::raw('AVG(reviews.rating) as avg_rating'),
+                DB::raw('COUNT(DISTINCT collections.id) as has_combo'),
+                DB::raw('COUNT(DISTINCT book_gifts.id) as has_gift'),
+                DB::raw('GROUP_CONCAT(DISTINCT collections.name SEPARATOR ", ") as combo_names'),
+                DB::raw('GROUP_CONCAT(DISTINCT book_gifts.gift_name SEPARATOR ", ") as gift_names')
             )
             ->when($category, fn($query) => $query->where('books.category_id', $category->id))
             ->groupBy('books.id', 'books.title', 'books.slug', 'books.cover_image', 'books.status', 'brands.name', 'categories.name');
@@ -205,6 +224,21 @@ class BookController extends Controller
                 ->leftJoin('categories', 'books.category_id', '=', 'categories.id')
                 ->leftJoin('book_formats', 'books.id', '=', 'book_formats.book_id')
                 ->leftJoin('reviews', 'books.id', '=', 'reviews.book_id')
+                ->leftJoin('book_collections', 'books.id', '=', 'book_collections.book_id')
+                ->leftJoin('collections', function($join) {
+                    $join->on('book_collections.collection_id', '=', 'collections.id')
+                         ->where('collections.combo_price', '>', 0)
+                         ->whereNull('collections.deleted_at')
+                         ->where(function($query) {
+                             $query->whereNull('collections.start_date')
+                                   ->orWhere('collections.start_date', '<=', now());
+                         })
+                         ->where(function($query) {
+                             $query->whereNull('collections.end_date')
+                                   ->orWhere('collections.end_date', '>=', now());
+                         });
+                })
+                ->leftJoin('book_gifts', 'books.id', '=', 'book_gifts.book_id')
                 ->select(
                     'books.id',
                     'books.title',
@@ -223,7 +257,11 @@ class BookController extends Controller
                     DB::raw('MAX(book_formats.discount) as max_discount'),
                     DB::raw('SUM(CASE WHEN book_formats.format_name NOT LIKE "%ebook%" AND book_formats.stock IS NOT NULL THEN book_formats.stock ELSE 0 END) as physical_stock'),
                     DB::raw('MAX(CASE WHEN book_formats.format_name LIKE "%ebook%" THEN 1 ELSE 0 END) as has_ebook'),
-                    DB::raw('AVG(reviews.rating) as avg_rating')
+                    DB::raw('AVG(reviews.rating) as avg_rating'),
+                    DB::raw('COUNT(DISTINCT collections.id) as has_combo'),
+                    DB::raw('COUNT(DISTINCT book_gifts.id) as has_gift'),
+                    DB::raw('GROUP_CONCAT(DISTINCT collections.name SEPARATOR ", ") as combo_names'),
+                    DB::raw('GROUP_CONCAT(DISTINCT book_gifts.gift_name SEPARATOR ", ") as gift_names')
                 )
                 ->groupBy(
                     'books.id', 
