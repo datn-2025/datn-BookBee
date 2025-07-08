@@ -9,6 +9,7 @@ use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
@@ -30,7 +31,6 @@ class AdminPaymentMethodController extends Controller
             $trashCount = PaymentMethod::onlyTrashed()->count();
 
             return view('admin.payment-methods.index', compact('paymentMethods', 'trashCount', 'search'));
-            
         } catch (\Throwable $e) {
             Log::error('Lỗi khi truy vấn phương thức thanh toán: ' . $e->getMessage());
             Toastr::error('Không thể truy vấn dữ liệu. Vui lòng thử lại sau.');
@@ -96,9 +96,18 @@ class AdminPaymentMethodController extends Controller
             'description.max' => 'Mô tả không được vượt quá 800 ký tự',
             'is_active.sometimes' => 'Trạng thái là bắt buộc',
             'is_active.boolean' => 'Trạng thái không hợp lệ',
-        ]);           
-        
+        ]);
+
         $validated['is_active'] = $request->has('is_active');
+
+        // Kiểm tra thay đổi
+        $original = $paymentMethod->only(['name', 'description', 'is_active']);
+        $incoming = Arr::only($validated, ['name', 'description', 'is_active']);
+
+        if ($original === $incoming) {
+            Toastr::info('Không có thay đổi nào cho phương thức thanh toán');
+            return redirect()->route('admin.payment-methods.index');
+        }
 
         $paymentMethod->update($validated);
 
