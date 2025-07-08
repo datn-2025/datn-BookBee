@@ -15,6 +15,7 @@ use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Admin\GiftController;
 use App\Models\BookGift;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class AdminBookController extends Controller
@@ -306,7 +307,7 @@ class AdminBookController extends Controller
 //        $book->author()->sync($request->input('author_ids', []));
         if ($request->has('author_ids')) {
             foreach ($request->input('author_ids') as $authorId) {
-                \DB::table('author_books')->insert([
+                DB::table('author_books')->insert([
                     'id' => Str::uuid(), // Tạo UUID mới
                     'book_id' => $book->id,
                     'author_id' => $authorId,
