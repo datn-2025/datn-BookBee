@@ -21,12 +21,14 @@ class Collection extends Model
         'start_date',
         'end_date',
         'combo_price',
+        'combo_stock', // Thêm trường này để fillable
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
         'combo_price' => 'decimal:2',
+        'combo_stock' => 'integer', // Thêm kiểu dữ liệu
     ];
 
     protected $dates = ['deleted_at'];
