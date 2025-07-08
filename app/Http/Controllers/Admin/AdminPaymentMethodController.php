@@ -29,11 +29,8 @@ class AdminPaymentMethodController extends Controller
             $paymentMethods = $query->latest()->paginate(2);
             $trashCount = PaymentMethod::onlyTrashed()->count();
 
-            return view('admin.payment-methods.index', [
-                'paymentMethods' => $paymentMethods,
-                'trashCount' => $trashCount,
-                'search' => $search,
-            ]);
+            return view('admin.payment-methods.index', compact('paymentMethods', 'trashCount', 'search'));
+            
         } catch (\Throwable $e) {
             Log::error('Lỗi khi truy vấn phương thức thanh toán: ' . $e->getMessage());
             Toastr::error('Không thể truy vấn dữ liệu. Vui lòng thử lại sau.');
