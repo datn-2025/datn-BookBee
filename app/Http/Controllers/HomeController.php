@@ -31,18 +31,18 @@ class HomeController extends Controller
 
         $featuredBooks = Book::with(['formats' => function ($q) {
             $q->orderByDesc('price');
-        }, 'author', 'images'])
+        }, 'authors', 'images'])
             ->withMax('formats', 'price')
             ->orderBy('formats_max_price', 'desc')
             ->take(4)
             ->get();
 
 
-        $latestBooks = Book::with(['author', 'images'])
+        $latestBooks = Book::with(['authors', 'images'])
             ->orderBy('publication_date', 'desc')
             ->take(4)
             ->get();
-        $bestReviewedBooks = Book::with(['author', 'images', 'formats', 'reviews'])
+        $bestReviewedBooks = Book::with(['authors', 'images', 'formats', 'reviews'])
             ->withMax('reviews', 'rating')
             ->orderBy('reviews_max_rating', 'desc')
             ->take(4)
@@ -50,7 +50,7 @@ class HomeController extends Controller
 
         $saleBooks = Book::with(['formats' => function ($q) {
             $q->orderByDesc('discount');
-        }, 'author', 'images'])
+        }, 'authors', 'images'])
             ->withMax('formats', 'discount')
             ->orderBy('formats_max_discount', 'desc')
             ->take(4)
@@ -69,12 +69,12 @@ class HomeController extends Controller
     public function show($slug)
 {
     $book = Book::with([
-        'author', 'category', 'brand', 'formats', 'images', 'reviews.user', 'attributeValues.attribute'
+        'authors', 'category', 'brand', 'formats', 'images', 'reviews.user', 'attributeValues.attribute'
     ])->where('slug', $slug)->firstOrFail();
 
     $relatedBooks = Book::where('category_id', $book->category_id)
         ->where('id', '!=', $book->id)
-        ->with(['images', 'author', 'formats'])
+        ->with(['images', 'authors', 'formats'])
         ->take(4)
         ->get();
 

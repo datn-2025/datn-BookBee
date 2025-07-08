@@ -11,11 +11,11 @@
         {{-- Giữa: Menu chính --}}
         <ul
             class="flex flex-wrap justify-center items-center gap-8 text-base semi-bold uppercase tracking-wide text-gray-900">
-            <li><a href="/" class="hover:text-red-500 text-red-500">Trang chủ</a></li>
+            <li><a href="{{ route('home') }}" class="hover:text-red-500 {{ request()->routeIs('home') ? 'text-red-500' : '' }}">Trang chủ</a></li>
             <li><a href="#" class="hover:text-red-500">Giới thiệu</a></li>
-            <li><a href="#" class="hover:text-red-500">Cửa hàng</a></li>
-            <li><a href="#" class="hover:text-red-500">Tin tức</a></li>
-            <li><a href="#" class="hover:text-red-500">Liên hệ</a></li>
+            <li><a href="{{ route('books.index') }}" class="hover:text-red-500 {{ request()->routeIs('books.*') ? 'text-red-500' : '' }}">Cửa hàng</a></li>
+            <li><a href="{{ route('news.index') }}" class="hover:text-red-500 {{ request()->routeIs('news.*') ? 'text-red-500' : '' }}">Tin tức</a></li>
+            <li><a href="{{ route('contact.form') }}" class="hover:text-red-500 {{ request()->routeIs('contact.*') ? 'text-red-500' : '' }}">Liên hệ</a></li>
         </ul>
         {{-- Phải: Tìm kiếm + icon + dòng phụ --}}
         <div class="flex flex-col items-end gap-1 text-sm md:text-xs">
@@ -36,11 +36,17 @@
             {{-- Dòng icon + tìm kiếm --}}
             <div class="flex items-center gap-3 text-[15px] text-gray-800">
                 {{-- Thanh tìm kiếm --}}
-                <div class="relative">
-                    <input type="text" placeholder="tìm kiếm"
-                           class="pl-3 pr-9 py-1 text-sm rounded border border-gray-300 focus:outline-none focus:border-black w-40">
-                    <i class="fas fa-search absolute right-2 top-1.5 text-sm text-gray-500"></i>
-                </div>
+                <form method="GET" action="{{ route('books.search') }}" class="relative">
+                    <input type="text" 
+                           name="search"
+                           placeholder="Tìm kiếm sách, tác giả, NXB, danh mục..."
+                           value="{{ request('search') }}"
+                           class="pl-3 pr-9 py-1 text-sm rounded border border-gray-300 focus:outline-none focus:border-black w-48"
+                           autocomplete="off">
+                    <button type="submit" class="absolute right-2 top-1.5 text-sm text-gray-500 hover:text-black">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
                 <!-- <i class="far fa-user hover:text-black cursor-pointer"></i> -->
                 <!-- Thay thế phần user icon cũ bằng code này -->
                 <div style="position: relative; display: inline-block;">
@@ -55,7 +61,7 @@
                     </a>
 
 
-                    <div style="position: absolute; right: 0; background: white;
+                    <div style="position: absolute; right: 0; background: white;  z-index: 1000;  
                 border: 1px solid #ddd; border-radius: 4px; display: none;" onmouseover="this.style.display='block'"
                          onmouseout="this.style.display='none'">
                         @auth
@@ -66,6 +72,10 @@
                             <a href="{{ route('orders.index') }}" style="display: block; padding: 8px 15px; color: #333; text-decoration: none;
                       border-bottom: 1px solid #eee; white-space: nowrap;">
                                 <i class="fas fa-user-circle" style="margin-right: 8px;"></i> Đơn Hàng Của Tôi
+                            </a>
+                            <a href="{{ route('wallet.index') }}" style="display: block; padding: 8px 15px; color: #333; text-decoration: none;
+                      border-bottom: 1px solid #eee; white-space: nowrap;">
+                                <i class="fas fa-user-circle" style="margin-right: 8px;"></i> Ví Của Tôi
                             </a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf

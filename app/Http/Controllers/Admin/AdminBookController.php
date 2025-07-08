@@ -24,7 +24,7 @@ class AdminBookController extends Controller
         $query = Book::query()
             ->with([
                 'category:id,name',
-                'author:id,name',
+                'authors:id,name',
                 'brand:id,name',
                 'formats:id,book_id,format_name,price,discount,stock',
                 'images:id,book_id,image_url'
@@ -53,7 +53,7 @@ class AdminBookController extends Controller
 
         // Lọc theo tác giả
         if ($request->filled('author')) {
-            $query->whereHas('author', function ($q) use ($request) {
+            $query->whereHas('authors', function ($q) use ($request) {
                 $q->where('authors.id', $request->author);
             });
         }
@@ -321,7 +321,7 @@ class AdminBookController extends Controller
     {
         $book = Book::with([
             'category:id,name',
-            'author:id,name',
+            'authors:id,name',
             'brand:id,name',
             'formats:id,book_id,format_name,price,discount,stock,file_url,sample_file_url,allow_sample_read',
             'images:id,book_id,image_url',
@@ -355,7 +355,7 @@ class AdminBookController extends Controller
             'formats',
             'images',
             'attributeValues',
-            'author' // sửa lại đúng quan hệ many-to-many
+            'authors' // sửa lại đúng quan hệ many-to-many
         ])->findOrFail($id);
 
         $categories = Category::all();
