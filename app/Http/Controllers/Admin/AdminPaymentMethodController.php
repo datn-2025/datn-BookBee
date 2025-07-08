@@ -173,11 +173,7 @@ class AdminPaymentMethodController extends Controller
 
     public function destroy(PaymentMethod $paymentMethod)
     {
-        if ($paymentMethod->payments()->exists()) {
-            return back()->with('error', 'Không thể xóa phương thức thanh toán này vì đã có giao dịch liên quan');
-        }
-
-        $paymentMethod->delete();
+        PaymentMethod::findOrFail($paymentMethod->id)->delete();
 
         Toastr::success('Đã xóa phương thức thanh toán thành công');
         return redirect()->route('admin.payment-methods.index');
