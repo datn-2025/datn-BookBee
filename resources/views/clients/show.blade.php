@@ -531,11 +531,11 @@
             $comboDesc = strip_tags($combo->description ?? '');
             $showComboMore = \Illuminate\Support\Str::length($comboDesc) > 200;
         @endphp
-        <div id="comboDescription" class="text-gray-700 text-base leading-relaxed text-center"
+        <div id="comboDescription" class="text-gray-700 text-base leading-relaxed text-left"
              data-full="{{ e($comboDesc) }}"
              data-short="{{ \Illuminate\Support\Str::limit($comboDesc, 200, '...') }}">
             @if (empty($comboDesc))
-                <span class="italic text-gray-400">Không có mô tả nào</span>
+                <div class="text-center"><span class="italic text-gray-400">Không có mô tả nào</span></div>
             @else
                 {{ $showComboMore ? \Illuminate\Support\Str::limit($comboDesc, 200, '...') : $comboDesc }}
             @endif
@@ -997,11 +997,11 @@
         <h2 class="text-2xl font-semibold mb-4 border-b border-gray-300 pb-2 text-gray-800 flex items-center">
             <i class="fas fa-align-left mr-2 text-red-400"></i>Mô tả sách
         </h2>
-        <div id="bookDescription" class="text-gray-700 text-base leading-relaxed text-center"
+        <div id="bookDescription" class="text-gray-700 text-base leading-relaxed text-left"
              data-full="{{ e($bookDesc) }}"
              data-short="{{ \Illuminate\Support\Str::limit($bookDesc, 200, '...') }}">
             @if (empty($bookDesc))
-                <span class="italic text-gray-400">Không có mô tả nào</span>
+                <div class="text-center"><span class="italic text-gray-400">Không có mô tả nào</span></div>
             @else
                 {{ $showBookMore ? \Illuminate\Support\Str::limit($bookDesc, 200, '...') : $bookDesc }}
             @endif
