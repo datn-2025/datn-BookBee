@@ -119,11 +119,11 @@
                                                         <form
                                                             action="{{ route('admin.payment-methods.destroy', $method) }}"
                                                             method="POST" class="d-inline"
-                                                            onsubmit="return confirm('{{ $method->payments()->exists() ? 'Phương thức này đang được sử dụng trong các đơn hàng. Bạn có chắc chắn muốn xóa không?' : 'Bạn có chắc chắn muốn xóa phương thức thanh toán này không?' }}')">
+                                                            onsubmit="return confirm('{{ $method->payments_count > 0 ? 'Phương thức này đang được sử dụng trong đơn hàng. Bạn có chắc chắn muốn xóa?' : 'Bạn có chắc chắn muốn xóa phương thức thanh toán này không?'}}')">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit" class="btn btn-sm btn-danger"
-                                                                title="Xóa tạm thời">
+                                                                title="Xóa tạm thời phương thức thanh toán">
                                                                 <i class="ri-delete-bin-fill"></i>
                                                             </button>
                                                         </form>
