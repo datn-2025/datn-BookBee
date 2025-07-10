@@ -104,8 +104,12 @@ class AISummaryService
         
         $prompt .= "Thông tin sách:\n";
         $prompt .= "**Tiêu đề:** {$book->title}\n";
-        $prompt .= "**Tác giả:** {$book->author->name}\n";
-        $prompt .= "**Thể loại:** {$book->category->name}\n";
+        
+        $authorName = $book->author ? $book->author->name : 'Tác giả không xác định';
+        $prompt .= "**Tác giả:** {$authorName}\n";
+        
+        $categoryName = $book->category ? $book->category->name : 'Thể loại không xác định';
+        $prompt .= "**Thể loại:** {$categoryName}\n";
         
         if ($book->description) {
             $prompt .= "**Mô tả:** {$book->description}\n";
@@ -211,8 +215,12 @@ class AISummaryService
     {
         $context = "Thông tin sách:\n";
         $context .= "- Tiêu đề: " . mb_convert_encoding($book->title, 'UTF-8', 'UTF-8') . "\n";
-        $context .= "- Tác giả: " . mb_convert_encoding($book->author->name, 'UTF-8', 'UTF-8') . "\n";
-        $context .= "- Thể loại: " . mb_convert_encoding($book->category->name, 'UTF-8', 'UTF-8') . "\n";
+        
+        $authorName = $book->author ? $book->author->name : 'Tác giả không xác định';
+        $context .= "- Tác giả: " . mb_convert_encoding($authorName, 'UTF-8', 'UTF-8') . "\n";
+        
+        $categoryName = $book->category ? $book->category->name : 'Thể loại không xác định';
+        $context .= "- Thể loại: " . mb_convert_encoding($categoryName, 'UTF-8', 'UTF-8') . "\n";
         
         if ($book->description) {
             $cleanDescription = mb_convert_encoding(substr($book->description, 0, 300), 'UTF-8', 'UTF-8');
@@ -236,7 +244,7 @@ class AISummaryService
     {
         // Làm sạch UTF-8 cho tất cả dữ liệu đầu vào
         $cleanBookTitle = mb_convert_encoding($book->title, 'UTF-8', 'UTF-8');
-        $cleanAuthorName = mb_convert_encoding($book->author->name, 'UTF-8', 'UTF-8');
+        $cleanAuthorName = mb_convert_encoding($book->author ? $book->author->name : 'Tác giả không xác định', 'UTF-8', 'UTF-8');
         $cleanUserMessage = mb_convert_encoding($userMessage, 'UTF-8', 'UTF-8');
         
         $prompt = "Bạn là một trợ lý AI chuyên về phân tích sách và văn học. ";
@@ -264,8 +272,8 @@ class AISummaryService
     {
         // Làm sạch UTF-8 cho dữ liệu sách
         $cleanBookTitle = mb_convert_encoding($book->title, 'UTF-8', 'UTF-8');
-        $cleanAuthorName = mb_convert_encoding($book->author->name, 'UTF-8', 'UTF-8');
-        $cleanCategoryName = mb_convert_encoding($book->category->name, 'UTF-8', 'UTF-8');
+        $cleanAuthorName = mb_convert_encoding($book->author ? $book->author->name : 'Tác giả không xác định', 'UTF-8', 'UTF-8');
+        $cleanCategoryName = mb_convert_encoding($book->category ? $book->category->name : 'Thể loại không xác định', 'UTF-8', 'UTF-8');
         
         // Kiểm tra xem câu hỏi có liên quan đến sách không ngay trong fallback
         $lowerMessage = strtolower($userMessage);
@@ -304,7 +312,7 @@ class AISummaryService
             return $this->generateSummary($book);
         } catch (Exception $e) {
             // Fallback với demo data nếu API không khả dụng
-            Log::warning('Using fallback summary for book: ' . $book->id);
+            Log::warning('Using fallback summar y for book: ' . $book->id);
             
             return $this->generateFallbackSummary($book);
         }
@@ -329,14 +337,22 @@ class AISummaryService
 
     private function generateDefaultSummary(Book $book)
     {
-        return "Cuốn sách \"{$book->title}\" của tác giả {$book->author->name} là một tác phẩm thuộc thể loại {$book->category->name}. " .
-               "Với {$book->page_count} trang, cuốn sách mang đến cho người đọc những kiến thức và trải nghiệm độc đáo trong lĩnh vực này.";
+        $authorName = $book->author ? $book->author->name : 'tác giả không xác định';
+        $categoryName = $book->category ? $book->category->name : 'thể loại không xác định';
+        $pageCount = $book->page_count ?: 'số trang không xác định';
+        
+        return "Cuốn sách \"{$book->title}\" của {$authorName} là một tác phẩm thuộc thể loại {$categoryName}. " .
+               "Với {$pageCount} trang, cuốn sách mang đến cho người đọc những kiến thức và trải nghiệm độc đáo trong lĩnh vực này.";
     }
 
     private function generateDefaultDetailedSummary(Book $book)
     {
-        return "Cuốn sách \"{$book->title}\" của tác giả {$book->author->name} là một tác phẩm xuất sắc trong thể loại {$book->category->name}. " .
-               "Qua {$book->page_count} trang, tác giả đã khéo léo xây dựng nội dung phong phú và hấp dẫn. " .
+        $authorName = $book->author ? $book->author->name : 'tác giả không xác định';
+        $categoryName = $book->category ? $book->category->name : 'thể loại không xác định';
+        $pageCount = $book->page_count ?: 'số trang không xác định';
+        
+        return "Cuốn sách \"{$book->title}\" của tác giả {$authorName} là một tác phẩm xuất sắc trong thể loại {$categoryName}. " .
+               "Qua {$pageCount} trang, tác giả đã khéo léo xây dựng nội dung phong phú và hấp dẫn. " .
                "Cuốn sách không chỉ cung cấp thông tin và kiến thức chuyên sâu mà còn mang đến những góc nhìn mới mẻ và sâu sắc. " .
                "Với phong cách viết cuốn hút và cách trình bày logic, tác phẩm phù hợp cho nhiều đối tượng độc giả khác nhau. " .
                "Đây là một cuốn sách đáng đọc cho những ai quan tâm đến lĩnh vực này.";
@@ -344,10 +360,12 @@ class AISummaryService
 
     private function generateDefaultKeyPoints(Book $book)
     {
+        $categoryName = $book->category ? $book->category->name : 'lĩnh vực này';
+        
         return [
             "Nội dung phong phú và đa dạng",
             "Phong cách viết hấp dẫn và dễ hiểu",
-            "Cung cấp kiến thức chuyên sâu về {$book->category->name}",
+            "Cung cấp kiến thức chuyên sâu về {$categoryName}",
             "Phù hợp cho nhiều đối tượng độc giả",
             "Có giá trị học thuật và thực tiễn cao"
         ];
@@ -362,6 +380,7 @@ class AISummaryService
             'Giáo dục' => ['Học tập', 'Phát triển', 'Kỹ năng'],
         ];
 
-        return $categoryBasedThemes[$book->category->name] ?? ['Kiến thức', 'Phát triển', 'Học hỏi'];
+        $categoryName = $book->category ? $book->category->name : null;
+        return $categoryBasedThemes[$categoryName] ?? ['Kiến thức', 'Phát triển', 'Học hỏi'];
     }
 }
