@@ -141,8 +141,8 @@ class AdminPaymentMethodController extends Controller
         $paymentMethod = PaymentMethod::withTrashed()->findOrFail($id);
         $paymentMethod->restore();
 
-        return redirect()->route('admin.payment-methods.trash')
-            ->with('success', 'Đã khôi phục phương thức thanh toán thành công');
+        Toastr::success('Đã khôi phục phương thức thanh toán thành công');
+        return redirect()->route('admin.payment-methods.trash');
     }
 
     public function forceDelete($id)
