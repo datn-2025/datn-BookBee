@@ -253,7 +253,7 @@
                                     <h6 class="mb-1 fs-15">Trạng thái thanh toán:</h6>
                                     <p class="text-muted mb-0">
                                         <span class="badge
-                                            @if($order->paymentStatus->name == 'Đã thanh toán') bg-success
+                                            @if($order->paymentStatus->name == 'Đã Thanh Toán') bg-success
                                             @elseif($order->paymentStatus->name == 'Chưa thanh toán') bg-warning
                                             @elseif($order->paymentStatus->name == 'Đã hủy') bg-danger
                                             @else bg-secondary @endif">

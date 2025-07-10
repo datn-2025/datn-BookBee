@@ -43,8 +43,8 @@
                             <option value="Chưa thanh toán" {{ request('payment_status') == 'Chưa thanh toán' ? 'selected' : '' }}>
                                 Chưa thanh toán
                             </option>
-                            <option value="Đã thanh toán" {{ request('payment_status') == 'Đã thanh toán' ? 'selected' : '' }}>
-                                Đã thanh toán
+                            <option value="Đã Thanh Toán" {{ request('payment_status') == 'Đã Thanh Toán' ? 'selected' : '' }}>
+                                Đã Thanh Toán
                             </option>
                             <option value="Thất bại" {{ request('payment_status') == 'Thất bại' ? 'selected' : '' }}>
                                 Thất bại
