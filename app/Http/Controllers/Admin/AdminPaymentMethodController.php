@@ -115,6 +115,44 @@ class AdminPaymentMethodController extends Controller
         return redirect()->route('admin.payment-methods.index');
     }
 
+    public function destroy(PaymentMethod $paymentMethod)
+    {
+        PaymentMethod::findOrFail($paymentMethod->id)->delete();
+
+        Toastr::success('Đã xóa phương thức thanh toán thành công');
+        return redirect()->route('admin.payment-methods.index');
+    }
+
+    public function trash()
+    {
+        $paymentMethods = PaymentMethod::onlyTrashed()->latest()->paginate(10);
+        return view('admin.payment-methods.trash', compact('paymentMethods'));
+    }
+
+    public function restore($id)
+    {
+        $paymentMethod = PaymentMethod::withTrashed()->findOrFail($id);
+        $paymentMethod->restore();
+
+        return redirect()->route('admin.payment-methods.trash')
+            ->with('success', 'Đã khôi phục phương thức thanh toán thành công');
+    }
+
+    public function forceDelete($id)
+    {
+        $paymentMethod = PaymentMethod::withTrashed()->findOrFail($id);
+
+        // Kiểm tra xem có đơn hàng nào đang sử dụng phương thức thanh toán này không
+        if ($paymentMethod->payments()->exists()) {
+            return back()->with('error', 'Không thể xóa vĩnh viễn vì có đơn hàng đang sử dụng phương thức thanh toán này');
+        }
+
+        $paymentMethod->forceDelete();
+
+        Toastr::success('Đã xóa vĩnh viễn phương thức thanh toán thành công');
+        return redirect()->route('admin.payment-methods.trash');
+    }
+
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -171,43 +209,6 @@ class AdminPaymentMethodController extends Controller
         return redirect()->back();
     }
 
-    public function destroy(PaymentMethod $paymentMethod)
-    {
-        PaymentMethod::findOrFail($paymentMethod->id)->delete();
-
-        Toastr::success('Đã xóa phương thức thanh toán thành công');
-        return redirect()->route('admin.payment-methods.index');
-    }
-
-    public function trash()
-    {
-        $paymentMethods = PaymentMethod::onlyTrashed()->latest()->paginate(10);
-        return view('admin.payment-methods.trash', compact('paymentMethods'));
-    }
-
-    public function restore($id)
-    {
-        $paymentMethod = PaymentMethod::withTrashed()->findOrFail($id);
-        $paymentMethod->restore();
-
-        return redirect()->route('admin.payment-methods.trash')
-            ->with('success', 'Đã khôi phục phương thức thanh toán thành công');
-    }
-
-    public function forceDelete($id)
-    {
-        $paymentMethod = PaymentMethod::withTrashed()->findOrFail($id);
-
-        // Kiểm tra xem có đơn hàng nào đang sử dụng phương thức thanh toán này không
-        if ($paymentMethod->payments()->exists()) {
-            return back()->with('error', 'Không thể xóa vĩnh viễn vì có đơn hàng đang sử dụng phương thức thanh toán này');
-        }
-
-        $paymentMethod->forceDelete();
-
-        return redirect()->route('admin.payment-methods.trash')
-            ->with('success', 'Đã xóa vĩnh viễn phương thức thanh toán');
-    }
     public function history(Request $request)
     {
         $payments = Payment::query();
