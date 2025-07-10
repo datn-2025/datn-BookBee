@@ -26,23 +26,27 @@ class OrderController extends Controller
         $orderStatuses = OrderStatus::query()->get();
         $paymentStatuses = PaymentStatus::query()->get();
         // tìm kiếm đơn hàng
-        // dd($request->all());
-        if ($request->has('search') ) {
-            $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%');
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('order_code', 'like', "%$search%")
+                  ->orWhereHas('user', function ($q2) use ($search) {
+                      $q2->where('name', 'like', "%$search%")
+                         ->orWhere('email', 'like', "%$search%");
+                  });
             });
         }
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->whereHas('orderStatus', function ($q) use ($request) {
                 $q->where('name', $request->status);
             });
         }
-        if ($request->has('payment')) {
+        if ($request->filled('payment')) {
             $query->whereHas('paymentStatus', function ($q) use ($request) {
                 $q->where('name', $request->payment);
             });
         }
-        if ($request->has('date')) {
+        if ($request->filled('date')) {
             $query->whereDate('created_at', $request->date);
         }
 
@@ -114,6 +118,7 @@ class OrderController extends Controller
         $request->validate([
             'order_status_id' => 'required|exists:order_statuses,id',
             'payment_status_id' => 'required|exists:payment_statuses,id',
+            'cancellation_reason' => 'nullable|string|max:1000',
         ]);
 
         try {
@@ -124,16 +129,30 @@ class OrderController extends Controller
             $newStatus = OrderStatus::findOrFail($request->order_status_id)->name;
             $allowed = OrderStatusHelper::getNextStatuses($currentStatus);
 
+            // Kiểm tra nếu trạng thái mới là "Đã hủy" thì yêu cầu lý do hủy hàng
+            if ($newStatus === 'Đã hủy' && empty($request->cancellation_reason)) {
+                Toastr::error('Vui lòng nhập lý do hủy hàng khi đổi trạng thái thành "Đã hủy"', 'Lỗi');
+                return back()->withInput();
+            }
+
             // ✅ Kiểm tra hợp lệ TRƯỚC khi cập nhật
             if (!in_array($newStatus, $allowed)) {
                 Toastr::error("Trạng thái mới không hợp lệ với trạng thái hiện tại", 'Lỗi');
                 return back()->withInput();
             }
 
-            $order->update([
+            $updateData = [
                 'order_status_id' => $request->order_status_id,
                 'payment_status_id' => $request->payment_status_id,
-            ]);
+            ];
+
+            // Nếu trạng thái mới là "Đã hủy", thiết lập ngày hủy và lý do hủy
+            if ($newStatus === 'Đã hủy') {
+                $updateData['cancelled_at'] = now();
+                $updateData['cancellation_reason'] = $request->cancellation_reason;
+            }
+
+            $order->update($updateData);
 
             // Ghi log
             Log::info("Order {$order->id} status changed from {$currentStatus} to {$newStatus} by admin");

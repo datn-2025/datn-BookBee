@@ -25,6 +25,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
     <link href="https://cdn.lineawesome.com/1.3.0/line-awesome/css/line-awesome.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
 
     <!-- Plugin CSS -->
     <link href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css" rel="stylesheet" />
@@ -291,7 +293,9 @@
                                 title="Tài khoản">
                                 <span class="d-flex align-items-center">
                                     <img class="rounded-circle header-profile-user"
-                                        src="{{ asset('assets/images/users/avatar-1.jpg') }}" alt="Avatar">
+                                        src="{{ auth()->user()->avatar ? asset('storage/' . auth()->user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=6366f1&color=fff&size=50' }}" 
+                                        alt="Avatar"
+                                        style="width: 32px; height: 32px; object-fit: cover;">
                                     <span class="text-start ms-xl-2">
                                         <span
                                             class="d-none d-xl-inline-block ms-1 fw-medium user-name-text">{{ auth()->user()->name }}</span>
@@ -304,10 +308,10 @@
                             <div class="dropdown-menu dropdown-menu-end">
                                 <h6 class="dropdown-header">Welcome {{ auth()->user()->name }}!</h6>
                                 <!-- item-->
-                                <a class="dropdown-item" href="pages-profile.html"><i
+                                <a class="dropdown-item" href="{{ route('admin.profile.index') }}"><i
                                         class="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i> <span
-                                        class="align-middle">Tài Khoản</span></a>
-                                <a class="dropdown-item" href="apps-chat.html"><i
+                                        class="align-middle">Quản lý tài khoản</span></a>
+                                <a class="dropdown-item" href="{{ route('admin.profile.index') }}"><i
                                         class="fa-solid fa-key text-muted fs-16 align-middle me-1"></i>
                                     <span class="align-middle">Đổi Mật Khẩu</span></a>
                                 <div class="dropdown-divider"></div>
@@ -400,6 +404,7 @@
                                     </li>
                                     <li><a href="{{ route('admin.attributes.index') }}" class="nav-link">Thuộc
                                             tính</a></li>
+                                    <li><a href="{{ route('admin.collections.index') }}" class="nav-link">Combo sách</a></li>
                                 </ul>
                             </div>
                         </li>
@@ -503,11 +508,28 @@
                                             data-key="t-basic-elements">Danh
                                             sách</a>
                                     </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.wallets.depositHistory') }}" class="nav-link"
+                                            data-key="t-basic-elements">Nạp ví</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.wallets.withdrawHistory') }}" class="nav-link"
+                                            data-key="t-basic-elements">Rút ví</a>
+                                    </li>
                                 </ul>
                             </div>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="{{ route('admin.reviews.index') }}">
+                                <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Bình luận & Đánh giá</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="{{ route('admin.invoices.index') }}">
+                                <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Hóa Đơn</span>
+                            </a>
+                        </li>
                         <li class="menu-title"><span data-key="t-menu">Cấu Hình</span></li>
-
                         <li class="nav-item">
                             <a class="nav-link menu-link" href="{{ route('admin.settings.index') }}">
                                 <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Cấu hình website</span>
@@ -570,13 +592,13 @@
         </div>
     </div>
 
-    <div class="customizer-setting d-none d-md-block">
+    {{-- <div class="customizer-setting d-none d-md-block">
         <button type="button" class="btn btn-info btn-icon btn-lg rounded-pill shadow-lg p-2"
             data-bs-toggle="offcanvas" data-bs-target="#theme-settings-offcanvas"
             aria-controls="theme-settings-offcanvas" title="Tùy chỉnh giao diện">
             <i class="mdi mdi-cog-outline mdi-spin fs-22"></i>
         </button>
-    </div>
+    </div> --}}
 
     {{-- <!-- Theme Settings -->
     <div class="offcanvas offcanvas-end border-0" tabindex="-1" id="theme-settings-offcanvas">
@@ -1275,7 +1297,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/list.pagination.js/0.1.1/list.pagination.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.5/dist/sweetalert2.all.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/rangePlugin.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     {{-- ================== INTERNAL PLUGINS ================== --}}
     <script src="{{ asset('assets/js/pages/plugins/lord-icon-2.1.0.js') }}"></script>
     <script src="{{ asset('assets/js/plugins.js') }}"></script>

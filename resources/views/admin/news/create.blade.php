@@ -27,6 +27,11 @@
                     <div class="card-body">
                         <form action="{{ route('admin.news.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
+                            @php
+                                $form_token = uniqid('news_', true);
+                                session(['news_form_token' => $form_token]);
+                            @endphp
+                            <input type="hidden" name="news_form_token" value="{{ $form_token }}">
 
                             <div class="row mb-3">
                                 <div class="col-lg-8">
@@ -34,7 +39,7 @@
                                         <label for="title" class="form-label">Tiêu đề <span
                                                 class="text-danger">*</span></label>
                                         <input placeholder="Nhập tiêu đề" type="text" class="form-control @error('title') is-invalid @enderror"
-                                            id="title" name="title" value="{{ old('title') }}" required>
+                                            id="title" name="title" value="{{ old('title') }}" >
                                         @error('title')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -43,8 +48,8 @@
                                     <div class="mb-3">
                                         <label for="summary" class="form-label">Tóm tắt <span
                                                 class="text-danger">*</span></label>
-                                        <textarea placeholder="Nhập mô tả ngắn, tối đa 300 ký tự." class="form-control @error('summary') is-invalid @enderror" id="summary"
-                                            name="summary" rows="4" required>{{ old('summary') }}</textarea>
+                                        <textarea placeholder="Nhập mô tả ngắn, tối đa 200 ký tự." class="form-control @error('summary') is-invalid @enderror" id="summary"
+                                            name="summary" rows="4" >{{ old('summary') }}</textarea>
                                         @error('summary')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -67,7 +72,7 @@
                                         <label for="category" class="form-label">Danh mục <span
                                                 class="text-danger">*</span></label>
                                         <select class="form-select @error('category') is-invalid @enderror" id="category"
-                                            name="category" required>
+                                            name="category" >
                                             <option value="">Chọn danh mục</option>
                                             <option value="Sách" {{ old('category') == 'Sách' ? 'selected' : '' }}>Sách
                                             </option>
@@ -84,7 +89,7 @@
                                         <label for="thumbnail" class="form-label">Ảnh đại diện <span
                                                 class="text-danger">*</span></label>
                                         <input type="file" class="form-control @error('thumbnail') is-invalid @enderror"
-                                            id="thumbnail" name="thumbnail" accept="image/*" required>
+                                            id="thumbnail" name="thumbnail" accept="image/*" >
                                         <div class="mt-2">
                                             <img id="thumbnail-preview" src="" alt=""
                                                 style="max-width: 100%; display: none;">
@@ -103,8 +108,8 @@
                                     </div>
 
                                     <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="ri-save-line align-bottom me-1"></i> Lưu
+                                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                                            <i class="ri-save-line align-bottom me-1"></i> Thêm mới
                                         </button>
                                         <a href="{{ route('admin.news.index') }}" class="btn btn-light">
                                             <i class="ri-arrow-go-back-line align-bottom me-1"></i> Quay lại
@@ -119,3 +124,20 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Tìm chính xác form thêm tin tức (dựa theo action)
+    const form = document.querySelector('form[action="{{ route('admin.news.store') }}"]');
+    const submitBtn = form ? form.querySelector('#submit-btn') : null;
+
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e){
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang xử lý...';
+        });
+    }
+});
+</script>
+@endpush

@@ -16,8 +16,8 @@ class PaymentService
             'transaction_id' => $data['transaction_id'],
             'payment_method_id' => $data['payment_method_id'],
             'amount' => $data['amount'],
-            'paid_at' => now(),
-            'payment_status_id' => PaymentStatus::where('name', 'Chờ Xử Lý')->first()->id
+            // 'paid_at' => now(),
+            // 'payment_status_id' => PaymentStatus::where('name', 'Chờ Xử Lý')->first()->id
         ]);
     }
 

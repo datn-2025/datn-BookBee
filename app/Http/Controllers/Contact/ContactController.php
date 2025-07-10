@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Contact;
 
 use App\Http\Controllers\Controller;
+use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 
 class ContactController extends Controller
@@ -17,31 +17,26 @@ class ContactController extends Controller
 
   public function submitForm(Request $request)
   {
-    // Validate dữ liệu form, thêm address và note optional
+    // Validate dữ liệu form
     $data = $request->validate([
       'name' => 'required|string|max:255',
       'email' => 'required|email',
       'phone' => 'required|string|max:20',
       'address' => 'nullable|string|max:255',
-      'note' => 'nullable|string',
-      // 'message' => 'required|string', 
+      'message' => 'required|string', // Thay đổi từ 'note' thành 'message'
     ]);
 
-    // Nếu bạn muốn lưu message vào note, gán như sau:
-    // $note = $data['note'] ?? $data['message'] ?? null;
-
     // Xóa liên hệ cũ nếu email đã tồn tại
-    DB::table('contacts')->where('email', $data['email'])->delete();
+    Contact::where('email', $data['email'])->delete();
 
-    DB::table('contacts')->insert([
-      'id' => (string) \Illuminate\Support\Str::uuid(), // Tạo UUID cho id
+    // Tạo liên hệ mới
+    Contact::create([
       'name' => $data['name'],
       'email' => $data['email'],
       'phone' => $data['phone'],
       'address' => $data['address'] ?? null,
-      'note' => $data['note'] ?? null,
-      'created_at' => now(),
-      'updated_at' => now(),
+      'note' => $data['message'], // Lưu message vào trường note
+      'status' => 'new', // Trạng thái mặc định
     ]);
 
     // Gửi mail trong queue

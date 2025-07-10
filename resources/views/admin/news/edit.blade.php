@@ -34,7 +34,7 @@
                                 <div class="mb-3">
                                     <label for="title" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control @error('title') is-invalid @enderror" 
-                                           id="title" name="title" value="{{ old('title', $article->title) }}" required>
+                                           id="title" name="title" value="{{ old('title', $article->title) }}" >
                                     @error('title')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -43,7 +43,7 @@
                                 <div class="mb-3">
                                     <label for="summary" class="form-label">Tóm tắt <span class="text-danger">*</span></label>
                                     <textarea class="form-control @error('summary') is-invalid @enderror" 
-                                              id="summary" name="summary" rows="3" required>{{ old('summary', $article->summary) }}</textarea>
+                                              id="summary" name="summary" rows="3" >{{ old('summary', $article->summary) }}</textarea>
                                     @error('summary')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -63,7 +63,7 @@
                                 <div class="mb-3">
                                     <label for="category" class="form-label">Danh mục <span class="text-danger">*</span></label>
                                     <select class="form-select @error('category') is-invalid @enderror" 
-                                            id="category" name="category" required>
+                                            id="category" name="category" >
                                         <option value="">Chọn danh mục</option>
                                         <option value="Sách" {{ old('category', $article->category) == 'Sách' ? 'selected' : '' }}>Sách</option>
                                         <option value="Kinh doanh" {{ old('category', $article->category) == 'Kinh doanh' ? 'selected' : '' }}>Kinh doanh</option>
@@ -98,7 +98,7 @@
                                 </div>
 
                                 <div class="d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary">
+                                    <button type="submit" class="btn btn-primary" id="submit-btn">
                                         <i class="ri-save-line align-bottom me-1"></i> Cập nhật
                                     </button>
                                     <a href="{{ route('admin.news.index') }}" class="btn btn-light">
@@ -114,3 +114,20 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Tìm chính xác form cập nhật tin tức (dựa theo action)
+    const form = document.querySelector('form[action="{{ route('admin.news.update', $article) }}"]');
+    const submitBtn = form ? form.querySelector('#submit-btn') : null;
+
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e){
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang xử lý...';
+        });
+    }
+});
+</script>
+@endpush

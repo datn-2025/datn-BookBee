@@ -104,7 +104,6 @@ class AISummaryService
         
         $prompt .= "Thông tin sách:\n";
         $prompt .= "**Tiêu đề:** {$book->title}\n";
-        
         $authorName = $book->author ? $book->author->name : 'Tác giả không xác định';
         $prompt .= "**Tác giả:** {$authorName}\n";
         
@@ -215,7 +214,6 @@ class AISummaryService
     {
         $context = "Thông tin sách:\n";
         $context .= "- Tiêu đề: " . mb_convert_encoding($book->title, 'UTF-8', 'UTF-8') . "\n";
-        
         $authorName = $book->author ? $book->author->name : 'Tác giả không xác định';
         $context .= "- Tác giả: " . mb_convert_encoding($authorName, 'UTF-8', 'UTF-8') . "\n";
         
@@ -379,7 +377,6 @@ class AISummaryService
             'Kinh tế' => ['Kinh doanh', 'Đầu tư', 'Phát triển'],
             'Giáo dục' => ['Học tập', 'Phát triển', 'Kỹ năng'],
         ];
-
         $categoryName = $book->category ? $book->category->name : null;
         return $categoryBasedThemes[$categoryName] ?? ['Kiến thức', 'Phát triển', 'Học hỏi'];
     }

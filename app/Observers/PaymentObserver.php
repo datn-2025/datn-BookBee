@@ -10,19 +10,20 @@ class PaymentObserver
 {
     public function creating(Payment $payment)
     {
-        // Nếu chưa có payment_status_id
+        // dd('Observer chạy', $payment->toArray());
         if (!$payment->payment_status_id) {
-            // Lấy phương thức thanh toán
             $paymentMethod = PaymentMethod::find($payment->payment_method_id);
 
             if ($paymentMethod) {
-                $statusName = '';
+                $methodName = strtolower($paymentMethod->name);
 
-                if (!str_contains(strtolower($paymentMethod->name), 'Thanh toán khi nhận hàng')) {
+                if ($methodName === 'thanh toán khi nhận hàng') {
                     $statusName = 'Chờ Xử Lý';
+                } else {
+                    $statusName = 'Đã Thanh Toán';
+                    $payment->paid_at = now();
                 }
 
-                // Lấy ID của trạng thái tương ứng
                 $status = PaymentStatus::where('name', $statusName)->first();
                 if ($status) {
                     $payment->payment_status_id = $status->id;

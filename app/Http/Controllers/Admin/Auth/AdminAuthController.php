@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin\Auth;
 
 use App\Http\Controllers\Controller;
@@ -12,7 +13,7 @@ class AdminAuthController extends Controller
 {
     public function showLoginForm()
     {
-        if (Auth::guard('admin')->check() && Auth::guard('admin')->user()->isAdmin()) {
+        if (Auth::guard('admin')->check()) {
             return redirect()->route('admin.dashboard');
         }
         return view('admin.auth.login');
@@ -67,11 +68,14 @@ class AdminAuthController extends Controller
     {
         $guard = Auth::guard('admin');
         if (!$guard->check()) {
-            abort(404, 'Bạn chưa đăng nhập');
+            Toastr::error('Bạn chưa đăng nhập', 'Lỗi');
+            return redirect()->route('admin.login');
         }
+
         $guard->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+        
         Toastr::success('Đăng xuất thành công!');
         return redirect()->route('admin.login');
     }
