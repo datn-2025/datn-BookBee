@@ -118,6 +118,7 @@ class OrderController extends Controller
         $request->validate([
             'order_status_id' => 'required|exists:order_statuses,id',
             'payment_status_id' => 'required|exists:payment_statuses,id',
+            'cancellation_reason' => 'nullable|string|max:1000',
         ]);
 
         try {
@@ -128,16 +129,30 @@ class OrderController extends Controller
             $newStatus = OrderStatus::findOrFail($request->order_status_id)->name;
             $allowed = OrderStatusHelper::getNextStatuses($currentStatus);
 
+            // Kiểm tra nếu trạng thái mới là "Đã hủy" thì yêu cầu lý do hủy hàng
+            if ($newStatus === 'Đã hủy' && empty($request->cancellation_reason)) {
+                Toastr::error('Vui lòng nhập lý do hủy hàng khi đổi trạng thái thành "Đã hủy"', 'Lỗi');
+                return back()->withInput();
+            }
+
             // ✅ Kiểm tra hợp lệ TRƯỚC khi cập nhật
             if (!in_array($newStatus, $allowed)) {
                 Toastr::error("Trạng thái mới không hợp lệ với trạng thái hiện tại", 'Lỗi');
                 return back()->withInput();
             }
 
-            $order->update([
+            $updateData = [
                 'order_status_id' => $request->order_status_id,
                 'payment_status_id' => $request->payment_status_id,
-            ]);
+            ];
+
+            // Nếu trạng thái mới là "Đã hủy", thiết lập ngày hủy và lý do hủy
+            if ($newStatus === 'Đã hủy') {
+                $updateData['cancelled_at'] = now();
+                $updateData['cancellation_reason'] = $request->cancellation_reason;
+            }
+
+            $order->update($updateData);
 
             // Ghi log
             Log::info("Order {$order->id} status changed from {$currentStatus} to {$newStatus} by admin");
