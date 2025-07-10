@@ -10,6 +10,7 @@ use App\Models\PaymentStatus;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
@@ -21,7 +22,7 @@ class AdminPaymentMethodController extends Controller
         try {
             $search = $request->input('search');
 
-            $query = PaymentMethod::query();
+            $query = PaymentMethod::withCount('payments');
 
             if (!empty($search)) {
                 $query->where('name', 'like', '%' . $search . '%');
@@ -117,7 +118,13 @@ class AdminPaymentMethodController extends Controller
 
     public function destroy(PaymentMethod $paymentMethod)
     {
-        PaymentMethod::findOrFail($paymentMethod->id)->delete();
+        if ($paymentMethod->trashed()) {
+            Toastr::error('Phương thức thanh toán này đã bị xóa tạm thời. Vui lòng khôi phục trước khi xóa vĩnh viễn.');
+            return redirect()->route('admin.payment-methods.index');
+        }
+
+        Log::info('Xóa mềm phương thức thanh toán ID: ' . $paymentMethod->id . ' bởi ' . Auth::user()->name);
+        $paymentMethod->delete();
 
         Toastr::success('Đã xóa phương thức thanh toán thành công');
         return redirect()->route('admin.payment-methods.index');
@@ -125,7 +132,7 @@ class AdminPaymentMethodController extends Controller
 
     public function trash()
     {
-        $paymentMethods = PaymentMethod::onlyTrashed()->latest()->paginate(10);
+        $paymentMethods = PaymentMethod::onlyTrashed()->withCount('payments')->latest()->paginate(10);
         return view('admin.payment-methods.trash', compact('paymentMethods'));
     }
 
