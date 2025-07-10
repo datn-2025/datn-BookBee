@@ -149,9 +149,9 @@ class AdminPaymentMethodController extends Controller
     {
         $paymentMethod = PaymentMethod::withTrashed()->findOrFail($id);
 
-        // Kiểm tra xem có đơn hàng nào đang sử dụng phương thức thanh toán này không
         if ($paymentMethod->payments()->exists()) {
-            return back()->with('error', 'Không thể xóa vĩnh viễn vì có đơn hàng đang sử dụng phương thức thanh toán này');
+            Toastr::error('Không thể xóa vĩnh viễn vì có đơn hàng đang sử dụng phương thức này');
+            return redirect()->route('admin.payment-methods.trash');
         }
 
         $paymentMethod->forceDelete();
