@@ -387,3 +387,12 @@ Route::middleware('auth')->prefix('wallet')->name('wallet.')->group(function () 
     Route::post('/withdraw', [App\Http\Controllers\WalletController::class, 'withdraw'])->name('withdraw');
     Route::get('/vnpay-return', [App\Http\Controllers\WalletController::class, 'vnpayReturn'])->name('vnpayReturn');
 });
+
+// AI Summary routes
+Route::prefix('ai-summary')->name('ai-summary.')->group(function() {
+    Route::post('/generate/{book}', [App\Http\Controllers\AISummaryController::class, 'generateSummary'])->name('generate');
+    Route::get('/get/{book}', [App\Http\Controllers\AISummaryController::class, 'getSummary'])->name('get');
+    Route::post('/regenerate/{book}', [App\Http\Controllers\AISummaryController::class, 'regenerateSummary'])->name('regenerate');
+    Route::get('/status/{book}', [App\Http\Controllers\AISummaryController::class, 'checkStatus'])->name('status');
+    Route::post('/chat/{book}', [App\Http\Controllers\AISummaryController::class, 'chatWithAI'])->name('chat');
+});
