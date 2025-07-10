@@ -130,9 +130,16 @@ class AdminPaymentMethodController extends Controller
         return redirect()->route('admin.payment-methods.index');
     }
 
-    public function trash()
+    public function trash(Request $request)
     {
-        $paymentMethods = PaymentMethod::onlyTrashed()->withCount('payments')->latest()->paginate(10);
+        $query = PaymentMethod::onlyTrashed()->withCount('payments');
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where('name', 'LIKE', '%' . $search . '%');
+        }
+        
+        $paymentMethods = $query->latest()->paginate(10)->withQueryString();
         return view('admin.payment-methods.trash', compact('paymentMethods'));
     }
 
