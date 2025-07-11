@@ -21,43 +21,52 @@ const brandColors = [
     '#FF5252', '#673AB7', '#CDDC39', '#03A9F4', '#FFEB3B'
 ];
 
-new Chart(ctxBrand, {
-    type: 'pie',
-    data: {
+const hasBrandData = brandData.some(value => value > 0);
+const brandChartData = hasBrandData
+    ? {
         labels: brandLabels,
         datasets: [{
             data: brandData,
             backgroundColor: brandColors.slice(0, brandLabels.length)
         }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'bottom'
+    }
+    : {
+        labels: ['Chưa có dữ liệu'],
+        datasets: [{
+            data: [1],
+            backgroundColor: ['#e0e0e0']
+        }]
+    };
+const brandChartOptions = {
+    responsive: true,
+    plugins: {
+        legend: {
+            position: 'bottom'
+        },
+        datalabels: {
+            display: hasBrandData,
+            color: '#fff',
+            formatter: (value, ctx) => {
+                if (!hasBrandData) return '';
+                const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                if (total === 0) return '';
+const percent = (value / total) * 100;
+return percent === 0 ? '' : percent.toFixed(1) + '%';
             },
-            datalabels: {
-                display: (ctx) => {
-                    const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                    const value = ctx.dataset.data[ctx.dataIndex];
-                    const percentage = (value / total) * 100;
-                    return percentage > 2; // Ẩn nhãn nếu quá nhỏ, tùy chỉnh theo ý muốn
-                },
-                color: '#fff',
-                formatter: (value, ctx) => {
-                    const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                    const percentage = ((value / total) * 100).toFixed(1);
-                    return `${percentage}%`;
-                },
-                anchor: 'center',
-                align: 'center',
-                font: {
-                    weight: 'bold',
-                    size: 12
-                }
+            anchor: 'center',
+            align: 'center',
+            font: {
+                weight: 'bold',
+                size: 12
             }
         }
     }
+};
+new Chart(ctxBrand, {
+    type: 'pie',
+    data: brandChartData,
+    options: brandChartOptions,
+    plugins: [ChartDataLabels]
 });
 </script>
 @endpush

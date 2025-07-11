@@ -21,38 +21,52 @@
             '#008080', '#e6beff', '#aa6e28', '#fffac8', '#800000'
         ];
 
-        new Chart(ctxCat, {
-            type: 'pie',
-            data: {
+        const hasCategoryData = categoryData.some(value => value > 0);
+        const categoryChartData = hasCategoryData
+            ? {
                 labels: categoryLabels,
                 datasets: [{
                     data: categoryData,
                     backgroundColor: colors.slice(0, categoryLabels.length)
                 }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
+            }
+            : {
+                labels: ['Chưa có dữ liệu'],
+                datasets: [{
+                    data: [1],
+                    backgroundColor: ['#e0e0e0']
+                }]
+            };
+        const categoryChartOptions = {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                datalabels: {
+                    display: hasCategoryData,
+                    color: '#fff',
+                    formatter: (value, ctx) => {
+                        if (!hasCategoryData) return '';
+                        const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                        if (total === 0) return '';
+const percent = (value / total) * 100;
+return percent === 0 ? '' : percent.toFixed(1) + '%';
                     },
-                    datalabels: {
-                        display: true, // Hiển thị tất cả
-                        color: '#fff',
-                        formatter: (value, ctx) => {
-                            const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            const percentage = ((value / total) * 100).toFixed(1);
-                            return `${percentage}%`;
-                        },
-                        anchor: 'center',
-                        align: 'center',
-                        font: {
-                            weight: 'bold',
-                            size: 12
-                        }
-                    },
+                    anchor: 'center',
+                    align: 'center',
+                    font: {
+                        weight: 'bold',
+                        size: 12
+                    }
                 }
             }
+        };
+        new Chart(ctxCat, {
+            type: 'pie',
+            data: categoryChartData,
+            options: categoryChartOptions,
+            plugins: [ChartDataLabels]
         });
     </script>
 @endpush
