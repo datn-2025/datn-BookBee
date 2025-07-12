@@ -72,9 +72,9 @@ class AdminReviewController extends Controller
         $review->load([
             'book' => function ($q) {
                 $q->withCount('reviews')
-                    ->withAvg('reviews', 'rating')
-                    ->withSum('orderItems as sold_count', 'quantity')
-                    ->with(['author', 'brand', 'category']);
+                  ->withAvg('reviews', 'rating')
+                  ->withSum('orderItems as sold_count', 'quantity')
+                  ->with(['authors', 'brand', 'category']);
             },
             'user'
         ]);
