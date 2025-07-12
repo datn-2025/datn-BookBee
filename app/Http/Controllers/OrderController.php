@@ -542,8 +542,13 @@ class OrderController extends Controller
                 DB::rollBack();
                 return redirect()->back()->with('error', 'Lỗi hệ thống khi hủy đơn hàng.');
             }
-            $order->order_status_id = $cancelledStatus->id;
-            $order->save();
+            
+            // Cập nhật đơn hàng với thông tin hủy
+            $order->update([
+                'order_status_id' => $cancelledStatus->id,
+                'cancelled_at' => now(),
+                'cancellation_reason' => implode(", ", $selectedReasons)
+            ]);
 
             DB::commit();
 
@@ -662,20 +667,35 @@ class OrderController extends Controller
                               ->first();
 
             if ($vnp_ResponseCode === '00') {
-                // Thanh toán thành công - nhưng set trạng thái là "Chưa thanh toán"
-                $paymentStatus = PaymentStatus::where('name', 'Chưa thanh toán')->first();
+                // Thanh toán thành công - cập nhật trạng thái thành "Đã Thanh Toán"
+                $paymentStatus = PaymentStatus::where('name', 'Đã Thanh Toán')->first();
+                
+                if (!$paymentStatus) {
+                    Log::error('Payment status "Đã Thanh Toán" not found');
+                    throw new \Exception('Trạng thái thanh toán không tồn tại');
+                }
 
                 if ($payment) {
                     $payment->update([
                         'payment_status_id' => $paymentStatus->id,
-                        'paid_at' => null, // Không set paid_at
+                        'paid_at' => now(), // Set thời gian thanh toán
                         'transaction_id' => $vnp_TransactionNo // Cập nhật với transaction ID từ VNPay
+                    ]);
+                    
+                    Log::info('Payment updated successfully', [
+                        'payment_id' => $payment->id,
+                        'transaction_id' => $vnp_TransactionNo
                     ]);
                 }
 
                 // Cập nhật trạng thái thanh toán của đơn hàng
                 $order->update([
                     'payment_status_id' => $paymentStatus->id
+                ]);
+                
+                Log::info('Order payment status updated to "Đã Thanh Toán"', [
+                    'order_id' => $order->id,
+                    'order_code' => $order->order_code
                 ]);
 
                 // Xóa giỏ hàng sau khi thanh toán thành công
@@ -708,7 +728,9 @@ class OrderController extends Controller
                 // Cập nhật trạng thái đơn hàng thành "Đã hủy"
                 $order->update([
                     'order_status_id' => $cancelledStatus->id,
-                    'payment_status_id' => $failedPaymentStatus->id
+                    'payment_status_id' => $failedPaymentStatus->id,
+                    'cancelled_at' => now(),
+                    'cancellation_reason' => 'Thanh toán VNPay thất bại - Mã lỗi: ' . $vnp_ResponseCode
                 ]);
 
                 // Tạo bản ghi hủy đơn hàng

@@ -77,6 +77,7 @@ class HomeController extends Controller
     }
 
     public function show($slug)
+
     {
         $book = Book::with([
             'authors',

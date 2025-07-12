@@ -72,6 +72,46 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="card mb-4 border-left-info shadow-sm">
+                            <div class="card-header bg-gradient-info text-dark fw-semibold d-flex align-items-center">
+                                <i class="fas fa-university mr-2"></i>
+                                <span>Tài khoản ngân hàng nhận tiền</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info small mb-3" style="background: #e9f7fd; border-left: 4px solid #17a2b8;">
+                                    <i class="fas fa-info-circle mr-1"></i> Vui lòng nhập chính xác thông tin tài khoản ngân hàng để nhận tiền từ hệ thống.
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="bank_name" class="fw-semibold"><i class="fas fa-university mr-1"></i> Tên ngân hàng</label>
+                                    <input type="text" name="bank_name" id="bank_name" class="form-control @error('bank_name') is-invalid @enderror" placeholder="VD: Vietcombank, Techcombank..." value="{{ old('bank_name', isset($setting->bank_setting) ? json_decode($setting->bank_setting, true)['bank_name'] ?? '' : '') }}">
+                                    <small class="form-text text-muted">Tên đầy đủ của ngân hàng (không viết tắt).</small>
+                                    @error('bank_name')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="bank_number" class="fw-semibold"><i class="fas fa-credit-card mr-1"></i> Số tài khoản</label>
+                                    <div class="input-group">
+                                        <input type="text" name="bank_number" id="bank_number" class="form-control @error('bank_number') is-invalid @enderror" placeholder="Nhập số tài khoản ngân hàng" value="{{ old('bank_number', isset($setting->bank_setting) ? json_decode($setting->bank_setting, true)['bank_number'] ?? '' : '') }}">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="copyBankNumber()" title="Copy"><i class="fas fa-copy"></i></button>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">Chỉ nhập số, không chứa dấu cách.</small>
+                                    @error('bank_number')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="customer_name" class="fw-semibold"><i class="fas fa-user mr-1"></i> Tên chủ tài khoản</label>
+                                    <input type="text" name="customer_name" id="customer_name" class="form-control @error('customer_name') is-invalid @enderror" placeholder="VD: NGUYEN VAN A" value="{{ old('customer_name', isset($setting->bank_setting) ? json_decode($setting->bank_setting, true)['customer_name'] ?? '' : '') }}">
+                                    <small class="form-text text-muted">Viết IN HOA, không dấu, đúng với tên trên tài khoản ngân hàng.</small>
+                                    @error('customer_name')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <div class="card mb-4 border-left-success">
@@ -139,6 +179,27 @@
 
 @push('scripts')
 <script>
+    function copyBankNumber() {
+        const input = document.getElementById('bank_number');
+        if (input) {
+            input.select();
+            input.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            toastr.success('Đã copy số tài khoản!');
+        }
+    }
+    function copyPreviewBankNumber() {
+        const el = document.getElementById('previewBankNumber');
+        if (el) {
+            const temp = document.createElement('input');
+            temp.value = el.innerText;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            toastr.success('Đã copy số tài khoản!');
+        }
+    }
     $(document).ready(function () {
         $('.custom-file-input').on('change', function() {
             let fileName = $(this).val().split('\\').pop();

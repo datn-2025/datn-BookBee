@@ -45,4 +45,12 @@ return [
         'redirect' => env('GOOGLE_REDIRECT'),
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+    ],
+
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+
 ];

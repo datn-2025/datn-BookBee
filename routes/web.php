@@ -188,6 +188,13 @@ Route::middleware('guest.admin')->group(function () {
 Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
+    // Admin Profile Management
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AdminProfileController::class, 'index'])->name('index');
+        Route::put('/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updateProfile'])->name('update');
+        Route::put('/password/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('password.update');
+    });
+
     Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard');
     Route::get('/revenue-report', RevenueReport::class)->name('revenue-report');
     Route::get('/balance-chart', BalanceChart::class)->name('balance-chart');
@@ -229,7 +236,10 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
 
     Route::prefix('wallets')->name('wallets.')->group(function () {
         Route::get('/', [WalletController::class, 'index'])->name('index');
-        Route::get('/{wallet}', [WalletController::class, 'show'])->name('show');
+        Route::get('/deposit-history', [\App\Http\Controllers\Admin\WalletController::class, 'depositHistory'])->name('depositHistory');
+        Route::get('/withdraw-history', [\App\Http\Controllers\Admin\WalletController::class, 'withdrawHistory'])->name('withdrawHistory');
+        Route::post('/approve/{id}', [WalletController::class, 'approveTransaction'])->name('approveTransaction');
+        Route::post('/reject/{id}', [WalletController::class, 'rejectTransaction'])->name('rejectTransaction');
     });
 
     // Route admin/categories
@@ -370,4 +380,23 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::delete('collections/{id}/force', [CollectionController::class, 'forceDelete'])->name('collections.forceDelete');
     Route::get('collections-trash', [CollectionController::class, 'trash'])->name('collections.trash');
     Route::post('collections/{id}/restore', [CollectionController::class, 'restore'])->name('collections.restore');
+});
+
+// Wallet user routes
+Route::middleware('auth')->prefix('wallet')->name('wallet.')->group(function () {
+    Route::get('/', [App\Http\Controllers\WalletController::class, 'index'])->name('index');
+    Route::get('/deposit', [App\Http\Controllers\WalletController::class, 'showDepositForm'])->name('deposit.form');
+    Route::post('/deposit', [App\Http\Controllers\WalletController::class, 'deposit'])->name('deposit');
+    Route::get('/withdraw', [App\Http\Controllers\WalletController::class, 'showWithdrawForm'])->name('withdraw.form');
+    Route::post('/withdraw', [App\Http\Controllers\WalletController::class, 'withdraw'])->name('withdraw');
+    Route::get('/vnpay-return', [App\Http\Controllers\WalletController::class, 'vnpayReturn'])->name('vnpayReturn');
+});
+
+// AI Summary routes
+Route::prefix('ai-summary')->name('ai-summary.')->group(function() {
+    Route::post('/generate/{book}', [App\Http\Controllers\AISummaryController::class, 'generateSummary'])->name('generate');
+    Route::get('/get/{book}', [App\Http\Controllers\AISummaryController::class, 'getSummary'])->name('get');
+    Route::post('/regenerate/{book}', [App\Http\Controllers\AISummaryController::class, 'regenerateSummary'])->name('regenerate');
+    Route::get('/status/{book}', [App\Http\Controllers\AISummaryController::class, 'checkStatus'])->name('status');
+    Route::post('/chat/{book}', [App\Http\Controllers\AISummaryController::class, 'chatWithAI'])->name('chat');
 });

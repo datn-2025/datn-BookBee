@@ -947,6 +947,25 @@
     </div>
 @endif
 
+        {{-- AI Summary Section --}}
+        <div class="mt-20 space-y-8">
+            <!-- Section Header with Adidas Style -->
+            <div class="relative">
+                <div class="flex items-center space-x-4 mb-8">
+                    <div class="w-1 h-12 bg-gradient-to-b from-blue-600 to-purple-600"></div>
+                    <div>
+                        <h2 class="adidas-font text-3xl font-bold text-black uppercase tracking-wider">
+                            TÓM TẮT AI
+                        </h2>
+                        <p class="text-gray-600 mt-2">Được tạo bởi trí tuệ nhân tạo</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- AI Summary Component --}}
+            @include('components.ai-summary', ['book' => $book])
+        </div>
+
         {{-- Enhanced Reviews Section - Adidas Style --}}
         <div class="mt-20 space-y-8">
             <!-- Section Header with Adidas Style -->

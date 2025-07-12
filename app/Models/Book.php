@@ -95,16 +95,14 @@ class Book extends Model
     {
         return $this->reviews()->avg('rating') ?? 0;
     }
-    public function gifts()
+    public function summary()
     {
-        return $this->hasMany(BookGift::class);
+        return $this->hasOne(BookSummary::class);
     }
-    public function authors()
+
+    public function hasSummary()
     {
-        return $this->belongsToMany(Author::class, 'author_books');
+        return $this->summary()->exists();
     }
-    public function collections()
-    {
-        return $this->belongsToMany(Collection::class, 'book_collections');
-    }
+    
 }

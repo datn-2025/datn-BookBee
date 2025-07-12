@@ -360,7 +360,7 @@
             <div class="col-xl-3">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Thông tin thanh toán</h5>
+                        <h5 class="card-title mb-0">Thông tin đơn hàng</h5>
                     </div>
                     <div class="card-body">
                         <div class="mb-4">
@@ -395,7 +395,7 @@
                                 </div>
                             </div>
                         </div>
-                        @if(isset($order->payments) && count($order->payments) > 0 && $order->paymentStatus->name == 'Đã thanh toán')
+                        @if(isset($order->payments) && count($order->payments) > 0 && $order->paymentStatus->name == 'Đã Thanh Toán')
                         <div class="mb-4">
                             <h6 class="mb-2">Lịch sử thanh toán</h6>
                             <div class="border rounded p-3">
@@ -456,6 +456,41 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Thông tin hủy hàng --}}
+                        @if($order->cancelled_at && in_array($order->orderStatus->name, ['Đã hủy', 'Đã Hủy']))
+                        <div class="mb-4">
+                            <div class="d-flex mb-2">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar-sm">
+                                        <div class="avatar-title bg-light text-danger rounded-circle shadow fs-3">
+                                            <i class="ri-close-circle-line"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">Ngày hủy hàng</h6>
+                                    <p class="text-muted mb-0">{{ $order->cancelled_at->format('d/m/Y H:i') }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex mb-2">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar-sm">
+                                        <div class="avatar-title bg-light text-warning rounded-circle shadow fs-3">
+                                            <i class="ri-information-line"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">Lý do hủy hàng</h6>
+                                    <p class="text-muted mb-0">{{ $order->cancellation_reason ?? 'Không có lý do cụ thể' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
 
