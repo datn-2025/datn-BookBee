@@ -104,7 +104,7 @@
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit" class="btn btn-sm btn-danger"
-                                                                title="Xóa vĩnh viễn" {{ $method->payments_count > 0 ? 'disabled' : '' }}>
+                                                                title="{{ $method->payments_count > 0 ? 'Không thể xóa vĩnh viễn vì có đơn hàng đang sử dụng phương thức này' : 'Xóa vĩnh viễn' }}" {{ $method->payments_count > 0 ? 'disabled' : '' }}>
                                                                 <i class="ri-delete-bin-line"></i>
                                                             </button>
                                                         </form>
