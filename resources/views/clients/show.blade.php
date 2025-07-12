@@ -378,24 +378,20 @@
         </div>
     </div>
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-12">
-            {{-- Ảnh combo --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+            <!-- Ảnh combo -->
             <div class="space-y-6">
-                <div class="product-image-main relative group">
-                    <div class="aspect-square bg-white border border-gray-100 overflow-hidden">
-                        <img src="{{ $combo->cover_image ? asset('storage/'.$combo->cover_image) : 'https://via.placeholder.com/400x500?text=Combo+Sách' }}" alt="{{ $combo->name }}" class="product-image w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                <div class="relative group">
+                    <div class="aspect-square bg-white border border-gray-100 overflow-hidden rounded-lg">
+                        <img src="{{ $combo->cover_image ? asset('storage/'.$combo->cover_image) : 'https://via.placeholder.com/400x500?text=Combo+Sách' }}" alt="{{ $combo->name }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </div>
                 </div>
             </div>
+            <!-- Thông tin combo -->
             <div class="space-y-8 adidas-font lg:pl-8">
-                <!-- Tiêu đề -->
                 <div class="space-y-4 pb-6 border-b border-gray-200">
-                    <div class="space-y-2">
-                        <h1 class="text-4xl lg:text-5xl font-bold text-black leading-tight tracking-tight">{{ isset($combo) ? $combo->name : ($book->title ?? '') }}</h1>
-                    </div>
-                
+                    <h1 class="text-4xl lg:text-5xl font-bold text-black leading-tight tracking-tight">{{ $combo->name }}</h1>
                 </div>
-                <!-- Thông tin nhanh -->
                 <div class="grid grid-cols-2 gap-4 mt-6">
                     <div class="space-y-3">
                         <div class="flex justify-between text-sm">
@@ -426,16 +422,14 @@
                         </div>
                     </div>
                 </div>
-                <!-- Khối giá và trạng thái -->
                 <div class="price-section space-y-4">
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-end space-x-4">
                         <span class="text-4xl font-bold text-black">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
                         @php
                             $statusText = $combo->status === 'active' ? ($combo->combo_stock > 0 ? 'Còn hàng' : 'Hết hàng') : 'Ngừng bán';
-                            $statusClass = $combo->status === 'active' ? ($combo->combo_stock > 0 ? 'status-in-stock' : 'status-out-of-stock') : 'status-out-of-stock';
                             $statusDot = $combo->status === 'active' ? ($combo->combo_stock > 0 ? 'bg-green-500' : 'bg-red-500') : 'bg-red-500';
                         @endphp
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold {{ $combo->combo_stock > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' }} border">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border {{ $combo->combo_stock > 0 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200' }}">
                             <span class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block"></span>{{ $statusText }}
                         </span>
                         @if($combo->combo_stock > 0)
@@ -443,67 +437,69 @@
                         @endif
                     </div>
                 </div>
-                <!-- Form mua combo giống sách đơn -->
-                <form action="{{ route('cart.add') }}" method="POST" class="mt-6">
+                <!-- Danh sách sách trong combo -->
+                <div class="combo-books-list bg-white border border-gray-100 rounded-lg p-4 mt-6">
+                    <h2 class="text-lg font-bold text-black mb-3 flex items-center adidas-font uppercase tracking-wider">
+                        <i class="fas fa-book text-base mr-2 text-black"></i>Danh sách sách trong combo
+                    </h2>
+                    <ul class="space-y-2 list-disc pl-6">
+                        @foreach($combo->books as $book)
+                            <li class="flex flex-col md:flex-row md:items-center gap-2">
+                                <a href="{{ route('books.show', $book->slug) }}" class="text-base text-blue-600 hover:underline font-semibold">{{ $book->title }}</a>
+                                <span class="text-gray-500 text-sm">@if($book->authors->count()) - Tác giả: {{ $book->authors->pluck('name')->join(', ') }} @endif</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+                <!-- Form mua combo -->
+                <form action="{{ route('cart.add') }}" method="POST" class="mt-8">
                     @csrf
                     <input type="hidden" name="combo_id" value="{{ $combo->id }}">
                     <input type="hidden" name="type" value="combo">
-                    <!-- Danh sách sách trong combo (di chuyển lên trên) -->
-                    <div class="space-y-6 mb-6">
-                        <h2 class="text-xl font-bold text-black mb-2">Danh sách sách trong combo:</h2>
-                        <ul class="list-disc pl-6 space-y-2">
-                            @foreach($combo->books as $book)
-                                <li>
-                                    <a href="{{ route('books.show', $book->slug) }}" class="text-lg text-blue-600 hover:underline font-semibold">{{ $book->title }}</a>
-                                    <span class="text-gray-500">@if($book->authors->count()) - Tác giả: {{ $book->authors->pluck('name')->join(', ') }} @endif</span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
                     <div class="mb-6">
                         <label class="block text-sm font-bold text-black uppercase tracking-wider mb-2">Số lượng</label>
-                        <div class="flex items-center max-w-xs">
-                            <button type="button" class="quantity-btn px-4 py-2 border border-gray-300 bg-white text-xl font-bold" onclick="updateComboQty(-1)">-</button>
-                            <input type="number" name="quantity" id="comboQuantity" value="1" min="1" class="w-16 text-center border-t border-b border-gray-300 py-2 text-lg font-semibold" style="appearance: none;" />
-                            <button type="button" class="quantity-btn px-4 py-2 border border-gray-300 bg-white text-xl font-bold" onclick="updateComboQty(1)">+</button>
+                        <div class="flex items-center border-2 border-gray-300 w-fit focus-within:border-black transition-colors duration-300">
+                            <button type="button" class="quantity-btn-enhanced w-14 h-14 border-r border-gray-300 flex items-center justify-center font-bold text-lg" onclick="updateComboQty(-1)">−</button>
+                            <input type="number" name="quantity" id="comboQuantity" value="1" min="1" class="w-20 h-14 text-center text-lg font-bold border-none outline-none" />
+                            <button type="button" class="quantity-btn-enhanced w-14 h-14 border-l border-gray-300 flex items-center justify-center font-bold text-lg" onclick="updateComboQty(1)">+</button>
                         </div>
                     </div>
-                    <button type="submit" class="w-full block adidas-btn-enhanced px-8 py-4 bg-black text-white border-2 border-black font-bold uppercase tracking-wider hover:bg-white hover:text-black transition-all duration-300 flex items-center justify-center space-x-3 mb-3"
+                    <button type="submit" class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center"
                         @if($combo->status !== 'active') disabled style="opacity:0.6;pointer-events:none;" @endif>
-                        <i class="fas fa-shopping-bag mr-2"></i>
-                        <span>Thêm vào giỏ hàng</span>
+                        <i class="fas fa-shopping-bag mr-3"></i>
+                        THÊM VÀO GIỎ HÀNG
                     </button>
-                     <!-- Wishlist Button -->
-                        <button class="wishlist-btn w-full h-14 border-2 border-black text-black font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center">
-                            <i class="far fa-heart mr-3"></i>
-                            YÊU THÍCH
-                        </button>
+                    <!-- Wishlist Button -->
+                    <button class="wishlist-btn w-full h-14 border-2 border-black text-black font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center mt-3">
+                        <i class="far fa-heart mr-3"></i>
+                        YÊU THÍCH
+                    </button>
                     <!-- Enhanced Share Section -->
-                <div class="share-section pt-8 border-t border-gray-200">
-                    <h3 class="text-sm font-bold text-black uppercase tracking-wider mb-6">Chia sẻ sản phẩm</h3>
-                    <div class="flex space-x-4">
-                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}"
-                            target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
-                            <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="https://twitter.com/intent/tweet?url={{ urlencode(url()->current()) }}" 
-                           target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                        <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ urlencode(url()->current()) }}"
-                            target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
-                            <i class="fab fa-linkedin-in"></i>
-                        </a>
-                        <a href="https://api.whatsapp.com/send?text={{ urlencode(url()->current()) }}" 
-                           target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
-                            <i class="fab fa-whatsapp"></i>
-                        </a>
-                        <a href="https://t.me/share/url?url={{ urlencode(url()->current()) }}" 
-                           target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
-                            <i class="fab fa-telegram-plane"></i>
-                        </a>
+                    <div class="share-section pt-8 border-t border-gray-200 mt-8">
+                        <h3 class="text-sm font-bold text-black uppercase tracking-wider mb-6">Chia sẻ sản phẩm</h3>
+                        <div class="flex space-x-4">
+                            <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}"
+                                target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                            <a href="https://twitter.com/intent/tweet?url={{ urlencode(url()->current()) }}" 
+                               target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                            <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ urlencode(url()->current()) }}"
+                                target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                                <i class="fab fa-linkedin-in"></i>
+                            </a>
+                            <a href="https://api.whatsapp.com/send?text={{ urlencode(url()->current()) }}" 
+                               target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                            <a href="https://t.me/share/url?url={{ urlencode(url()->current()) }}" 
+                               target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                                <i class="fab fa-telegram-plane"></i>
+                            </a>
+                        </div>
                     </div>
-                </div>
                 </form>
                 <script>
                     function updateComboQty(change) {
@@ -522,8 +518,9 @@
 
 {{-- Sau phần combo hoặc book info, luôn render các section chi tiết phía dưới --}}
  @if(isset($relatedCombos) && $relatedCombos->count())
-             {{-- Enhanced Related Products Section - Adidas Style --}}
-              <div class="mt-16 bg-white/90 shadow-sm border border-gray-200 rounded-lg p-6">
+             {{-- Mô tả combo (đồng bộ style sách đơn) --}}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mt-16 bg-white/90 shadow-sm border border-gray-200 rounded-lg p-6">
         <h2 class="text-2xl font-semibold mb-4 border-b border-gray-300 pb-2 text-gray-800 flex items-center">
             <i class="fas fa-align-left mr-2 text-red-400"></i>Mô tả combo
         </h2>
@@ -544,114 +541,71 @@
             <button id="showMoreComboBtn" class="text-blue-500 mt-2 text-sm hover:underline">Xem thêm</button>
         @endif
     </div>
-        <div class="mt-20 space-y-8">
-            <!-- Section Header with Adidas Style -->
-            <div class="relative">
-                <div class="flex items-center space-x-4 mb-8">
-                    <div class="w-1 h-12 bg-black"></div>
-                    <div>
-                        <h2 class="adidas-font text-3xl font-bold text-black uppercase tracking-wider">
-                            SẢN PHẨM LIÊN QUAN
-                        </h2>
-                        <p class="text-sm text-gray-600 uppercase tracking-wide font-medium mt-1">Có thể bạn sẽ thích</p>
+</div>
+
+{{-- Sản phẩm liên quan (đồng bộ style sách đơn, fix ảnh) --}}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20">
+    <div class="flex items-center space-x-4 mb-8">
+        <div class="w-1 h-12 bg-black"></div>
+        <div>
+            <h2 class="adidas-font text-3xl font-bold text-black uppercase tracking-wider">
+                SẢN PHẨM LIÊN QUAN
+            </h2>
+            <p class="text-sm text-gray-600 uppercase tracking-wide font-medium mt-1">Có thể bạn sẽ thích</p>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        @foreach ($relatedCombos as $related)
+            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden group hover:border-black transition-all duration-300 p-2 cursor-pointer relative"
+                 onclick="window.location.href='{{ route('combos.show', $related->slug ?? $related->id) }}'">
+                <div class="relative aspect-square bg-white border border-gray-100 overflow-hidden rounded-lg mb-2">
+                    <a href="{{ route('combos.show', $related->slug ?? $related->id) }}" class="block w-full h-full">
+                        <img src="{{ $related->cover_image ? asset('storage/' . $related->cover_image) : asset('images/default.jpg') }}"
+                             alt="{{ $related->name }}"
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    </a>
+                    @php $relatedStock = $related->combo_stock ?? 0; @endphp
+                    @if($relatedStock <= 0)
+                        <div class="absolute top-2 left-2">
+                            <span class="bg-red-600 text-white text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                                HẾT HÀNG
+                            </span>
+                        </div>
+                    @endif
+                </div>
+                <div class="p-2">
+                    <h3 class="font-bold text-black text-base leading-tight group-hover:text-gray-600 transition-colors duration-300 line-clamp-2 min-h-[40px]">
+                        <span class="hover:underline">{{ $related->name }}</span>
+                    </h3>
+                    <p class="text-xs text-gray-600 uppercase tracking-wide font-medium min-h-[18px]">
+                        {{ $related->books->pluck('authors')->flatten()->pluck('name')->unique()->join(', ') ?: 'KHÔNG RÕ TÁC GIẢ' }}
+                    </p>
+                    <div class="flex items-center space-x-2 pt-1">
+                        <span class="text-lg font-bold text-black">
+                            {{ number_format($related->combo_price, 0, ',', '.') }}₫
+                        </span>
+                    </div>
+                    <div class="pt-1">
+                        <button onclick="event.stopPropagation(); addRelatedToCart('{{ $related->id }}')"
+                                class="adidas-btn-enhanced w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center {{ $relatedStock <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800' }}"
+                                {{ $relatedStock <= 0 ? 'disabled' : '' }}>
+                            <span class="relative flex items-center space-x-1">
+                                <i class="fas fa-shopping-cart text-xs"></i>
+                                <span>{{ $relatedStock <= 0 ? 'HẾT HÀNG' : 'THÊM VÀO GIỎ' }}</span>
+                                <i class="fas fa-arrow-right text-xs transform group-hover/btn:translate-x-1 transition-transform duration-300"></i>
+                            </span>
+                        </button>
                     </div>
                 </div>
             </div>
-
-            <!-- Enhanced Products Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                @foreach ($relatedCombos as $related)
-                    <div class="related-product-card bg-white border-2 border-gray-100 relative overflow-hidden group hover:border-black transition-all duration-500 p-2 cursor-pointer"
-                         onclick="window.location.href='{{ route('combos.show', $related->slug ?? $related->id) }}'">
-                        <!-- Product Image Container -->
-                        <div class="relative aspect-square bg-gray-50 overflow-hidden rounded-lg">
-                            <!-- Main Product Image -->
-                            <a href="{{ route('books.show', $related->slug ?? $related->id) }}" class="block w-full h-full">
-                                <img src="{{ asset('storage/' . ($related->cover_image ?? 'default.jpg')) }}"
-                                    alt="{{ $related->title }}" 
-                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out">
-                            </a>
-                            <!-- Premium Overlay -->
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duratyion-500"></div>
-                            <!-- Wishlist Button -->
-                            <div class="absolute top-2 right-2">
-                                <button class="w-9 h-9 bg-white bg-opacity-90 backdrop-blur-sm border border-gray-200 flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all duration-300 transform hover:scale-110 rounded-full"
-                                        onclick="event.stopPropagation()">
-                                    <i class="far fa-heart text-base"></i>
-                                </button>
-                            </div>
-                            <!-- Quick View Button (hover) -->
-                            <div class="absolute bottom-2 left-2 right-2 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out">
-                                <button onclick="event.stopPropagation(); window.location.href='{{ route('combos.show', $related->slug ?? $related->id) }}'"
-                                    class="w-full bg-black bg-opacity-90 backdrop-blur-sm text-white py-2 px-3 text-center font-bold uppercase tracking-wider text-xs hover:bg-white hover:text-black transition-all duration-300 block rounded">
-                                    XEM CHI TIẾT →
-                                </button>
-                            </div>
-                            <!-- Stock Badge -->
-                            @php $relatedStock = $related->combo_stock ?? 0; @endphp
-                            @if($relatedStock <= 0)
-                                <div class="absolute top-2 left-2">
-                                    <span class="bg-red-600 text-white text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded">
-                                        HẾT HÀNG
-                                    </span>
-                                </div>
-                            @endif
-                        </div>
-                        <!-- Product Info -->
-                        <div class="p-3 space-y-2 bg-white">
-                            <h3 class="font-bold text-black text-base leading-tight group-hover:text-gray-600 transition-colors duration-300 line-clamp-2 min-h-[40px]">
-                                <span class="hover:underline">{{ $related->name }}</span>
-                            </h3>
-                            <p class="text-xs text-gray-600 uppercase tracking-wide font-medium min-h-[18px]">
-                                {{ $related->books->pluck('authors')->flatten()->pluck('name')->unique()->join(', ') ?: 'KHÔNG RÕ TÁC GIẢ' }}
-                            </p>
-                            <div class="flex items-center space-x-2 pt-1">
-                                <span class="text-lg font-bold text-black">
-                                    {{ number_format($related->combo_price, 0, ',', '.') }}₫
-                                </span>
-                            </div>
-                            <div class="pt-1">
-                                <button onclick="event.stopPropagation(); addRelatedToCart('{{ $related->id }}')"
-                                        class="adidas-btn-enhanced w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center group/btn {{ $relatedStock <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800' }}"
-                                        {{ $relatedStock <= 0 ? 'disabled' : '' }}>
-                                    <span class="relative flex items-center space-x-1">
-                                        <i class="fas fa-shopping-cart text-xs"></i>
-                                        <span>{{ $relatedStock <= 0 ? 'HẾT HÀNG' : 'THÊM VÀO GIỎ' }}</span>
-                                        <i class="fas fa-arrow-right text-xs transform group-hover/btn:translate-x-1 transition-transform duration-300"></i>
-                                    </span>
-                                </button>
-                            </div>
-                            @if($related->reviews && $related->reviews->count() > 0)
-                                <div class="flex items-center space-x-1 pt-1 border-t border-gray-100 mt-1">
-                                    <div class="flex text-yellow-400 text-xs">
-                                        @php $avgRating = $related->reviews->avg('rating') @endphp
-                                        @for ($i = 1; $i <= 5; $i++)
-                                            @if ($i <= $avgRating)
-                                                ★
-                                            @else
-                                                ☆
-                                            @endif
-                                        @endfor
-                                    </div>
-                                    <span class="text-xs text-gray-500 font-medium">
-                                        ({{ $related->reviews->count() }})
-                                    </span>
-                                </div>
-                            @endif
-                        </div>
-                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-600 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div class="absolute top-0 right-0 w-0 h-0 border-l-[16px] border-l-transparent border-t-[16px] border-t-black opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                    </div>
-                @endforeach
-            </div>
-
-            <!-- View All Button -->
-            <div class="flex justify-center pt-8">
-                <a href="{{ route('books.index') }}" class="adidas-btn-enhanced px-8 py-4 bg-white text-black border-2 border-black font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all duration-300 flex items-center space-x-3">
-                    <span>XEM TẤT CẢ SẢN PHẨM</span>
-                </a>
-            </div>
-        </div>
+        @endforeach
+    </div>
+    <div class="flex justify-center pt-8 mb-8">
+        <a href="{{ route('books.index') }}" class="adidas-btn-enhanced px-8 py-4 bg-white text-black border-2 border-black font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all duration-300 flex items-center space-x-3">
+            <span>XEM TẤT CẢ COMBO</span>
+        </a>
+    </div>
+</div>
         @endif
 
 @if(!isset($combo))
@@ -674,84 +628,70 @@
     </div>
 
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-12">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
             {{-- Product Images --}}
             <div class="space-y-6">
-                <!-- Main Image with Enhanced Container -->
-                <div class="product-image-main relative group">
-                    <div class="aspect-square bg-white border border-gray-100 overflow-hidden">
-                        <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
-                            alt="{{ $book->title }}" id="mainImage"
-                            class="product-image w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                <div class="relative group">
+                    <div class="aspect-square bg-white border border-gray-100 overflow-hidden rounded-lg">
+                        <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}" alt="{{ $book->title }}" id="mainImage" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </div>
-                    <!-- Zoom indicator -->
-                    <div class="absolute bottom-4 right-4 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <i class="fas fa-search-plus mr-1"></i>Phóng to
-                    </div>
-                </div>
-
-                <!-- Enhanced Thumbnails -->
-                @if ($book->images->count() > 1)
-                    <div class="grid grid-cols-5 gap-3">
+                    @if ($book->images->count() > 1)
+                    <div class="grid grid-cols-5 gap-3 mt-4">
                         @foreach ($book->images as $index => $image)
-                            <div class="thumbnail-container relative group cursor-pointer {{ $index === 0 ? 'ring-2 ring-black' : '' }}"
-                                 onclick="changeMainImage('{{ asset('storage/' . $image->image_url) }}', this)">
+                            <div class="relative group cursor-pointer {{ $index === 0 ? 'ring-2 ring-black' : '' }}" onclick="changeMainImage('{{ asset('storage/' . $image->image_url) }}', this)">
                                 <div class="aspect-square bg-white border border-gray-200 overflow-hidden transition-all duration-300 hover:border-black">
-                                    <img src="{{ asset('storage/' . $image->image_url) }}" alt="{{ $book->title }}"
-                                        class="thumbnail-image w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                                    <img src="{{ asset('storage/' . $image->image_url) }}" alt="{{ $book->title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
                                 </div>
                             </div>
                         @endforeach
                     </div>
-                @endif
+                    @endif
+                </div>
             </div>
             {{-- Enhanced Product Info --}}
             <div class="space-y-8 adidas-font lg:pl-8">
-                <!-- Product Header -->
+                {{-- Product Header --}}
                 <div class="space-y-4 pb-6 border-b border-gray-200">
-                    <div class="space-y-2">
-                        <p class="text-sm font-semibold text-gray-600 uppercase tracking-wider">{{ $book->category->name ?? 'SÁCH' }}</p>
-                        <h1 class="text-4xl lg:text-5xl font-bold text-black leading-tight tracking-tight">{{ $book->title }}</h1>
-                    </div>
-                    
-                    <!-- Quick Info Grid -->
-                    <div class="grid grid-cols-2 gap-4 mt-6">
-                        <div class="space-y-3">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600 font-medium">TÁC GIẢ</span>
-                                <span class="text-black font-semibold">
-    @if($book->authors && $book->authors->count())
-        {{ $book->authors->pluck('name')->join(', ') }}
-    @else
-        Không rõ
-    @endif
-</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600 font-medium">THƯƠNG HIỆU</span>
-                                <span class="text-black font-semibold">{{ $book->brand->name ?? 'Không rõ' }}</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600 font-medium">ISBN</span>
-                                <span class="text-black font-semibold">{{ $book->isbn }}</span>
-                            </div>
+                    <h1 class="text-4xl lg:text-5xl font-bold text-black leading-tight tracking-tight">{{ $book->title }}</h1>
+                </div>
+                {{-- Quick Info Grid --}}
+                <div class="grid grid-cols-2 gap-4 mt-6">
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 font-medium">TÁC GIẢ</span>
+                            <span class="text-black font-semibold">
+                                @if($book->authors && $book->authors->count())
+                                    {{ $book->authors->pluck('name')->join(', ') }}
+                                @else
+                                    Không rõ
+                                @endif
+                            </span>
                         </div>
-                        <div class="space-y-3">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600 font-medium">XUẤT BẢN</span>
-                                <span class="text-black font-semibold">{{ $book->publication_date->format('d/m/Y') }}</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600 font-medium">SỐ TRANG</span>
-                                <span class="text-black font-semibold">{{ $book->page_count }}</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600 font-medium">THỂ LOẠI</span>
-                                <span class="text-black font-semibold">{{ $book->category->name ?? 'Không rõ' }}</span>
-                            </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 font-medium">THƯƠNG HIỆU</span>
+                            <span class="text-black font-semibold">{{ $book->brand->name ?? 'Không rõ' }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 font-medium">ISBN</span>
+                            <span class="text-black font-semibold">{{ $book->isbn }}</span>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 font-medium">XUẤT BẢN</span>
+                            <span class="text-black font-semibold">{{ $book->publication_date->format('d/m/Y') }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 font-medium">SỐ TRANG</span>
+                            <span class="text-black font-semibold">{{ $book->page_count }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 font-medium">THỂ LOẠI</span>
+                            <span class="text-black font-semibold">{{ $book->category->name ?? 'Không rõ' }}</span>
                         </div>
                     </div>
                 </div>
+                {{-- Price Section --}}
                 @php
                     $formats = $book->formats->sortByDesc(fn($f) => $f->format_name === 'Ebook');
                     $defaultFormat = $formats->first();
@@ -760,56 +700,12 @@
                     $discount = $defaultFormat->discount ?? 0;
                     $finalPrice = $defaultPrice - ($defaultPrice * ($discount / 100));
                 @endphp
-
-                <!-- Enhanced Price Section -->
                 <div class="price-section space-y-4">
                     <div class="flex items-end space-x-4">
-                        <span id="bookPrice" data-base-price="{{ $defaultPrice }}" 
-                              class="text-4xl font-bold text-black">
-                            {{ number_format($finalPrice, 0, ',', '.') }}₫
-                    </div>
-                </div>
-                @if(isset($bookGifts) && $bookGifts->count())
-                    <div class="book-gifts-section mt-6">
-                        <h3 class="text-lg font-bold text-black mb-2 flex items-center"><span class="mr-2">🎁</span>Quà tặng kèm</h3>
-                        <ul class="space-y-3">
-                            @foreach($bookGifts as $gift)
-                                <li class="flex items-start space-x-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                                    @if($gift->gift_image)
-                                        <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="{{ $gift->gift_name }}" class="w-16 h-16 object-cover rounded shadow">
-                                    @else
-                                        <span class="w-16 h-16 flex items-center justify-center bg-gray-200 rounded">🎁</span>
-                                    @endif
-                                    <div>
-                                        <div class="font-semibold text-black">{{ $gift->gift_name }}</div>
-                                        @if($gift->gift_description)
-                                            <div class="text-sm text-gray-600">{{ $gift->gift_description }}</div>
-                                        @endif
-                                        @if($gift->quantity > 0)
-                                            <div class="text-xs text-green-600 mt-1">Số lượng: {{ $gift->quantity }}</div>
-                                        @endif
-                                        @if($gift->start_date || $gift->end_date)
-                                            <div class="text-xs text-gray-500 mt-1">
-                                                @if($gift->start_date)
-                                                    <span>Bắt đầu: {{ Carbon::parse($gift->start_date)->format('d/m/Y') }}</span>
-                                                @endif
-                                                @if($gift->end_date)
-                                                    <span class="ml-2">Kết thúc: {{ Carbon::parse($gift->end_date)->format('d/m/Y') }}</span>
-                                                @endif
-                                            </div>
-                                        @endif
-                                    </div>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-                        </span>
+                        <span id="bookPrice" data-base-price="{{ $defaultPrice }}" class="text-4xl font-bold text-black">{{ number_format($finalPrice, 0, ',', '.') }}₫</span>
                         @if ($discount > 0)
-                            <div class="flex items-center space-x-3">
-                                <span id="originalPrice" class="text-xl text-gray-500 line-through">
-                                    {{ number_format($defaultPrice, 0, ',', '.') }}₫
-                                </span>
+                        <span id="originalPrice" class="text-xl text-gray-500 line-through">{{ number_format($defaultPrice, 0, ',', '.') }}₫</span>
+                        <span id="discountText" class="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">-<span id="discountPercent">{{ $discount }}</span>%</span>
                                 <span id="discountText" class="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold"
                                       style="display: {{ $discount > 0 ? 'inline' : 'none' }}">
                                     -<span id="discountPercent">{{ $discount }}</span>%
@@ -861,6 +757,45 @@
                         @endif
                     </div>
                 </div>
+
+                <!-- Quà tặng kèm -->
+                @if(isset($bookGifts) && $bookGifts->count())
+                <div class="book-gifts-section mt-8">
+                    <h3 class="text-lg font-bold text-black mb-3 flex items-center adidas-font uppercase tracking-wider">
+                        <i class="fas fa-gift text-base mr-2 text-black"></i>Quà tặng kèm
+                    </h3>
+                    <ul class="space-y-3">
+                        @foreach($bookGifts as $gift)
+                            <li class="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-black transition-all duration-200 shadow-sm">
+                                @if($gift->gift_image)
+                                    <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="{{ $gift->gift_name }}" class="w-16 h-16 object-cover rounded shadow border border-gray-200">
+                                @else
+                                    <span class="w-16 h-16 flex items-center justify-center bg-gray-100 rounded text-2xl border border-gray-200"><i class="fas fa-gift"></i></span>
+                                @endif
+                                <div class="flex-1">
+                                    <div class="font-semibold text-black text-base adidas-font">{{ $gift->gift_name }}</div>
+                                    @if($gift->gift_description)
+                                        <div class="text-sm text-gray-700 mt-1">{{ $gift->gift_description }}</div>
+                                    @endif
+                                    @if($gift->quantity > 0)
+                                        <div class="text-xs text-green-700 mt-1">Số lượng: {{ $gift->quantity }}</div>
+                                    @endif
+                                    @if($gift->start_date || $gift->end_date)
+                                        <div class="text-xs text-gray-500 mt-1 flex flex-wrap gap-2">
+                                            @if($gift->start_date)
+                                                <span>Bắt đầu: {{ Carbon::parse($gift->start_date)->format('d/m/Y') }}</span>
+                                            @endif
+                                            @if($gift->end_date)
+                                                <span>Kết thúc: {{ Carbon::parse($gift->end_date)->format('d/m/Y') }}</span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
 
                 <!-- Enhanced Format Selection -->
                 @if ($book->formats->count())
@@ -1054,6 +989,41 @@
                                 </div>
                                 <div>
                                     <span class="font-bold uppercase tracking-wider text-sm">{{ $review->user->name ?? 'KHÁCH HÀNG ẨN DANH' }}</span>
+                                    @if(isset($bookGifts) && $bookGifts->count())
+                <div class="book-gifts-section mt-6">
+                    <h3 class="text-lg font-bold text-black mb-2 flex items-center"><span class="mr-2">🎁</span>Quà tặng kèm</h3>
+                    <ul class="space-y-3">
+                        @foreach($bookGifts as $gift)
+                            <li class="flex items-start gap-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200 shadow-sm">
+                                @if($gift->gift_image)
+                                    <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="{{ $gift->gift_name }}" class="w-16 h-16 object-cover rounded shadow">
+                                @else
+                                    <span class="w-16 h-16 flex items-center justify-center bg-yellow-100 rounded text-2xl">🎁</span>
+                                @endif
+                                <div class="flex-1">
+                                    <div class="font-semibold text-black text-base">{{ $gift->gift_name }}</div>
+                                    @if($gift->gift_description)
+                                        <div class="text-sm text-gray-700 mt-1">{{ $gift->gift_description }}</div>
+                                    @endif
+                                    @if($gift->quantity > 0)
+                                        <div class="text-xs text-green-700 mt-1">Số lượng: {{ $gift->quantity }}</div>
+                                    @endif
+                                    @if($gift->start_date || $gift->end_date)
+                                        <div class="text-xs text-gray-500 mt-1 flex flex-wrap gap-2">
+                                            @if($gift->start_date)
+                                                <span>Bắt đầu: {{ Carbon::parse($gift->start_date)->format('d/m/Y') }}</span>
+                                            @endif
+                                            @if($gift->end_date)
+                                                <span>Kết thúc: {{ Carbon::parse($gift->end_date)->format('d/m/Y') }}</span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
                                     <div class="flex text-yellow-400 text-xs mt-1">
                                         @for ($i = 0; $i < $review->rating; $i++)
                                             ★
