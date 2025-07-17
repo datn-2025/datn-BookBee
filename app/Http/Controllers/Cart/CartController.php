@@ -360,7 +360,8 @@ class CartController extends Controller
                     return response()->json([
                         'success' => 'Đã thêm sách điện tử vào giỏ hàng',
                         'stock' => $bookInfo->stock,
-                        'current_quantity' => 1
+                        'current_quantity' => 1,
+                        'cart_count' => (int) DB::table('carts')->where('user_id', Auth::id())->sum('quantity')
                     ]);
                 }
                 // Kiểm tra tổng số lượng sau khi thêm (chỉ với sách vật lý)
@@ -380,10 +381,15 @@ class CartController extends Controller
                         'price' => $finalPrice,
                         'updated_at' => now()
                     ]);
+                
+                // Get updated cart count
+                $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                
                 return response()->json([
                     'success' => 'Đã thêm ' . $quantity . ' sản phẩm "' . $bookInfo->title . '" vào giỏ hàng',
                     'stock' => $bookInfo->stock,
-                    'current_quantity' => $newQuantity
+                    'current_quantity' => $newQuantity,
+                    'cart_count' => (int) $cartCount
                 ]);
             } else {
                 // Nếu là ebook: luôn set quantity = 1
@@ -404,10 +410,14 @@ class CartController extends Controller
                         'updated_at' => now()
                     ]);
                     
+                    // Get updated cart count
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                    
                     return response()->json([
                         'success' => 'Đã thêm sản phẩm "' . $bookInfo->title . '" vào giỏ hàng',
                         'stock' => $bookInfo->stock,
-                        'current_quantity' => $quantity
+                        'current_quantity' => $quantity,
+                        'cart_count' => (int) $cartCount
                     ]);
                 } catch (\Illuminate\Database\QueryException $e) {
                     // Nếu bị duplicate key error (unique constraint violation)
@@ -574,6 +584,9 @@ class CartController extends Controller
                     'updated_at' => now()
                 ]);
 
+                // Get updated cart count
+                $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+
                 return response()->json([
                     'success' => 'Sách điện tử luôn có số lượng cố định là 1',
                     'data' => [
@@ -581,7 +594,8 @@ class CartController extends Controller
                         'price' => $bookInfo->price,
                         'quantity' => 1,
                         'is_ebook' => true
-                    ]
+                    ],
+                    'cart_count' => (int) $cartCount
                 ]);
             } else {
                 // SÁCH VẬT LÝ: Kiểm tra tồn kho và cho phép thay đổi số lượng
@@ -610,6 +624,9 @@ class CartController extends Controller
                         'updated_at' => now()
                     ]);
 
+                    // Get updated cart count
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+
                     return response()->json([
                         'success' => 'Đã cập nhật số lượng sản phẩm',
                         'data' => [
@@ -617,7 +634,8 @@ class CartController extends Controller
                             'price' => $currentPrice, // Trả về giá đã được áp dụng combo (nếu có)
                             'quantity' => $quantity,
                             'is_ebook' => false
-                        ]
+                        ],
+                        'cart_count' => (int) $cartCount
                     ]);
                 } else {
                     // Xóa sản phẩm khi số lượng = 0
@@ -685,10 +703,17 @@ class CartController extends Controller
             $deletedCount = $query->delete();
 
             if ($deletedCount > 0) {
+                // Get updated cart count
+                $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                
                 Log::info('Cart item removed successfully:', [
-                    'deleted_count' => $deletedCount
+                    'deleted_count' => $deletedCount,
+                    'remaining_cart_count' => $cartCount
                 ]);
-                return response()->json(['success' => 'Đã xóa sản phẩm khỏi giỏ hàng']);
+                return response()->json([
+                    'success' => 'Đã xóa sản phẩm khỏi giỏ hàng',
+                    'cart_count' => (int) $cartCount
+                ]);
             } else {
                 Log::warning('No cart item found to delete');
                 return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
@@ -947,7 +972,8 @@ class CartController extends Controller
 
             return response()->json([
                 'success' => "Đã xóa tất cả sản phẩm khỏi giỏ hàng",
-                'deleted_count' => $deletedCount
+                'deleted_count' => $deletedCount,
+                'cart_count' => 0
             ]);
         } catch (\Exception $e) {
             Log::error('Error in clearCart:', [
@@ -1020,5 +1046,24 @@ class CartController extends Controller
             ]);
             return response()->json(['error' => 'Server error'], 500);
         }
+    }
+
+    /**
+     * Get cart item count for AJAX requests
+     */
+    public function getCartCount()
+    {
+        if (!Auth::check()) {
+            return response()->json(['count' => 0]);
+        }
+
+        $user = Auth::user();
+        
+        // Sum all quantities in cart for this user
+        $totalCount = DB::table('carts')
+            ->where('user_id', $user->id)
+            ->sum('quantity');
+
+        return response()->json(['count' => (int) $totalCount]);
     }
 }
