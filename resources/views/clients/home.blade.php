@@ -610,7 +610,7 @@
                         <div class="w-16 h-0.5 bg-black mt-2"></div>
                     </div>
                 </div>
-                <a href="#" class="bg-black text-white px-6 py-3 font-bold text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors">
+                <a href="{{ route('news.index') }}" class="bg-black text-white px-6 py-3 font-bold text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors">
                     XEM TẤT CẢ
                 </a>
             </div>
@@ -618,7 +618,7 @@
             <!-- Articles Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($articles->take(3) as $article)
-                    <article class="group bg-white border-2 border-gray-100 hover:border-black transition-all duration-300 cursor-pointer" onclick="window.location='#'">
+                    <article class="group bg-white border-2 border-gray-100 hover:border-black transition-all duration-300">
                         <!-- Image -->
                         <div class="aspect-[4/3] bg-gray-100 overflow-hidden relative">
                             <img src="{{ asset('storage/' . $article->thumbnail) }}" 
