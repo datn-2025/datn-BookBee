@@ -326,7 +326,8 @@ class AdminBookController extends Controller
             'formats:id,book_id,format_name,price,discount,stock,file_url,sample_file_url,allow_sample_read',
             'images:id,book_id,image_url',
             'attributeValues.attribute',
-            'reviews.user:id,name,email'
+            'reviews.user:id,name,email',
+            'gifts'
         ])->findOrFail($id);
 
         // Calculate average rating
