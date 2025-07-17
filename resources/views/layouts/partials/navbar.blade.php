@@ -1,162 +1,211 @@
-<nav class="bg-white px-6 py-5 shadow-sm border-b">
-    <div
-        class="max-w-screen-xl mx-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-between min-h-[80px]">
-        {{-- Trái: Logo --}}
-        <div class="flex items-center justify-between md:justify-start gap-3">
-            <a href="#">
-                <img src="{{ asset('storage/' . (get_setting() ? get_setting()->logo : 'default_logo.png')) }}"
-                     alt="Logo" class="h-32 w-auto"/>
-            </a>
-        </div>
-        {{-- Giữa: Menu chính --}}
-        <ul
-            class="flex flex-wrap justify-center items-center gap-8 text-base semi-bold uppercase tracking-wide text-gray-900">
-            <li><a href="{{ route('home') }}" class="hover:text-red-500 {{ request()->routeIs('home') ? 'text-red-500' : '' }}">Trang chủ</a></li>
-            <li><a href="#" class="hover:text-red-500">Giới thiệu</a></li>
-            <li><a href="{{ route('books.index') }}" class="hover:text-red-500 {{ request()->routeIs('books.*') ? 'text-red-500' : '' }}">Cửa hàng</a></li>
-            <li><a href="{{ route('news.index') }}" class="hover:text-red-500 {{ request()->routeIs('news.*') ? 'text-red-500' : '' }}">Tin tức</a></li>
-            <li><a href="{{ route('contact.form') }}" class="hover:text-red-500 {{ request()->routeIs('contact.*') ? 'text-red-500' : '' }}">Liên hệ</a></li>
-        </ul>
-        {{-- Phải: Tìm kiếm + icon + dòng phụ --}}
-        <div class="flex flex-col items-end gap-1 text-sm md:text-xs">
-            {{-- Dòng phụ --}}
-            <div class="flex items-center gap-4">
+<nav class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            {{-- Logo --}}
+            <div class="flex-shrink-0">
+                <a href="{{ route('home') }}" class="block">
+                    <img src="{{ asset('storage/' . (get_setting() ? get_setting()->logo : 'default_logo.png')) }}"
+                         alt="Logo" class="h-10 w-auto"/>
+                </a>
+            </div>
 
+            {{-- Mobile menu button --}}
+            <div class="md:hidden">
+                <button type="button" id="mobile-menu-btn" class="p-2 text-gray-600 hover:text-black focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
 
-                {{-- Cờ + chọn ngôn ngữ --}}
-                <nav class="relative">
-                    <div class="flex items-center space-x-2">
-                        <img src="{{ asset('storage/images/vn-flag.png') }}" alt="Vietnam Flag" class="h-4 w-6">
-                        {{-- <span class="text-sm font-medium">VietNam</span> --}}
-                    </div>
+            {{-- Desktop Navigation --}}
+            <div class="hidden md:flex md:items-center md:space-x-8">
+                {{-- Main Menu --}}
+                <nav class="flex space-x-8">
+                    <a href="{{ route('home') }}" 
+                       class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide {{ request()->routeIs('home') ? 'text-black font-semibold' : 'hover:text-black' }}">
+                        Trang chủ
+                    </a>
+                    <a href="#" 
+                       class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide hover:text-black">
+                        Giới thiệu
+                    </a>
+                    <a href="{{ route('books.index') }}" 
+                       class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide {{ request()->routeIs('books.*') ? 'text-black font-semibold' : 'hover:text-black' }}">
+                        Cửa hàng
+                    </a>
+                    <a href="{{ route('news.index') }}" 
+                       class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide {{ request()->routeIs('news.*') ? 'text-black font-semibold' : 'hover:text-black' }}">
+                        Tin tức
+                    </a>
+                    <a href="{{ route('contact.form') }}" 
+                       class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide {{ request()->routeIs('contact.*') ? 'text-black font-semibold' : 'hover:text-black' }}">
+                        Liên hệ
+                    </a>
                 </nav>
 
+                {{-- Right Side Icons --}}
+                <div class="flex items-center space-x-4">
+                    {{-- Search --}}
+                    <form method="GET" action="{{ route('books.search') }}" class="relative">
+                        <input type="text" 
+                               name="search"
+                               placeholder="Tìm kiếm..."
+                               value="{{ request('search') }}"
+                               class="w-64 pl-4 pr-10 py-2 text-sm border border-gray-300 rounded-none focus:outline-none focus:border-black"
+                               autocomplete="off">
+                        <button type="submit" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-black">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </button>
+                    </form>
 
-            </div>
-            {{-- Dòng icon + tìm kiếm --}}
-            <div class="flex items-center gap-3 text-[15px] text-gray-800">
-                {{-- Thanh tìm kiếm --}}
-                <form method="GET" action="{{ route('books.search') }}" class="relative">
-                    <input type="text" 
-                           name="search"
-                           placeholder="Tìm kiếm sách, tác giả, NXB, danh mục..."
-                           value="{{ request('search') }}"
-                           class="pl-3 pr-9 py-1 text-sm rounded border border-gray-300 focus:outline-none focus:border-black w-48"
-                           autocomplete="off">
-                    <button type="submit" class="absolute right-2 top-1.5 text-sm text-gray-500 hover:text-black">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </form>
-                <!-- <i class="far fa-user hover:text-black cursor-pointer"></i> -->
-                <!-- Thay thế phần user icon cũ bằng code này -->
-                <div style="position: relative; display: inline-block;">
-                    <a href="{{ auth()->check() ? '#' : route('login') }}"
-                       style="text-decoration: none; color: inherit;"
-                       onmouseover="this.nextElementSibling.style.display='block'"
-                       onmouseout="this.nextElementSibling.style.display='none'">
-                        <i class="far fa-user"></i>
-                        @auth
-                            <span style="margin-left: 5px;">{{ Auth::user()->name }}</span>
-                        @endauth
+                    {{-- User Account --}}
+                    <div class="user-dropdown relative">
+                        <button class="user-btn flex items-center space-x-2 p-2 text-gray-600 hover:text-black focus:outline-none">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            @auth
+                                <span class="text-sm font-medium">{{ Auth::user()->name }}</span>
+                            @endauth
+                        </button>
+                        
+                        <div class="dropdown-menu absolute right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg">
+                            @auth
+                                <a href="{{ route('account.profile') }}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                                    <svg class="inline h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                    Tài khoản
+                                </a>
+                                <a href="{{ route('orders.index') }}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                                    <svg class="inline h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                                    </svg>
+                                    Đơn hàng
+                                </a>
+                                <a href="{{ route('wallet.index') }}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                                    <svg class="inline h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                    Ví của tôi
+                                </a>
+                                <div class="border-t border-gray-100">
+                                    <form method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button type="submit" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                                            <svg class="inline h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                            </svg>
+                                            Đăng xuất
+                                        </button>
+                                    </form>
+                                </div>
+                            @else
+                                <a href="{{ route('login') }}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                                    <svg class="inline h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                                    </svg>
+                                    Đăng nhập
+                                </a>
+                                <a href="{{ route('register') }}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                                    <svg class="inline h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                                    </svg>
+                                    Đăng ký
+                                </a>
+                            @endauth
+                        </div>
+                    </div>
+
+                    {{-- Wishlist --}}
+                    <a href="{{ route('wishlist.index') }}" class="p-2 text-gray-600 hover:text-black focus:outline-none">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                        </svg>
                     </a>
 
-
-                    <div style="position: absolute; right: 0; background: white;  z-index: 1000;  
-                border: 1px solid #ddd; border-radius: 4px; display: none;" onmouseover="this.style.display='block'"
-                         onmouseout="this.style.display='none'">
-                        @auth
-                            <a href="{{ route('account.profile') }}" style="display: block; padding: 8px 15px; color: #333; text-decoration: none;
-                      border-bottom: 1px solid #eee; white-space: nowrap;">
-                                <i class="fas fa-user-circle" style="margin-right: 8px;"></i> Tài khoản
-                            </a>
-                            <a href="{{ route('orders.index') }}" style="display: block; padding: 8px 15px; color: #333; text-decoration: none;
-                      border-bottom: 1px solid #eee; white-space: nowrap;">
-                                <i class="fas fa-user-circle" style="margin-right: 8px;"></i> Đơn Hàng Của Tôi
-                            </a>
-                            <a href="{{ route('wallet.index') }}" style="display: block; padding: 8px 15px; color: #333; text-decoration: none;
-                      border-bottom: 1px solid #eee; white-space: nowrap;">
-                                <i class="fas fa-user-circle" style="margin-right: 8px;"></i> Ví Của Tôi
-                            </a>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" style="width: 100%; text-align: left; padding: 8px 15px;
-                               background: none; border: none; color: #333; cursor: pointer;">
-                                    <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i> Đăng xuất
-                                </button>
-                            </form>
-                        @else
-                            <a href="{{ route('login') }}" style="display: block; padding: 8px 15px; color: #333; text-decoration: none;
-                      border-bottom: 1px solid #eee; white-space: nowrap;">
-                                <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i> Đăng nhập
-                            </a>
-                            <a href="{{ route('register') }}"
-                               style="display: block; padding: 8px 15px; color: #333; text-decoration: none;">
-                                <i class="fas fa-user-plus" style="margin-right: 8px;"></i> Đăng ký
-                            </a>
-                        @endauth
-                    </div>
-                </div>
-                <i class="far fa-heart hover:text-black cursor-pointer"></i>
-                <div class="relative">
-                    <a href="{{route('cart.index')}}"> <i
-                            class="fas fa-shopping-bag hover:text-black cursor-pointer"></i></a>
-                    <span
-                        class="absolute -top-2 -right-2 text-[10px] bg-yellow-400 text-black font-bold rounded-full px-1"></span>
+                    {{-- Cart --}}
+                    <a href="{{ route('cart.index') }}" class="relative p-2 text-gray-600 hover:text-black">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                        </svg>
+                        <span class="absolute -top-1 -right-1 h-4 w-4 bg-black text-white text-xs rounded-full flex items-center justify-center">0</span>
+                    </a>
                 </div>
             </div>
         </div>
 
-
+        {{-- Mobile menu --}}
+        <div id="mobile-menu" class="hidden md:hidden border-t border-gray-100">
+            <div class="px-2 pt-4 pb-3 space-y-1">
+                <a href="{{ route('home') }}" 
+                   class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 {{ request()->routeIs('home') ? 'bg-gray-50 text-black' : 'hover:bg-gray-50' }}">
+                    Trang chủ
+                </a>
+                <a href="#" 
+                   class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-50">
+                    Giới thiệu
+                </a>
+                <a href="{{ route('books.index') }}" 
+                   class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 {{ request()->routeIs('books.*') ? 'bg-gray-50 text-black' : 'hover:bg-gray-50' }}">
+                    Cửa hàng
+                </a>
+                <a href="{{ route('news.index') }}" 
+                   class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 {{ request()->routeIs('news.*') ? 'bg-gray-50 text-black' : 'hover:bg-gray-50' }}">
+                    Tin tức
+                </a>
+                <a href="{{ route('contact.form') }}" 
+                   class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 {{ request()->routeIs('contact.*') ? 'bg-gray-50 text-black' : 'hover:bg-gray-50' }}">
+                    Liên hệ
+                </a>
+                
+                {{-- Mobile Search --}}
+                <div class="px-3 py-2">
+                    <form method="GET" action="{{ route('books.search') }}" class="relative">
+                        <input type="text" 
+                               name="search"
+                               placeholder="Tìm kiếm..."
+                               value="{{ request('search') }}"
+                               class="w-full pl-4 pr-10 py-2 text-sm border border-gray-300 rounded-none focus:outline-none focus:border-black"
+                               autocomplete="off">
+                        <button type="submit" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </nav>
 
 <style>
-    /* Main Navigation */
-    .adidas-nav {
-        position: relative;
-        z-index: 1000;
-    }
-
-    .adidas-nav {
-        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-
-    .adidas-btn {
-        transition: background-color 0.2s ease;
-    }
-
-    .adidas-btn:hover {
-        background-color: #f3f4f6;
-    }
-
-    .adidas-gradient-text {
-        background: linear-gradient(45deg, #000000, #767677, #000000);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    /* Navigation links hover effects */
+    /* Clean navigation styles */
     .nav-link {
         position: relative;
+        transition: color 0.2s ease;
     }
 
-    .nav-link::before {
+    .nav-link::after {
         content: '';
         position: absolute;
-        bottom: -2px;
+        bottom: -4px;
         left: 0;
         width: 0;
         height: 2px;
-        background: #3b82f6;
-        transition: width 0.3s ease;
+        background-color: #000;
+        transition: width 0.2s ease;
     }
 
-    .nav-link:hover::before {
+    .nav-link:hover::after {
         width: 100%;
     }
 
-    /* Enhanced dropdown styles */
+    /* User dropdown */
     .user-dropdown {
         position: relative;
     }
@@ -165,511 +214,104 @@
         position: absolute;
         right: 0;
         top: 100%;
-        margin-top: 8px;
         opacity: 0;
         visibility: hidden;
-        transform: translateY(-8px) scale(0.98);
+        transform: translateY(-8px);
         transition: all 0.2s ease;
         pointer-events: none;
-        z-index: 9999;
-        background: #ffffff !important;
-        border-radius: 8px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
-        border: 2px solid #f3f4f6;
-        min-width: 200px;
-        display: block;
-        overflow: hidden;
-        backdrop-filter: blur(10px);
+        z-index: 50;
     }
 
-    /* Arrow pointer */
-    .user-dropdown .dropdown-menu::before {
-        content: '';
-        position: absolute;
-        top: -7px;
-        right: 20px;
-        width: 14px;
-        height: 14px;
-        background: #ffffff !important;
-        transform: rotate(45deg);
-        border: 2px solid #f3f4f6;
-        border-bottom: none;
-        border-right: none;
-        z-index: -1;
-        box-shadow: -2px -2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    /* Show dropdown on hover */
     .user-dropdown:hover .dropdown-menu {
         opacity: 1;
         visibility: visible;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
         pointer-events: auto;
     }
 
-    /* Alternative fallback for touch devices */
     .user-dropdown .dropdown-menu.show {
         opacity: 1;
         visibility: visible;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
         pointer-events: auto;
-    }
-
-    /* Enhanced user button */
-    .user-dropdown .user-btn {
-        transition: all 0.15s ease;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .user-dropdown .user-btn::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
-        transform: translate(-50%, -50%);
-        transition: all 0.15s ease;
-        border-radius: 50%;
-    }
-
-    .user-dropdown:hover .user-btn {
-        background: #f3f4f6;
-        transform: translateY(-0.5px);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    }
-
-    .user-dropdown:hover .user-btn::before {
-        width: 20px;
-        height: 20px;
-    }
-
-    .user-dropdown:hover .user-btn svg {
-        transform: scale(1.05);
-        color: #3b82f6;
-    }
-
-    .user-dropdown .user-btn svg {
-        transition: all 0.15s ease;
-        position: relative;
-        z-index: 1;
-    }
-
-    /* Enhanced dropdown items */
-    .dropdown-menu a,
-    .dropdown-menu button {
-        transition: all 0.15s ease;
-        position: relative;
-        overflow: hidden;
-        margin: 2px 4px;
-        border-radius: 6px;
-        font-weight: 500;
-        letter-spacing: 0.01em;
-        color: #000000 !important;
-    }
-
-    .dropdown-menu a::before,
-    .dropdown-menu button::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.05), transparent);
-        transition: left 0.25s ease;
-    }
-
-    .dropdown-menu a:hover,
-    .dropdown-menu button:hover {
-        background: #f8fafc !important;
-        transform: translateX(2px);
-        color: #1e40af !important;
-        box-shadow: 0 2px 6px rgba(59, 130, 246, 0.12);
-        border-radius: 6px;
-    }
-
-    .dropdown-menu a:hover::before,
-    .dropdown-menu button:hover::before {
-        left: 100%;
-    }
-
-    /* Special styling for first and last items */
-    .dropdown-menu a:first-child,
-    .dropdown-menu form:first-child button {
-        margin-top: 8px;
-    }
-
-    .dropdown-menu a:last-child,
-    .dropdown-menu form:last-child button {
-        margin-bottom: 8px;
-    }
-
-    /* Logout button special styling */
-    .dropdown-menu form button[type="submit"] {
-        color: #dc2626 !important;
-        font-weight: 600;
-    }
-
-    .dropdown-menu form button[type="submit"]:hover {
-        background: #fef2f2 !important;
-        color: #991b1b !important;
-        box-shadow: 0 2px 6px rgba(220, 38, 38, 0.12);
-        border-radius: 6px;
-    }
-
-    /* Mobile show state for touch devices */
-    .dropdown-menu.show {
-        opacity: 1 !important;
-        visibility: visible !important;
-        transform: translateY(0) scale(1) !important;
-        pointer-events: auto !important;
-    }
-
-    /* Enhanced loading animation */
-    @keyframes dropdownSlideIn {
-        0% {
-            opacity: 0;
-            transform: translateY(-8px) scale(0.98);
-        }
-        50% {
-            opacity: 0.8;
-            transform: translateY(-2px) scale(0.99);
-        }
-        100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-
-    .dropdown-menu.show {
-        animation: dropdownSlideIn 0.2s ease;
-    }
-
-    /* Stagger animation for menu items */
-    .dropdown-menu a,
-    .dropdown-menu button {
-        opacity: 0;
-        animation: fadeInUp 0.15s ease forwards;
-    }
-
-    .dropdown-menu.show a:nth-child(1),
-    .dropdown-menu.show button:nth-child(1) {
-        animation-delay: 0.05s;
-    }
-
-    .dropdown-menu.show a:nth-child(2),
-    .dropdown-menu.show button:nth-child(2) {
-        animation-delay: 0.075s;
-    }
-
-    .dropdown-menu.show a:nth-child(3),
-    .dropdown-menu.show button:nth-child(3) {
-        animation-delay: 0.1s;
-    }
-
-    .dropdown-menu.show a:nth-child(4),
-    .dropdown-menu.show button:nth-child(4) {
-        animation-delay: 0.125s;
-    }
-
-    @keyframes fadeInUp {
-        0% {
-            opacity: 0;
-            transform: translateY(5px);
-        }
-        100% {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Hover state items show immediately */
-    .user-dropdown:hover .dropdown-menu a,
-    .user-dropdown:hover .dropdown-menu button {
-        opacity: 1;
-        animation: none;
-    }
-
-    /* Ripple effect for button clicks */
-    .ripple-effect {
-        position: absolute;
-        border-radius: 50%;
-        background: rgba(59, 130, 246, 0.15);
-        transform: scale(0);
-        animation: rippleAnimation 0.3s linear;
-        pointer-events: none;
-    }
-
-    @keyframes rippleAnimation {
-        to {
-            transform: scale(2);
-            opacity: 0;
-        }
-    }
-
-    /* Microinteractions for better feedback */
-    .dropdown-menu a:active,
-    .dropdown-menu button:active {
-        transform: translateX(2px) scale(0.99);
-    }
-
-    /* Focus states for accessibility */
-    .user-btn:focus {
-        outline: 2px solid #3b82f6;
-        outline-offset: 2px;
-    }
-
-    .dropdown-menu a:focus,
-    .dropdown-menu button:focus {
-        outline: 2px solid #3b82f6;
-        outline-offset: -2px;
-        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    }
-
-    /* Smooth transitions for better perceived performance */
-    .user-dropdown * {
-        will-change: transform, opacity;
-    }
-
-    /* High contrast mode support */
-    @media (prefers-contrast: high) {
-        .user-dropdown .dropdown-menu {
-            border: 2px solid #000;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-
-        .dropdown-menu a:hover,
-        .dropdown-menu button:hover {
-            background: #000;
-            color: #fff;
-        }
-    }
-
-    /* Reduced motion support */
-    @media (prefers-reduced-motion: reduce) {
-        .user-dropdown .dropdown-menu,
-        .dropdown-menu a,
-        .dropdown-menu button,
-        .user-dropdown .user-btn {
-            transition: none;
-            animation: none;
-        }
-
-        .dropdown-menu.show {
-            animation: none;
-        }
-    }
-
-    /* Cart/Wishlist badge */
-    .badge-bounce {
-        transition: transform 0.2s ease;
-    }
-
-    .adidas-btn:hover .badge-bounce {
-        transform: scale(1.1);
-    }
-
-    /* Search button hover */
-    .search-btn {
-        transition: background-color 0.2s ease;
-    }
-
-    .search-btn:hover {
-        background-color: #1e40af;
     }
 
     /* Mobile menu */
     .mobile-menu-item {
         transition: all 0.2s ease;
-        border-left: 3px solid transparent;
     }
 
-    .mobile-menu-item:hover {
-        background: #f8fafc;
-        border-left-color: #3b82f6;
-        padding-left: 16px;
+    /* Focus states for accessibility */
+    button:focus,
+    input:focus,
+    a:focus {
+        outline: 2px solid #000;
+        outline-offset: 2px;
     }
 
-    /* Responsive adjustments */
+    /* Search input */
+    input[type="text"] {
+        transition: border-color 0.2s ease;
+    }
+
+    /* Clean button styles */
+    button {
+        transition: color 0.2s ease;
+    }
+
+    /* Responsive design */
     @media (max-width: 768px) {
-        .user-dropdown .dropdown-menu {
-            right: 0;
-            min-width: 180px;
-            margin-top: 12px;
-            border-radius: 10px;
-        }
-
-        .user-dropdown .dropdown-menu::before {
-            right: 16px;
-        }
-
-        /* On mobile, prefer click over hover */
         .user-dropdown:hover .dropdown-menu {
             opacity: 0;
             visibility: hidden;
-            transform: translateY(-8px) scale(0.98);
+            transform: translateY(-8px);
             pointer-events: none;
-        }
-
-        .user-dropdown .dropdown-menu.show {
-            opacity: 1 !important;
-            visibility: visible !important;
-            transform: translateY(0) scale(1) !important;
-            pointer-events: auto !important;
-        }
-
-        /* Enhanced touch targets for mobile */
-        .dropdown-menu a,
-        .dropdown-menu button {
-            padding: 12px 16px;
-            font-size: 15px;
-            margin: 1px 3px;
-        }
-    }
-
-    @media (min-width: 769px) {
-        /* Desktop hover should work */
-        .user-dropdown:hover .dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
-        }
-
-        /* Smooth hover delay */
-        .user-dropdown .dropdown-menu {
-            transition-delay: 0.05s;
-        }
-
-        .user-dropdown:hover .dropdown-menu {
-            transition-delay: 0s;
-        }
-    }
-
-    /* Dark mode support */
-    @media (prefers-color-scheme: dark) {
-        .user-dropdown .dropdown-menu {
-            background: #1f2937;
-            border: 1px solid #374151;
-        }
-
-        .user-dropdown .dropdown-menu::before {
-            background: #1f2937;
-            border-color: #374151;
-        }
-
-        .dropdown-menu a,
-        .dropdown-menu button {
-            color: #f9fafb;
-        }
-
-        .dropdown-menu a:hover,
-        .dropdown-menu button:hover {
-            background: #374151;
-            color: #60a5fa;
         }
     }
 </style>
 
 <script>
-    // Simple mobile menu toggle
-    document.getElementById('mobile-menu-btn').addEventListener('click', function () {
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
-        mobileMenu.classList.toggle('hidden');
-    });
+        
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
 
-    // Enhanced dropdown functionality with better UX
-    document.addEventListener('DOMContentLoaded', function () {
+        // User dropdown functionality
         const dropdown = document.querySelector('.user-dropdown');
-        if (!dropdown) return;
+        if (dropdown) {
+            const dropdownMenu = dropdown.querySelector('.dropdown-menu');
+            const userBtn = dropdown.querySelector('.user-btn');
 
-        const dropdownMenu = dropdown.querySelector('.dropdown-menu');
-        const userBtn = dropdown.querySelector('.user-btn');
-        let hoverTimeout;
-        let clickTimeout;
+            // Click functionality for mobile/touch devices
+            if (userBtn && dropdownMenu) {
+                userBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    dropdownMenu.classList.toggle('show');
+                });
 
-        // Ensure dropdown menu is properly initialized
-        if (dropdownMenu) {
-            // Remove any conflicting classes
-            dropdownMenu.classList.remove('hidden');
-
-            // Enhanced hover functionality for desktop
-            dropdown.addEventListener('mouseenter', function () {
-                clearTimeout(hoverTimeout);
-                if (window.innerWidth > 768) {
-                    dropdownMenu.classList.add('show');
-                    // Stagger animation for items
-                    const items = dropdownMenu.querySelectorAll('a, button');
-                    items.forEach((item, index) => {
-                        item.style.animationDelay = `${0.1 + (index * 0.05)}s`;
-                    });
-                }
-            });
-
-            dropdown.addEventListener('mouseleave', function () {
-                if (window.innerWidth > 768) {
-                    hoverTimeout = setTimeout(() => {
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!dropdown.contains(e.target)) {
                         dropdownMenu.classList.remove('show');
-                    }, 100);
-                }
-            });
+                    }
+                });
 
-            // Enhanced click functionality for mobile/touch
-            userBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                clearTimeout(clickTimeout);
-
-                // Add ripple effect
-                const ripple = document.createElement('span');
-                ripple.className = 'ripple-effect';
-                this.appendChild(ripple);
-                setTimeout(() => ripple.remove(), 600);
-
-                // Toggle the dropdown with smooth animation
-                if (dropdownMenu.classList.contains('show')) {
-                    dropdownMenu.classList.remove('show');
-                } else {
-                    // Close any other open dropdowns first
-                    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-                        if (menu !== dropdownMenu) menu.classList.remove('show');
-                    });
-
-                    dropdownMenu.classList.add('show');
-
-                    // Stagger animation for items
-                    const items = dropdownMenu.querySelectorAll('a, button');
-                    items.forEach((item, index) => {
-                        item.style.animationDelay = `${0.1 + (index * 0.05)}s`;
-                    });
-                }
-            });
-
-            // Close dropdown when clicking outside with smooth animation
-            document.addEventListener('click', function (e) {
-                if (!dropdown.contains(e.target)) {
-                    dropdownMenu.classList.remove('show');
-                }
-            });
-
-            // Close dropdown on escape key
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') {
-                    dropdownMenu.classList.remove('show');
-                    userBtn.focus(); // Return focus to button
-                }
-            });
-
-            // Handle window resize
-            window.addEventListener('resize', function () {
-                if (window.innerWidth > 768) {
-                    dropdownMenu.classList.remove('show');
-                }
-            });
+                // Close dropdown on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        dropdownMenu.classList.remove('show');
+                        userBtn.focus();
+                    }
+                });
+            }
         }
     });
 </script>
