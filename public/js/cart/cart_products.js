@@ -113,6 +113,13 @@ const CartProducts = {
         if (response.success) {
             CartBase.utils.showSuccess(response.success);
             
+            // Dispatch cart update event with count
+            if (typeof response.cart_count !== 'undefined') {
+                document.dispatchEvent(new CustomEvent('cartUpdated', {
+                    detail: { count: response.cart_count }
+                }));
+            }
+            
             // Always reload page after successful removal to update all cart data
             setTimeout(() => {
                 location.reload();
@@ -184,6 +191,14 @@ const CartProducts = {
     handleClearSuccess(response) {
         if (response.success) {
             CartBase.utils.showSuccess(response.success);
+            
+            // Dispatch cart clear event
+            if (typeof response.cart_count !== 'undefined') {
+                document.dispatchEvent(new CustomEvent('cartUpdated', {
+                    detail: { count: response.cart_count }
+                }));
+            }
+            
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
