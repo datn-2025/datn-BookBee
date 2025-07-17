@@ -6,7 +6,11 @@ use App\Models\Category;
 use App\Models\Book;
 use App\Models\NewsArticle;
 use App\Models\Review;
+use App\Models\User;
+use App\Models\Order;
+use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Jorenvh\Share\ShareFacade;
 
 class HomeController extends Controller
@@ -73,7 +77,10 @@ class HomeController extends Controller
             ->latest()
             ->get();
 
-        return view('clients.home', compact('books', 'categories', 'featuredBooks', 'latestBooks', 'bestReviewedBooks', 'saleBooks', 'reviews', 'articles', 'combos'));
+        // Lấy thống kê thực tế từ database
+        $statistics = $this->getStatistics();
+
+        return view('clients.home', compact('books', 'categories', 'featuredBooks', 'latestBooks', 'bestReviewedBooks', 'saleBooks', 'reviews', 'articles', 'combos', 'statistics'));
     }
 
     public function show($slug)
@@ -127,5 +134,60 @@ class HomeController extends Controller
             ->get();
 
         return view('clients.show', compact('combo', 'relatedCombos'));
+    }
+
+    /**
+     * Lấy thống kê thực tế từ database
+     */
+    private function getStatistics()
+    {
+        try {
+            // Lấy số khách hàng (users có role là 'user')
+            $totalCustomers = User::whereHas('role', function($q) {
+                $q->where('name', 'user');
+            })->count();
+
+            // Lấy tổng số sách đã bán từ các đơn hàng thành công
+            $totalBooksSold = OrderItem::join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->join('order_statuses', 'orders.order_status_id', '=', 'order_statuses.id')
+                ->where('order_statuses.name', 'Thành công')
+                ->sum('order_items.quantity');
+
+            // Tính trung bình thời gian giao hàng (từ đặt đến thành công)
+            $avgDeliveryTime = Order::join('order_statuses', 'orders.order_status_id', '=', 'order_statuses.id')
+                ->where('order_statuses.name', 'Thành công')
+                ->whereNotNull('orders.updated_at')
+                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, orders.created_at, orders.updated_at)) as avg_hours')
+                ->value('avg_hours');
+
+            $avgDeliveryHours = $avgDeliveryTime && $avgDeliveryTime > 0 ? round($avgDeliveryTime) : 48;
+
+            // Đánh giá trung bình của tất cả sách
+            $avgRating = Review::avg('rating');
+            $qualityPercentage = $avgRating ? round(($avgRating / 5) * 100) : 100;
+
+            // Kiểm tra xem có dữ liệu thực tế không
+            $hasRealData = $totalCustomers > 0 || $totalBooksSold > 0;
+
+            return [
+                'customers' => max($totalCustomers, 0),
+                'books_sold' => max($totalBooksSold, 0),
+                'delivery_hours' => max($avgDeliveryHours, 1),
+                'quality_percentage' => max($qualityPercentage, 1),
+                'has_real_data' => $hasRealData
+            ];
+        } catch (\Exception $e) {
+            // Log lỗi để debug
+            Log::error('Error getting statistics: ' . $e->getMessage());
+            
+            // Nếu có lỗi, ẩn phần thống kê
+            return [
+                'customers' => 0,
+                'books_sold' => 0,
+                'delivery_hours' => 48,
+                'quality_percentage' => 100,
+                'has_real_data' => false
+            ];
+        }
     }
 }
