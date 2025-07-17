@@ -12,7 +12,7 @@ use Jorenvh\Share\ShareFacade;
 class HomeController extends Controller
 {
     public function index()
-    
+
     {
         $books = Book::with('category', 'formats', 'images')
             ->orderBy('publication_date', 'desc')
@@ -27,7 +27,7 @@ class HomeController extends Controller
             }])
             ->take(3)
             ->get();
-            
+
 
         $featuredBooks = Book::with(['formats' => function ($q) {
             $q->orderByDesc('price');
@@ -63,33 +63,69 @@ class HomeController extends Controller
             ->take(10)
             ->get();
         $articles = NewsArticle::latest()->take(4)->get();
-        return view('clients.home', compact('books', 'categories', 'featuredBooks', 'latestBooks', 'bestReviewedBooks', 'saleBooks', 'reviews', 'articles'));
+
+        // Lấy các combo sách (collections có combo_price)
+        $combos = \App\Models\Collection::with(['books.images', 'books.formats'])
+            ->whereNotNull('combo_price')
+            ->where('status', 'active')
+            ->orderByDesc('created_at')
+            ->take(4)
+            ->latest()
+            ->get();
+
+        return view('clients.home', compact('books', 'categories', 'featuredBooks', 'latestBooks', 'bestReviewedBooks', 'saleBooks', 'reviews', 'articles', 'combos'));
     }
 
     public function show($slug)
-{
-    $book = Book::with([
-        'author', 'category', 'brand', 'formats', 'images', 'reviews.user', 'attributeValues.attribute', 'summary'
-    ])->where('slug', $slug)->firstOrFail();
 
-    $relatedBooks = Book::where('category_id', $book->category_id)
-        ->where('id', '!=', $book->id)
-        ->with(['images', 'authors', 'formats'])
-        ->take(4)
-        ->get();
+    {
+        $book = Book::with([
+            'authors',
+            'category',
+            'brand',
+            'formats',
+            'images',
+            'reviews.user',
+            'attributeValues.attribute'
+        ])->where('slug', $slug)->firstOrFail();
 
-    // Tạo các nút chia sẻ link sản phẩm
-    $shareButtons = ShareFacade::page(
-        route('books.show', $book->slug),
-        $book->title
-    )
-    ->facebook()
-    ->twitter()
-    ->linkedin()
-    ->whatsapp()
-    ->telegram();
+        $relatedBooks = Book::where('category_id', $book->category_id)
+            ->where('id', '!=', $book->id)
+            ->with(['images', 'authors', 'formats'])
+            ->take(4)
+            ->get();
 
-    return view('clients.show', compact('book', 'relatedBooks', 'shareButtons'));
-}
+        // Tạo các nút chia sẻ link sản phẩm
+        $shareButtons = ShareFacade::page(
+            route('books.show', $book->slug),
+            $book->title
+        )
+            ->facebook()
+            ->twitter()
+            ->linkedin()
+            ->whatsapp()
+            ->telegram();
 
+        $bookGifts = $book->gifts()->get();
+        return view('clients.show', compact('book', 'relatedBooks', 'shareButtons', 'bookGifts'));
+    }
+
+    /**
+     * Hiển thị chi tiết combo sách
+     */
+    public function showCombo($slug)
+    {
+        $combo = \App\Models\Collection::with(['books.authors', 'books.images', 'books.formats'])
+            ->where('slug', $slug)
+            ->where('status', 'active')
+            ->firstOrFail();
+
+        $relatedCombos = \App\Models\Collection::where('id', '!=', $combo->id)
+            ->where('status', 'active')
+            ->orderByDesc('created_at')
+            ->take(4)
+            ->get();
+
+        return view('clients.show', compact('combo', 'relatedCombos'));
+    }
 }
