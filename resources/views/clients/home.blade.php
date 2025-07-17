@@ -284,11 +284,12 @@
             </div>
 
             <!-- Enhanced Stats Section -->
+            @if(isset($statistics) && $statistics['has_real_data'])
             <div class="mt-20 pt-16 border-t border-gray-200" data-aos="fade-up" data-aos-delay="600">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                     <div class="space-y-2 group cursor-pointer">
                         <div class="text-3xl md:text-4xl font-black text-black counter-animate group-hover:text-red-500 transition-colors duration-300"
-                            data-target="1000">0</div>
+                            data-target="{{ $statistics['customers'] }}">0</div>
                         <div
                             class="text-xs uppercase tracking-[0.2em] text-gray-500 font-bold group-hover:text-gray-700 transition-colors duration-300">
                             KHÁCH HÀNG</div>
@@ -296,6 +297,19 @@
                             class="w-8 h-0.5 bg-black mx-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         </div>
                     </div>
+                    
+                    @if($statistics['books_sold'] > 0)
+                    <div class="space-y-2 group cursor-pointer">
+                        <div class="text-3xl md:text-4xl font-black text-black counter-animate group-hover:text-green-500 transition-colors duration-300"
+                            data-target="{{ $statistics['books_sold'] }}">0</div>
+                        <div
+                            class="text-xs uppercase tracking-[0.2em] text-gray-500 font-bold group-hover:text-gray-700 transition-colors duration-300">
+                            SÁCH ĐÃ BÁN</div>
+                        <div
+                            class="w-8 h-0.5 bg-black mx-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        </div>
+                    </div>
+                    @else
                     <div class="space-y-2 group cursor-pointer">
                         <div
                             class="text-3xl md:text-4xl font-black text-black group-hover:text-yellow-500 transition-colors duration-300">
@@ -307,9 +321,11 @@
                             class="w-8 h-0.5 bg-black mx-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         </div>
                     </div>
+                    @endif
+                    
                     <div class="space-y-2 group cursor-pointer">
                         <div class="text-3xl md:text-4xl font-black text-black counter-animate group-hover:text-pink-500 transition-colors duration-300"
-                            data-target="48">0</div>
+                            data-target="{{ $statistics['delivery_hours'] }}">0</div>
                         <div
                             class="text-xs uppercase tracking-[0.2em] text-gray-500 font-bold group-hover:text-gray-700 transition-colors duration-300">
                             GIỜ GIAO HÀNG</div>
@@ -319,7 +335,7 @@
                     </div>
                     <div class="space-y-2 group cursor-pointer">
                         <div class="text-3xl md:text-4xl font-black text-black counter-animate group-hover:text-blue-500 transition-colors duration-300"
-                            data-target="100">0</div>
+                            data-target="{{ $statistics['quality_percentage'] }}">0</div>
                         <div
                             class="text-xs uppercase tracking-[0.2em] text-gray-500 font-bold group-hover:text-gray-700 transition-colors duration-300">
                             % CHẤT LƯỢNG</div>
@@ -329,6 +345,23 @@
                     </div>
                 </div>
             </div>
+            @elseif(isset($statistics))
+            <!-- Stats Section when no real data available -->
+            <div class="mt-20 pt-16 border-t border-gray-200" data-aos="fade-up" data-aos-delay="600">
+                <div class="text-center mb-8">
+                    <div class="flex items-center justify-center gap-4 mb-4">
+                        <div class="w-12 h-0.5 bg-black opacity-20"></div>
+                        <span class="text-xs font-bold uppercase tracking-[0.3em] text-gray-400">
+                            ĐANG THU THẬP DỮ LIỆU THỐNG KÊ
+                        </span>
+                        <div class="w-12 h-0.5 bg-black opacity-20"></div>
+                    </div>
+                    <p class="text-sm text-gray-500 uppercase tracking-wider">
+                        Thống kê sẽ được hiển thị khi có đơn hàng thành công
+                    </p>
+                </div>
+            </div>
+            @endif
         </div>
     </section>
 
