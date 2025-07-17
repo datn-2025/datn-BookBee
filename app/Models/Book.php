@@ -110,5 +110,10 @@ class Book extends Model
     {
         return $this->summary()->exists();
     }
+
+    public function gifts(): HasMany
+    {
+        return $this->hasMany(BookGift::class);
+    }
     
 }
