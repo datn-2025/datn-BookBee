@@ -1699,6 +1699,18 @@
                 } else {
                     alert('Đã thêm sản phẩm vào giỏ hàng!');
                 }
+                
+                // Dispatch cart count update event
+                if (typeof data.cart_count !== 'undefined') {
+                    document.dispatchEvent(new CustomEvent('cartItemAdded', {
+                        detail: { count: data.cart_count }
+                    }));
+                } else {
+                    // Fallback: refresh cart count from server
+                    if (window.CartCountManager && typeof window.CartCountManager.refreshFromServer === 'function') {
+                        window.CartCountManager.refreshFromServer();
+                    }
+                }
             } else if (data.error) {
                 if (typeof toastr !== 'undefined') {
                     // Kiểm tra nếu là lỗi trộn lẫn loại sản phẩm
@@ -1802,6 +1814,18 @@
                     });
                 } else {
                     alert(data.success);
+                }
+                
+                // Dispatch cart count update event
+                if (typeof data.cart_count !== 'undefined') {
+                    document.dispatchEvent(new CustomEvent('cartItemAdded', {
+                        detail: { count: data.cart_count }
+                    }));
+                } else {
+                    // Fallback: refresh cart count from server
+                    if (window.CartCountManager && typeof window.CartCountManager.refreshFromServer === 'function') {
+                        window.CartCountManager.refreshFromServer();
+                    }
                 }
                 
                 // Show cart count update notification
