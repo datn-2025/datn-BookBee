@@ -398,6 +398,13 @@ const CartQuantity = {
         if (response.success) {
             CartBase.utils.showSuccess(response.success);
             
+            // Dispatch cart update event with count
+            if (typeof response.cart_count !== 'undefined') {
+                document.dispatchEvent(new CustomEvent('cartUpdated', {
+                    detail: { count: response.cart_count }
+                }));
+            }
+            
             // Update item data based on response
             if (response.data) {
                 const isEbook = response.data.is_ebook || false;
