@@ -59,6 +59,10 @@ Route::get('/books/{slug?}', [BookController::class, 'index'])->name('books.inde
 Route::get('/book/{slug}', [HomeController::class, 'show'])->name('books.show');
 Route::get('/books/{categoryId?}', [BookController::class, 'index'])->name('books.index');
 
+// web.php
+Route::get('combos/{slug}', [HomeController::class, 'showCombo'])->name('combos.show');
+
+
 // Tìm kiếm sách
 Route::get('/search', [BookController::class, 'search'])->name('books.search');
 
