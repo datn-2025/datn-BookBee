@@ -4,8 +4,7 @@
             {{-- Logo --}}
             <div class="flex-shrink-0">
                 <a href="{{ route('home') }}" class="block">
-                    <img src="{{ asset('storage/' . (get_setting() ? get_setting()->logo : 'default_logo.png')) }}"
-                         alt="Logo" class="h-10 w-auto"/>
+                    <h2 class="text-2xl font-black text-black uppercase tracking-tight">BOOK<span class="text-black">BEE</span></h2>
                 </a>
             </div>
 
