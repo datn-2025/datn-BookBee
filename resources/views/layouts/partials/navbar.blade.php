@@ -25,8 +25,8 @@
                        class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide {{ request()->routeIs('home') ? 'text-black font-semibold' : 'hover:text-black' }}">
                         Trang chủ
                     </a>
-                    <a href="#" 
-                       class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide hover:text-black">
+                    <a href="{{ route('about') }}" 
+                       class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide {{ request()->routeIs('about') ? 'text-black font-semibold' : 'hover:text-black' }}">
                         Giới thiệu
                     </a>
                     <a href="{{ route('books.index') }}" 
@@ -148,8 +148,8 @@
                    class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 {{ request()->routeIs('home') ? 'bg-gray-50 text-black' : 'hover:bg-gray-50' }}">
                     Trang chủ
                 </a>
-                <a href="#" 
-                   class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-50">
+                <a href="{{ route('about') }}" 
+                   class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 {{ request()->routeIs('about') ? 'bg-gray-50 text-black' : 'hover:bg-gray-50' }}">
                     Giới thiệu
                 </a>
                 <a href="{{ route('books.index') }}" 
