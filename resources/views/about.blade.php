@@ -482,7 +482,7 @@
                     </div>
                     <div class="flex items-center gap-4">
                         <div class="w-16 h-1 bg-white"></div>
-                        <span class="geometric-text text-sm text-gray-300">EST. 2024</span>
+                        <span class="geometric-text text-sm text-gray-300">THÀNH LẬP 2024</span>
                     </div>
                 </div>
                 <div class="relative order-1 md:order-2 fade-in">
@@ -548,11 +548,11 @@
                     </div>
                     <div class="border-l-4 border-black pl-6">
                         <p class="text-gray-700 leading-relaxed text-lg mb-6">
-                            Democratize access to knowledge through innovative digital platform. Create seamless reading experience for modern users.
+                            Dân chủ hóa việc tiếp cận tri thức thông qua nền tảng kỹ thuật số tiên tiến. Tạo ra trải nghiệm đọc sách liền mạch cho người dùng hiện đại.
                         </p>
                         <div class="flex items-center gap-4">
                             <div class="w-8 h-1 bg-black"></div>
-                            <span class="geometric-text text-sm text-gray-500">MISSION</span>
+                            <span class="geometric-text text-sm text-gray-500">SỨ MỆNH</span>
                         </div>
                     </div>
                 </div>
@@ -566,11 +566,11 @@
                     </div>
                     <div class="border-l-4 border-black pl-6">
                         <p class="text-gray-700 leading-relaxed text-lg mb-6">
-                            Become Vietnam's leading digital book platform, setting new standards for user experience and content accessibility.
+                            Trở thành nền tảng sách kỹ thuật số hàng đầu Việt Nam, đặt ra tiêu chuẩn mới cho trải nghiệm người dùng và khả năng tiếp cận nội dung.
                         </p>
                         <div class="flex items-center gap-4">
                             <div class="w-8 h-1 bg-black"></div>
-                            <span class="geometric-text text-sm text-gray-500">VISION</span>
+                            <span class="geometric-text text-sm text-gray-500">TẦM NHÌN</span>
                         </div>
                     </div>
                 </div>
@@ -583,7 +583,7 @@
                     </div>
                     <h3 class="text-xl font-black geometric-text mb-4">CHẤT LƯỢNG</h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Curated collection of premium books from trusted publishers worldwide.
+                        Bộ sưu tập được tuyển chọn kỹ càng những cuốn sách cao cấp từ các nhà xuất bản uy tín trên toàn thế giới.
                     </p>
                 </div>
 
@@ -593,7 +593,7 @@
                     </div>
                     <h3 class="text-xl font-black geometric-text mb-4">ĐA DẠNG</h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Comprehensive library spanning all genres and subjects for every reader.
+                        Thư viện toàn diện bao gồm tất cả các thể loại và chủ đề dành cho mọi độc giả.
                     </p>
                 </div>
 
@@ -603,7 +603,7 @@
                     </div>
                     <h3 class="text-xl font-black geometric-text mb-4">TỐC ĐỘ</h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Lightning-fast delivery and instant digital access to your favorite books.
+                        Giao hàng nhanh như chớp và truy cập kỹ thuật số tức thì đến những cuốn sách yêu thích của bạn.
                     </p>
                 </div>
             </div>
@@ -627,7 +627,7 @@
                     <div class="bg-gray-50 border-2 border-black p-8 ml-4">
                         <h3 class="text-2xl font-black geometric-text mb-4">KHỞI ĐẦU</h3>
                         <p class="text-gray-700 leading-relaxed">
-                            BookBee platform launched with focus on minimalist design and optimal user experience. Started with carefully curated collection.
+                            Nền tảng BookBee ra mắt với trọng tâm là thiết kế tối giản và trải nghiệm người dùng tối ưu. Bắt đầu với bộ sưu tập được tuyển chọn kỹ càng.
                         </p>
                     </div>
                 </div>
@@ -637,17 +637,17 @@
                     <div class="bg-gray-50 border-2 border-black p-8 ml-4">
                         <h3 class="text-2xl font-black geometric-text mb-4">PHÁT TRIỂN</h3>
                         <p class="text-gray-700 leading-relaxed">
-                            Expanded library with thousands of new titles. Enhanced UX with geometric design principles and professional delivery network.
+                            Mở rộng thư viện với hàng ngàn đầu sách mới. Cải tiến UX với các nguyên tắc thiết kế hình học và mạng lưới giao hàng chuyên nghiệp.
                         </p>
                     </div>
                 </div>
 
                 <div class="timeline-item">
-                    <div class="timeline-year">NOW</div>
+                    <div class="timeline-year">HIỆN TẠI</div>
                     <div class="bg-black text-white border-2 border-black p-8 ml-4">
                         <h3 class="text-2xl font-black geometric-text mb-4">TƯƠNG LAI</h3>
                         <p class="text-gray-300 leading-relaxed">
-                            Pioneering the future of digital reading with innovative features and unparalleled user satisfaction.
+                            Tiên phong trong tương lai của việc đọc sách kỹ thuật số với các tính năng tiên tiến và sự hài lòng người dùng vô song.
                         </p>
                     </div>
                 </div>
@@ -672,8 +672,8 @@
                         <div class="team-icon w-24 h-24 bg-gray-200 border-2 border-black mx-auto mb-6 flex items-center justify-center">
                             <i class="fas fa-user text-2xl text-gray-600"></i>
                         </div>
-                        <h3 class="text-xl font-black geometric-text mb-2">TEAM LEADER</h3>
-                        <p class="text-gray-600 geometric-text text-sm mb-4">FOUNDER & CEO</p>
+                        <h3 class="text-xl font-black geometric-text mb-2">TRƯỞNG NHÓM</h3>
+                        <p class="text-gray-600 geometric-text text-sm mb-4">NGƯỜI SÁNG LẬP & GIÁM ĐỐC ĐIỀU HÀNH</p>
                         <div class="w-full h-1 bg-black"></div>
                     </div>
                 </div>
@@ -683,8 +683,8 @@
                         <div class="team-icon w-24 h-24 bg-gray-200 border-2 border-black mx-auto mb-6 flex items-center justify-center">
                             <i class="fas fa-code text-2xl text-gray-600"></i>
                         </div>
-                        <h3 class="text-xl font-black geometric-text mb-2">DEVELOPER</h3>
-                        <p class="text-gray-600 geometric-text text-sm mb-4">TECHNICAL LEAD</p>
+                        <h3 class="text-xl font-black geometric-text mb-2">LẬP TRÌNH VIÊN</h3>
+                        <p class="text-gray-600 geometric-text text-sm mb-4">TRƯỞNG PHÒNG KỸ THUẬT</p>
                         <div class="w-full h-1 bg-black"></div>
                     </div>
                 </div>
@@ -694,8 +694,8 @@
                         <div class="team-icon w-24 h-24 bg-gray-200 border-2 border-black mx-auto mb-6 flex items-center justify-center">
                             <i class="fas fa-palette text-2xl text-gray-600"></i>
                         </div>
-                        <h3 class="text-xl font-black geometric-text mb-2">DESIGNER</h3>
-                        <p class="text-gray-600 geometric-text text-sm mb-4">CREATIVE DIRECTOR</p>
+                        <h3 class="text-xl font-black geometric-text mb-2">THIẾT KẾ</h3>
+                        <p class="text-gray-600 geometric-text text-sm mb-4">GIÁM ĐỐC SÁNG TẠO</p>
                         <div class="w-full h-1 bg-black"></div>
                     </div>
                 </div>
@@ -724,7 +724,7 @@
                     </div>
                     <div class="faq-content px-6 pb-6">
                         <p class="text-gray-600 leading-relaxed">
-                            Comprehensive digital library featuring literature, science, technology, business, self-development, and children's books. Continuously updated with latest releases from trusted publishers.
+                            Thư viện kỹ thuật số toàn diện bao gồm văn học, khoa học, công nghệ, kinh doanh, phát triển bản thân và sách thiếu nhi. Được cập nhật liên tục với những phát hành mới nhất từ các nhà xuất bản uy tín.
                         </p>
                     </div>
                 </div>
@@ -738,7 +738,7 @@
                     </div>
                     <div class="faq-content px-6 pb-6">
                         <p class="text-gray-600 leading-relaxed">
-                            24-48 hours delivery within city limits, 2-3 days nationwide. Express same-day delivery available for urgent orders. Digital books available instantly.
+                            Giao hàng 24-48 giờ trong phạm vi thành phố, 2-3 ngày toàn quốc. Có sẵn giao hàng cấp tốc trong ngày cho đơn hàng khẩn cấp. Sách kỹ thuật số có sẵn ngay lập tức.
                         </p>
                     </div>
                 </div>
@@ -752,7 +752,7 @@
                     </div>
                     <div class="faq-content px-6 pb-6">
                         <p class="text-gray-600 leading-relaxed">
-                            7-day return policy for defective items or incorrect orders. Contact support via hotline or email for assistance. Digital purchases subject to platform terms.
+                            Chính sách đổi trả 7 ngày cho các mặt hàng bị lỗi hoặc đơn hàng không đúng. Liên hệ hỗ trợ qua đường dây nóng hoặc email để được hỗ trợ. Việc mua sách kỹ thuật số tuân theo điều khoản của nền tảng.
                         </p>
                     </div>
                 </div>
@@ -766,7 +766,7 @@
                     </div>
                     <div class="faq-content px-6 pb-6">
                         <p class="text-gray-600 leading-relaxed">
-                            Receive tracking code via email/SMS after successful order. Monitor order status directly on BookBee website or mobile app. Real-time updates available.
+                            Nhận mã theo dõi qua email/SMS sau khi đặt hàng thành công. Theo dõi trạng thái đơn hàng trực tiếp trên trang web BookBee hoặc ứng dụng di động. Có sẵn cập nhật theo thời gian thực.
                         </p>
                     </div>
                 </div>
@@ -791,7 +791,7 @@
                     <div class="w-24 h-1 bg-white mx-auto mb-8"></div>
                     
                     <p class="text-xl text-gray-300 max-w-2xl mx-auto mb-12 leading-relaxed">
-                        Discover unlimited knowledge with BookBee's modern platform. Experience the future of digital reading.
+                        Khám phá tri thức không giới hạn với nền tảng hiện đại của BookBee. Trải nghiệm tương lai của việc đọc sách kỹ thuật số.
                     </p>
                     
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
@@ -799,7 +799,7 @@
                             XEM SÁCH NGAY
                         </a>
                         <a href="{{ route('contact.form') }}" class="btn-secondary">
-                            LIÊN HỆ
+                            LIÊN HỆ NGAY
                         </a>
                     </div>
                 </div>
