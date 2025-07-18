@@ -17,7 +17,7 @@
                 <h4 class="text-sm font-bold text-black uppercase tracking-wide">Liên kết nhanh</h4>
                 <ul class="space-y-2">
                     <li><a href="{{ route('home') }}" class="text-gray-600 text-sm hover:text-black transition-colors duration-200 font-medium">Trang chủ</a></li>
-                    <li><a href="#" class="text-gray-600 text-sm hover:text-black transition-colors duration-200 font-medium">Giới thiệu</a></li>
+                    <li><a href="{{ route('about') }}" class="text-gray-600 text-sm hover:text-black transition-colors duration-200 font-medium">Giới thiệu</a></li>
                     <li><a href="{{ route('books.index') }}" class="text-gray-600 text-sm hover:text-black transition-colors duration-200 font-medium">Cửa hàng</a></li>
                     <li><a href="{{ route('news.index') }}" class="text-gray-600 text-sm hover:text-black transition-colors duration-200 font-medium">Tin tức</a></li>
                     <li><a href="{{ route('contact.form') }}" class="text-gray-600 text-sm hover:text-black transition-colors duration-200 font-medium">Liên hệ</a></li>
