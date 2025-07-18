@@ -628,16 +628,16 @@
                         </span>
                     </div>
                     <h1 class="text-4xl md:text-5xl lg:text-7xl font-black uppercase leading-[0.9] tracking-tight mb-6 geometric-text">
-                        <span class="block">IMPOSSIBLE</span>
-                        <span class="block text-gray-400">IS</span>
-                        <span class="block">NOTHING</span>
+                        <span class="block">KHÔNG CÓ</span>
+                        <span class="block text-gray-400">GÌ LÀ</span>
+                        <span class="block">BẤT KHẢ THI</span>
                     </h1>
                     <p class="text-lg md:text-xl text-gray-300 mb-8 max-w-lg">
                         BookBee - Nơi tri thức không có giới hạn. Chúng tôi tin rằng mọi cuốn sách đều có thể thay đổi cuộc sống của bạn.
                     </p>
                     <div class="flex items-center gap-4">
                         <div class="w-12 md:w-16 h-0.5 bg-white"></div>
-                        <span class="text-xs md:text-sm font-bold uppercase tracking-wide">EST. 2024</span>
+                        <span class="text-xs md:text-sm font-bold uppercase tracking-wide">THÀNH LẬP 2024</span>
                     </div>
                 </div>
                 <div class="relative order-1 md:order-2 fade-in">
@@ -712,7 +712,7 @@
                     </p>
                     <div class="flex items-center gap-4">
                         <div class="w-8 h-0.5 bg-black"></div>
-                        <span class="text-sm font-bold uppercase tracking-wide text-gray-500">EST. 2024</span>
+                        <span class="text-sm font-bold uppercase tracking-wide text-gray-500">THÀNH LẬP 2024</span>
                     </div>
                 </div>
 
@@ -728,14 +728,14 @@
                     </p>
                     <div class="flex items-center gap-4">
                         <div class="w-8 h-0.5 bg-black"></div>
-                        <span class="text-sm font-bold uppercase tracking-wide text-gray-500">FUTURE VISION</span>
+                        <span class="text-sm font-bold uppercase tracking-wide text-gray-500">TẦM NHÌN TƯƠNG LAI</span>
                     </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 geometric-animate">
                 <div class="mission-card p-8 fade-in">
-                    <div class="w-16 h-16 bg-black text-white flex items-center justify-center mb-6 font-bold text-xl clip-path: polygon(50% 0%, 0% 100%, 100% 100%)">
+                    <div class="w-16 h-16 bg-black text-white flex items-center justify-center mb-6 font-bold text-xl" style="clip-path: polygon(50% 0%, 0% 100%, 100% 100%);">
                         01
                     </div>
                     <h3 class="text-xl font-bold uppercase tracking-wide mb-4 geometric-text">CHẤT LƯỢNG</h3>
@@ -745,7 +745,7 @@
                 </div>
 
                 <div class="mission-card p-8 fade-in">
-                    <div class="w-16 h-16 bg-black text-white flex items-center justify-center mb-6 font-bold text-xl clip-path: polygon(50% 0%, 0% 100%, 100% 100%)">
+                    <div class="w-16 h-16 bg-black text-white flex items-center justify-center mb-6 font-bold text-xl" style="clip-path: polygon(50% 0%, 0% 100%, 100% 100%);">
                         02
                     </div>
                     <h3 class="text-xl font-bold uppercase tracking-wide mb-4 geometric-text">ĐA DẠNG</h3>
@@ -755,7 +755,7 @@
                 </div>
 
                 <div class="mission-card p-8 fade-in">
-                    <div class="w-16 h-16 bg-black text-white flex items-center justify-center mb-6 font-bold text-xl clip-path: polygon(50% 0%, 0% 100%, 100% 100%)">
+                    <div class="w-16 h-16 bg-black text-white flex items-center justify-center mb-6 font-bold text-xl" style="clip-path: polygon(50% 0%, 0% 100%, 100% 100%);">
                         03
                     </div>
                     <h3 class="text-xl font-bold uppercase tracking-wide mb-4 geometric-text">TỐC ĐỘ</h3>
@@ -813,7 +813,7 @@
                 <div class="timeline-item">
                     <div class="timeline-content bg-black text-white">
                         <div class="flex items-center gap-4 mb-4">
-                            <span class="text-2xl font-black geometric-text">NOW</span>
+                            <span class="text-2xl font-black geometric-text">HIỆN TẠI</span>
                             <div class="w-8 h-0.5 bg-white"></div>
                         </div>
                         <h3 class="text-xl font-bold uppercase tracking-wide mb-4 geometric-text">TƯƠNG LAI</h3>
@@ -847,8 +847,8 @@
                     <div class="w-32 h-32 bg-gray-200 mx-auto mb-6 flex items-center justify-center" style="clip-path: polygon(50% 0%, 0% 100%, 100% 100%);">
                         <i class="fas fa-user text-4xl text-gray-500"></i>
                     </div>
-                    <h3 class="text-xl font-bold uppercase tracking-wide mb-2 geometric-text">TEAM LEADER</h3>
-                    <p class="text-gray-600 uppercase tracking-wide text-sm mb-4">Founder & CEO</p>
+                    <h3 class="text-xl font-bold uppercase tracking-wide mb-2 geometric-text">TRƯỞNG NHÓM</h3>
+                    <p class="text-gray-600 uppercase tracking-wide text-sm mb-4">Người sáng lập & Giám đốc điều hành</p>
                     <div class="w-8 h-0.5 bg-black mx-auto"></div>
                 </div>
 
@@ -856,8 +856,8 @@
                     <div class="w-32 h-32 bg-gray-200 mx-auto mb-6 flex items-center justify-center" style="clip-path: polygon(50% 0%, 0% 100%, 100% 100%);">
                         <i class="fas fa-code text-4xl text-gray-500"></i>
                     </div>
-                    <h3 class="text-xl font-bold uppercase tracking-wide mb-2 geometric-text">DEVELOPER</h3>
-                    <p class="text-gray-600 uppercase tracking-wide text-sm mb-4">Technical Lead</p>
+                    <h3 class="text-xl font-bold uppercase tracking-wide mb-2 geometric-text">LẬP TRÌNH VIÊN</h3>
+                    <p class="text-gray-600 uppercase tracking-wide text-sm mb-4">Trưởng phòng Kỹ thuật</p>
                     <div class="w-8 h-0.5 bg-black mx-auto"></div>
                 </div>
 
@@ -865,8 +865,8 @@
                     <div class="w-32 h-32 bg-gray-200 mx-auto mb-6 flex items-center justify-center" style="clip-path: polygon(50% 0%, 0% 100%, 100% 100%);">
                         <i class="fas fa-palette text-4xl text-gray-500"></i>
                     </div>
-                    <h3 class="text-xl font-bold uppercase tracking-wide mb-2 geometric-text">DESIGNER</h3>
-                    <p class="text-gray-600 uppercase tracking-wide text-sm mb-4">Creative Director</p>
+                    <h3 class="text-xl font-bold uppercase tracking-wide mb-2 geometric-text">THIẾT KẾ</h3>
+                    <p class="text-gray-600 uppercase tracking-wide text-sm mb-4">Giám đốc Sáng tạo</p>
                     <div class="w-8 h-0.5 bg-black mx-auto"></div>
                 </div>
             </div>
@@ -964,7 +964,7 @@
                         XEM SÁCH NGAY
                     </a>
                     <a href="{{ route('contact.form') }}" class="btn-secondary" style="border: 2px solid #fff; color: #fff;">
-                        LIÊN HỆ
+                        LIÊN HỆ NGAY
                     </a>
                 </div>
             </div>
