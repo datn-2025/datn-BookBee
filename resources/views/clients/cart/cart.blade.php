@@ -79,46 +79,179 @@
                 </div>
                 <div class="adidas-cart-products-list">
                 @foreach($cart as $item)
-                    <div class="adidas-cart-product-card cart-item" 
-                         data-book-id="{{ $item->book_id }}" 
-                         data-book-format-id="{{ $item->book_format_id }}"
-                         data-attribute-value-ids="{{ $item->attribute_value_ids }}"
-                         data-price="{{ $item->price ?? 0 }}" 
-                         data-stock="{{ $item->stock ?? 0 }}"
-                         data-format-name="{{ $item->format_name ?? '' }}">
-                        <div class="adidas-cart-product-img-wrap">
-                            @if($item->image)
-                                <img class="adidas-cart-product-img" src="{{ asset($item->image) }}" alt="{{ $item->title ?? 'Book image' }}">
-                            @else
-                                <div class="adidas-cart-product-img-placeholder">
-                                    <i class="fas fa-book"></i>
+                    @if($item->is_combo)
+                        {{-- Hiển thị Combo --}}
+                        <div class="adidas-cart-product-card cart-item combo-item" 
+                             data-collection-id="{{ $item->collection_id }}" 
+                             data-price="{{ $item->price ?? 0 }}"
+                             data-is-combo="true">
+                            <div class="adidas-cart-product-img-wrap">
+                                @if($item->image)
+                                    <img class="adidas-cart-product-img" src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->title ?? 'Combo image' }}">
+                                @else
+                                    <div class="adidas-cart-product-img-placeholder combo-placeholder">
+                                        <i class="fas fa-layer-group"></i>
+                                    </div>
+                                @endif
+                                <div class="combo-badge">
+                                    <i class="fas fa-layer-group"></i>
+                                    <span>COMBO</span>
                                 </div>
-                            @endif
+                            </div>
+                            <div class="adidas-cart-product-info">
+                                <div class="adidas-cart-product-header">
+                                    <h5 class="adidas-cart-product-title combo-title">{{ $item->title ?? 'Combo sách' }}</h5>
+                                    <button class="adidas-cart-product-remove" data-collection-id="{{ $item->collection_id }}" data-is-combo="true" title="Xóa combo">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="adidas-cart-product-meta">
+                                    <span><i class="fas fa-layer-group"></i> {{ $item->author_name ?? 'Combo sách' }}</span>
+                                    <span class="format-name"><i class="fas fa-gift"></i> {{ $item->format_name ?? 'Combo sách' }}</span>
+                                </div>
+                                
+                                {{-- Hiển thị danh sách sách trong combo --}}
+                                @if(isset($item->combo_books) && count($item->combo_books) > 0)
+                                    <div class="combo-books-preview">
+                                        <small class="combo-books-label">
+                                            <i class="fas fa-list"></i> Bao gồm {{ count($item->combo_books) }} cuốn sách:
+                                        </small>
+                                        <div class="combo-books-list">
+                                            @foreach($item->combo_books as $index => $book)
+                                                <span class="combo-book-item">{{ $book->title }}</span>@if($index < count($item->combo_books) - 1),@endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+                                
+                                {{-- Lưu ý combo không có quà tặng --}}
+                                <div class="combo-note">
+                                    <small><i class="fas fa-info-circle"></i> Combo không bao gồm quà tặng</small>
+                                </div>
+                                
+                                <div class="adidas-cart-product-footer">
+                                    <div class="adidas-cart-product-price">
+                                        <small>Đơn giá combo</small>
+                                        <div><i class="fas fa-tag"></i> {{ number_format($item->price ?? 0) }}đ</div>
+                                    </div>
+                                    <div class="adidas-cart-product-qty">
+                                        <small><i class="fas fa-calculator"></i> Số lượng</small>
+                                        <div class="adidas-cart-qty-control" data-collection-id="{{ $item->collection_id }}">
+                                            <button type="button" class="decrease-quantity" data-action="decrease" title="Giảm số lượng" aria-label="Giảm số lượng combo {{ $item->title ?? 'Combo' }}" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <input type="number" 
+                                                   class="quantity-input" 
+                                                   value="{{ $item->quantity ?? 1 }}" 
+                                                   min="1"
+                                                   data-collection-id="{{ $item->collection_id }}"
+                                                   data-last-value="{{ $item->quantity ?? 1 }}"
+                                                   aria-label="Số lượng combo {{ $item->title ?? 'Combo' }}" 
+                                                   autocomplete="off">
+                                            <button type="button" class="increase-quantity" data-action="increase" title="Tăng số lượng" aria-label="Tăng số lượng combo {{ $item->title ?? 'Combo' }}">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                        <div class="combo-availability-info">
+                                            <small>
+                                                @php
+                                                    $startDate = $item->start_date ?? null;
+                                                    $endDate = $item->end_date ?? null;
+                                                    $now = now();
+                                                    $isActive = true;
+                                                    
+                                                    if ($startDate && $now < \Carbon\Carbon::parse($startDate)) {
+                                                        $isActive = false;
+                                                        $statusMessage = 'Combo chưa mở bán';
+                                                        $statusIcon = 'fas fa-clock';
+                                                        $statusClass = 'combo-pending';
+                                                    } elseif ($endDate && $now > \Carbon\Carbon::parse($endDate)) {
+                                                        $isActive = false;
+                                                        $statusMessage = 'Combo đã kết thúc';
+                                                        $statusIcon = 'fas fa-times-circle';
+                                                        $statusClass = 'combo-expired';
+                                                    } else {
+                                                        $statusMessage = 'Combo đang hoạt động';
+                                                        $statusIcon = 'fas fa-check-circle';
+                                                        $statusClass = 'combo-active';
+                                                    }
+                                                @endphp
+                                                
+                                                <div class="combo-status {{ $statusClass }}">
+                                                    <i class="{{ $statusIcon }}"></i> {{ $statusMessage }}
+                                                </div>
+                                                
+                                                @if($startDate)
+                                                    <div class="combo-date-info">
+                                                        <i class="fas fa-calendar-alt"></i> 
+                                                        Từ: {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }}
+                                                        @if($endDate)
+                                                            - {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
+                                                        @endif
+                                                    </div>
+                                                @elseif($endDate)
+                                                    <div class="combo-date-info">
+                                                        <i class="fas fa-calendar-times"></i> 
+                                                        Kết thúc: {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
+                                                    </div>
+                                                @else
+                                                    <div class="combo-date-info">
+                                                        <i class="fas fa-infinity"></i> Không giới hạn thời gian
+                                                    </div>
+                                                @endif
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="adidas-cart-product-total">
+                                        <small>Thành tiền</small>
+                                        <div class="item-total">{{ number_format(($item->price ?? 0) * $item->quantity) }}đ</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="adidas-cart-product-info">
-                            <div class="adidas-cart-product-header">
-                                <h5 class="adidas-cart-product-title">{{ $item->title ?? 'Không có tiêu đề' }}</h5>
-                                <button class="adidas-cart-product-remove" data-book-id="{{ $item->book_id }}" title="Xóa sản phẩm">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                    @else
+                        {{-- Hiển thị Sách đơn lẻ --}}
+                        <div class="adidas-cart-product-card cart-item" 
+                             data-book-id="{{ $item->book_id }}" 
+                             data-book-format-id="{{ $item->book_format_id }}"
+                             data-attribute-value-ids="{{ $item->attribute_value_ids }}"
+                             data-price="{{ $item->price ?? 0 }}" 
+                             data-stock="{{ $item->stock ?? 0 }}"
+                             data-format-name="{{ $item->format_name ?? '' }}"
+                             data-is-combo="false">
+                            <div class="adidas-cart-product-img-wrap">
+                                @if($item->image)
+                                    <img class="adidas-cart-product-img" src="{{ asset($item->image) }}" alt="{{ $item->title ?? 'Book image' }}">
+                                @else
+                                    <div class="adidas-cart-product-img-placeholder">
+                                        <i class="fas fa-book"></i>
+                                    </div>
+                                @endif
                             </div>
-                            <div class="adidas-cart-product-meta">
-                                <span><i class="fas fa-user"></i> {{ $item->author_name ?? 'Chưa cập nhật' }}</span>
-                                <span class="format-name"><i class="fas fa-bookmark"></i> {{ $item->format_name ?? 'Chưa cập nhật' }}</span>
-                            </div>
-                            @if($item->attribute_value_ids && $item->attribute_value_ids !== '[]')
-                                @php
-                                    $attributeIds = json_decode($item->attribute_value_ids, true);
-                                    $attributes = collect();
-                                    if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
-                                        $attributes = DB::table('attribute_values')
-                                            ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
-                                            ->whereIn('attribute_values.id', $attributeIds)
-                                            ->select('attributes.name as attr_name', 'attribute_values.value as attr_value')
-                                            ->get();
-                                    }
-                                @endphp
-                                @if($attributes->count() > 0)
+                            <div class="adidas-cart-product-info">
+                                <div class="adidas-cart-product-header">
+                                    <h5 class="adidas-cart-product-title">{{ $item->title ?? 'Không có tiêu đề' }}</h5>
+                                    <button class="adidas-cart-product-remove" data-book-id="{{ $item->book_id }}" data-is-combo="false" title="Xóa sản phẩm">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="adidas-cart-product-meta">
+                                    <span><i class="fas fa-user"></i> {{ $item->author_name ?? 'Chưa cập nhật' }}</span>
+                                    <span class="format-name"><i class="fas fa-bookmark"></i> {{ $item->format_name ?? 'Chưa cập nhật' }}</span>
+                                </div>
+                                @if($item->attribute_value_ids && $item->attribute_value_ids !== '[]')
+                                    @php
+                                        $attributeIds = json_decode($item->attribute_value_ids, true);
+                                        $attributes = collect();
+                                        if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
+                                            $attributes = DB::table('attribute_values')
+                                                ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
+                                                ->whereIn('attribute_values.id', $attributeIds)
+                                                ->select('attributes.name as attr_name', 'attribute_values.value as attr_value')
+                                                ->get();
+                                        }
+                                    @endphp
+                                    @if($attributes->count() > 0)
                                     <div class="adidas-cart-product-attrs">
                                         <small><i class="fas fa-tags"></i> Thuộc tính:</small>
                                         <div>
@@ -129,6 +262,26 @@
                                     </div>
                                 @endif
                             @endif
+                            
+                            {{-- Hiển thị quà tặng cho sách đơn lẻ --}}
+                            @if(isset($item->gifts) && count($item->gifts) > 0)
+                                <div class="adidas-cart-product-gifts">
+                                    <small class="gifts-label">
+                                        <i class="fas fa-gift"></i> Quà tặng đi kèm:
+                                    </small>
+                                    <div class="gifts-list">
+                                        @foreach($item->gifts as $gift)
+                                            <div class="gift-item">
+                                                <span class="gift-name">{{ $gift->name }}</span>
+                                                @if($gift->description)
+                                                    <small class="gift-desc">{{ $gift->description }}</small>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                            
                             <div class="adidas-cart-product-footer">
                                 <div class="adidas-cart-product-price">
                                     <small>Đơn giá</small>
@@ -174,7 +327,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    @endif
                 @endforeach
                 </div>
             </div>
