@@ -75,6 +75,7 @@ Route::prefix('cart')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('cart.index');
     Route::get('/count', [CartController::class, 'getCartCount'])->name('cart.count');
     Route::post('/add', [CartController::class, 'addToCart'])->name('cart.add');
+    Route::post('/add-combo', [CartController::class, 'addComboToCart'])->name('cart.add-combo');
     Route::post('/update', [CartController::class, 'updateCart'])->name('cart.update');
     Route::post('/remove', [CartController::class, 'removeFromCart'])->name('cart.remove');
     Route::post('/clear', [CartController::class, 'clearCart'])->name('cart.clear');
