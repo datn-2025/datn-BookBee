@@ -44,7 +44,6 @@ class BalanceChart extends Component
         $this->fromDate = null;
         $this->toDate = null;
         $this->loadData();
-        $this->dispatch('resetDateInputs');
     }
 
     public function loadData()

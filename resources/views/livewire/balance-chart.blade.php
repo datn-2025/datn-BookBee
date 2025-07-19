@@ -33,11 +33,11 @@
             <div class="col-md-9 d-flex justify-content-end gap-2 flex-wrap">
                 <div>
                     <label>Từ ngày:</label>
-                    <input type="date" wire:model.defer="fromDate" class="form-control" />
+                    <input type="date" wire:model="fromDate" class="form-control" />
                 </div>
                 <div>
                     <label>Đến ngày:</label>
-                    <input type="date" wire:model.defer="toDate" class="form-control" />
+                    <input type="date" wire:model="toDate" class="form-control" />
                 </div>
                 <div class="d-flex gap-2 align-items-end">
                     <button wire:click="applyCustomFilter" class="btn btn-primary">Áp dụng</button>
@@ -63,6 +63,29 @@
             const existingChart = Chart.getChart(ctx);
             if (existingChart) existingChart.destroy();
 
+            const hasData = chartData && chartData.length > 0 && chartData.some(val => val > 0);
+
+            // Custom plugin để vẽ text khi không có dữ liệu
+            const noDataPlugin = {
+                id: 'noData',
+                afterDraw: (chart) => {
+                    if (!hasData) {
+                        const { ctx, chartArea } = chart;
+                        ctx.save();
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.font = '18px Arial';
+                        ctx.fillStyle = '#999';
+                        ctx.fillText(
+                            'Không có dữ liệu trong khoảng thời gian đã chọn.',
+                            (chartArea.left + chartArea.right) / 2,
+                            (chartArea.top + chartArea.bottom) / 2
+                        );
+                        ctx.restore();
+                    }
+                }
+            };
+
             new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -87,13 +110,11 @@
                             }
                         }
                     }
-                }
+                },
+                plugins: [noDataPlugin]
             });
         });
 
-        Livewire.on('resetDateInputs', () => {
-            document.querySelector('input[wire\:model\.defer="fromDate"]').value = '';
-            document.querySelector('input[wire\:model\.defer="toDate"]').value = '';
-        });
+
     </script>
 @endpush

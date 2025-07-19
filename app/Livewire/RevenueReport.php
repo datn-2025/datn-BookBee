@@ -156,6 +156,7 @@ class RevenueReport extends Component
 
     public function render()
     {
-        return view('livewire.revenue-report');
+        $hasData = !empty($this->chartData) && array_sum($this->chartData) > 0;
+        return view('livewire.revenue-report', compact('hasData'));
     }
 }
