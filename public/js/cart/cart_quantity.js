@@ -69,6 +69,11 @@ const CartQuantity = {
 
     // Check if item is an ebook
     isEbook(cartItem) {
+        // Skip ebook check for combo items
+        if (this.isCombo(cartItem)) {
+            return false;
+        }
+        
         // Method 1: Check format name in cart item data
         const formatElement = cartItem.querySelector('.format-name, [data-format]');
         if (formatElement) {
@@ -99,6 +104,11 @@ const CartQuantity = {
         return false;
     },
 
+    // Check if item is a combo
+    isCombo(cartItem) {
+        return cartItem.dataset.isCombo === 'true' || cartItem.classList.contains('combo-item');
+    },
+
     // Setup quantity input events
     setupQuantityInput(input, cartItem) {
         const itemData = CartBase.utils.getCartItemData(cartItem);
@@ -126,9 +136,15 @@ const CartQuantity = {
             if (!input || button.disabled) return;
             
             const currentValue = parseInt(input.value) || 1;
-            const max = parseInt(input.max) || parseInt(cartItem.dataset.stock) || 1;
+            const isComboItem = this.isCombo(cartItem);
             
-            if (currentValue < max) {
+            // For combo items, no max limit. For regular items, check stock
+            let max = Infinity;
+            if (!isComboItem) {
+                max = parseInt(input.max) || parseInt(cartItem.dataset.stock) || 1;
+            }
+            
+            if (isComboItem || currentValue < max) {
                 const newValue = currentValue + 1;
                 input.value = newValue;
                 
@@ -139,7 +155,7 @@ const CartQuantity = {
                 this.updateQuantity(cartItem, newValue);
                 this.updateButtonStates(cartItem);
             } else {
-                // Show feedback when max reached
+                // Show feedback when max reached (only for non-combo items)
                 CartBase.utils.showWarning(`Số lượng tối đa là ${max} sản phẩm`);
                 this.addErrorFeedback(cartItem);
             }
@@ -195,7 +211,6 @@ const CartQuantity = {
     validateQuantityInput(input, itemData) {
         const newValue = parseInt(input.value) || 0;
         const min = parseInt(input.min) || 1;
-        const max = parseInt(input.max) || itemData.stock;
         const cartItem = input.closest('.cart-item');
 
         // Skip validation for ebooks
@@ -204,6 +219,18 @@ const CartQuantity = {
             return;
         }
 
+        // For combo items, only apply basic min validation
+        if (this.isCombo(cartItem)) {
+            if (newValue < min) {
+                input.value = min;
+                CartBase.utils.showWarning(`Số lượng tối thiểu là ${min}`);
+            }
+            return;
+        }
+
+        // For regular books, apply stock validation
+        const max = parseInt(input.max) || itemData.stock;
+        
         // Check stock limit for physical books
         if (newValue > itemData.stock) {
             CartBase.utils.showError(`Số lượng không được vượt quá ${itemData.stock} sản phẩm (số lượng tồn kho hiện tại)`);
@@ -239,19 +266,22 @@ const CartQuantity = {
         const itemData = CartBase.utils.getCartItemData(cartItem);
         const quantityControls = cartItem.querySelector('.quantity-controls');
 
-        if (!quantityInput || !itemData) return;
+        if (!quantityInput) return;
 
         const currentValue = parseInt(quantityInput.value) || 1;
         const min = parseInt(quantityInput.min) || 1;
-        const max = parseInt(quantityInput.max) || itemData.stock;
+        
+        // For combo items, no max limit based on stock
+        const isComboItem = this.isCombo(cartItem);
+        let max = isComboItem ? Infinity : (parseInt(quantityInput.max) || (itemData ? itemData.stock : 1));
 
         // Update increase button
         if (increaseBtn) {
-            const shouldDisable = currentValue >= max;
+            const shouldDisable = isComboItem ? false : (currentValue >= max);
             increaseBtn.disabled = shouldDisable;
             increaseBtn.setAttribute('aria-disabled', shouldDisable);
             
-            if (shouldDisable) {
+            if (shouldDisable && !isComboItem) {
                 increaseBtn.title = `Đã đạt số lượng tối đa (${max})`;
             } else {
                 increaseBtn.title = 'Tăng số lượng';
@@ -271,8 +301,10 @@ const CartQuantity = {
             }
         }
 
-        // Update quantity feedback
-        this.updateQuantityFeedback(cartItem, currentValue, max);
+        // Update quantity feedback (skip for combo items)
+        if (!isComboItem) {
+            this.updateQuantityFeedback(cartItem, currentValue, max);
+        }
         
         // Remove error states
         if (quantityControls) {
@@ -344,8 +376,11 @@ const CartQuantity = {
             return;
         }
 
-        // Validate quantity against stock for physical books
-        if (newQuantity > itemData.stock) {
+        // Check if this is a combo item
+        const isCombo = this.isCombo(cartItem);
+        
+        // Only validate quantity against stock for physical books (not combo)
+        if (!isCombo && newQuantity > itemData.stock) {
             CartBase.utils.showError(`Số lượng không được vượt quá ${itemData.stock} sản phẩm (số lượng tồn kho hiện tại)`);
             if (quantityInput) quantityInput.value = oldQuantity;
             return;
@@ -365,12 +400,21 @@ const CartQuantity = {
 
         // Prepare data for update - include all identifying information
         const updateData = {
-            book_id: itemData.bookId,
-            book_format_id: cartItem.dataset.bookFormatId || null,
-            attribute_value_ids: cartItem.dataset.attributeValueIds || null,
             quantity: newQuantity,
             _token: CartBase.utils.getCSRFToken()
         };
+
+        if (isCombo) {
+            // For combo items
+            updateData.collection_id = cartItem.dataset.collectionId;
+            updateData.is_combo = true;
+        } else {
+            // For individual book items  
+            updateData.book_id = itemData.bookId;
+            updateData.book_format_id = cartItem.dataset.bookFormatId || null;
+            updateData.attribute_value_ids = cartItem.dataset.attributeValueIds || null;
+            updateData.is_combo = false;
+        }
 
         // Make AJAX request
         $.ajax({
