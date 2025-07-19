@@ -7,211 +7,249 @@
 @section('title', 'Giỏ hàng')
 
 @push('styles')
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-black': '#000000',
+                        'brand-white': '#ffffff',
+                        'brand-gray': '#767677',
+                        'brand-light-gray': '#f4f4f4',
+                        'brand-red': '#d71921',
+                        'brand-green': '#69be28',
+                    },
+                    fontFamily: {
+                        'brand': ['Roboto', 'Arial', 'sans-serif'],
+                    },
+                    animation: {
+                        'slide-in': 'slideIn 0.3s ease-out',
+                        'fade-in': 'fadeIn 0.2s ease-in',
+                        'bounce-soft': 'bounceSoft 2s infinite',
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    <link rel="stylesheet" href="/css/cart-adidas.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes bounceSoft {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-5px); }
+            60% { transform: translateY(-3px); }
+        }
+        .cart-hover:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
+        }
+    </style>
 @endpush
 
 @section('content')
-<div class="adidas-cart-container">
-    <!-- Modern Page Header -->
-    <div class="adidas-cart-header">
-        <div class="adidas-cart-header-content">
-            <div class="adidas-cart-header-icon">
-                <i class="fas fa-shopping-cart"></i>
-            </div>
-            <div>
-                <h1 class="adidas-cart-title">Giỏ hàng của bạn</h1>
-                <p class="adidas-cart-desc">Quản lý các sản phẩm bạn muốn mua</p>
-            </div>
-        </div>
-        @if(count($cart) > 0)
-            <div class="adidas-cart-actions">
-                <a id="add-wishlist-btn" class="adidas-btn adidas-btn-secondary" href="{{ route('wishlist.index') }}">
-                    <i class="fas fa-heart"></i> Thêm từ yêu thích
-                </a>
-                <button id="clear-cart-btn" class="adidas-btn adidas-btn-danger">
-                    <i class="fas fa-trash-alt"></i> Xóa tất cả
-                </button>
-            </div>
-        @endif
+<div class="min-h-screen bg-white py-8 md:py-16 relative overflow-hidden">
+    <!-- Background Elements -->
+    <div class="absolute inset-0 pointer-events-none">
+        <div class="absolute top-0 right-0 w-64 h-1 bg-black opacity-10"></div>
+        <div class="absolute bottom-0 left-0 w-32 h-32 bg-black opacity-5 transform rotate-45"></div>
+        <div class="absolute top-1/2 right-10 w-0.5 h-24 bg-black opacity-20"></div>
     </div>
 
-    @if(count($cart) > 0)
-        <div class="adidas-cart-main">
-            <!-- Danh sách sản phẩm -->
-            <div class="adidas-cart-products">
-                <div class="adidas-cart-products-header">
-                    <i class="fas fa-shopping-cart"></i>
-                    <h4>Sản phẩm trong giỏ ({{ count($cart) }})</h4>
-                    @php
-                        $hasEbooks = false;
-                        $hasPhysical = false;
-                        foreach($cart as $item) {
-                            $isEbook = isset($item->format_name) && (stripos($item->format_name, 'ebook') !== false);
-                            if ($isEbook) {
-                                $hasEbooks = true;
-                            } else {
-                                $hasPhysical = true;
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="text-center mb-12 animate-fade-in">
+            <div class="flex items-center justify-center gap-4 mb-4">
+                <div class="w-12 h-0.5 bg-black"></div>
+                <span class="text-xs font-bold uppercase tracking-[0.3em] text-gray-600">
+                    BOOKBEE CART
+                </span>
+                <div class="w-12 h-0.5 bg-black"></div>
+            </div>
+            <h1 class="text-4xl md:text-6xl font-black uppercase tracking-tight text-black mb-4">
+                GIỎ HÀNG CỦA BẠN
+            </h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Quản lý các sản phẩm bạn muốn mua một cách thông minh và hiệu quả
+            </p>
+        </div>
+
+        @if(count($cart) > 0)
+            <!-- Action Bar -->
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 p-6 bg-gray-50 border-l-4 border-black">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-black text-white flex items-center justify-center">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-bold uppercase tracking-wide text-black">
+                            {{ count($cart) }} SẢN PHẨM TRONG GIỎ
+                        </h4>
+                        @php
+                            $hasEbooks = false;
+                            $hasPhysical = false;
+                            foreach($cart as $item) {
+                                $isEbook = isset($item->format_name) && (stripos($item->format_name, 'ebook') !== false);
+                                if ($isEbook) {
+                                    $hasEbooks = true;
+                                } else {
+                                    $hasPhysical = true;
+                                }
                             }
-                        }
-                    @endphp
-                    @if($hasEbooks && $hasPhysical)
-                        <div class="cart-type-indicator mixed">
-                            <span class="badge badge-mixed">
-                                <i class="fas fa-mobile-alt"></i> Ebooks
-                                <span class="mx-2">+</span>
-                                <i class="fas fa-book"></i> Sách vật lý
+                        @endphp
+                        @if($hasEbooks && $hasPhysical)
+                            <span class="inline-flex items-center gap-2 text-sm font-medium text-gray-600">
+                                <i class="fas fa-mobile-alt"></i> Ebooks + <i class="fas fa-book"></i> Sách vật lý
                             </span>
-                        </div>
-                    @elseif($hasEbooks)
-                        <div class="cart-type-indicator ebook">
-                            <span class="badge badge-ebook">
+                        @elseif($hasEbooks)
+                            <span class="inline-flex items-center gap-2 text-sm font-medium text-gray-600">
                                 <i class="fas fa-mobile-alt"></i> Chỉ Ebooks
                             </span>
-                        </div>
-                    @else
-                        <div class="cart-type-indicator physical">
-                            <span class="badge badge-physical">
+                        @else
+                            <span class="inline-flex items-center gap-2 text-sm font-medium text-gray-600">
                                 <i class="fas fa-book"></i> Chỉ sách vật lý
                             </span>
-                        </div>
-                    @endif
+                        @endif
+                    </div>
                 </div>
-                <div class="adidas-cart-products-list">
+                <div class="flex gap-3">
+                    <a href="{{ route('wishlist.index') }}" class="bg-white border-2 border-black text-black px-6 py-3 font-bold text-sm uppercase tracking-wide hover:bg-black hover:text-white transition-all duration-300 flex items-center gap-2">
+                        <i class="fas fa-heart"></i> THÊM TỪ YÊU THÍCH
+                    </a>
+                    <button id="clear-cart-btn" class="bg-red-600 border-2 border-red-600 text-white px-6 py-3 font-bold text-sm uppercase tracking-wide hover:bg-white hover:text-red-600 transition-all duration-300 flex items-center gap-2">
+                        <i class="fas fa-trash-alt"></i> XÓA TẤT CẢ
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Products List -->
+                <div class="lg:col-span-2 space-y-6">
                 @foreach($cart as $item)
                     @if($item->is_combo)
-                        {{-- Hiển thị Combo --}}
-                        <div class="adidas-cart-product-card cart-item combo-item" 
+                        {{-- Combo Item --}}
+                        <div class="cart-hover bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 p-6 cart-item combo-item" 
                              data-collection-id="{{ $item->collection_id }}" 
                              data-price="{{ $item->price ?? 0 }}"
                              data-is-combo="true">
-                            <div class="adidas-cart-product-img-wrap">
-                                @if($item->image)
-                                    <img class="adidas-cart-product-img" src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->title ?? 'Combo image' }}">
-                                @else
-                                    <div class="adidas-cart-product-img-placeholder combo-placeholder">
-                                        <i class="fas fa-layer-group"></i>
+                            
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <!-- Product Image -->
+                                <div class="relative group">
+                                    @if($item->image)
+                                        <img class="w-32 h-40 object-cover" 
+                                             src="{{ asset('storage/' . $item->image) }}" 
+                                             alt="{{ $item->title ?? 'Combo image' }}">
+                                    @else
+                                        <div class="w-32 h-40 bg-gray-100 flex items-center justify-center">
+                                            <i class="fas fa-layer-group text-3xl text-gray-400"></i>
+                                        </div>
+                                    @endif
+                                    <!-- Combo Badge -->
+                                    <div class="absolute -top-2 -left-2 bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase">
+                                        <i class="fas fa-layer-group mr-1"></i>COMBO
                                     </div>
-                                @endif
-                                <div class="combo-badge">
-                                    <i class="fas fa-layer-group"></i>
-                                    <span>COMBO</span>
-                                </div>
-                            </div>
-                            <div class="adidas-cart-product-info">
-                                <div class="adidas-cart-product-header">
-                                    <h5 class="adidas-cart-product-title combo-title">{{ $item->title ?? 'Combo sách' }}</h5>
-                                    <button class="adidas-cart-product-remove" data-collection-id="{{ $item->collection_id }}" data-is-combo="true" title="Xóa combo">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                                <div class="adidas-cart-product-meta">
-                                    <span><i class="fas fa-layer-group"></i> {{ $item->author_name ?? 'Combo sách' }}</span>
-                                    <span class="format-name"><i class="fas fa-gift"></i> {{ $item->format_name ?? 'Combo sách' }}</span>
                                 </div>
                                 
-                                {{-- Hiển thị danh sách sách trong combo --}}
-                                @if(isset($item->combo_books) && count($item->combo_books) > 0)
-                                    <div class="combo-books-preview">
-                                        <small class="combo-books-label">
-                                            <i class="fas fa-list"></i> Bao gồm {{ count($item->combo_books) }} cuốn sách:
-                                        </small>
-                                        <div class="combo-books-list">
-                                            @foreach($item->combo_books as $index => $book)
-                                                <span class="combo-book-item">{{ $book->title }}</span>@if($index < count($item->combo_books) - 1),@endif
-                                            @endforeach
+                                <!-- Product Info -->
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <h3 class="text-xl font-bold text-black uppercase tracking-wide">
+                                            {{ $item->title ?? 'Combo sách' }}
+                                        </h3>
+                                        <button class="text-red-600 hover:text-red-800 p-2 adidas-cart-product-remove" 
+                                                data-collection-id="{{ $item->collection_id }}" 
+                                                data-is-combo="true" 
+                                                title="Xóa combo">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="space-y-3 mb-4">
+                                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                                            <i class="fas fa-layer-group"></i>
+                                            <span>{{ $item->author_name ?? 'Combo sách' }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                                            <i class="fas fa-gift"></i>
+                                            <span>{{ $item->format_name ?? 'Combo sách' }}</span>
                                         </div>
                                     </div>
-                                @endif
-                                
-                                {{-- Lưu ý combo không có quà tặng --}}
-                                <div class="combo-note">
-                                    <small><i class="fas fa-info-circle"></i> Combo không bao gồm quà tặng</small>
-                                </div>
-                                
-                                <div class="adidas-cart-product-footer">
-                                    <div class="adidas-cart-product-price">
-                                        <small>Đơn giá combo</small>
-                                        <div><i class="fas fa-tag"></i> {{ number_format($item->price ?? 0) }}đ</div>
-                                    </div>
-                                    <div class="adidas-cart-product-qty">
-                                        <small><i class="fas fa-calculator"></i> Số lượng</small>
-                                        <div class="adidas-cart-qty-control" data-collection-id="{{ $item->collection_id }}">
-                                            <button type="button" class="decrease-quantity" data-action="decrease" title="Giảm số lượng" aria-label="Giảm số lượng combo {{ $item->title ?? 'Combo' }}" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                            <input type="number" 
-                                                   class="quantity-input" 
-                                                   value="{{ $item->quantity ?? 1 }}" 
-                                                   min="1"
-                                                   data-collection-id="{{ $item->collection_id }}"
-                                                   data-last-value="{{ $item->quantity ?? 1 }}"
-                                                   aria-label="Số lượng combo {{ $item->title ?? 'Combo' }}" 
-                                                   autocomplete="off">
-                                            <button type="button" class="increase-quantity" data-action="increase" title="Tăng số lượng" aria-label="Tăng số lượng combo {{ $item->title ?? 'Combo' }}">
-                                                <i class="fas fa-plus"></i>
-                                            </button>
+
+                                    {{-- Combo Books List --}}
+                                    @if(isset($item->combo_books) && count($item->combo_books) > 0)
+                                        <div class="bg-gray-50 p-4 border-l-4 border-black mb-4">
+                                            <div class="flex items-center gap-2 text-sm font-bold text-black mb-2">
+                                                <i class="fas fa-list"></i>
+                                                <span>Bao gồm {{ count($item->combo_books) }} cuốn sách:</span>
+                                            </div>
+                                            <div class="flex flex-wrap gap-2">
+                                                @foreach($item->combo_books as $book)
+                                                    <span class="bg-white px-3 py-1 text-xs border border-gray-200 font-medium">
+                                                        {{ $book->title }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
                                         </div>
-                                        <div class="combo-availability-info">
-                                            <small>
-                                                @php
-                                                    $startDate = $item->start_date ?? null;
-                                                    $endDate = $item->end_date ?? null;
-                                                    $now = now();
-                                                    $isActive = true;
-                                                    
-                                                    if ($startDate && $now < \Carbon\Carbon::parse($startDate)) {
-                                                        $isActive = false;
-                                                        $statusMessage = 'Combo chưa mở bán';
-                                                        $statusIcon = 'fas fa-clock';
-                                                        $statusClass = 'combo-pending';
-                                                    } elseif ($endDate && $now > \Carbon\Carbon::parse($endDate)) {
-                                                        $isActive = false;
-                                                        $statusMessage = 'Combo đã kết thúc';
-                                                        $statusIcon = 'fas fa-times-circle';
-                                                        $statusClass = 'combo-expired';
-                                                    } else {
-                                                        $statusMessage = 'Combo đang hoạt động';
-                                                        $statusIcon = 'fas fa-check-circle';
-                                                        $statusClass = 'combo-active';
-                                                    }
-                                                @endphp
-                                                
-                                                <div class="combo-status {{ $statusClass }}">
-                                                    <i class="{{ $statusIcon }}"></i> {{ $statusMessage }}
-                                                </div>
-                                                
-                                                @if($startDate)
-                                                    <div class="combo-date-info">
-                                                        <i class="fas fa-calendar-alt"></i> 
-                                                        Từ: {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }}
-                                                        @if($endDate)
-                                                            - {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
-                                                        @endif
-                                                    </div>
-                                                @elseif($endDate)
-                                                    <div class="combo-date-info">
-                                                        <i class="fas fa-calendar-times"></i> 
-                                                        Kết thúc: {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
-                                                    </div>
-                                                @else
-                                                    <div class="combo-date-info">
-                                                        <i class="fas fa-infinity"></i> Không giới hạn thời gian
-                                                    </div>
-                                                @endif
-                                            </small>
+                                    @endif
+                                    
+                                    <!-- Price and Quantity -->
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <!-- Price -->
+                                        <div>
+                                            <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Đơn giá</span>
+                                            <div class="text-lg font-bold text-black">
+                                                {{ number_format($item->price ?? 0) }}đ
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="adidas-cart-product-total">
-                                        <small>Thành tiền</small>
-                                        <div class="item-total">{{ number_format(($item->price ?? 0) * $item->quantity) }}đ</div>
+                                        
+                                        <!-- Quantity -->
+                                        <div>
+                                            <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Số lượng</span>
+                                            <div class="flex items-center mt-1 adidas-cart-qty-control" data-collection-id="{{ $item->collection_id }}">
+                                                <button type="button" 
+                                                        class="w-10 h-10 bg-black text-white hover:bg-gray-800 transition-colors duration-200 decrease-quantity" 
+                                                        data-action="decrease" 
+                                                        {{ $item->quantity <= 1 ? 'disabled' : '' }}>
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                                <input type="number" 
+                                                       class="w-16 h-10 text-center border-t-2 border-b-2 border-black text-black font-bold quantity-input" 
+                                                       value="{{ $item->quantity ?? 1 }}" 
+                                                       min="1"
+                                                       data-collection-id="{{ $item->collection_id }}"
+                                                       data-last-value="{{ $item->quantity ?? 1 }}">
+                                                <button type="button" 
+                                                        class="w-10 h-10 bg-black text-white hover:bg-gray-800 transition-colors duration-200 increase-quantity" 
+                                                        data-action="increase">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Total -->
+                                        <div>
+                                            <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Thành tiền</span>
+                                            <div class="text-xl font-black text-black item-total">
+                                                {{ number_format(($item->price ?? 0) * $item->quantity) }}đ
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     @else
-                        {{-- Hiển thị Sách đơn lẻ --}}
-                        <div class="adidas-cart-product-card cart-item" 
+                        {{-- Individual Book Item --}}
+                        <div class="cart-hover bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 p-6 cart-item" 
                              data-book-id="{{ $item->book_id }}" 
                              data-book-format-id="{{ $item->book_format_id }}"
                              data-attribute-value-ids="{{ $item->attribute_value_ids }}"
@@ -219,175 +257,279 @@
                              data-stock="{{ $item->stock ?? 0 }}"
                              data-format-name="{{ $item->format_name ?? '' }}"
                              data-is-combo="false">
-                            <div class="adidas-cart-product-img-wrap">
-                                @if($item->image)
-                                    <img class="adidas-cart-product-img" src="{{ asset($item->image) }}" alt="{{ $item->title ?? 'Book image' }}">
-                                @else
-                                    <div class="adidas-cart-product-img-placeholder">
-                                        <i class="fas fa-book"></i>
-                                    </div>
-                                @endif
-                            </div>
-                            <div class="adidas-cart-product-info">
-                                <div class="adidas-cart-product-header">
-                                    <h5 class="adidas-cart-product-title">{{ $item->title ?? 'Không có tiêu đề' }}</h5>
-                                    <button class="adidas-cart-product-remove" data-book-id="{{ $item->book_id }}" data-is-combo="false" title="Xóa sản phẩm">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                                <div class="adidas-cart-product-meta">
-                                    <span><i class="fas fa-user"></i> {{ $item->author_name ?? 'Chưa cập nhật' }}</span>
-                                    <span class="format-name"><i class="fas fa-bookmark"></i> {{ $item->format_name ?? 'Chưa cập nhật' }}</span>
-                                </div>
-                                @if($item->attribute_value_ids && $item->attribute_value_ids !== '[]')
-                                    @php
-                                        $attributeIds = json_decode($item->attribute_value_ids, true);
-                                        $attributes = collect();
-                                        if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
-                                            $attributes = DB::table('attribute_values')
-                                                ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
-                                                ->whereIn('attribute_values.id', $attributeIds)
-                                                ->select('attributes.name as attr_name', 'attribute_values.value as attr_value')
-                                                ->get();
-                                        }
-                                    @endphp
-                                    @if($attributes->count() > 0)
-                                    <div class="adidas-cart-product-attrs">
-                                        <small><i class="fas fa-tags"></i> Thuộc tính:</small>
-                                        <div>
-                                            @foreach($attributes->unique(function($attr) { return $attr->attr_name . ':' . $attr->attr_value; }) as $attr)
-                                                <span>{{ $attr->attr_name }}: {{ $attr->attr_value }}</span>
-                                            @endforeach
+                            
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <!-- Product Image -->
+                                <div class="relative group">
+                                    @if($item->image)
+                                        <img class="w-32 h-40 object-cover" 
+                                             src="{{ asset($item->image) }}" 
+                                             alt="{{ $item->title ?? 'Book image' }}">
+                                    @else
+                                        <div class="w-32 h-40 bg-gray-100 flex items-center justify-center">
+                                            <i class="fas fa-book text-3xl text-gray-400"></i>
                                         </div>
-                                    </div>
-                                @endif
-                            @endif
-                            
-                            {{-- Hiển thị quà tặng cho sách đơn lẻ --}}
-                            @if(isset($item->gifts) && count($item->gifts) > 0)
-                                <div class="adidas-cart-product-gifts">
-                                    <small class="gifts-label">
-                                        <i class="fas fa-gift"></i> Quà tặng đi kèm:
-                                    </small>
-                                    <div class="gifts-list">
-                                        @foreach($item->gifts as $gift)
-                                            <div class="gift-item">
-                                                <span class="gift-name">{{ $gift->name }}</span>
-                                                @if($gift->description)
-                                                    <small class="gift-desc">{{ $gift->description }}</small>
-                                                @endif
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
-                            
-                            <div class="adidas-cart-product-footer">
-                                <div class="adidas-cart-product-price">
-                                    <small>Đơn giá</small>
-                                    <div><i class="fas fa-tag"></i> {{ number_format($item->price ?? 0) }}đ</div>
-                                </div>
-                                <div class="adidas-cart-product-qty">
-                                    <small><i class="fas fa-calculator"></i> Số lượng</small>
+                                    @endif
+                                    
                                     @php
                                         $isEbook = isset($item->format_name) && (stripos($item->format_name, 'ebook') !== false);
                                     @endphp
-                                    <div class="adidas-cart-qty-control" data-book-id="{{ $item->book_id }}">
-                                        @if($isEbook)
-                                            <input type="number" class="quantity-input" value="1" min="1" max="1" data-book-id="{{ $item->book_id }}" disabled style="background:#f5f5f5;cursor:not-allowed;width:60px;text-align:center;border:1px solid #ddd;">
-                                            <small class="ebook-notice" style="color:#666;font-size:11px;margin-top:2px;display:block;">
-                                                <i class="fas fa-info-circle"></i> Sách điện tử
-                                            </small>
-                                        @else
-                                            <button type="button" class="decrease-quantity" data-action="decrease" title="Giảm số lượng" aria-label="Giảm số lượng sản phẩm {{ $item->title ?? 'Sách' }}" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                            <input type="number" class="quantity-input" value="{{ $item->quantity }}" min="1" max="{{ $item->stock ?? 1 }}" data-book-id="{{ $item->book_id }}" data-original-value="{{ $item->quantity }}" aria-label="Số lượng sản phẩm {{ $item->title ?? 'Sách' }}" autocomplete="off">
-                                            <button type="button" class="increase-quantity" data-action="increase" title="Tăng số lượng" aria-label="Tăng số lượng sản phẩm {{ $item->title ?? 'Sách' }}" {{ $item->quantity >= ($item->stock ?? 1) ? 'disabled' : '' }}>
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                        @endif
-                                    </div>
-                                    <div class="adidas-cart-product-stock">
-                                        <small>
-                                            @if($isEbook)
-                                                <span><i class="fas fa-infinity"></i> Ebook - Có sẵn</span>
-                                            @else
-                                                <span><i class="fas fa-boxes"></i> Còn <span>{{ $item->stock ?? 0 }}</span> sản phẩm</span>
-                                                @if($item->quantity >= ($item->stock ?? 1))
-                                                    <span class="adidas-cart-product-max"><i class="fas fa-exclamation-triangle"></i> Đã đạt tối đa</span>
-                                                @endif
-                                            @endif
-                                        </small>
-                                    </div>
+                                    @if($isEbook)
+                                        <div class="absolute -top-2 -left-2 bg-blue-600 text-white px-3 py-1 text-xs font-bold uppercase">
+                                            <i class="fas fa-mobile-alt mr-1"></i>EBOOK
+                                        </div>
+                                    @endif
                                 </div>
-                                <div class="adidas-cart-product-total">
-                                    <small>Thành tiền</small>
-                                    <div class="item-total">{{ number_format(($item->price ?? 0) * $item->quantity) }}đ</div>
+                                
+                                <!-- Product Info -->
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <h3 class="text-xl font-bold text-black uppercase tracking-wide">
+                                            {{ $item->title ?? 'Không có tiêu đề' }}
+                                        </h3>
+                                        <button class="text-red-600 hover:text-red-800 p-2 adidas-cart-product-remove" 
+                                                data-book-id="{{ $item->book_id }}" 
+                                                data-is-combo="false" 
+                                                title="Xóa sản phẩm">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="space-y-3 mb-4">
+                                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                                            <i class="fas fa-user"></i>
+                                            <span>{{ $item->author_name ?? 'Chưa cập nhật' }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                                            <i class="fas fa-bookmark"></i>
+                                            <span>{{ $item->format_name ?? 'Chưa cập nhật' }}</span>
+                                        </div>
+                                    </div>
+
+                                    {{-- Attributes --}}
+                                    @if($item->attribute_value_ids && $item->attribute_value_ids !== '[]')
+                                        @php
+                                            $attributeIds = json_decode($item->attribute_value_ids, true);
+                                            $attributes = collect();
+                                            if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
+                                                $attributes = DB::table('attribute_values')
+                                                    ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
+                                                    ->whereIn('attribute_values.id', $attributeIds)
+                                                    ->select('attributes.name as attr_name', 'attribute_values.value as attr_value')
+                                                    ->get();
+                                            }
+                                        @endphp
+                                        @if($attributes->count() > 0)
+                                            <div class="bg-gray-50 p-3 border-l-4 border-gray-400 mb-4">
+                                                <div class="text-xs text-gray-500 uppercase tracking-wide font-bold mb-2">
+                                                    <i class="fas fa-tags"></i> Thuộc tính:
+                                                </div>
+                                                <div class="flex flex-wrap gap-2">
+                                                    @foreach($attributes->unique(function($attr) { return $attr->attr_name . ':' . $attr->attr_value; }) as $attr)
+                                                        <span class="bg-white px-2 py-1 text-xs border border-gray-200 font-medium">
+                                                            {{ $attr->attr_name }}: {{ $attr->attr_value }}
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
+                                    @endif
+                                    
+                                    {{-- Gifts --}}
+                                    @if(isset($item->gifts) && count($item->gifts) > 0)
+                                        <div class="bg-green-50 p-3 border-l-4 border-green-500 mb-4">
+                                            <div class="text-xs text-green-600 uppercase tracking-wide font-bold mb-2">
+                                                <i class="fas fa-gift"></i> Quà tặng đi kèm:
+                                            </div>
+                                            <div class="space-y-1">
+                                                @foreach($item->gifts as $gift)
+                                                    <div class="text-sm">
+                                                        <span class="font-medium text-green-800">{{ $gift->name }}</span>
+                                                        @if($gift->description)
+                                                            <div class="text-xs text-green-600">{{ $gift->description }}</div>
+                                                        @endif
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+                                    
+                                    <!-- Price and Quantity -->
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <!-- Price -->
+                                        <div>
+                                            <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Đơn giá</span>
+                                            <div class="text-lg font-bold text-black">
+                                                {{ number_format($item->price ?? 0) }}đ
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Quantity -->
+                                        <div>
+                                            <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Số lượng</span>
+                                            @if($isEbook)
+                                                <div class="mt-1">
+                                                    <input type="number" 
+                                                           class="w-16 h-10 text-center border-2 border-gray-300 bg-gray-100 text-black font-bold" 
+                                                           value="1" 
+                                                           min="1" 
+                                                           max="1" 
+                                                           disabled>
+                                                    <div class="text-xs text-gray-500 mt-1">
+                                                        <i class="fas fa-info-circle"></i> Sách điện tử
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div class="flex items-center mt-1 adidas-cart-qty-control" data-book-id="{{ $item->book_id }}">
+                                                    <button type="button" 
+                                                            class="w-10 h-10 bg-black text-white hover:bg-gray-800 transition-colors duration-200 decrease-quantity" 
+                                                            data-action="decrease" 
+                                                            {{ $item->quantity <= 1 ? 'disabled' : '' }}>
+                                                        <i class="fas fa-minus"></i>
+                                                    </button>
+                                                    <input type="number" 
+                                                           class="w-16 h-10 text-center border-t-2 border-b-2 border-black text-black font-bold quantity-input" 
+                                                           value="{{ $item->quantity }}" 
+                                                           min="1" 
+                                                           max="{{ $item->stock ?? 1 }}" 
+                                                           data-book-id="{{ $item->book_id }}" 
+                                                           data-original-value="{{ $item->quantity }}">
+                                                    <button type="button" 
+                                                            class="w-10 h-10 bg-black text-white hover:bg-gray-800 transition-colors duration-200 increase-quantity" 
+                                                            data-action="increase" 
+                                                            {{ $item->quantity >= ($item->stock ?? 1) ? 'disabled' : '' }}>
+                                                        <i class="fas fa-plus"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    @if($item->quantity >= ($item->stock ?? 1))
+                                                        <span class="text-red-600"><i class="fas fa-exclamation-triangle"></i> Đã đạt tối đa</span>
+                                                    @else
+                                                        <span><i class="fas fa-boxes"></i> Còn {{ $item->stock ?? 0 }} sản phẩm</span>
+                                                    @endif
+                                                </div>
+                                            @endif
+                                        </div>
+                                        
+                                        <!-- Total -->
+                                        <div>
+                                            <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Thành tiền</span>
+                                            <div class="text-xl font-black text-black item-total">
+                                                {{ number_format(($item->price ?? 0) * $item->quantity) }}đ
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     @endif
                 @endforeach
                 </div>
+
+                <!-- Order Summary -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white border-2 border-black p-6 sticky top-8">
+                        <!-- Header -->
+                        <div class="border-b-2 border-black pb-4 mb-6">
+                            <h4 class="text-2xl font-black uppercase tracking-wide text-black">
+                                TỔNG KẾT ĐƠN HÀNG
+                            </h4>
+                        </div>
+                        
+                        <!-- Summary Details -->
+                        <div class="space-y-4 mb-6">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-bold uppercase tracking-wide text-gray-600">
+                                    <i class="fas fa-shopping-bag mr-2"></i>Tạm tính:
+                                </span>
+                                <span id="subtotal" class="text-lg font-bold text-black">
+                                    {{ number_format($total) }}đ
+                                </span>
+                            </div>
+                            
+                            <div class="border-t-2 border-black pt-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-lg font-black uppercase tracking-wide text-black">
+                                        <i class="fas fa-coins mr-2"></i>TỔNG CỘNG:
+                                    </span>
+                                    <span id="total-amount" class="text-2xl font-black text-black">
+                                        {{ number_format($total) }}đ
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Checkout Button -->
+                        <a href="{{ route('orders.checkout') }}" 
+                           class="w-full bg-black text-white py-4 px-6 font-bold text-sm uppercase tracking-wide hover:bg-gray-800 transition-all duration-300 flex items-center justify-center gap-3 group">
+                            <i class="fas fa-credit-card"></i>
+                            <span>TIẾN HÀNH THANH TOÁN</span>
+                            <i class="fas fa-arrow-right transform group-hover:translate-x-1 transition-transform duration-300"></i>
+                        </a>
+                        
+                        <!-- Security Notice -->
+                        <div class="mt-4 text-center">
+                            <div class="flex items-center justify-center gap-2 text-xs text-gray-500">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>THANH TOÁN AN TOÀN & BẢO MẬT</span>
+                                <i class="fas fa-lock"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <!-- Tổng kết đơn hàng -->
-            <div class="adidas-cart-summary">
-                <div class="adidas-cart-summary-header">
-                    <i class="fas fa-calculator"></i>
-                    <h4>Tổng kết đơn hàng</h4>
-                </div>
-                <div class="adidas-cart-summary-details">
-                    <h6>Chi tiết thanh toán</h6>
-                    <div class="adidas-cart-summary-row">
-                        <span><i class="fas fa-shopping-bag"></i> Tạm tính:</span>
-                        <span id="subtotal">{{ number_format($total) }}đ</span>
+        @else
+            <!-- Empty Cart Section -->
+            <div class="text-center py-16">
+                <div class="mb-8">
+                    <div class="w-32 h-32 bg-gray-100 mx-auto mb-6 flex items-center justify-center">
+                        <i class="fas fa-shopping-cart text-5xl text-gray-400"></i>
                     </div>
-                    <div class="adidas-cart-summary-row adidas-cart-summary-total">
-                        <span><i class="fas fa-coins"></i> Tổng cộng:</span>
-                        <span id="total-amount">{{ number_format($total) }}đ</span>
-                    </div>
+                    <h2 class="text-3xl font-black uppercase tracking-tight text-black mb-4">
+                        GIỎ HÀNG TRỐNG
+                    </h2>
+                    <p class="text-lg text-gray-600 max-w-lg mx-auto mb-8">
+                        Khám phá hàng ngàn cuốn sách hay và thêm chúng vào giỏ hàng của bạn!
+                    </p>
                 </div>
-                <div class="adidas-cart-summary-checkout">
-                    <a href="{{route('orders.checkout')}}" class="adidas-btn adidas-btn-primary">
-                        <i class="fas fa-credit-card"></i>
-                        <span>Tiến hành thanh toán</span>
-                        <i class="fas fa-arrow-right"></i>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="{{ route('books.index') }}" 
+                       class="bg-black text-white px-8 py-4 font-bold text-sm uppercase tracking-wide hover:bg-gray-800 transition-all duration-300 flex items-center justify-center gap-3">
+                        <i class="fas fa-book-open"></i>
+                        <span>KHÁM PHÁ SÁCH NGAY</span>
+                    </a>
+                    <a href="{{ route('wishlist.index') }}" 
+                       class="bg-white border-2 border-black text-black px-8 py-4 font-bold text-sm uppercase tracking-wide hover:bg-black hover:text-white transition-all duration-300 flex items-center justify-center gap-3">
+                        <i class="fas fa-heart"></i>
+                        <span>THÊM TỪ YÊU THÍCH</span>
                     </a>
                 </div>
-                <div class="adidas-cart-summary-safe">
-                    <i class="fas fa-shield-alt"></i>
-                    <small>Thanh toán an toàn & bảo mật</small>
-                    <i class="fas fa-lock"></i>
+
+                <!-- Suggestions -->
+                <div class="mt-12">
+                    <h6 class="text-sm font-bold uppercase tracking-wide text-gray-600 mb-6">GỢI Ý CHO BẠN</h6>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <div class="bg-gray-50 px-4 py-2 border-l-4 border-red-600">
+                            <span class="text-sm font-bold text-black">
+                                <i class="fas fa-fire mr-2 text-red-600"></i>SÁCH HOT
+                            </span>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-2 border-l-4 border-yellow-600">
+                            <span class="text-sm font-bold text-black">
+                                <i class="fas fa-star mr-2 text-yellow-600"></i>BÁN CHẠY
+                            </span>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-2 border-l-4 border-green-600">
+                            <span class="text-sm font-bold text-black">
+                                <i class="fas fa-percentage mr-2 text-green-600"></i>GIẢM GIÁ
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    @else
-        <!-- Modern Empty Cart Section -->
-        <div class="adidas-cart-empty">
-            <div class="adidas-cart-empty-icon">
-                <i class="fas fa-shopping-cart"></i>
-            </div>
-            <h2>Giỏ hàng của bạn đang trống</h2>
-            <p>Khám phá hàng ngàn cuốn sách hay và thêm chúng vào giỏ hàng của bạn!</p>
-            <div class="adidas-cart-empty-actions">
-                <a href="{{ route('books.index') }}" class="adidas-btn adidas-btn-primary">
-                    <i class="fas fa-book-open"></i> Khám phá sách ngay
-                </a>
-                <a href="{{ route('wishlist.index') }}" class="adidas-btn adidas-btn-secondary">
-                    <i class="fas fa-heart"></i> Thêm từ yêu thích
-                </a>
-            </div>
-            <div class="adidas-cart-empty-suggest">
-                <h6>Gợi ý cho bạn</h6>
-                <div class="adidas-cart-empty-suggest-list">
-                    <div><span><i class="fas fa-fire"></i> Sách hot</span></div>
-                    <div><span><i class="fas fa-star"></i> Bán chạy</span></div>
-                    <div><span><i class="fas fa-percentage"></i> Giảm giá</span></div>
-                </div>
-            </div>
-        </div>
-    @endif
+        @endif
+    </div>
 </div>
 @endsection
 
