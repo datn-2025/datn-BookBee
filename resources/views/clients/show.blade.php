@@ -1074,42 +1074,104 @@
                     </div>
                 </div>
 
-                <!-- Quà tặng kèm -->
+                <!-- Enhanced Gift Section - Adidas Style -->
                 @if(isset($bookGifts) && $bookGifts->count())
-                <div class="book-gifts-section mt-8">
-                    <h3 class="text-lg font-bold text-black mb-3 flex items-center adidas-font uppercase tracking-wider">
-                        <i class="fas fa-gift text-base mr-2 text-black"></i>Quà tặng kèm
-                    </h3>
-                    <ul class="space-y-3">
-                        @foreach($bookGifts as $gift)
-                            <li class="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-black transition-all duration-200 shadow-sm">
-                                @if($gift->gift_image)
-                                    <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="{{ $gift->gift_name }}" class="w-16 h-16 object-cover rounded shadow border border-gray-200">
-                                @else
-                                    <span class="w-16 h-16 flex items-center justify-center bg-gray-100 rounded text-2xl border border-gray-200"><i class="fas fa-gift"></i></span>
-                                @endif
-                                <div class="flex-1">
-                                    <div class="font-semibold text-black text-base adidas-font">{{ $gift->gift_name }}</div>
-                                    @if($gift->gift_description)
-                                        <div class="text-sm text-gray-700 mt-1">{{ $gift->gift_description }}</div>
-                                    @endif
-                                    @if($gift->quantity > 0)
-                                        <div class="text-xs text-green-700 mt-1">Số lượng: {{ $gift->quantity }}</div>
-                                    @endif
-                                    @if($gift->start_date || $gift->end_date)
-                                        <div class="text-xs text-gray-500 mt-1 flex flex-wrap gap-2">
-                                            @if($gift->start_date)
-                                                <span>Bắt đầu: {{ Carbon::parse($gift->start_date)->format('d/m/Y') }}</span>
+                <div class="mt-8 space-y-6">
+                    <!-- Section Header with Adidas Style -->
+                    <div class="relative">
+                        <div class="flex items-center space-x-4 mb-6">
+                            <div class="w-1 h-12 bg-black"></div>
+                            <div>
+                                <h3 class="adidas-font text-2xl font-bold text-black uppercase tracking-wider">
+                                    <i class="fas fa-gift text-lg mr-3 text-black"></i>Quà tặng kèm
+                                </h3>
+                                <p class="text-gray-600 mt-1 uppercase text-sm tracking-wide font-medium">Ưu đãi đặc biệt khi mua sách</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Gift Container -->
+                    <div class="bg-white border-2 border-gray-100 relative overflow-hidden group hover:border-black transition-all duration-300">
+                        <!-- Geometric background accent -->
+                        <div class="absolute top-0 right-0 w-20 h-20 bg-black opacity-5 transform rotate-45 translate-x-10 -translate-y-10"></div>
+                        
+                        <div class="p-6 space-y-4">
+                            @foreach($bookGifts as $gift)
+                                <div class="flex items-start gap-6 p-4 border border-gray-100 hover:border-black hover:shadow-lg transition-all duration-300 group/item">
+                                    <!-- Gift Image/Icon -->
+                                    <div class="flex-shrink-0">
+                                        @if($gift->gift_image)
+                                            <div class="w-20 h-20 border-2 border-gray-200 group-hover/item:border-black transition-all duration-300">
+                                                <img src="{{ asset('storage/' . $gift->gift_image) }}" 
+                                                     alt="{{ $gift->gift_name }}" 
+                                                     class="w-full h-full object-cover">
+                                            </div>
+                                        @else
+                                            <div class="w-20 h-20 flex items-center justify-center bg-gray-100 border-2 border-gray-200 group-hover/item:border-black group-hover/item:bg-black group-hover/item:text-white transition-all duration-300">
+                                                <i class="fas fa-gift text-2xl"></i>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <!-- Gift Details -->
+                                    <div class="flex-1 space-y-2">
+                                        <div class="font-bold text-black text-lg adidas-font uppercase tracking-wide">
+                                            {{ $gift->gift_name }}
+                                        </div>
+                                        
+                                        @if($gift->gift_description)
+                                            <div class="text-gray-700 font-medium leading-relaxed">
+                                                {{ $gift->gift_description }}
+                                            </div>
+                                        @endif
+                                        
+                                        <div class="flex flex-wrap gap-4 text-sm">
+                                            @if($gift->quantity > 0)
+                                                <div class="flex items-center space-x-2">
+                                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                    <span class="text-green-700 font-semibold uppercase tracking-wide">
+                                                        Số lượng: {{ $gift->quantity }}
+                                                    </span>
+                                                </div>
                                             @endif
-                                            @if($gift->end_date)
-                                                <span>Kết thúc: {{ Carbon::parse($gift->end_date)->format('d/m/Y') }}</span>
+                                            
+                                            @if($gift->start_date || $gift->end_date)
+                                                <div class="flex items-center space-x-4">
+                                                    @if($gift->start_date)
+                                                        <div class="flex items-center space-x-2">
+                                                            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                                            <span class="text-gray-600 font-medium uppercase tracking-wide">
+                                                                Từ: {{ Carbon::parse($gift->start_date)->format('d/m/Y') }}
+                                                            </span>
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    @if($gift->end_date)
+                                                        <div class="flex items-center space-x-2">
+                                                            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                                                            <span class="text-gray-600 font-medium uppercase tracking-wide">
+                                                                Đến: {{ Carbon::parse($gift->end_date)->format('d/m/Y') }}
+                                                            </span>
+                                                        </div>
+                                                    @endif
+                                                </div>
                                             @endif
                                         </div>
-                                    @endif
+                                    </div>
+
+                                    <!-- Accent Line -->
+                                    <div class="w-1 bg-gray-200 group-hover/item:bg-black transition-all duration-300 self-stretch"></div>
                                 </div>
-                            </li>
-                        @endforeach
-                    </ul>
+                                
+                                @if(!$loop->last)
+                                    <div class="border-t border-gray-100"></div>
+                                @endif
+                            @endforeach
+                        </div>
+
+                        <!-- Bottom accent line -->
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-black to-transparent opacity-10"></div>
+                    </div>
                 </div>
                 @endif
 
