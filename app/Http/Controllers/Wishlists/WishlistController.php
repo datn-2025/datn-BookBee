@@ -77,21 +77,23 @@ class WishlistController extends Controller
 
       $wishlist = DB::table('wishlists')
         ->join('books', 'wishlists.book_id', '=', 'books.id')
-        ->join('authors', 'books.author_id', '=', 'authors.id')
         ->leftJoin('brands', 'books.brand_id', '=', 'brands.id')
         ->leftJoin('categories', 'books.category_id', '=', 'categories.id')
+        ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
+        ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
         ->where('wishlists.user_id', $user->id)
         ->select(
           'books.id as book_id',
           'books.slug',
           'books.cover_image',
           'books.title',
-          'authors.name as author_name',
+          DB::raw('GROUP_CONCAT(DISTINCT authors.name SEPARATOR ", ") as author_name'),
           'brands.name as brand_name',
           'categories.name as category_name',
           'categories.id as category_id',
           'wishlists.created_at'
         )
+        ->groupBy('books.id', 'books.slug', 'books.cover_image', 'books.title', 'brands.name', 'categories.name', 'categories.id', 'wishlists.created_at')
         ->orderBy('wishlists.created_at', 'desc')
         ->paginate(10);
 

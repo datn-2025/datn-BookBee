@@ -7,6 +7,7 @@ use App\Models\BookSummary;
 use App\Services\AISummaryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class AISummaryController extends Controller
 {
