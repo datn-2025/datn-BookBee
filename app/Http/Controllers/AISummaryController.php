@@ -23,7 +23,7 @@ class AISummaryController extends Controller
     public function generateSummary(Request $request, $bookId): JsonResponse
     {
         try {
-            $book = Book::with(['author', 'category'])->findOrFail($bookId);
+            $book = Book::with(['authors', 'category'])->findOrFail($bookId);
 
             // Kiểm tra xem đã có summary chưa
             if ($book->hasSummary() && $book->summary->isCompleted()) {
@@ -85,7 +85,7 @@ class AISummaryController extends Controller
     public function regenerateSummary(Request $request, $bookId): JsonResponse
     {
         try {
-            $book = Book::with(['author', 'category', 'summary'])->findOrFail($bookId);
+            $book = Book::with(['authors', 'category', 'summary'])->findOrFail($bookId);
 
             // Xóa summary cũ nếu có
             if ($book->hasSummary()) {
@@ -166,7 +166,7 @@ class AISummaryController extends Controller
         ]);
 
         try {
-            $book = Book::with(['author', 'category', 'summary'])->findOrFail($bookId);
+            $book = Book::with(['authors', 'category', 'summary'])->findOrFail($bookId);
             $userMessage = trim($request->input('message'));
 
             // Làm sạch UTF-8 encoding cho user message
