@@ -9,12 +9,12 @@
     <title>{{ get_setting() ? get_setting()->name_website : 'BookBee' }} - @yield('title')</title>
     <link rel="shortcut icon" href="{{ asset('storage/' . (get_setting() ? get_setting()->favicon : 'default_favicon.ico')) }}" />
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+   
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
 
@@ -81,6 +81,8 @@
 
 <body style="margin:0; min-height:100vh;">
     @include('layouts.partials.navbar')
+    <div id="notification" class=" alert mx-3 invisible" >
+    </div>
     @yield('content')
 
     {!! Toastr::message() !!}
@@ -93,8 +95,14 @@
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
+    {{-- Chat Widget --}}
+    @include('components.chat-widget')
+
     @stack('scripts')
     @include('layouts.partials.footer')
+
+    <!-- Chat script moved to app.js -->
+    
     <script>
        $(document).ready(function() {
     // Lấy tỉnh thành
