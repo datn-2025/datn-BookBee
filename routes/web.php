@@ -36,8 +36,12 @@ use App\Http\Controllers\Login\GoogleController;
 use App\Http\Controllers\Wishlists\WishlistController;
 use App\Livewire\BalanceChart;
 use App\Livewire\RevenueReport;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
+
+//broadcsast route 
+Broadcast::routes(); 
 // Route QR code
 Route::get('storage/private/{filename}', function ($filename) {
     $path = storage_path('app/private/' . $filename);
@@ -190,6 +194,13 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/', [\App\Http\Controllers\Admin\AdminProfileController::class, 'index'])->name('index');
         Route::put('/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updateProfile'])->name('update');
         Route::put('/password/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('password.update');
+    });
+
+    // chat real-time
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'index'])->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'show'])->name('show');
+        Route::post('/send', [\App\Http\Controllers\Admin\AdminChatRealTimeController::class, 'send'])->name('send');
     });
 
     Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard');
