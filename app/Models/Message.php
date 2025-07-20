@@ -37,6 +37,31 @@ class Message extends Model
     {
         return $this->hasMany(MessageRead::class);
     }
+
+    /**
+     * Check if message has been read by a specific user
+     */
+    public function isReadBy($userId)
+    {
+        return $this->reads()->where('user_id', $userId)->exists();
+    }
+
+    /**
+     * Get read status for a specific user
+     */
+    public function getReadStatus($userId)
+    {
+        $readRecord = $this->reads()->where('user_id', $userId)->first();
+        return $readRecord ? $readRecord->read_at : null;
+    }
+
+    /**
+     * Check if sender is admin
+     */
+    public function isAdmin()
+    {
+        return $this->sender && $this->sender->role && $this->sender->role->name === 'admin';
+    }
   // tạo id theo uuid
     protected static function booted()
     {
