@@ -1,5 +1,4 @@
 @extends('layouts.app')
-@extends('layouts.app')
 @php
     use Carbon\Carbon;
 @endphp
