@@ -80,7 +80,10 @@ class DatabaseSeeder extends Seeder
             InvoiceSeeder::class,
             RInvoiceItemSeeder::class,
             RWalletSeeder::class,
-            RWalletTransactionSeeder::class
+            RWalletTransactionSeeder::class,
+            ConversationSeeder::class,
+            MessageSeeder::class,
+            MessageReadSeeder::class,
         ]);
     }
 }
