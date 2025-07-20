@@ -37,8 +37,6 @@
                 console.log('Testing Toastr after delay...');
                 if (typeof toastr !== 'undefined') {
                     console.log('Toastr is available after delay');
-                    // Test toastr notification
-                    toastr.info('Toastr đã sẵn sàng!', 'Test');
                 } else {
                     console.error('Toastr is still not available after delay');
                 }
