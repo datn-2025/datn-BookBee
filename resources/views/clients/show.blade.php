@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@extends('layouts.app')
 @php
     use Carbon\Carbon;
 @endphp
@@ -453,6 +454,47 @@
             from { transform: translateY(30px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
+
+        /* Clean Button Styles for Description Section */
+        .product-detail-page .clean-btn {
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-detail-page .clean-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .product-detail-page .clean-btn:hover::before {
+            left: 100%;
+        }
+
+        .product-detail-page .clean-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .product-detail-page .clean-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Enhanced Description Container Styles */
+        .product-detail-page .description-container {
+            transition: all 0.3s ease;
+        }
+
+        .product-detail-page .description-container:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
     </style>
 @endpush
 @section('content')
@@ -727,26 +769,82 @@
  @if(isset($relatedCombos) && $relatedCombos->count())
              {{-- Mô tả combo (đồng bộ style sách đơn) --}}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="mt-16 bg-white/90 shadow-sm border border-gray-200 rounded-lg p-6">
-        <h2 class="text-2xl font-semibold mb-4 border-b border-gray-300 pb-2 text-gray-800 flex items-center">
-            <i class="fas fa-align-left mr-2 text-red-400"></i>Mô tả combo
-        </h2>
-        @php
-            $comboDesc = strip_tags($combo->description ?? '');
-            $showComboMore = \Illuminate\Support\Str::length($comboDesc) > 200;
-        @endphp
-        <div id="comboDescription" class="text-gray-700 text-base leading-relaxed text-left"
-             data-full="{{ e($comboDesc) }}"
-             data-short="{{ \Illuminate\Support\Str::limit($comboDesc, 200, '...') }}">
-            @if (empty($comboDesc))
-                <div class="text-center"><span class="italic text-gray-400">Không có mô tả nào</span></div>
-            @else
-                {{ $showComboMore ? \Illuminate\Support\Str::limit($comboDesc, 200, '...') : $comboDesc }}
-            @endif
+    <div class="mt-20 space-y-8">
+        <!-- Section Header with Clean Style -->
+        <div class="relative">
+            <div class="flex items-center space-x-4 mb-8">
+                <div class="w-1 h-12 bg-black"></div>
+                <div>
+                    <h2 class="adidas-font text-3xl font-bold text-black uppercase tracking-wider">
+                        MÔ TẢ COMBO
+                    </h2>
+                    <p class="text-sm text-gray-600 uppercase tracking-wide font-medium mt-1">Chi tiết về combo sách</p>
+                </div>
+            </div>
         </div>
-        @if($showComboMore)
-            <button id="showMoreComboBtn" class="text-blue-500 mt-2 text-sm hover:underline">Xem thêm</button>
-        @endif
+
+        <!-- Enhanced Description Container -->
+        <div class="description-container bg-white border-2 border-gray-100 relative overflow-hidden group hover:border-black transition-all duration-300">
+            <!-- Header Bar -->
+            <div class="bg-black text-white px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-layer-group text-xs"></i>
+                    </div>
+                    <span class="font-bold uppercase tracking-wider text-sm adidas-font">NỘI DUNG COMBO</span>
+                </div>
+                <div class="w-6 h-6 border border-white border-opacity-30 rounded-full flex items-center justify-center">
+                    <i class="fas fa-info text-xs"></i>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-6">
+                @php
+                    $comboDesc = strip_tags($combo->description ?? '');
+                    $showComboMore = \Illuminate\Support\Str::length($comboDesc) > 200;
+                @endphp
+                <div id="comboDescription" class="text-gray-800 text-base leading-relaxed font-medium"
+                     data-full="{{ e($comboDesc) }}"
+                     data-short="{{ \Illuminate\Support\Str::limit($comboDesc, 200, '...') }}">
+                    @if (empty($comboDesc))
+                        <div class="text-center py-8">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-layer-group text-2xl text-gray-400"></i>
+                            </div>
+                            <div class="space-y-2">
+                                <h3 class="text-xl font-bold text-black uppercase tracking-wider adidas-font">CHƯA CÓ MÔ TẢ</h3>
+                                <p class="text-gray-600 text-sm adidas-font">Thông tin chi tiết sẽ được cập nhật sớm.</p>
+                            </div>
+                        </div>
+                    @else
+                        <div class="relative">
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-400 to-black"></div>
+                            <div class="pl-6">
+                                {{ $showComboMore ? \Illuminate\Support\Str::limit($comboDesc, 200, '...') : $comboDesc }}
+                            </div>
+                        </div>
+                        
+                        @if($showComboMore)
+                            <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+                                <button id="showMoreComboBtn" class="clean-btn bg-black text-white px-6 py-2 font-bold uppercase tracking-wider text-sm hover:bg-gray-800 transition-all duration-300 flex items-center space-x-2">
+                                    <span>Xem thêm</span>
+                                    <i class="fas fa-arrow-right text-xs"></i>
+                                </button>
+                                <div class="flex space-x-1">
+                                    <div class="w-2 h-2 bg-black rounded-full"></div>
+                                    <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                                    <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                                </div>
+                            </div>
+                        @endif
+                    @endif
+                </div>
+            </div>
+
+            <!-- Side accent -->
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-600 to-black"></div>
+        </div>
     </div>
 </div>
 
@@ -1160,22 +1258,78 @@
             $showBookMore = \Illuminate\Support\Str::length($bookDesc) > 200;
         @endphp
         @if(isset($book))
-    <div class="mt-16 bg-white/90 shadow-sm border border-gray-200 rounded-lg p-6">
-        <h2 class="text-2xl font-semibold mb-4 border-b border-gray-300 pb-2 text-gray-800 flex items-center">
-            <i class="fas fa-align-left mr-2 text-red-400"></i>Mô tả sách
-        </h2>
-        <div id="bookDescription" class="text-gray-700 text-base leading-relaxed text-left"
-             data-full="{{ e($bookDesc) }}"
-             data-short="{{ \Illuminate\Support\Str::limit($bookDesc, 200, '...') }}">
-            @if (empty($bookDesc))
-                <div class="text-center"><span class="italic text-gray-400">Không có mô tả nào</span></div>
-            @else
-                {{ $showBookMore ? \Illuminate\Support\Str::limit($bookDesc, 200, '...') : $bookDesc }}
-            @endif
+    <div class="mt-20 space-y-8">
+        <!-- Section Header with Clean Style -->
+        <div class="relative">
+            <div class="flex items-center space-x-4 mb-8">
+                <div class="w-1 h-12 bg-black"></div>
+                <div>
+                    <h2 class="adidas-font text-3xl font-bold text-black uppercase tracking-wider">
+                        MÔ TẢ SÁCH
+                    </h2>
+                    <p class="text-sm text-gray-600 uppercase tracking-wide font-medium mt-1">Chi tiết về cuốn sách</p>
+                </div>
+            </div>
         </div>
-        @if($showBookMore)
-            <button id="showMoreBtn" class="text-blue-500 mt-2 text-sm hover:underline">Xem thêm</button>
-        @endif
+
+        <!-- Enhanced Description Container -->
+        <div class="description-container bg-white border-2 border-gray-100 relative overflow-hidden group hover:border-black transition-all duration-300">
+            <!-- Header Bar -->
+            <div class="bg-black text-white px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-book-open text-xs"></i>
+                    </div>
+                    <span class="font-bold uppercase tracking-wider text-sm adidas-font">NỘI DUNG SÁCH</span>
+                </div>
+                <div class="w-6 h-6 border border-white border-opacity-30 rounded-full flex items-center justify-center">
+                    <i class="fas fa-info text-xs"></i>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-6">
+                <div id="bookDescription" class="text-gray-800 text-base leading-relaxed font-medium"
+                     data-full="{{ e($bookDesc) }}"
+                     data-short="{{ \Illuminate\Support\Str::limit($bookDesc, 200, '...') }}">
+                    @if (empty($bookDesc))
+                        <div class="text-center py-8">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-book text-2xl text-gray-400"></i>
+                            </div>
+                            <div class="space-y-2">
+                                <h3 class="text-xl font-bold text-black uppercase tracking-wider adidas-font">CHƯA CÓ MÔ TẢ</h3>
+                                <p class="text-gray-600 text-sm adidas-font">Thông tin chi tiết sẽ được cập nhật sớm.</p>
+                            </div>
+                        </div>
+                    @else
+                        <div class="relative">
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-400 to-black"></div>
+                            <div class="pl-6">
+                                {{ $showBookMore ? \Illuminate\Support\Str::limit($bookDesc, 200, '...') : $bookDesc }}
+                            </div>
+                        </div>
+                        
+                        @if($showBookMore)
+                            <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+                                <button id="showMoreBtn" class="clean-btn bg-black text-white px-6 py-2 font-bold uppercase tracking-wider text-sm hover:bg-gray-800 transition-all duration-300 flex items-center space-x-2">
+                                    <span>Xem thêm</span>
+                                    <i class="fas fa-arrow-right text-xs"></i>
+                                </button>
+                                <div class="flex space-x-1">
+                                    <div class="w-2 h-2 bg-black rounded-full"></div>
+                                    <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                                    <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                                </div>
+                            </div>
+                        @endif
+                    @endif
+                </div>
+            </div>
+
+            <!-- Side accent -->
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-600 to-black"></div>
+        </div>
     </div>
 @endif
 
@@ -1441,7 +1595,7 @@
                                         {{ $relatedStock <= 0 ? 'disabled' : '' }}>
                                     <span class="relative flex items-center space-x-2">
                                         <i class="fas fa-shopping-cart text-sm"></i>
-                                        <span>{{ $relatedStock <= 0 ? 'HẾT HÀNG' : 'THÊM VÀO GIỎ' }}</span>
+                                        <span>{{ $relatedStock <=  0 ? 'HẾT HÀNG' : 'THÊM VÀO GIỎ' }}</span>
                                         <i class="fas fa-arrow-right text-sm transform group-hover/btn:translate-x-1 transition-transform duration-300"></i>
                                     </span>
                                 </button>
@@ -1451,12 +1605,12 @@
                             @if($related->reviews->count() > 0)
                                 <div class="flex items-center space-x-2 pt-2 border-t border-gray-100">
                                     <div class="flex text-yellow-400 text-sm">
-                                        @php $avgRating = $related->reviews->avg('rating') @endphp
+                                        @php $avgRating = round($related->reviews->avg('rating')) @endphp
                                         @for ($i = 1; $i <= 5; $i++)
                                             @if ($i <= $avgRating)
-                                                ★
+                                                <i class="fas fa-star"></i>
                                             @else
-                                                ☆
+                                                <i class="far fa-star"></i>
                                             @endif
                                         @endfor
                                     </div>
@@ -1652,7 +1806,7 @@
                 if (stock === -1) {
                     stockText = 'SẮP RA MẮT';
                     stockClass = 'status-coming-soon font-semibold';
-                } else if (stock === -2) {
+                } else if ($stock === -2) {
                     stockText = 'NGƯNG KINH DOANH';
                     stockClass = 'status-discontinued font-semibold';
                 } else if (stock === 0) {
@@ -1761,14 +1915,17 @@
         let isBookExpanded = false;
         if (showMoreBtn && bookDescriptionDiv) {
             showMoreBtn.addEventListener('click', function() {
-                if (isBookExpanded) {
-                    bookDescriptionDiv.innerHTML = bookDescriptionDiv.dataset.short;
-                    showMoreBtn.textContent = 'Xem thêm';
-                    isBookExpanded = false;
-                } else {
-                    bookDescriptionDiv.innerHTML = bookDescriptionDiv.dataset.full;
-                    showMoreBtn.textContent = 'Thu gọn';
-                    isBookExpanded = true;
+                const contentDiv = bookDescriptionDiv.querySelector('.pl-6');
+                if (contentDiv) {
+                    if (isBookExpanded) {
+                        contentDiv.innerHTML = bookDescriptionDiv.dataset.short;
+                        showMoreBtn.innerHTML = '<span>Xem thêm</span><i class="fas fa-arrow-right text-xs"></i>';
+                        isBookExpanded = false;
+                    } else {
+                        contentDiv.innerHTML = bookDescriptionDiv.dataset.full;
+                        showMoreBtn.innerHTML = '<span>Thu gọn</span><i class="fas fa-arrow-up text-xs"></i>';
+                        isBookExpanded = true;
+                    }
                 }
             });
         }
@@ -1778,14 +1935,17 @@
         let isComboExpanded = false;
         if (showMoreComboBtn && comboDescriptionDiv) {
             showMoreComboBtn.addEventListener('click', function() {
-                if (isComboExpanded) {
-                    comboDescriptionDiv.innerHTML = comboDescriptionDiv.dataset.short;
-                    showMoreComboBtn.textContent = 'Xem thêm';
-                    isComboExpanded = false;
-                } else {
-                    comboDescriptionDiv.innerHTML = comboDescriptionDiv.dataset.full;
-                    showMoreComboBtn.textContent = 'Thu gọn';
-                    isComboExpanded = true;
+                const contentDiv = comboDescriptionDiv.querySelector('.pl-6');
+                if (contentDiv) {
+                    if (isComboExpanded) {
+                        contentDiv.innerHTML = comboDescriptionDiv.dataset.short;
+                        showMoreComboBtn.innerHTML = '<span>Xem thêm</span><i class="fas fa-arrow-right text-xs"></i>';
+                        isComboExpanded = false;
+                    } else {
+                        contentDiv.innerHTML = comboDescriptionDiv.dataset.full;
+                        showMoreComboBtn.innerHTML = '<span>Thu gọn</span><i class="fas fa-arrow-up text-xs"></i>';
+                        isComboExpanded = true;
+                    }
                 }
             });
         }
