@@ -104,7 +104,7 @@ class AISummaryService
         
         $prompt .= "Thông tin sách:\n";
         $prompt .= "**Tiêu đề:** {$book->title}\n";
-        $authorName = $book->author ? $book->author->name : 'Tác giả không xác định';
+        $authorName = $book->authors->count() > 0 ? $book->authors->pluck('name')->join(', ') : 'Tác giả không xác định';
         $prompt .= "**Tác giả:** {$authorName}\n";
         
         $categoryName = $book->category ? $book->category->name : 'Thể loại không xác định';
@@ -214,7 +214,7 @@ class AISummaryService
     {
         $context = "Thông tin sách:\n";
         $context .= "- Tiêu đề: " . mb_convert_encoding($book->title, 'UTF-8', 'UTF-8') . "\n";
-        $authorName = $book->author ? $book->author->name : 'Tác giả không xác định';
+        $authorName = $book->authors->count() > 0 ? $book->authors->pluck('name')->join(', ') : 'Tác giả không xác định';
         $context .= "- Tác giả: " . mb_convert_encoding($authorName, 'UTF-8', 'UTF-8') . "\n";
         
         $categoryName = $book->category ? $book->category->name : 'Thể loại không xác định';
@@ -242,7 +242,7 @@ class AISummaryService
     {
         // Làm sạch UTF-8 cho tất cả dữ liệu đầu vào
         $cleanBookTitle = mb_convert_encoding($book->title, 'UTF-8', 'UTF-8');
-        $cleanAuthorName = mb_convert_encoding($book->author ? $book->author->name : 'Tác giả không xác định', 'UTF-8', 'UTF-8');
+        $cleanAuthorName = mb_convert_encoding($book->authors->count() > 0 ? $book->authors->pluck('name')->join(', ') : 'Tác giả không xác định', 'UTF-8', 'UTF-8');
         $cleanUserMessage = mb_convert_encoding($userMessage, 'UTF-8', 'UTF-8');
         
         $prompt = "Bạn là một trợ lý AI chuyên về phân tích sách và văn học. ";
@@ -270,7 +270,7 @@ class AISummaryService
     {
         // Làm sạch UTF-8 cho dữ liệu sách
         $cleanBookTitle = mb_convert_encoding($book->title, 'UTF-8', 'UTF-8');
-        $cleanAuthorName = mb_convert_encoding($book->author ? $book->author->name : 'Tác giả không xác định', 'UTF-8', 'UTF-8');
+        $cleanAuthorName = mb_convert_encoding($book->authors->count() > 0 ? $book->authors->pluck('name')->join(', ') : 'Tác giả không xác định', 'UTF-8', 'UTF-8');
         $cleanCategoryName = mb_convert_encoding($book->category ? $book->category->name : 'Thể loại không xác định', 'UTF-8', 'UTF-8');
         
         // Kiểm tra xem câu hỏi có liên quan đến sách không ngay trong fallback
@@ -335,7 +335,7 @@ class AISummaryService
 
     private function generateDefaultSummary(Book $book)
     {
-        $authorName = $book->author ? $book->author->name : 'tác giả không xác định';
+        $authorName = $book->authors->count() > 0 ? $book->authors->pluck('name')->join(', ') : 'tác giả không xác định';
         $categoryName = $book->category ? $book->category->name : 'thể loại không xác định';
         $pageCount = $book->page_count ?: 'số trang không xác định';
         
@@ -345,7 +345,7 @@ class AISummaryService
 
     private function generateDefaultDetailedSummary(Book $book)
     {
-        $authorName = $book->author ? $book->author->name : 'tác giả không xác định';
+        $authorName = $book->authors->count() > 0 ? $book->authors->pluck('name')->join(', ') : 'tác giả không xác định';
         $categoryName = $book->category ? $book->category->name : 'thể loại không xác định';
         $pageCount = $book->page_count ?: 'số trang không xác định';
         
