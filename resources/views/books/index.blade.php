@@ -344,14 +344,16 @@
                 <!-- Grid View Card theo phong cách clean -->
                 <div class="book-card grid-view group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 overflow-hidden cursor-pointer transform hover:-translate-y-2">
                   <div class="relative overflow-hidden">
-                    <!-- Gift Badge -->
+                    <!-- Enhanced Gift Badge -->
                     @if(!empty($book->has_gift) && $book->has_gift > 0)
                     <div class="absolute top-3 left-3 z-30" title="Quà tặng: {{ $book->gift_names ?? 'Sách có quà tặng kèm theo' }}">
-                      <div class="bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase tracking-wide">
-                        <svg class="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.236 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.764A3.001 3.001 0 015 5zm2.764 0a1 1 0 012 0H7.764zM11 12a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
-                        </svg>
-                        GIFT
+                      <div class="bg-gradient-to-r from-red-600 to-red-700 text-white px-3 py-2 text-xs font-bold uppercase tracking-wide border-2 border-white shadow-lg transform hover:scale-105 transition-all duration-200">
+                        <div class="flex items-center space-x-1">
+                          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.236 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.764A3.001 3.001 0 015 5zm2.764 0a1 1 0 012 0H7.764zM11 12a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
+                          </svg>
+                          <span>Quà Tặng </span>
+                        </div>
                       </div>
                     </div>
                     @endif
@@ -512,14 +514,16 @@
                   <div class="flex p-6 space-x-6">
                     <!-- Book Cover -->
                     <div class="relative flex-shrink-0">
-                      <!-- Gift Badge -->
+                      <!-- Enhanced Gift Badge -->
                       @if(!empty($book->has_gift) && $book->has_gift > 0)
                       <div class="absolute -top-2 -left-2 z-30" title="Quà tặng: {{ $book->gift_names ?? 'Sách có quà tặng kèm theo' }}">
-                        <div class="flex items-center space-x-1 bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase tracking-wide">
-                          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.236 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.764A3.001 3.001 0 015 5zm2.764 0a1 1 0 012 0H7.764zM11 12a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
-                          </svg>
-                          <span>GIFT</span>
+                        <div class="bg-gradient-to-r from-red-600 to-red-700 text-white px-3 py-2 text-xs font-bold uppercase tracking-wide border-2 border-white shadow-lg transform hover:scale-105 transition-all duration-200">
+                          <div class="flex items-center space-x-1">
+                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.236 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.764A3.001 3.001 0 015 5zm2.764 0a1 1 0 012 0H7.764zM11 12a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>GIFT</span>
+                          </div>
                         </div>
                       </div>
                       @endif
