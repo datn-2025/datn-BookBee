@@ -28,6 +28,8 @@
     <link href="https://cdn.lineawesome.com/1.3.0/line-awesome/css/line-awesome.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
+    <!-- Chat CSS -->
+    <link href="{{ asset('css/chat.css') }}" rel="stylesheet" />
 
     <!-- Plugin CSS -->
     <link href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css" rel="stylesheet" />
@@ -36,7 +38,21 @@
 
      @vite(['resources/js/app.js', 'resources/css/app.css'])
 
-     <script src="{{ asset('js/chat.js') }}"></script>
+    <!-- Laravel Echo / Pusher Setup -->
+    <script>
+        // Import Echo from Vite
+        window.Pusher = window.Pusher || {};
+        
+        // Setup Echo when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.Echo !== 'undefined') {
+                console.log('Laravel Echo initialized successfully');
+            } else {
+                console.warn('Laravel Echo not available');
+            }
+        });
+    </script>
+
 
 
     <!-- JS Libraries -->
@@ -61,9 +77,17 @@
             placeholder: 'Nhập mô tả chi tiết...'
         });
     </script>
-    {{-- <script>
-        window.currentUserId = {{ auth()->id() }};
-    </script> --}}
+    
+    <!-- Chat Configuration -->
+    <script>
+        window.currentUserId = {{ auth('admin')->check() ? auth('admin')->id() : (auth()->check() ? auth()->id() : 'null') }};
+        window.Laravel = {
+            user: {
+                id: {{ auth('admin')->check() ? auth('admin')->id() : (auth()->check() ? auth()->id() : 'null') }},
+                name: '{{ auth('admin')->check() ? auth('admin')->user()->name : (auth()->check() ? auth()->user()->name : '') }}'
+            }
+        };
+    </script>
 
     <!-- Toastr Config -->
     <script>
@@ -700,6 +724,11 @@
             document.querySelector('#toast-container')?.remove();
         }
     </script>
+
+    {{-- ================== CHAT JS ================== --}}
+    <script src="{{ asset('js/chat-init.js') }}"></script>
+    <script src="{{ asset('js/chat.js') }}"></script>
+    <script src="{{ asset('js/chat-realtime.js') }}"></script>
 
     {{-- ================== LIVEWIRE & PAGE-SPECIFIC SCRIPTS ================== --}}
     @livewireScripts
