@@ -16,17 +16,72 @@
         .message-file:hover {
             background-color: #f8f9fa !important;
         }
+
+        /* Typing animation */
+        .typing-animation {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #6c757d;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Auto scroll */
+        .chat-conversation {
+            scroll-behavior: smooth;
+        }
+
+        /* Message transitions */
+        .chat-list {
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading state */
+        .btn[wire\:loading] {
+            pointer-events: none;
+        }
     </style>
 
-
-    <div class="chat-content d-lg-flex">
-        <!-- start chat conversation section -->
-        <div class="w-100 overflow-hidden position-relative">
-            <!-- conversation user -->
-            <div class="position-relative">
-                <div class="position-relative" id="users-chat">
-                    <!-- Topbar -->
-                    <div class="p-3 user-chat-topbar">
+    @if ($selectedConversation)
+    <div class="chat-content d-flex flex-column h-100">
+        <!-- Topbar -->
+        <div class="p-3 user-chat-topbar flex-shrink-0" style="border-bottom: 1px solid #dee2e6;">
                         <div class="row align-items-center">
                             <div class="col-sm-4 col-8">
                                 <div class="d-flex align-items-center">
@@ -115,19 +170,21 @@
                                 </ul>
                             </div>
                         </div>
-                    </div>
+        </div>
 
-                    <!-- Chat content -->
-                    <div class="chat-conversation p-3 p-lg-4" id="chat-conversation" data-simplebar>
-                        <div id="elmLoader" class="text-center py-4"></div>
-                        @php $previousDate = null; @endphp
-                        <ul class="list-unstyled chat-conversation-list" id="message-container">
+        <!-- Chat content -->
+        <div class="chat-conversation p-3" id="chat-conversation" style="height: 400px; overflow-y: auto; background-color: #f8f9fa;">
+            <div id="elmLoader" class="text-center py-4"></div>
+            @php $previousDate = null; @endphp
+            <ul class="list-unstyled chat-conversation-list" id="message-container" wire:key="messages-{{ count($chatMessages) }}">
                             @foreach ($chatMessages as $message)
                                 @php
-                                    $isMine = $message->sender_id === auth()->id();
-                                    $isAdmin = $message->sender->isAdmin();
-                                    $side = $isAdmin ? 'right' : 'left';
-                                    $bgColor = $isAdmin ? 'bg-primary text-white' : 'bg-light text-dark';
+                                    $currentUser = Auth::guard('admin')->user() ?: Auth::user();
+                                    $currentUserId = $currentUser ? $currentUser->id : null;
+                                    $isMine = $message->sender_id === $currentUserId;
+                                    $isAdmin = $message->sender && method_exists($message->sender, 'isAdmin') ? $message->sender->isAdmin() : false;
+                                    $side = $isMine ? 'right' : 'left';
+                                    $bgColor = $isMine ? 'bg-primary text-white' : 'bg-light text-dark';
                                     $date = $message->created_at->format('Y-m-d');
                                 @endphp
 
@@ -148,8 +205,8 @@
                                     <div class="conversation-list">
                                         @if (!$isMine)
                                             <div class="chat-avatar">
-                                                <img src="{{ $message->sender->avatar ?? asset('storage/avatars/' . $message->sender->avatar) }}"
-                                                    alt="Admin" class="avatar-xs rounded-circle">
+                                                <img src="{{ $message->sender->avatar ? asset('storage/avatars/' . $message->sender->avatar) : asset('images/default-user.png') }}"
+                                                    alt="User" class="avatar-xs rounded-circle">
                                             </div>
                                         @endif
 
@@ -224,7 +281,7 @@
                                                     class="text-muted time">{{ $message->created_at->format('h:i A') }}</small>
 
                                                 @if ($isMine)
-                                                    @if ($message->read_at)
+                                                    @if ($message->reads->where('user_id', '!=', $currentUserId)->count() > 0)
                                                         {{-- Đã đọc: 2 dấu check màu xanh --}}
                                                         <span class="text-success" title="Đã xem"><i
                                                                 class="bx bx-check-double"></i></span>
@@ -244,106 +301,120 @@
                         <div id="chat-end" class="text-center mt-4" style="display:none;">
                             <p class="text-muted mb-0">End of conversation</p>
                         </div>
+                        
+                        <!-- Typing Indicator -->
+                        <div id="typing-indicator" class="typing-indicator-container px-3" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-xs me-2">
+                                    <img src="{{ $selectedConversation->customer->avatar ? asset('storage/avatars/' . $selectedConversation->customer->avatar) : asset('images/default-user.png') }}" 
+                                         alt="Avatar" class="rounded-circle">
+                                </div>
+                                <div class="typing-animation">
+                                    <span class="typing-dot"></span>
+                                    <span class="typing-dot"></span>
+                                    <span class="typing-dot"></span>
+                                </div>
+                                <small class="text-muted ms-2">đang soạn tin nhắn...</small>
+                            </div>
+                        </div>
+        </div>
+        <!-- chat input -->
+        <div class="chat-input-section flex-shrink-0 p-3" style="border-top: 1px solid #dee2e6;">
+            <!-- Giao diện form -->
+            <form wire:submit.prevent="sendMessage">
+                <div class="row g-0 align-items-center">
+                    <!-- Emoji -->
+                    <div class="col-auto pe-2">
+                        <button type="button" class="btn btn-light rounded-circle p-2">
+                            <i class="bx bx-smile fs-4 text-primary"></i>
+                        </button>
                     </div>
 
-                    <div class="alert alert-warning alert-dismissible copyclipboard-alert px-4 fade show"
-                        id="copyClipBoard" role="alert">
-                        Message copied
+                    <!-- File upload -->
+                    <div class="col-auto pe-2">
+                        <label for="fileUpload" class="btn btn-light rounded-circle p-2" style="cursor: pointer;">
+                            <i class="bx bx-plus fs-4 text-primary"></i>
+                        </label>
+                        <input type="file" id="fileUpload" wire:model="fileUpload" class="d-none"
+                            accept="image/*,application/*">
                     </div>
 
-                    <!-- chat input -->
-                    <div class="chat-input-section p-3 p-lg-4">
-                        <!-- Giao diện form -->
-                        <form wire:submit.prevent="send" class="message-form">
-                            <div class="row g-0 align-items-center">
-                                <!-- Emoji -->
-                                <div class="col-auto pe-2">
-                                    <button type="button" class="btn btn-light rounded-circle p-2">
-                                        <i class="bx bx-smile fs-4 text-primary"></i>
+                    <!-- Nhập tin nhắn + ảnh -->
+                    <div class="col px-2">
+                        <div class="bg-light rounded shadow-sm p-2 d-flex flex-row align-items-center gap-2 position-relative">
+                            {{-- File preview --}}
+                            @if ($fileUpload)
+                                <div class="position-relative me-2" style="max-width: 80px; min-width: 60px;">
+                                    @if (method_exists($fileUpload, 'getMimeType') && Str::startsWith($fileUpload->getMimeType(), 'image/'))
+                                        <img src="{{ $fileUpload->temporaryUrl() }}" class="img-thumbnail" alt="Preview"
+                                            style="max-width: 100%; max-height: 60px;">
+                                    @else
+                                        <div class="bg-secondary text-white text-center p-2 rounded" style="font-size: 12px;">
+                                            📎 {{ Str::limit($fileUpload->getClientOriginalName(), 10) }}
+                                        </div>
+                                    @endif
+                                    <button type="button"
+                                        class="btn btn-sm btn-light position-absolute top-0 end-0 rounded-circle"
+                                        wire:click="$set('fileUpload', null)" style="transform: translate(50%, -50%);">
+                                        &times;
                                     </button>
                                 </div>
+                            @endif
 
-                                <!-- File upload -->
-                                <div class="col-auto pe-2">
-                                    <label for="uploadFile" class="btn btn-light rounded-circle p-2"
-                                        style="cursor: pointer;">
-                                        <i class="bx bx-plus fs-4 text-primary"></i>
-                                    </label>
-                                    <input type="file" id="uploadFile" wire:model="uploadFile" class="d-none"
-                                        accept="image/*,application/*">
-                                </div>
-
-                                <!-- Nhập tin nhắn + ảnh -->
-                                <div class="col px-2">
-                                    <div
-                                        class="bg-light rounded shadow-sm p-2 d-flex flex-row align-items-center gap-2 position-relative">
-                                        {{-- Ảnh preview với wire:key để tránh re-render --}}
-                                        @if ($uploadFile)
-                                            <div class="position-relative me-2"
-                                                style="max-width: 80px; min-width: 60px;"
-                                                wire:key="file-preview-{{ $uploadFile->getFilename() }}">
-                                                @if (method_exists($uploadFile, 'getMimeType') && Str::startsWith($uploadFile->getMimeType(), 'image/'))
-                                                    <img src="{{ $uploadFile->temporaryUrl() }}"
-                                                        class="img-thumbnail" alt="Preview"
-                                                        style="max-width: 100%; max-height: 60px;">
-                                                @else
-                                                    <div class="bg-secondary text-white text-center p-2 rounded"
-                                                        style="font-size: 12px;">
-                                                        📎 {{ $uploadFile->getClientOriginalName() }}
-                                                    </div>
-                                                @endif
-                                                <button type="button"
-                                                    class="btn btn-sm btn-light position-absolute top-0 end-0 rounded-circle"
-                                                    wire:click="removeFile" style="transform: translate(50%, -50%);">
-                                                    &times;
-                                                </button>
-                                            </div>
-                                        @endif
-                                        {{-- <input type="text"
-                                            class="form-control chat-input bg-white border-0 rounded-pill shadow-sm flex-grow-1"
-                                            placeholder="Type your message..." wire:model.defer="messageInput"
-                                            autocomplete="off" wire:key="message-input"> --}}
-                                        <input type="text"
-                                            class="form-control chat-input bg-white border-0 rounded-pill shadow-sm flex-grow-1"
-                                            placeholder="Type your message..." wire:model="messageInput"
-                                            autocomplete="off">
-
-                                    </div>
-                                </div>
-
-                                <!-- Gửi -->
-                                <div class="col-auto ps-2">
-                                    <button type="submit" class="btn btn-primary rounded-circle p-2">
-                                        <i class="bx bx-send text-white"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-
-
-                    <!-- reply preview -->
-                    <div class="replyCard">
-                        <div class="card mb-0">
-                            <div class="card-body py-3">
-                                <div class="replymessage-block mb-0 d-flex align-items-start">
-                                    <div class="flex-grow-1">
-                                        <h5 class="conversation-name"></h5>
-                                        <p class="mb-0"></p>
-                                    </div>
-                                    <div class="flex-shrink-0">
-                                        <button type="button" id="close_toggle"
-                                            class="btn btn-sm btn-link mt-n2 me-n3 fs-18">
-                                            <i class="bx bx-x align-middle"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            <input type="text"
+                                class="form-control chat-input bg-white border-0 rounded-pill shadow-sm flex-grow-1"
+                                placeholder="Type your message..." 
+                                wire:model="message_content"
+                                autocomplete="off"
+                                id="messageInputField">
                         </div>
                     </div>
 
-                </div> {{-- END #users-chat --}}
+                    <!-- Gửi -->
+                    <div class="col-auto ps-2">
+                        <button type="submit" class="btn btn-primary rounded-circle p-2" 
+                                wire:loading.attr="disabled">
+                            <i class="bx bx-send text-white" wire:loading.remove></i>
+                            <i class="bx bx-loader-alt bx-spin text-white" wire:loading></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Upload file button khi có file -->
+                @if ($fileUpload)
+                    <div class="mt-2 text-center">
+                        <button type="button" wire:click="uploadFile" class="btn btn-sm btn-success">
+                            <i class="bx bx-upload"></i> Send File
+                        </button>
+                    </div>
+                @endif
+            </form>
+            
+            <!-- reply preview -->
+            <div class="replyCard" style="display: none;">
+                <div class="card mb-0">
+                    <div class="card-body py-3">
+                        <div class="replymessage-block mb-0 d-flex align-items-start">
+                            <div class="flex-grow-1">
+                                <h5 class="conversation-name"></h5>
+                                <p class="mb-0"></p>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <button type="button" id="close_toggle"
+                                    class="btn btn-sm btn-link mt-n2 me-n3 fs-18">
+                                    <i class="bx bx-x align-middle"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+        </div>
+
+        <!-- Alert for copy clipboard -->
+        <div class="alert alert-warning alert-dismissible copyclipboard-alert px-4 fade show"
+            id="copyClipBoard" role="alert" style="position: absolute; top: 20px; right: 20px; z-index: 1000; display: none;">
+            Message copied
         </div>
     </div>
 
@@ -374,22 +445,21 @@
             <div class="bg-white" style="padding-top: 75px;">
                 <!-- Name and Status -->
                 <div class="text-center mb-4">
-                    @if ($selectedConversation)
-                        <h4 class="mb-1">{{ $selectedConversation->customer->name }}</h4>
-                        <p class="text-success mb-0">
-                            <small>
-                                @if ($selectedConversation->customer->status === 'online')
-                                    <span class="badge bg-success">Online</span>
-                                @elseif ($selectedConversation->customer->last_seen)
-                                    <span class="badge bg-warning">
-                                        Hoạt động
-                                        {{ \Carbon\Carbon::parse($selectedConversation->customer->last_seen)->diffForHumans() }}
-                                    </span>
-                                @else
-                                    <span class="badge bg-secondary">Offline</span>
-                                @endif
-                            </small>
-                        </p>
+                    <h4 class="mb-1">{{ $selectedConversation->customer->name }}</h4>
+                    <p class="text-success mb-0">
+                        <small>
+                            @if ($selectedConversation->customer->status === 'online')
+                                <span class="badge bg-success">Online</span>
+                            @elseif ($selectedConversation->customer->last_seen)
+                                <span class="badge bg-warning">
+                                    Hoạt động
+                                    {{ \Carbon\Carbon::parse($selectedConversation->customer->last_seen)->diffForHumans() }}
+                                </span>
+                            @else
+                                <span class="badge bg-secondary">Offline</span>
+                            @endif
+                        </small>
+                    </p>
                         <!-- Contact Information -->
                         <div class="px-4">
                             <div class="card bg-light border-0 mb-3">
@@ -434,19 +504,19 @@
                                 </button>
                             </div>
                         </div>
-                    @else
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1 overflow-hidden">
-                                <h5 class="text-truncate mb-0 fs-16 text-muted">
-                                    Chưa chọn người để trò chuyện
-                                </h5>
-                            </div>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>
     </div>
+    @else
+        <div class="d-flex align-items-center justify-content-center h-100">
+            <div class="text-center">
+                <i class="bx bx-message-square-dots" style="font-size: 4rem; color: #6c757d; opacity: 0.5;"></i>
+                <h4 class="text-muted">Chưa chọn cuộc trò chuyện</h4>
+                <p class="text-muted">Vui lòng chọn cuộc trò chuyện từ danh sách bên trái</p>
+            </div>
+        </div>
+    @endif
 
     <!-- Đặt modal duy nhất ở cuối file, ngoài vòng lặp -->
     <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
@@ -462,33 +532,93 @@
                 </div>
             </div>
         </div>
-    </div>
-    <script>
-        function openImageModal(imageSrc) {
-            document.getElementById('modalImage').src = imageSrc;
-            const imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
-            imageModal.show();
-        }
-        document.addEventListener('livewire:init', () => {
-            // Cuộn xuống cuối khi nhận sự kiện
-            Livewire.on('scrollToBottom', () => {
-                setTimeout(() => {
-                    const container = document.getElementById('chat-conversation');
-                    if (container && container.simplebar) {
-                        container.simplebar.getScrollElement().scrollTop = container.simplebar
-                            .getScrollElement().scrollHeight;
-                    }
-                }, 100);
-            });
-
-            // Lắng nghe sự kiện từ Pusher
-            window.Echo.channel('conversation.{{ $selectedConversation->id }}')
-                .listen('MessageSent', (e) => {
-                    @this.call('onMessageSent', e.message);
-                });
-        });
-    </script>
-
-
-
 </div>
+
+<script>
+    // Pass conversation ID to JavaScript for Echo listening
+    window.currentConversationId = '{{ $selectedConversation->id ?? null }}';
+    
+    // Auto scroll to bottom when component loads
+    document.addEventListener('livewire:load', function() {
+        setTimeout(function() {
+            scrollToBottom();
+        }, 100);
+    });
+
+    // Function to scroll to bottom of chat conversation
+    function scrollToBottom() {
+        const chatContainer = document.getElementById('chat-conversation');
+        if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    }
+
+    // Listen for new messages and scroll to bottom
+    document.addEventListener('livewire:updated', function() {
+        setTimeout(function() {
+            scrollToBottom();
+        }, 100);
+    });
+
+    // Listen for Livewire scroll-to-bottom event
+    window.addEventListener('scroll-to-bottom', function() {
+        scrollToBottom();
+    });
+
+    // Laravel Echo real-time listening
+    @if($selectedConversation)
+    if (typeof window.Echo !== 'undefined' && window.currentConversationId) {
+        console.log('Setting up Echo listener for conversation:', window.currentConversationId);
+        
+        // Debug Echo connection
+        console.log('Echo object:', window.Echo);
+        
+        const channelName = 'bookbee.' + window.currentConversationId;
+        console.log('Listening to channel:', channelName);
+        
+        window.Echo.channel(channelName)
+            .listen('MessageSent', (e) => {
+                console.log('🔥 New message received via Echo:', e);
+                console.log('Message data:', e.message);
+                
+                // Trigger Livewire to refresh messages
+                if (window.Livewire && @this) {
+                    console.log('Calling messageReceived method...');
+                    @this.call('messageReceived', e.message)
+                        .then(() => {
+                            console.log('✅ messageReceived method called successfully');
+                        })
+                        .catch((error) => {
+                            console.error('❌ Error calling messageReceived:', error);
+                        });
+                }
+                
+                // Scroll to bottom after message is added
+                setTimeout(scrollToBottom, 200);
+            })
+            .error((error) => {
+                console.error('Echo channel error:', error);
+            });
+    } else {
+        console.warn('Echo not available:', {
+            Echo: typeof window.Echo,
+            conversationId: window.currentConversationId
+        });
+    }
+    @endif
+
+    // Function to show image modal
+    function showImageModal(src, title) {
+        const modal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        const modalTitle = document.getElementById('imageModalLabel');
+        
+        if (modal && modalImage) {
+            modalImage.src = src;
+            if (modalTitle) modalTitle.textContent = title || 'Image';
+            
+            const bootstrapModal = new bootstrap.Modal(modal);
+            bootstrapModal.show();
+        }
+    }
+</script>
