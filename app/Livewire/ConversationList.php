@@ -11,6 +11,8 @@ class ConversationList extends Component
     public $conversations = [];
     public $selectedConversationId = null;
 
+    protected $listeners = ['conversationUpdated' => 'refreshConversations'];
+
     public function mount()
     {
         $this->loadConversations();
