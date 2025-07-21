@@ -44,38 +44,7 @@ class AdminChatrealtimeController extends Controller
             'messages'
         ));
     }
-    public function send(Request $request)
-    {
-        $request->validate([
-            'conversation_id' => 'required|exists:conversations,id',
-            'sender_id' => 'required|exists:users,id',
-            'content' => 'required|string|max:1000',
-        ]);
-
-        // Tạo tin nhắn
-        $message = Message::create([
-            'conversation_id' => $request->conversation_id,
-            'sender_id' => $request->sender_id,
-            'content' => $request->content,
-            'type' => 'text',
-        ]);
-
-        // Cập nhật thời gian tin nhắn cuối cùng
-        Conversation::where('id', $request->conversation_id)
-            ->update(['last_message_at' => now()]);
-
-        // Đánh dấu người gửi đã đọc tin nhắn này
-        MessageRead::create([
-            'message_id' => $message->id,
-            'user_id' => $request->sender_id,
-            'read_at' => now(),
-        ]);
-         // 👉 Phát sự kiện realtime
-        event(new MessageSent($message));
-
-        // Trả về dữ liệu cho frontend
-        return response()->json(['message' => $message], 201);
-    }
+   
 
 
 }
