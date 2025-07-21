@@ -193,8 +193,15 @@ class OrderController extends Controller
                 throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
             }
 
-            // Lấy thông tin giỏ hàng của người dùng
-            $cartItems = $user->cart()->with(['book.images', 'bookFormat'])->get();
+            // Lấy thông tin giỏ hàng của người dùng và kiểm tra tính hợp lệ
+            $cartItems = $user->cart()
+                ->with(['book', 'bookFormat'])
+                ->whereNotNull('book_id')
+                ->whereNotNull('book_format_id')
+                ->get();
+
+            // Log thông tin cart items để debug
+            \Log::info('Cart Items:', $cartItems->toArray());
 
             if ($cartItems->isEmpty()) {
                 DB::rollBack();
@@ -272,18 +279,30 @@ class OrderController extends Controller
                 ]);
 
                 // Tạo OrderItems
-                foreach ($cartItems as $cartItem) {
-                    $orderItem = OrderItem::create([
-                        'id' => (string) Str::uuid(),
-                        'order_id' => $order->id,
-                        'book_id' => $cartItem->book_id,
-                        'book_format_id' => $cartItem->book_format_id,
-                        'quantity' => $cartItem->quantity,
-                        'price' => $cartItem->price,
-                        'total' => $cartItem->quantity * $cartItem->price,
-                    ]);
+            foreach ($cartItems as $cartItem) {
+                // Kiểm tra và log thông tin từng cart item
+                Log::info('Processing cart item:', [
+                    'cart_item_id' => $cartItem->id,
+                    'book_id' => $cartItem->book_id,
+                    'book_format_id' => $cartItem->book_format_id,
+                    'quantity' => $cartItem->quantity,
+                    'price' => $cartItem->price
+                ]);
 
-                    // Lưu thuộc tính sản phẩm
+                // Validate dữ liệu cart item
+                if (!$cartItem->book_id || !$cartItem->book_format_id) {
+                    throw new \Exception('Dữ liệu sản phẩm trong giỏ hàng không hợp lệ.');
+                }
+
+                $orderItem = OrderItem::create([
+                    'id' => (string) Str::uuid(),
+                    'order_id' => $order->id,
+                    'book_id' => $cartItem->book_id,
+                    'book_format_id' => $cartItem->book_format_id,
+                    'quantity' => $cartItem->quantity,
+                    'price' => $cartItem->price,
+                    'total' => $cartItem->quantity * $cartItem->price,
+                ]);                    // Lưu thuộc tính sản phẩm
                     $attributeValueIds = $cartItem->attribute_value_ids ?? [];
                     if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
                         foreach ($attributeValueIds as $attributeValueId) {
@@ -338,6 +357,16 @@ class OrderController extends Controller
 
             // Create OrderItems
             foreach ($cartItems as $cartItem) {
+                // Kiểm tra dữ liệu cart item
+                if (!$cartItem->book_id || !$cartItem->book_format_id) {
+                    Log::error('Invalid cart item data:', [
+                        'cart_item_id' => $cartItem->id,
+                        'book_id' => $cartItem->book_id,
+                        'book_format_id' => $cartItem->book_format_id
+                    ]);
+                    throw new \Exception('Dữ liệu giỏ hàng không hợp lệ.');
+                }
+
                 $orderItem = OrderItem::create([
                     'id' => (string) Str::uuid(),
                     'order_id' => $order->id,
@@ -349,11 +378,7 @@ class OrderController extends Controller
                 ]);
 
                 // ---- START: Added logic for saving order item attributes ----
-                // IMPORTANT: Adjust '$cartItem->attribute_value_ids' if your cart item structure is different
-                // For example, if attributes are in $cartItem->options['selected_attributes']
-                // then use: $attributeValueIds = $cartItem->options['selected_attributes'] ?? [];
                 $attributeValueIds = $cartItem->attribute_value_ids ?? [];
-                // dd($attributeValueIds);
                 if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
                     foreach ($attributeValueIds as $attributeValueId) {
                         if ($attributeValueId) { // Ensure ID is not null or empty

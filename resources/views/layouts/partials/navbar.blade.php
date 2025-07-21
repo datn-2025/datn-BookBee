@@ -29,10 +29,33 @@
                        class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide {{ request()->routeIs('about') ? 'text-black font-semibold' : 'hover:text-black' }}">
                         Giới thiệu
                     </a>
-                    <a href="{{ route('books.index') }}" 
-                       class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide {{ request()->routeIs('books.*') ? 'text-black font-semibold' : 'hover:text-black' }}">
-                        Cửa hàng
-                    </a>
+                    <!-- Dropdown Cửa hàng -->
+                    <div class="shop-dropdown">
+                        <button class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide hover:text-black flex items-center gap-1 {{ request()->routeIs('books.*') || request()->routeIs('combos.*') ? 'text-black font-semibold' : '' }}">
+                            Cửa hàng
+                            <svg class="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div class="dropdown-menu mt-2 w-48 bg-white border-2 border-gray-200 shadow-lg">
+                            <a href="{{ route('books.index') }}" 
+                               class="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200 {{ request()->routeIs('books.*') ? 'bg-gray-50 text-black font-semibold' : '' }}">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-1 h-4 bg-black"></div>
+                                    <span class="uppercase tracking-wide">Sách</span>
+                                </div>
+                            </a>
+                            <a href="{{ route('combos.index') }}" 
+                               class="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200 {{ request()->routeIs('combos.*') ? 'bg-gray-50 text-black font-semibold' : '' }}">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-1 h-4 bg-black"></div>
+                                    <span class="uppercase tracking-wide">Combo sách</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
                     <a href="{{ route('news.index') }}" 
                        class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide {{ request()->routeIs('news.*') ? 'text-black font-semibold' : 'hover:text-black' }}">
                         Tin tức
@@ -156,6 +179,10 @@
                    class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 {{ request()->routeIs('books.*') ? 'bg-gray-50 text-black' : 'hover:bg-gray-50' }}">
                     Cửa hàng
                 </a>
+                <a href="{{ route('combos.index') }}" 
+                   class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 {{ request()->routeIs('combos.*') ? 'bg-gray-50 text-black' : 'hover:bg-gray-50' }}">
+                    Combo
+                </a>
                 <a href="{{ route('news.index') }}" 
                    class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 {{ request()->routeIs('news.*') ? 'bg-gray-50 text-black' : 'hover:bg-gray-50' }}">
                     Tin tức
@@ -239,6 +266,31 @@
         pointer-events: auto;
     }
 
+    /* Shop dropdown */
+    .shop-dropdown {
+        position: relative;
+    }
+
+    .shop-dropdown .dropdown-menu {
+        position: absolute;
+        left: 0;
+        top: 100%;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: all 0.2s ease;
+        pointer-events: none;
+        z-index: 50;
+    }
+
+    .shop-dropdown:hover .dropdown-menu,
+    .shop-dropdown .dropdown-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
     /* Mobile menu */
     .mobile-menu-item {
         transition: all 0.2s ease;
@@ -283,6 +335,38 @@
             mobileMenuBtn.addEventListener('click', function() {
                 mobileMenu.classList.toggle('hidden');
             });
+        }
+
+        // Shop dropdown functionality
+        const shopDropdown = document.querySelector('.shop-dropdown');
+        if (shopDropdown) {
+            const dropdownMenu = shopDropdown.querySelector('.dropdown-menu');
+            const shopBtn = shopDropdown.querySelector('button');
+
+            // Click functionality
+            if (shopBtn && dropdownMenu) {
+                shopBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    dropdownMenu.classList.toggle('show');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!shopDropdown.contains(e.target)) {
+                        dropdownMenu.classList.remove('show');
+                    }
+                });
+
+                // Close dropdown on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        dropdownMenu.classList.remove('show');
+                        shopBtn.focus();
+                    }
+                });
+            }
         }
 
         // User dropdown functionality
