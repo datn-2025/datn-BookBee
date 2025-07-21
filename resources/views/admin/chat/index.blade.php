@@ -4,6 +4,23 @@
 
 @section('content')
     <style>
+        
+
+        .chat-wrapper {
+            height: 80vh; /* chiều cao vừa phải thay vì 100vh */
+        }
+
+        /* Đảm bảo chat-content có layout đúng */
+        .chat-content {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+        }
+
+        .user-chat-topbar {
+            flex-shrink: 0 !important;
+        }
+
         .chat-conversation-list hr {
             border-color: #ccc;
             opacity: 0.5;
@@ -43,13 +60,35 @@
             overflow-y: auto;
         }
 
-        .message-input {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: white;
+        /* Chat conversation với height đơn giản */
+        .chat-conversation {
+            flex: 1 !important;
+            overflow-y: auto !important;
+            overflow-x: hidden;
             padding: 1rem;
-            border-top: 1px solid #dee2e6;
+            height: 60vh !important; /* height cố định đơn giản */
+            max-height: 60vh !important;
+        }
+
+        /* Đảm bảo chat input không bị che */
+        .chat-input-section {
+            flex-shrink: 0 !important;
+            border-top: 1px solid #dee2e6 !important;
+            background: white !important;
+            position: sticky !important;
+            bottom: 0 !important;
+        }
+
+        
+
+        /* Sidebar đơn giản */
+        .chat-leftsidebar {
+            height: 80vh;
+        }
+
+        .chat-room-list {
+            height: 60vh; /* đơn giản hóa */
+            overflow-y: auto;
         }
 
         .message-time {
@@ -83,10 +122,12 @@
             margin-bottom: 1rem;
             opacity: 0.5;
         }
+
+
     </style>
     <div class="page-content">
         <div class="container-fluid">
-            <div class="chat-wrapper d-lg-flex gap-1 mx-n4 mt-n4 p-1">
+            <div class="chat-wrapper d-lg-flex gap-1">
                 <div class="chat-leftsidebar minimal-border">
                     <div class="px-4 pt-4 mb-3">
                         <div class="d-flex align-items-start">
@@ -182,7 +223,7 @@
                 </div>
                 <!-- end chat leftsidebar -->
                 <!-- Start User chat -->
-                <div  class="user-chat w-100 overflow-hidden minimal-border">
+                <div class="user-chat w-100 minimal-border">
                     @if ($selectedConversation)
                         <livewire:chat-realtime :selectedConversation="$selectedConversation" />
                     @else
@@ -225,12 +266,5 @@
     @endsection
 
     @push('scripts')
-        <script>
-            window.addEventListener('scrollToBottom', () => {
-                const container = document.getElementById('message-container');
-                if (container) {
-                    container.scrollTop = container.scrollHeight;
-                }
-            });
-        </script>
+
     @endpush
