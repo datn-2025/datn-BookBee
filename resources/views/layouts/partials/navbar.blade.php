@@ -31,11 +31,33 @@
                        style="color: {{ request()->routeIs('about') ? 'black' : '#374151' }}; font-weight: {{ request()->routeIs('about') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease;">
                         Giới thiệu
                     </a>
-                    <a href="{{ route('books.index') }}" 
-                       class="nav-link"
-                       style="color: {{ request()->routeIs('books.*') ? 'black' : '#374151' }}; font-weight: {{ request()->routeIs('books.*') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease;">
-                        Cửa hàng
-                    </a>
+                    <!-- Dropdown Cửa hàng -->
+                    <div class="shop-dropdown">
+                        <button class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide hover:text-black flex items-center gap-1 {{ request()->routeIs('books.*') || request()->routeIs('combos.*') ? 'text-black font-semibold' : '' }}">
+                            Cửa hàng
+                            <svg class="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div class="dropdown-menu mt-2 w-48 bg-white border-2 border-gray-200 shadow-lg">
+                            <a href="{{ route('books.index') }}" 
+                               class="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200 {{ request()->routeIs('books.*') ? 'bg-gray-50 text-black font-semibold' : '' }}">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-1 h-4 bg-black"></div>
+                                    <span class="uppercase tracking-wide">Sách</span>
+                                </div>
+                            </a>
+                            <a href="{{ route('combos.index') }}" 
+                               class="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200 {{ request()->routeIs('combos.*') ? 'bg-gray-50 text-black font-semibold' : '' }}">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-1 h-4 bg-black"></div>
+                                    <span class="uppercase tracking-wide">Combo sách</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
                     <a href="{{ route('news.index') }}" 
                        class="nav-link"
                        style="color: {{ request()->routeIs('news.*') ? 'black' : '#374151' }}; font-weight: {{ request()->routeIs('news.*') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease;">
@@ -189,6 +211,10 @@
                    onmouseout="if(!'{{ request()->routeIs('books.*') }}') this.style.backgroundColor=''">
                     Cửa hàng
                 </a>
+                <a href="{{ route('combos.index') }}" 
+                   class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 {{ request()->routeIs('combos.*') ? 'bg-gray-50 text-black' : 'hover:bg-gray-50' }}">
+                    Combo
+                </a>
                 <a href="{{ route('news.index') }}" 
                    style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: #111827; text-decoration: none; {{ request()->routeIs('news.*') ? 'background-color: #f9fafb; color: black;' : '' }} transition: background-color 0.2s ease;"
                    onmouseover="if(!this.style.backgroundColor) this.style.backgroundColor='#f9fafb'"
@@ -232,6 +258,81 @@
         .nav-desktop { display: flex !important; }
         .mobile-menu-btn { display: none !important; }
     }
+
+    .nav-link::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background-color: #000;
+        transition: width 0.2s ease;
+    }
+
+    .nav-link:hover::after {
+        width: 100%;
+    }
+
+    /* User dropdown */
+    .user-dropdown {
+        position: relative;
+    }
+
+    .user-dropdown .dropdown-menu {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: all 0.2s ease;
+        pointer-events: none;
+        z-index: 50;
+    }
+
+    .user-dropdown:hover .dropdown-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    .user-dropdown .dropdown-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    /* Shop dropdown */
+    .shop-dropdown {
+        position: relative;
+    }
+
+    .shop-dropdown .dropdown-menu {
+        position: absolute;
+        left: 0;
+        top: 100%;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: all 0.2s ease;
+        pointer-events: none;
+        z-index: 50;
+    }
+
+    .shop-dropdown:hover .dropdown-menu,
+    .shop-dropdown .dropdown-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    /* Mobile menu */
+    .mobile-menu-item {
+        transition: all 0.2s ease;
     
     /* Hover effects cho desktop */
     @media (min-width: 768px) {
@@ -280,7 +381,38 @@
             });
         }
 
-        // User dropdown functionality cho mobile
+        // Shop dropdown functionality
+        const shopDropdown = document.querySelector('.shop-dropdown');
+        if (shopDropdown) {
+            const dropdownMenu = shopDropdown.querySelector('.dropdown-menu');
+            const shopBtn = shopDropdown.querySelector('button');
+
+            // Click functionality
+            if (shopBtn && dropdownMenu) {
+                shopBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    dropdownMenu.classList.toggle('show');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!shopDropdown.contains(e.target)) {
+                        dropdownMenu.classList.remove('show');
+                    }
+                });
+
+                // Close dropdown on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        dropdownMenu.classList.remove('show');
+                        shopBtn.focus();
+                    }
+                });
+            }
+        }
+
         const dropdown = document.querySelector('.user-dropdown');
         if (dropdown) {
             const dropdownMenu = dropdown.querySelector('.dropdown-menu');

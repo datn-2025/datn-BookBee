@@ -195,4 +195,62 @@ class HomeController extends Controller
     {
         return view('about');
     }
+
+    public function combos(\Illuminate\Http\Request $request)
+    {
+        $query = \App\Models\Collection::with(['books' => function ($query) {
+            $query->with(['formats', 'images', 'authors']);
+        }])->where('status', 'active');
+
+        // Filter by price range
+        if ($request->filled('min_price')) {
+            $query->where('combo_price', '>=', $request->min_price);
+        }
+        if ($request->filled('max_price')) {
+            $query->where('combo_price', '<=', $request->max_price);
+        }
+
+        // Filter by discount percentage
+        if ($request->filled('discount')) {
+            $query->whereRaw('((SELECT SUM(COALESCE((SELECT MAX(price) FROM book_formats WHERE book_id = books.id), 0)) FROM books INNER JOIN book_collections ON books.id = book_collections.book_id WHERE book_collections.collection_id = collections.id) - combo_price) / (SELECT SUM(COALESCE((SELECT MAX(price) FROM book_formats WHERE book_id = books.id), 0)) FROM books INNER JOIN book_collections ON books.id = book_collections.book_id WHERE book_collections.collection_id = collections.id) * 100 >= ?', [$request->discount]);
+        }
+
+        // Filter by number of books
+        if ($request->filled('book_count')) {
+            $query->whereHas('books', function($q) use ($request) {
+                // This is a bit complex, we'll use a simpler approach
+            }, '>=', $request->book_count);
+        }
+
+        // Search by name
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        // Sorting
+        $sort = $request->get('sort', 'newest');
+        switch ($sort) {
+            case 'price_low':
+                $query->orderBy('combo_price', 'asc');
+                break;
+            case 'price_high':
+                $query->orderBy('combo_price', 'desc');
+                break;
+            case 'name':
+                $query->orderBy('name', 'asc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+
+        $combos = $query->paginate(12)->withQueryString();
+
+        // Get filter options
+        $priceRange = \App\Models\Collection::where('status', 'active')
+            ->whereNotNull('combo_price')
+            ->selectRaw('MIN(combo_price) as min_price, MAX(combo_price) as max_price')
+            ->first();
+
+        return view('combos.index', compact('combos', 'priceRange'));
+    }
 }

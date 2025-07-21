@@ -61,6 +61,7 @@ Route::get('/book/{slug}', [HomeController::class, 'show'])->name('books.show');
 Route::get('/books/{categoryId?}', [BookController::class, 'index'])->name('books.index');
 
 // web.php
+Route::get('/combos', [HomeController::class, 'combos'])->name('combos.index');
 Route::get('combos/{slug}', [HomeController::class, 'showCombo'])->name('combos.show');
 
 

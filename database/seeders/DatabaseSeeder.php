@@ -63,6 +63,7 @@ class DatabaseSeeder extends Seeder
             RAttributeValueSeeder::class,
             RNewsArticleSeeder::class,
             RBookSeeder::class,
+            AuthorBookSeeder::class,
             RAddressSeeder::class,
             PaymentMethodSeeder::class,
             PaymentStatusSeeder::class,
