@@ -430,9 +430,16 @@
 
                         <!-- Đơn hàng -->
                         <li class="nav-item">
-                            <a class="nav-link menu-link" href="{{ route('admin.orders.index') }}">
+                            <a class="nav-link menu-link" href="#sidebarOrders" data-bs-toggle="collapse"
+                                aria-expanded="false">
                                 <i class="ri-pages-line"></i> <span data-key="t-orders">Quản lý đơn hàng</span>
                             </a>
+                            <div class="collapse menu-dropdown" id="sidebarOrders">
+                                <ul class="nav nav-sm flex-column">
+                                    <li><a href="{{ route('admin.orders.index') }}" class="nav-link">Danh sách đơn hàng</a></li>
+                                    <li><a href="{{ route('admin.refunds.index') }}" class="nav-link">Yêu cầu hoàn tiền</a></li>
+                                </ul>
+                            </div>
                         </li>
 
                         <!-- Tin tức -->

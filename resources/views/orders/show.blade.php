@@ -209,15 +209,44 @@
                 </div>
             </div>
 
-            {{-- Action Buttons (Optional) --}}
-            <div class="mt-10 pt-6 border-t border-gray-200 text-right">
-                <a href="{{ route('orders.index') }}" class="text-indigo-600 hover:text-indigo-800 font-medium mr-4">
-                    &larr; Quay lại danh sách đơn hàng
-                </a>
-                {{-- Example: Print button --}}
-                {{-- <button onclick="window.print();" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
-                    In Đơn Hàng
-                </button> --}}
+            {{-- Action Buttons --}}
+            <div class="mt-10 pt-6 border-t border-gray-200 flex justify-between items-center">
+                <div>
+                    <a href="{{ route('orders.index') }}" class="text-indigo-600 hover:text-indigo-800 font-medium">
+                        &larr; Quay lại danh sách đơn hàng
+                    </a>
+                </div>
+                <div class="flex space-x-4">
+                    {{-- Hiển thị nút hoàn tiền khi đơn hàng "Thành công" và "Đã Thanh Toán" --}}
+                    @if($order->orderStatus->name === 'Thành công' && $order->paymentStatus->name === 'Đã Thanh Toán' && !in_array($order->paymentStatus->name, ['Đã Hoàn Tiền', 'Đang Hoàn Tiền']))
+                        <a href="{{ route('account.orders.refund.create', $order->id) }}" 
+                           class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 active:bg-yellow-800 focus:outline-none focus:border-yellow-900 focus:ring ring-yellow-300 disabled:opacity-25 transition ease-in-out duration-150">
+                            <i class="fas fa-undo mr-2"></i>
+                            Yêu cầu hoàn tiền
+                        </a>
+                    @endif
+                    
+                    {{-- Hiển thị trạng thái đang hoàn tiền --}}
+                    @if($order->paymentStatus->name === 'Đang Hoàn Tiền')
+                        <span class="inline-flex items-center px-4 py-2 bg-blue-100 border border-transparent rounded-md font-semibold text-xs text-blue-800 uppercase tracking-widest">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>
+                            Đang xử lý hoàn tiền
+                        </span>
+                    @endif
+                    
+                    {{-- Hiển thị trạng thái đã hoàn tiền --}}
+                    @if($order->paymentStatus->name === 'Đã Hoàn Tiền')
+                        <span class="inline-flex items-center px-4 py-2 bg-green-100 border border-transparent rounded-md font-semibold text-xs text-green-800 uppercase tracking-widest">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Đã hoàn tiền
+                        </span>
+                    @endif
+                    
+                    <button onclick="window.print();" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
+                        <i class="fas fa-print mr-2"></i>
+                        In đơn hàng
+                    </button>
+                </div>
             </div>
         </div>
     </div>
