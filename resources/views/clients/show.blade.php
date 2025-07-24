@@ -566,17 +566,46 @@
                                 <span
                                     class="text-4xl font-bold text-black adidas-font">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
                                 @php
-                                    $statusText = $combo->status === 'active' ? ($combo->combo_stock > 0 ? 'Còn hàng' : 'Hết hàng') : 'Ngừng bán';
-                                    $statusDot = $combo->status === 'active' ? ($combo->combo_stock > 0 ? 'bg-green-500' : 'bg-red-500') : 'bg-red-500';
+                                    $now = now();
+                                    $startDate = $combo->start_date ? \Carbon\Carbon::parse($combo->start_date) : null;
+                                    $endDate = $combo->end_date ? \Carbon\Carbon::parse($combo->end_date) : null;
+                                    $isActive = $combo->status === 'active' && 
+                                              (!$startDate || $now >= $startDate) && 
+                                              (!$endDate || $now <= $endDate);
+                                              
+                                    if (!$isActive) {
+                                        if ($combo->status !== 'active') {
+                                            $statusText = 'Ngừng bán';
+                                            $statusDot = 'bg-gray-500';
+                                            $badgeClass = 'bg-gray-50 text-gray-700 border-gray-200';
+                                        } elseif ($startDate && $now < $startDate) {
+                                            $statusText = 'Chưa bắt đầu';
+                                            $statusDot = 'bg-yellow-500';
+                                            $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                                        } elseif ($endDate && $now > $endDate) {
+                                            $statusText = 'Đã kết thúc';
+                                            $statusDot = 'bg-red-500';
+                                            $badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                        }
+                                    } else {
+                                        $statusText = 'Đang mở bán';
+                                        $statusDot = 'bg-green-500';
+                                        $badgeClass = 'bg-green-50 text-green-700 border-green-200';
+                                    }
                                 @endphp
-                                <span
-                                    class="inline-flex items-center px-3 py-1 text-sm font-semibold border adidas-font uppercase tracking-wider {{ $combo->combo_stock > 0 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200' }}">
-                                    <span
-                                        class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block"></span>{{ $statusText }}
+                                <span class="inline-flex items-center px-3 py-1 text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }}">
+                                    <span class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block"></span>{{ $statusText }}
                                 </span>
-                                @if($combo->combo_stock > 0)
-                                    <span class="text-sm text-gray-600 adidas-font">(<span
-                                            class="font-bold text-black">{{ $combo->combo_stock }}</span> combo còn lại)</span>
+                                
+                                @if($isActive && $startDate)
+                                    <span class="text-sm text-gray-600 adidas-font">
+                                        (Bắt đầu: {{ $startDate->format('d/m/Y') }})
+                                    </span>
+                                @endif
+                                @if($isActive && $endDate)
+                                    <span class="text-sm text-gray-600 adidas-font">
+                                        (Kết thúc: {{ $endDate->format('d/m/Y') }})
+                                    </span>
                                 @endif
                             </div>
                         </div>
@@ -610,7 +639,6 @@
                                         <i class="fas fa-minus"></i>
                                     </button>
                                     <input type="number" name="quantity" id="comboQuantity" value="1" min="1"
-                                        max="{{ $combo->combo_stock }}" data-max="{{ $combo->combo_stock }}"
                                         class="quantity-input-enhanced adidas-font" />
                                     <button type="button" class="quantity-btn-enhanced" id="comboIncrementBtn">
                                         <i class="fas fa-plus"></i>
@@ -619,7 +647,15 @@
                             </div>
                             <button type="submit"
                                 class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font"
-                                @if($combo->status !== 'active') disabled style="opacity:0.6;pointer-events:none;" @endif>
+                                @php
+                                    $now = now();
+                                    $startDate = $combo->start_date ? \Carbon\Carbon::parse($combo->start_date) : null;
+                                    $endDate = $combo->end_date ? \Carbon\Carbon::parse($combo->end_date) : null;
+                                    $isActive = $combo->status === 'active' && 
+                                              (!$startDate || $now >= $startDate) && 
+                                              (!$endDate || $now <= $endDate);
+                                @endphp
+                                @if(!$isActive) disabled style="opacity:0.6;pointer-events:none;" @endif>
                                 <i class="fas fa-shopping-bag mr-3"></i>
                                 <span>THÊM VÀO GIỎ HÀNG</span>
                             </button>
@@ -2159,6 +2195,181 @@
                     }
                 });
             }
+
+            // Handle combo quantity controls
+            @if(isset($combo))
+            const comboQuantityInput = document.getElementById('comboQuantity');
+            const comboIncrementBtn = document.getElementById('comboIncrementBtn');
+            const comboDecrementBtn = document.getElementById('comboDecrementBtn');
+
+            if (comboQuantityInput && comboIncrementBtn && comboDecrementBtn) {
+                // Function to update button states
+                function updateComboButtonStates() {
+                    const value = parseInt(comboQuantityInput.value) || 1;
+                    const min = parseInt(comboQuantityInput.min) || 1;
+                    
+                    comboDecrementBtn.disabled = value <= min;
+                    comboDecrementBtn.style.opacity = value <= min ? '0.5' : '1';
+                    
+                    // No max limit for combo items - they check date validation instead
+                    comboIncrementBtn.disabled = false;
+                    comboIncrementBtn.style.opacity = '1';
+                }
+
+                // Increment button handler
+                comboIncrementBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const currentValue = parseInt(comboQuantityInput.value) || 1;
+                    comboQuantityInput.value = currentValue + 1;
+                    updateComboButtonStates();
+                });
+
+                // Decrement button handler
+                comboDecrementBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const currentValue = parseInt(comboQuantityInput.value) || 1;
+                    const min = parseInt(comboQuantityInput.min) || 1;
+                    
+                    if (currentValue > min) {
+                        comboQuantityInput.value = currentValue - 1;
+                        updateComboButtonStates();
+                    }
+                });
+
+                // Input validation
+                comboQuantityInput.addEventListener('input', function() {
+                    let value = parseInt(this.value) || 1;
+                    const min = parseInt(this.min) || 1;
+                    
+                    if (value < min) {
+                        value = min;
+                        this.value = value;
+                    }
+                    
+                    updateComboButtonStates();
+                });
+
+                comboQuantityInput.addEventListener('blur', function() {
+                    if (!this.value || parseInt(this.value) < 1) {
+                        this.value = 1;
+                        updateComboButtonStates();
+                    }
+                });
+
+                // Initialize button states
+                updateComboButtonStates();
+            }
+
+            // Handle combo form submission
+            const comboForm = document.querySelector('form[action="{{ route("cart.add") }}"]');
+            if (comboForm) {
+                comboForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Check if user is logged in
+                    @auth
+                    @else
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Vui lòng đăng nhập để thêm combo vào giỏ hàng!');
+                        } else {
+                            alert('Vui lòng đăng nhập để thêm combo vào giỏ hàng!');
+                        }
+                        setTimeout(() => {
+                            window.location.href = '{{ route("login") }}';
+                        }, 1500);
+                        return;
+                    @endauth
+
+                    const formData = new FormData(comboForm);
+                    const submitBtn = comboForm.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerHTML;
+                    
+                    // Disable button and show loading
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-3"></i><span>Đang thêm...</span>';
+
+                    fetch('{{ route("cart.add") }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Combo form response:', data); // Debug logging
+                        
+                        if (data.success) {
+                            if (typeof toastr !== 'undefined') {
+                                console.log('Showing toastr success message'); // Debug
+                                toastr.success(data.success, 'Thành công!', {
+                                    timeOut: 3000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
+                            } else {
+                                console.log('Toastr not available, using alert'); // Debug
+                                alert(data.success);
+                            }
+
+                            // Dispatch cart count update event
+                            if (typeof data.cart_count !== 'undefined') {
+                                document.dispatchEvent(new CustomEvent('cartItemAdded', {
+                                    detail: { count: data.cart_count }
+                                }));
+                            }
+
+                            // Show cart count update notification
+                            setTimeout(() => {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.info('Xem giỏ hàng của bạn', 'Tip', {
+                                        timeOut: 2000,
+                                        onclick: function () {
+                                            window.location.href = '{{ route("cart.index") }}';
+                                        }
+                                    });
+                                }
+                            }, 1000);
+
+                        } else if (data.error) {
+                            console.log('Showing toastr error message:', data.error); // Debug
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(data.error, 'Lỗi!', {
+                                    timeOut: 5000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
+                            } else {
+                                console.log('Toastr not available, using alert'); // Debug
+                                alert(data.error);
+                            }
+                        } else {
+                            console.log('Unknown response format:', data); // Debug
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Combo form submission error:', error); // Debug
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Có lỗi xảy ra khi thêm combo vào giỏ hàng', 'Lỗi mạng!', {
+                                timeOut: 5000,
+                                positionClass: 'toast-top-right',
+                                closeButton: true,
+                                progressBar: true
+                            });
+                        } else {
+                            alert('Có lỗi xảy ra khi thêm combo vào giỏ hàng');
+                        }
+                    })
+                    .finally(() => {
+                        // Re-enable button
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    });
+                });
+            }
+            @endif
 
 
         </script>
