@@ -424,6 +424,8 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/{id}/pdf', [AdminInvoiceController::class, 'generatePdf'])->name('generate-pdf');
     });
 
+
+
     Route::resource('collections', CollectionController::class);
     Route::post('collections/{collection}/attach-books', [CollectionController::class, 'attachBooks'])->name('collections.attachBooks');
     Route::resource('collections', CollectionController::class);

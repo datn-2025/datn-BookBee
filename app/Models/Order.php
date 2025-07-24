@@ -31,6 +31,7 @@ class Order extends Model
         'recipient_email',
         'cancelled_at',
         'cancellation_reason',
+        'delivery_method',
     ];
 
     protected $casts = [

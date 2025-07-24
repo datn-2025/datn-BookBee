@@ -102,6 +102,7 @@
                         <input type="hidden" name="discount_amount_applied" id="form_hidden_discount_amount" value="0">
                         <input type="hidden" name="applied_voucher_code" id="form_hidden_applied_voucher_code" value="">
                         <input type="hidden" name="shipping_fee_applied" id="form_hidden_shipping_fee" value="20000">
+                        <input type="hidden" name="delivery_method" id="form_hidden_delivery_method" value="delivery">
                         
                         {{-- Khu vực nhập địa chỉ mới --}}
                         <div id="new-address-form">
@@ -210,8 +211,69 @@
                             </div>
                         </div>
                         
-                        <!-- Phương thức vận chuyển -->
+                        <!-- Phương thức nhận hàng -->
                         <div class="mt-12 mb-8">
+                            <div class="flex items-center gap-4 mb-8">
+                                <div class="flex-shrink-0">
+                                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-gray-900">Phương thức nhận hàng</h3>
+                                    <p class="text-gray-600 mt-1">Chọn cách thức nhận sách phù hợp với bạn</p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <label class="group relative flex items-center p-6 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                    <input type="radio" name="delivery_method" value="delivery" class="sr-only" checked>
+                                    <div class="flex items-center justify-center w-5 h-5 border-2 border-gray-300 rounded-full group-has-[:checked]:border-blue-500 group-has-[:checked]:bg-blue-500 mr-4">
+                                        <div class="w-2 h-2 bg-white rounded-full opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                            </svg>
+                                            <span class="font-semibold text-gray-900">Giao hàng tận nơi</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600">Nhận sách tại địa chỉ của bạn</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold text-blue-600">Có phí ship</div>
+                                        <div class="text-xs text-gray-500">Tùy khu vực</div>
+                                    </div>
+                                </label>
+                                <label class="group relative flex items-center p-6 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-green-300 hover:bg-green-50 transition-all duration-200 has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
+                                    <input type="radio" name="delivery_method" value="pickup" class="sr-only">
+                                    <div class="flex items-center justify-center w-5 h-5 border-2 border-gray-300 rounded-full group-has-[:checked]:border-green-500 group-has-[:checked]:bg-green-500 mr-4">
+                                        <div class="w-2 h-2 bg-white rounded-full opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                            </svg>
+                                            <span class="font-semibold text-gray-900">Nhận tại cửa hàng</span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">MIỄN PHÍ</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600">Đến cửa hàng để nhận sách</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold text-green-600">0đ</div>
+                                        <div class="text-xs text-gray-500">Không phí ship</div>
+                                    </div>
+                                </label>
+                            </div>
+                            @error('delivery_method')
+                            <p class="text-red-500 text-xs mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        
+                        <!-- Phương thức vận chuyển -->
+                        <div class="mt-12 mb-8 shipping-section">
                             <div class="flex items-center gap-4 mb-8">
                                 <div class="flex-shrink-0">
                                     <div class="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
@@ -573,6 +635,30 @@ function updateTotal() {
     });
 }
 
+// Xử lý delivery method
+document.querySelectorAll('input[name="delivery_method"]').forEach(input => {
+    input.addEventListener('change', function() {
+        const shippingSection = document.querySelector('.shipping-section');
+        // Cập nhật hidden field
+        document.getElementById('form_hidden_delivery_method').value = this.value;
+        
+        if (this.value === 'pickup') {
+            // Ẩn section vận chuyển và set phí ship = 0
+            shippingSection.style.display = 'none';
+            document.getElementById('shipping-fee').textContent = '0đ';
+            document.getElementById('form_hidden_shipping_fee').value = 0;
+        } else {
+            // Hiện section vận chuyển và set phí ship mặc định
+            shippingSection.style.display = 'block';
+            const selectedShipping = document.querySelector('input[name="shipping_method"]:checked');
+            const shippingFee = selectedShipping ? (selectedShipping.value === 'standard' ? 20000 : 40000) : 20000;
+            document.getElementById('shipping-fee').textContent = `${number_format(shippingFee)}đ`;
+            document.getElementById('form_hidden_shipping_fee').value = shippingFee;
+        }
+        updateTotal();
+    });
+});
+
 // Cập nhật phí vận chuyển khi thay đổi phương thức
 document.querySelectorAll('input[name="shipping_method"]').forEach(input => {
     input.addEventListener('change', function() {
@@ -580,6 +666,16 @@ document.querySelectorAll('input[name="shipping_method"]').forEach(input => {
         document.getElementById('shipping-fee').textContent = `${number_format(shippingFee)}đ`;
         updateTotal();
     });
+});
+
+// Khởi tạo trạng thái ban đầu
+document.addEventListener('DOMContentLoaded', function() {
+    const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+    if (deliveryMethod && deliveryMethod.value === 'pickup') {
+        document.querySelector('.shipping-section').style.display = 'none';
+        document.getElementById('shipping-fee').textContent = '0đ';
+        updateTotal();
+    }
 });
 
 document.getElementById('apply-voucher-btn-new').addEventListener('click', function() {

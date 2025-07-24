@@ -26,16 +26,15 @@ class AdminInvoiceController extends Controller
             $query->where('type', $request->invoice_type);
         }
         
-        // Lọc chỉ lấy các invoice có order với trạng thái 'Thành công' (cho hóa đơn bán hàng)
-        // Hoặc tất cả hóa đơn hoàn tiền
-        $query->where(function($q) {
-            $q->where('type', 'refund')
-              ->orWhereHas('order', function($orderQ) {
-                  $orderQ->whereHas('orderStatus', function($statusQ) {
-                      $statusQ->where('name', 'Thành công');
-                  });
-              });
-        });
+        // Hiển thị tất cả hóa đơn (bỏ lọc theo trạng thái 'Thành công')
+        // $query->where(function($q) {
+        //     $q->where('type', 'refund')
+        //       ->orWhereHas('order', function($orderQ) {
+        //           $orderQ->whereHas('orderStatus', function($statusQ) {
+        //               $statusQ->where('name', 'Thành công');
+        //           });
+        //       });
+        // });
         $query->with([
             'order' => function($q) {
                 $q->with(['user', 'address', 'paymentMethod']);

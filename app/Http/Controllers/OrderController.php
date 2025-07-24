@@ -16,6 +16,7 @@ use App\Models\OrderItemAttributeValue; // Added for order item attributes
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
+use App\Services\InvoiceService;
 use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Services\QrCodeService;
@@ -35,19 +36,22 @@ class OrderController extends Controller
     protected $paymentService;
     protected $emailService;
     protected $qrCodeService;
+    protected $invoiceService;
 
     public function __construct(
         OrderService $orderService,
         VoucherService $voucherService,
         PaymentService $paymentService,
         EmailService $emailService,
-        QrCodeService $qrCodeService
+        QrCodeService $qrCodeService,
+        InvoiceService $invoiceService
     ) {
         $this->orderService = $orderService;
         $this->voucherService = $voucherService;
         $this->paymentService = $paymentService;
         $this->emailService = $emailService;
         $this->qrCodeService = $qrCodeService;
+        $this->invoiceService = $invoiceService;
     }
 
     public function checkout(Request $request)
@@ -113,7 +117,8 @@ class OrderController extends Controller
         $rules = [
             'voucher_code' => 'nullable|exists:vouchers,code',
             'payment_method_id' => 'required|exists:payment_methods,id',
-            'shipping_method' => 'required|in:standard,express',
+            'delivery_method' => 'required|in:delivery,pickup',
+            'shipping_method' => 'required_if:delivery_method,delivery|in:standard,express',
             'shipping_fee_applied' => 'required|numeric',
             'note' => 'nullable|string|max:500',
 
@@ -274,8 +279,9 @@ class OrderController extends Controller
                     'order_status_id' => $orderStatus->id,
                     'payment_status_id' => $paymentStatus->id,
                     'total_amount' => $finalTotalAmount,
-                    'shipping_fee' => $request->shipping_fee_applied,
+                    'shipping_fee' => $request->delivery_method === 'pickup' ? 0 : $request->shipping_fee_applied,
                     'discount_amount' => (int) $actualDiscountAmount,
+                    'delivery_method' => $request->delivery_method,
                 ]);
 
                 // Tạo OrderItems
@@ -350,8 +356,9 @@ class OrderController extends Controller
                 'order_status_id' => $orderStatus->id,
                 'payment_status_id' => $paymentStatus->id,
                 'total_amount' => $finalTotalAmount,
-                'shipping_fee' => $request->shipping_fee_applied,
+                'shipping_fee' => $request->delivery_method === 'pickup' ? 0 : $request->shipping_fee_applied,
                 'discount_amount' => (int) $actualDiscountAmount,
+                'delivery_method' => $request->delivery_method,
             ]);
 //            dd($order->recipient_email);
 
@@ -411,6 +418,18 @@ class OrderController extends Controller
             // Generate and save QR Code using QrCodeService
             $this->qrCodeService->generateOrderQrCode($order);
             $this->emailService->sendOrderConfirmation($order);
+            
+            // Tạo và gửi hóa đơn cho thanh toán COD
+            try {
+                $this->invoiceService->processInvoiceForPaidOrder($order);
+                Log::info('Invoice created and sent for COD order', ['order_id' => $order->id]);
+            } catch (\Exception $e) {
+                Log::error('Failed to create invoice for COD order', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+            
             $successMessage = 'Đặt hàng thành công!';
 
             // Clear the user's cart after successful order
@@ -728,6 +747,17 @@ class OrderController extends Controller
 
                 // Gửi email xác nhận
                 $this->emailService->sendOrderConfirmation($order);
+                
+                // Tạo và gửi hóa đơn cho thanh toán VNPay thành công
+                try {
+                    $this->invoiceService->processInvoiceForPaidOrder($order);
+                    Log::info('Invoice created and sent for VNPay order', ['order_id' => $order->id]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create invoice for VNPay order', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
 
                 // Tạo QR code nếu chưa có
                 if (!$order->qr_code) {

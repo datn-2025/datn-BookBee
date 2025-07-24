@@ -133,6 +133,23 @@
                                                         </div>
                                                     </div>
                                                 </li>
+                                                <li>
+                                                    <div class="d-flex">
+                                                        <div class="flex-shrink-0 text-muted">
+                                                            <i class="ri-truck-line me-1 fs-16 align-middle"></i>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-1 fs-14">Phương thức nhận hàng:</h6>
+                                                            <p class="text-muted mb-0">
+                                                                @if($order->delivery_method === 'pickup')
+                                                                    <span class="badge bg-info">Nhận tại cửa hàng</span>
+                                                                @else
+                                                                    <span class="badge bg-primary">Giao hàng tận nơi</span>
+                                                                @endif
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </li>
                                             </ul>
                                         </div>
                                     </div>
