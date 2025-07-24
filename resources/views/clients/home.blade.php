@@ -631,6 +631,122 @@
     </section>
     @endif
 
+    <!-- SÁCH SẮP RA MẮT - ADIDAS STYLE -->
+    @if(isset($upcomingBooks) && $upcomingBooks->count())
+    <section class="bg-gradient-to-br from-gray-50 to-white py-20" data-aos="fade-up">
+        <div class="max-w-7xl mx-auto px-4">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-12">
+                <div class="flex items-center gap-4">
+                    <div class="w-1 h-12 bg-orange-500"></div>
+                    <div>
+                        <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-black">SÁCH SẮP RA MẮT</h2>
+                        <p class="text-gray-600 text-sm uppercase tracking-wider mt-1">COMING SOON</p>
+                        <div class="w-16 h-0.5 bg-orange-500 mt-2"></div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-sm text-gray-600">
+                    <span>🔥</span>
+                    <span class="uppercase tracking-wider font-bold">SẮP PHÁT HÀNH</span>
+                </div>
+            </div>
+            
+            <!-- Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                @foreach($upcomingBooks as $upcomingBook)
+                    <div onclick="window.location='{{ route('books.show', ['slug' => $upcomingBook->slug]) }}'"
+                         class="group bg-white border-2 border-gray-100 hover:border-orange-500 transition-all duration-300 cursor-pointer relative overflow-hidden">
+                        
+                        <!-- Coming Soon Badge -->
+                        <div class="absolute top-3 right-3 bg-orange-500 text-white px-2 py-1 text-xs font-bold uppercase z-10 rotate-12">
+                            SOON
+                        </div>
+                        
+                        <!-- Release Date Badge -->
+                        <div class="absolute top-3 left-3 bg-black text-white px-2 py-1 text-xs font-bold uppercase z-10">
+                            @if($upcomingBook->publication_date)
+                                {{ $upcomingBook->publication_date->format('m/Y') }}
+                            @else
+                                TBD
+                            @endif
+                        </div>
+                        
+                        <!-- Image -->
+                        <div class="aspect-[3/4] bg-gray-50 overflow-hidden relative">
+                            @if($upcomingBook->images->count() > 0)
+                                <img src="{{ asset('storage/' . $upcomingBook->images->first()->image_path) }}" 
+                                     alt="{{ $upcomingBook->title }}" 
+                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100">
+                            @else
+                                <div class="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                    <span class="text-gray-500 text-4xl">📚</span>
+                                </div>
+                            @endif
+                            
+                            <!-- Overlay effect -->
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"></div>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="p-4 space-y-3">
+                            <h3 class="font-bold text-black text-sm uppercase tracking-wide group-hover:text-orange-600 transition-colors line-clamp-2">
+                                {{ $upcomingBook->title }}
+                            </h3>
+                            
+                            @if($upcomingBook->authors->count() > 0)
+                                <p class="text-xs text-gray-600 uppercase tracking-wider">
+                                    {{ $upcomingBook->authors->first()->name }}
+                                </p>
+                            @endif
+                            
+                            <!-- Price if available -->
+                            @if($upcomingBook->formats->count() > 0)
+                                <p class="text-lg font-bold text-orange-600">
+                                    {{ number_format($upcomingBook->formats->first()->price, 0, ',', '.') }}₫
+                                </p>
+                            @endif
+                            
+                            <!-- Release countdown -->
+                            <div class="pt-2 border-t border-gray-100">
+                                <div class="flex items-center justify-between">
+                                    @if($upcomingBook->publication_date)
+                                        <span class="text-xs text-gray-500 uppercase tracking-wider">
+                                            @if($upcomingBook->publication_date->isFuture())
+                                                Còn {{ $upcomingBook->publication_date->diffInDays(now()) }} ngày
+                                            @else
+                                                Đã phát hành
+                                            @endif
+                                        </span>
+                                    @else
+                                        <span class="text-xs text-gray-500 uppercase tracking-wider">
+                                            Thông báo sớm
+                                        </span>
+                                    @endif
+                                    <div class="w-6 h-0.5 bg-orange-500 group-hover:w-8 transition-all duration-300"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            
+            <!-- Call to action -->
+            <div class="text-center mt-12">
+                <div class="inline-flex items-center gap-4 bg-orange-50 px-8 py-4 rounded-none">
+                    <span class="text-orange-600 text-2xl">🔔</span>
+                    <div>
+                        <p class="text-black font-bold uppercase tracking-wide">ĐĂNG KÝ NHẬN THÔNG BÁO</p>
+                        <p class="text-gray-600 text-sm">Khi sách được phát hành chính thức</p>
+                    </div>
+                    <button class="bg-orange-500 text-white px-6 py-2 font-bold text-sm uppercase tracking-wider hover:bg-orange-600 transition-colors">
+                        ĐĂNG KÝ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+    @endif
+
     <!-- TIN TỨC - ADIDAS STYLE -->
     <section class="bg-gray-50 py-20">
         <div class="max-w-7xl mx-auto px-4">
