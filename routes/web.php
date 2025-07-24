@@ -412,9 +412,17 @@ Route::middleware('auth')->prefix('wallet')->name('wallet.')->group(function () 
 
 // AI Summary routes
 Route::prefix('ai-summary')->name('ai-summary.')->group(function() {
+    // Book AI Summary routes
     Route::post('/generate/{book}', [App\Http\Controllers\AISummaryController::class, 'generateSummary'])->name('generate');
     Route::get('/get/{book}', [App\Http\Controllers\AISummaryController::class, 'getSummary'])->name('get');
     Route::post('/regenerate/{book}', [App\Http\Controllers\AISummaryController::class, 'regenerateSummary'])->name('regenerate');
     Route::get('/status/{book}', [App\Http\Controllers\AISummaryController::class, 'checkStatus'])->name('status');
     Route::post('/chat/{book}', [App\Http\Controllers\AISummaryController::class, 'chatWithAI'])->name('chat');
+    
+    // Combo AI Summary routes
+    Route::post('/combo/generate/{combo}', [App\Http\Controllers\AISummaryController::class, 'generateComboSummary'])->name('combo.generate');
+    Route::get('/combo/get/{combo}', [App\Http\Controllers\AISummaryController::class, 'getComboSummary'])->name('combo.get');
+    Route::post('/combo/regenerate/{combo}', [App\Http\Controllers\AISummaryController::class, 'regenerateComboSummary'])->name('combo.regenerate');
+    Route::get('/combo/status/{combo}', [App\Http\Controllers\AISummaryController::class, 'checkComboStatus'])->name('combo.status');
+    Route::post('/combo/chat/{combo}', [App\Http\Controllers\AISummaryController::class, 'chatWithComboAI'])->name('combo.chat');
 });

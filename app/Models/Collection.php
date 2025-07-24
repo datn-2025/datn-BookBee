@@ -37,4 +37,19 @@ class Collection extends Model
     {
         return $this->belongsToMany(Book::class, 'book_collections');
     }
+
+    public function summary()
+    {
+        return $this->hasOne(ComboSummary::class);
+    }
+
+    public function hasSummary()
+    {
+        return $this->summary()->exists();
+    }
+
+    public function getSummaryAttribute()
+    {
+        return $this->getRelationValue('summary');
+    }
 }
