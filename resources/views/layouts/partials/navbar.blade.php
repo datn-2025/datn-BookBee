@@ -111,7 +111,7 @@
                             @endauth
                         </button>
                         
-                        <div class="dropdown-menu" style="position: absolute; right: 0; top: 100%; margin-top: 0.5rem; width: 12rem; background-color: white; border: 1px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 0.2s ease; pointer-events: none; z-index: 50;">
+                        <div class="dropdown-menu user-dropdown-menu">
                             @auth
                                 <a href="{{ route('account.profile') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: background-color 0.2s ease;"
                                    onmouseover="this.style.backgroundColor='#f9fafb'"
@@ -296,19 +296,17 @@
         position: absolute;
         right: 0;
         top: 100%;
+        margin-top: 0.5rem;
+        width: 12rem;
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         opacity: 0;
         visibility: hidden;
         transform: translateY(-8px);
         transition: all 0.2s ease;
         pointer-events: none;
-        z-index: 50;
-    }
-
-    .user-dropdown:hover .dropdown-menu {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-        pointer-events: auto;
+        z-index: 9999;
     }
 
     .user-dropdown .dropdown-menu.show {
@@ -316,6 +314,14 @@
         visibility: visible;
         transform: translateY(0);
         pointer-events: auto;
+    }
+
+    /* User dropdown hover effect - đây là phần quan trọng */
+    .user-dropdown:hover .dropdown-menu {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: translateY(0) !important;
+        pointer-events: auto !important;
     }
 
     /* Shop dropdown */
@@ -343,6 +349,24 @@
         pointer-events: auto;
     }
 
+    /* User dropdown hover effect */
+    .user-dropdown:hover .dropdown-menu {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: translateY(0) !important;
+        pointer-events: auto !important;
+    }
+
+    /* Debug - để test hover effect */
+    .user-dropdown:hover {
+        background-color: rgba(255, 0, 0, 0.1) !important;
+    }
+
+    /* Force show dropdown for testing */
+    .user-dropdown .dropdown-menu {
+        display: block !important;
+    }
+
     /* Mobile menu */
     .mobile-menu-item {
         transition: all 0.2s ease;
@@ -350,19 +374,19 @@
     
     /* Hover effects cho desktop */
     @media (min-width: 768px) {
-        .user-dropdown:hover .dropdown-menu {
-            opacity: 1 !important;
-            visibility: visible !important;
-            transform: translateY(0) !important;
-            pointer-events: auto !important;
-        }
-        
         .nav-link:hover {
             color: black !important;
         }
 
         .shop-dropdown:hover button svg {
             transform: rotate(180deg);
+        }
+        
+        .shop-dropdown:hover .dropdown-menu {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: translateY(0) !important;
+            pointer-events: auto !important;
         }
     }
     
