@@ -15,6 +15,7 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
+        'preorder_id',
         'address_id',
         'voucher_id',
         'total_amount',
@@ -69,6 +70,11 @@ class Order extends Model
     public function paymentMethod(): BelongsTo
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+
+    public function preorder(): BelongsTo
+    {
+        return $this->belongsTo(Preorder::class);
     }
 
     public function invoice(): HasOne
