@@ -33,27 +33,34 @@
                     </a>
                     <!-- Dropdown Cửa hàng -->
                     <div class="shop-dropdown">
-                        <button class="nav-link text-gray-900 font-medium text-sm uppercase tracking-wide hover:text-black flex items-center gap-1 {{ request()->routeIs('books.*') || request()->routeIs('combos.*') ? 'text-black font-semibold' : '' }}">
+                        <button class="nav-link" 
+                                style="color: {{ request()->routeIs('books.*') || request()->routeIs('combos.*') ? 'black' : '#374151' }}; font-weight: {{ request()->routeIs('books.*') || request()->routeIs('combos.*') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease; display: flex; align-items: center; gap: 0.25rem; background: none; border: none; cursor: pointer;"
+                                aria-expanded="false"
+                                aria-haspopup="true">
                             Cửa hàng
-                            <svg class="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg style="width: 1rem; height: 1rem; transform: rotate(0deg); transition: transform 0.2s ease;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div class="dropdown-menu mt-2 w-48 bg-white border-2 border-gray-200 shadow-lg">
+                        <div class="dropdown-menu" style="position: absolute; left: 0; top: 100%; margin-top: 0.5rem; width: 12rem; background-color: white; border: 2px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 0.2s ease; pointer-events: none; z-index: 50;">
                             <a href="{{ route('books.index') }}" 
-                               class="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200 {{ request()->routeIs('books.*') ? 'bg-gray-50 text-black font-semibold' : '' }}">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-1 h-4 bg-black"></div>
-                                    <span class="uppercase tracking-wide">Sách</span>
+                               style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: background-color 0.2s ease; {{ request()->routeIs('books.*') ? 'background-color: #f9fafb; color: black; font-weight: 600;' : '' }}"
+                               onmouseover="this.style.backgroundColor='#f9fafb'; this.style.color='black'"
+                               onmouseout="this.style.backgroundColor='{{ request()->routeIs('books.*') ? '#f9fafb' : 'white' }}'; this.style.color='{{ request()->routeIs('books.*') ? 'black' : '#374151' }}'">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div style="width: 0.25rem; height: 1rem; background-color: black;"></div>
+                                    <span style="text-transform: uppercase; letter-spacing: 0.05em;">Sách</span>
                                 </div>
                             </a>
                             <a href="{{ route('combos.index') }}" 
-                               class="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200 {{ request()->routeIs('combos.*') ? 'bg-gray-50 text-black font-semibold' : '' }}">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-1 h-4 bg-black"></div>
-                                    <span class="uppercase tracking-wide">Combo sách</span>
+                               style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: background-color 0.2s ease; {{ request()->routeIs('combos.*') ? 'background-color: #f9fafb; color: black; font-weight: 600;' : '' }}"
+                               onmouseover="this.style.backgroundColor='#f9fafb'; this.style.color='black'"
+                               onmouseout="this.style.backgroundColor='{{ request()->routeIs('combos.*') ? '#f9fafb' : 'white' }}'; this.style.color='{{ request()->routeIs('combos.*') ? 'black' : '#374151' }}'">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div style="width: 0.25rem; height: 1rem; background-color: black;"></div>
+                                    <span style="text-transform: uppercase; letter-spacing: 0.05em;">Combo sách</span>
                                 </div>
                             </a>
                         </div>
@@ -212,8 +219,10 @@
                     Cửa hàng
                 </a>
                 <a href="{{ route('combos.index') }}" 
-                   class="mobile-menu-item block px-3 py-2 text-base font-medium text-gray-900 {{ request()->routeIs('combos.*') ? 'bg-gray-50 text-black' : 'hover:bg-gray-50' }}">
-                    Combo
+                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: #111827; text-decoration: none; {{ request()->routeIs('combos.*') ? 'background-color: #f9fafb; color: black;' : '' }} transition: background-color 0.2s ease;"
+                   onmouseover="if(!this.style.backgroundColor) this.style.backgroundColor='#f9fafb'"
+                   onmouseout="if(!'{{ request()->routeIs('combos.*') }}') this.style.backgroundColor=''">
+                    Combo sách
                 </a>
                 <a href="{{ route('news.index') }}" 
                    style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: #111827; text-decoration: none; {{ request()->routeIs('news.*') ? 'background-color: #f9fafb; color: black;' : '' }} transition: background-color 0.2s ease;"
@@ -257,6 +266,10 @@
         .md-hidden { display: none !important; }
         .nav-desktop { display: flex !important; }
         .mobile-menu-btn { display: none !important; }
+    }
+
+    .nav-link {
+        position: relative;
     }
 
     .nav-link::after {
@@ -333,6 +346,7 @@
     /* Mobile menu */
     .mobile-menu-item {
         transition: all 0.2s ease;
+    }
     
     /* Hover effects cho desktop */
     @media (min-width: 768px) {
@@ -345,6 +359,10 @@
         
         .nav-link:hover {
             color: black !important;
+        }
+
+        .shop-dropdown:hover button svg {
+            transform: rotate(180deg);
         }
     }
     
@@ -393,20 +411,50 @@
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    dropdownMenu.classList.toggle('show');
+                    const isVisible = dropdownMenu.style.opacity === '1' || dropdownMenu.classList.contains('show');
+                    
+                    if (isVisible) {
+                        dropdownMenu.style.opacity = '0';
+                        dropdownMenu.style.visibility = 'hidden';
+                        dropdownMenu.style.transform = 'translateY(-8px)';
+                        dropdownMenu.style.pointerEvents = 'none';
+                        dropdownMenu.classList.remove('show');
+                        shopBtn.querySelector('svg').style.transform = 'rotate(0deg)';
+                        shopBtn.setAttribute('aria-expanded', 'false');
+                    } else {
+                        dropdownMenu.style.opacity = '1';
+                        dropdownMenu.style.visibility = 'visible';
+                        dropdownMenu.style.transform = 'translateY(0)';
+                        dropdownMenu.style.pointerEvents = 'auto';
+                        dropdownMenu.classList.add('show');
+                        shopBtn.querySelector('svg').style.transform = 'rotate(180deg)';
+                        shopBtn.setAttribute('aria-expanded', 'true');
+                    }
                 });
 
                 // Close dropdown when clicking outside
                 document.addEventListener('click', function(e) {
                     if (!shopDropdown.contains(e.target)) {
+                        dropdownMenu.style.opacity = '0';
+                        dropdownMenu.style.visibility = 'hidden';
+                        dropdownMenu.style.transform = 'translateY(-8px)';
+                        dropdownMenu.style.pointerEvents = 'none';
                         dropdownMenu.classList.remove('show');
+                        shopBtn.querySelector('svg').style.transform = 'rotate(0deg)';
+                        shopBtn.setAttribute('aria-expanded', 'false');
                     }
                 });
 
                 // Close dropdown on escape key
                 document.addEventListener('keydown', function(e) {
                     if (e.key === 'Escape') {
+                        dropdownMenu.style.opacity = '0';
+                        dropdownMenu.style.visibility = 'hidden';
+                        dropdownMenu.style.transform = 'translateY(-8px)';
+                        dropdownMenu.style.pointerEvents = 'none';
                         dropdownMenu.classList.remove('show');
+                        shopBtn.querySelector('svg').style.transform = 'rotate(0deg)';
+                        shopBtn.setAttribute('aria-expanded', 'false');
                         shopBtn.focus();
                     }
                 });
