@@ -698,6 +698,27 @@
                 </div>
             </div>
 
+            {{-- AI Summary Section for Combo --}}
+            @if(isset($combo))
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20 space-y-8">
+                    <!-- Section Header with Adidas Style -->
+                    <div class="relative">
+                        <div class="flex items-center space-x-4 mb-8">
+                            <div class="w-1 h-12 bg-gradient-to-b from-blue-600 to-purple-600"></div>
+                            <div>
+                                <h2 class="adidas-font text-3xl font-bold text-black uppercase tracking-wider">
+                                    TÓM TẮT AI - COMBO
+                                </h2>
+                                <p class="text-gray-600 mt-2">Được tạo bởi trí tuệ nhân tạo</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- AI Summary Component for Combo --}}
+                    @include('components.ai-summary', ['combo' => $combo])
+                </div>
+            @endif
+
             {{-- Sản phẩm liên quan (đồng bộ style sách đơn, fix ảnh) --}}
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20">
                 <div class="flex items-center space-x-4 mb-8">
@@ -1169,6 +1190,7 @@
                     @endif
 
                     {{-- AI Summary Section --}}
+                    @if(!isset($combo))
                     <div class="mt-20 space-y-8">
                         <!-- Section Header with Adidas Style -->
                         <div class="relative">
@@ -1186,6 +1208,7 @@
                         {{-- AI Summary Component --}}
                         @include('components.ai-summary', ['book' => $book])
                     </div>
+                    @endif
 
                     {{-- Enhanced Reviews Section - Adidas Style --}}
                     <div class="mt-20 space-y-8">
