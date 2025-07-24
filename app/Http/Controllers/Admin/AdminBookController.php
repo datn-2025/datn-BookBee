@@ -149,12 +149,14 @@ class AdminBookController extends Controller
             'formats.ebook.file' => 'required_if:has_ebook,1|mimes:pdf,epub|max:50000',
             'formats.ebook.sample_file' => 'nullable|mimes:pdf,epub|max:10000',
             'formats.ebook.allow_sample_read' => 'boolean',
-            'status' => 'required|string|max:50',
             'category_id' => 'required|uuid|exists:categories,id',
             'author_ids' => 'required|array|min:1', // Bắt buộc nhập tác giả
             'author_ids.*' => 'required|uuid|exists:authors,id',
             'brand_id' => 'required|uuid|exists:brands,id',
             'publication_date' => 'required|date', // Bắt buộc nhập ngày xuất bản
+            'release_date' => 'nullable|date|after_or_equal:publication_date', // Ngày ra mắt phải sau hoặc bằng ngày xuất bản
+            'status_mode' => 'required|in:auto,manual',
+            'status' => 'required_if:status_mode,manual|in:Còn hàng,Sắp ra mắt,Hết hàng tồn kho,Ngừng kinh doanh',
             'cover_image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ], [
@@ -170,7 +172,6 @@ class AdminBookController extends Controller
             'author_ids.*.uuid' => 'Tác giả không hợp lệ',
             'brand_id.required' => 'Vui lòng chọn thương hiệu',
             'brand_id.uuid' => 'Thương hiệu không hợp lệ',
-            'status.required' => 'Vui lòng chọn trạng thái',
             'cover_image.required' => 'Vui lòng chọn ảnh bìa cho sách',
             'cover_image.image' => 'File ảnh bìa không hợp lệ',
             'cover_image.max' => 'Kích thước ảnh bìa không được vượt quá 2MB',
@@ -186,6 +187,11 @@ class AdminBookController extends Controller
             'attribute_values.*.id.distinct' => 'Không được chọn trùng thuộc tính cho sách',
             'publication_date.required' => 'Vui lòng nhập ngày xuất bản',
             'publication_date.date' => 'Ngày xuất bản không hợp lệ',
+            'release_date.date' => 'Ngày ra mắt không hợp lệ',
+            'release_date.after_or_equal' => 'Ngày ra mắt phải sau hoặc bằng ngày xuất bản',
+            'status_mode.required' => 'Vui lòng chọn cách xác định trạng thái',
+            'status.required_if' => 'Vui lòng chọn trạng thái khi sử dụng chế độ thủ công',
+            'status.in' => 'Trạng thái không hợp lệ',
         ]);
         // dd($request->all());
         if($validator->fails()) {
@@ -204,11 +210,27 @@ class AdminBookController extends Controller
             'description',
             'brand_id',
             'category_id',
-            'status',
             'isbn',
             'publication_date',
+            'release_date',
             'page_count'
         ]);
+
+        // Xử lý trạng thái dựa trên mode được chọn
+        if ($request->input('status_mode') === 'manual') {
+            // Chế độ thủ công: sử dụng trạng thái người dùng chọn
+            $data['status'] = $request->input('status');
+        } else {
+            // Chế độ tự động: xác định trạng thái dựa trên ngày ra mắt hoặc ngày xuất bản
+            $targetDate = $request->release_date ? \Carbon\Carbon::parse($request->release_date) : \Carbon\Carbon::parse($request->publication_date);
+            $today = now();
+            
+            if ($targetDate->gt($today->startOfDay())) {
+                $data['status'] = 'Sắp ra mắt';
+            } else {
+                $data['status'] = 'Còn hàng';
+            }
+        }
 
         // dd($request->hasFile('cover_image'));
 
@@ -310,6 +332,8 @@ class AdminBookController extends Controller
                     'id' => Str::uuid(), // Tạo UUID mới
                     'book_id' => $book->id,
                     'author_id' => $authorId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
         }
@@ -414,12 +438,14 @@ class AdminBookController extends Controller
             'formats.ebook.file' => 'nullable|mimes:pdf,epub|max:50000', // khác store: required_if -> nullable
             'formats.ebook.sample_file' => 'nullable|mimes:pdf,epub|max:10000',
             'formats.ebook.allow_sample_read' => 'boolean',
-            'status' => 'required|string|max:50',
             'category_id' => 'required|uuid|exists:categories,id',
             'author_ids' => 'required|array|min:1', // Bắt buộc nhập tác giả
             'author_ids.*' => 'required|uuid|exists:authors,id',
             'brand_id' => 'required|uuid|exists:brands,id',
             'publication_date' => 'required|date', // Bắt buộc nhập ngày xuất bản
+            'release_date' => 'nullable|date|after_or_equal:publication_date', // Ngày ra mắt phải sau hoặc bằng ngày xuất bản
+            'status_mode' => 'required|in:auto,manual',
+            'status' => 'required_if:status_mode,manual|in:Còn hàng,Sắp ra mắt,Hết hàng tồn kho,Ngừng kinh doanh',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // khác store: required -> nullable
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ], [
@@ -435,7 +461,6 @@ class AdminBookController extends Controller
             'author_ids.*.uuid' => 'Tác giả không hợp lệ',
             'brand_id.required' => 'Vui lòng chọn thương hiệu',
             'brand_id.uuid' => 'Thương hiệu không hợp lệ',
-            'status.required' => 'Vui lòng chọn trạng thái',
             'cover_image.image' => 'File ảnh bìa không hợp lệ',
             'cover_image.max' => 'Kích thước ảnh bìa không được vượt quá 2MB',
             'formats.physical.price.required_if' => 'Vui lòng nhập giá bán cho sách vật lý',
@@ -449,6 +474,11 @@ class AdminBookController extends Controller
             'attribute_values.*.id.distinct' => 'Không được chọn trùng thuộc tính cho sách',
             'publication_date.required' => 'Vui lòng nhập ngày xuất bản',
             'publication_date.date' => 'Ngày xuất bản không hợp lệ',
+            'release_date.date' => 'Ngày ra mắt không hợp lệ',
+            'release_date.after_or_equal' => 'Ngày ra mắt phải sau hoặc bằng ngày xuất bản',
+            'status_mode.required' => 'Vui lòng chọn cách xác định trạng thái',
+            'status.required_if' => 'Vui lòng chọn trạng thái khi sử dụng chế độ thủ công',
+            'status.in' => 'Trạng thái không hợp lệ',
         ]);
         if ($validator->fails()) {
             return back()->withInput()->withErrors($validator->errors());
@@ -465,11 +495,27 @@ class AdminBookController extends Controller
             'description',
             'brand_id',
             'category_id',
-            'status',
             'isbn',
             'publication_date',
+            'release_date',
             'page_count'
         ]);
+
+        // Xử lý trạng thái dựa trên mode được chọn
+        if ($request->input('status_mode') === 'manual') {
+            // Chế độ thủ công: sử dụng trạng thái người dùng chọn
+            $data['status'] = $request->input('status');
+        } else {
+            // Chế độ tự động: xác định trạng thái dựa trên ngày ra mắt hoặc ngày xuất bản
+            $targetDate = $request->release_date ? \Carbon\Carbon::parse($request->release_date) : \Carbon\Carbon::parse($request->publication_date);
+            $today = now();
+            
+            if ($targetDate->gt($today->startOfDay())) {
+                $data['status'] = 'Sắp ra mắt';
+            } else {
+                $data['status'] = 'Còn hàng';
+            }
+        }
 
         // Kiểm tra slug trùng lặp trước khi validate
         $title = $request->input('title');
@@ -626,7 +672,16 @@ class AdminBookController extends Controller
         }
 
         // Cập nhật danh sách tác giả
-        $book->authors()->sync($request->input('author_ids', []));
+        $authorIds = $request->input('author_ids', []);
+        $syncData = [];
+        foreach ($authorIds as $authorId) {
+            $syncData[$authorId] = [
+                'id' => \Illuminate\Support\Str::uuid(),
+                'created_at' => now(),
+                'updated_at' => now()
+            ];
+        }
+        $book->authors()->sync($syncData);
 
         Toastr::success('Cập nhật sách thành công!');
         return redirect()->route('admin.books.index');
