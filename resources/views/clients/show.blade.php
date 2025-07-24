@@ -6,6 +6,32 @@
 @push('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link href="https://fonts.googleapis.com/css2?family=AdihausDIN:wght@400;700&family=TitilliumWeb:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom scrollbar for preorder modal */
+        #preorderModal .overflow-y-auto::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #preorderModal .overflow-y-auto::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+        
+        #preorderModal .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: #000;
+            border-radius: 4px;
+        }
+        
+        #preorderModal .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: #333;
+        }
+        
+        /* Firefox scrollbar */
+        #preorderModal .overflow-y-auto {
+            scrollbar-width: thin;
+            scrollbar-color: #000 #f0f0f0;
+        }
+    </style>
     <script>
         // Debug: Check if Toastr is loaded
         document.addEventListener('DOMContentLoaded', function() {
@@ -1212,13 +1238,18 @@
                 <!-- Enhanced Attributes -->
                  {{-- Thuộc tính --}}
                 @if($book->attributeValues->count())
-                    <div class="attribute-group space-y-4">
+                    <div class="attribute-group space-y-4" id="attributeGroup">
                         <h3 class="text-sm font-bold text-black uppercase tracking-wider adidas-font">Tùy chọn sản phẩm</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             @foreach($book->attributeValues->unique('attribute_id') as $attrVal)
-                                <div class="space-y-2">
+                                @php
+                                    $attributeName = $attrVal->attribute->name ?? 'Không rõ';
+                                    $isLanguageAttribute = strpos(strtolower($attributeName), 'ngôn ngữ') !== false || 
+                                                          strpos(strtolower($attributeName), 'language') !== false;
+                                @endphp
+                                <div class="space-y-2 attribute-item" data-is-language="{{ $isLanguageAttribute ? 'true' : 'false' }}">
                                     <label for="attribute_{{ $attrVal->id }}" class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">
-                                        {{ $attrVal->attribute->name ?? 'Không rõ' }}
+                                        {{ $attributeName }}
                                     </label>
                                     @php
                                         $filteredValues = \App\Models\BookAttributeValue::with('attributeValue')
@@ -1271,10 +1302,46 @@
                     </div>
                     <!-- Enhanced Add to Cart Button -->
                     <div class="space-y-4">
-                        <button id="addToCartBtn" class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
-                            <i class="fas fa-shopping-bag mr-3"></i>
-                            <span>THÊM VÀO GIỎ HÀNG</span>
-                        </button>
+                        @php
+                            // Kiểm tra trạng thái sách để hiển thị nút phù hợp
+                            $isUpcoming = false;
+                            $buttonText = 'THÊM VÀO GIỎ HÀNG';
+                            $buttonIcon = 'fas fa-shopping-bag';
+                            $buttonColor = 'bg-black';
+                            
+                            if ($book->status === 'Sắp ra mắt') {
+                                $isUpcoming = true;
+                                $buttonText = 'ĐẶT TRƯỚC SÁCH';
+                                $buttonIcon = 'fas fa-clock';
+                                $buttonColor = 'bg-orange-600';
+                            } elseif ($book->status === 'Còn hàng') {
+                                $isUpcoming = false;
+                                $buttonText = 'THÊM VÀO GIỎ HÀNG';
+                                $buttonIcon = 'fas fa-shopping-bag';
+                                $buttonColor = 'bg-black';
+                            } elseif ($book->status === 'Hết hàng') {
+                                $isUpcoming = false;
+                                $buttonText = 'HẾT HÀNG';
+                                $buttonIcon = 'fas fa-exclamation-triangle';
+                                $buttonColor = 'bg-gray-500';
+                            }
+                        @endphp
+                        
+                        @if($book->status === 'Hết hàng')
+                            <!-- Nút hết hàng - không thể click -->
+                            <button class="w-full h-16 {{ $buttonColor }} text-white font-bold text-lg uppercase tracking-wider flex items-center justify-center adidas-font opacity-50 cursor-not-allowed" disabled>
+                                <i class="{{ $buttonIcon }} mr-3"></i>
+                                <span>{{ $buttonText }}</span>
+                            </button>
+                        @else
+                            <!-- Nút thêm vào giỏ hàng hoặc đặt trước -->
+                            <button id="addToCartBtn" 
+                                    class="adidas-btn-enhanced w-full h-16 {{ $buttonColor }} hover:bg-opacity-90 text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font"
+                                    data-is-upcoming="{{ $isUpcoming ? 'true' : 'false' }}">
+                                <i class="{{ $buttonIcon }} mr-3"></i>
+                                <span id="addToCartBtnText">{{ $buttonText }}</span>
+                            </button>
+                        @endif
                         
                         <!-- Wishlist Button -->
                         <button class="wishlist-btn w-full h-14 border-2 border-black text-black font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
@@ -1722,6 +1789,293 @@
     </div>
 </div>
 
+<!-- Modal Đặt Trước Sách -->
+<div id="preorderModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+    <div class="bg-white shadow-2xl max-w-6xl w-[95vw] max-h-[95vh] overflow-hidden border-4 border-black drop-shadow-2xl rounded-lg">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-black text-white">
+            <h3 class="text-xl font-bold text-white uppercase tracking-wider adidas-font flex items-center">
+                <i class="fas fa-clock mr-3"></i>
+                ĐẶT TRƯỚC SÁCH
+            </h3>
+            <button id="closePreorderModal" class="text-white hover:text-gray-300 text-3xl font-bold focus:outline-none adidas-font transition-colors duration-300">&times;</button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="flex flex-col lg:flex-row max-h-[calc(95vh-80px)]">
+            <!-- Form Section - Left Side -->
+            <div class="lg:w-1/2 p-8 border-r border-gray-200 overflow-y-auto max-h-[calc(95vh-160px)]">
+                <form id="preorderForm" class="space-y-6">
+                    @csrf
+                    <input type="hidden" id="preorderBookId" name="book_id" value="">
+                    <input type="hidden" id="preorderBookFormatId" name="book_format_id" value="">
+                    
+                    <div class="mb-8">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-1 h-8 bg-black"></div>
+                            <h3 class="text-xl font-black uppercase tracking-wide text-black">
+                                THÔNG TIN NGƯỜI NHẬN
+                            </h3>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="group">
+                            <label for="preorderRecipientName" class="block text-sm font-bold uppercase tracking-wider text-black mb-3 adidas-font">
+                                TÊN NGƯỜI NHẬN *
+                            </label>
+                            <input type="text" name="customer_name" id="preorderRecipientName" required
+                                class="w-full border-2 border-black px-4 py-4 focus:outline-none focus:border-gray-600 adidas-font transition-all duration-300"
+                                placeholder="Nhập họ và tên đầy đủ" @auth value="{{ auth()->user()->name }}" @endauth>
+                        </div>
+                        
+                        <div class="group">
+                            <label for="preorderPhone" class="block text-sm font-bold uppercase tracking-wider text-black mb-3 adidas-font">
+                                SỐ ĐIỆN THOẠI *
+                            </label>
+                            <input type="text" name="phone" id="preorderPhone" required
+                                class="w-full border-2 border-black px-4 py-4 focus:outline-none focus:border-gray-600 adidas-font transition-all duration-300"
+                                placeholder="Nhập số điện thoại" @auth value="{{ auth()->user()->phone ?? '' }}" @endauth>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-8 group">
+                        <label for="preorderEmail" class="block text-sm font-bold uppercase tracking-wider text-black mb-3 adidas-font">
+                            EMAIL *
+                        </label>
+                        <input type="email" name="email" id="preorderEmail" required
+                            class="w-full border-2 border-black px-4 py-4 focus:outline-none focus:border-gray-600 adidas-font transition-all duration-300"
+                            placeholder="Nhập email để nhận thông báo" @auth value="{{ auth()->user()->email }}" @endauth>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-1 h-8 bg-black"></div>
+                            <h3 class="text-xl font-black uppercase tracking-wide text-black">
+                                ĐỊA CHỈ GIAO HÀNG
+                            </h3>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="mb-4">
+                            <label for="preorderTinh" class="block text-sm font-bold uppercase tracking-wider text-black mb-3 adidas-font">
+                                TỈNH/THÀNH PHỐ *
+                            </label>
+                            <select id="preorderTinh" name="province_code" required
+                                class="w-full border-2 border-black px-4 py-4 focus:outline-none focus:border-gray-600 adidas-font bg-white">
+                                <option value="">Chọn Tỉnh/Thành phố</option>
+                            </select>
+                            <input type="hidden" name="province_name" id="preorderTenTinh">
+                        </div>
+                        <div class="mb-4">
+                            <label for="preorderQuan" class="block text-sm font-bold uppercase tracking-wider text-black mb-3 adidas-font">
+                                QUẬN/HUYỆN *
+                            </label>
+                            <select id="preorderQuan" name="district_code" required
+                                class="w-full border-2 border-black px-4 py-4 focus:outline-none focus:border-gray-600 adidas-font bg-white">
+                                <option value="">Chọn Quận/Huyện</option>
+                            </select>
+                            <input type="hidden" name="district_name" id="preorderTenQuan">
+                        </div>
+                        <div class="mb-4">
+                            <label for="preorderPhuong" class="block text-sm font-bold uppercase tracking-wider text-black mb-3 adidas-font">
+                                PHƯỜNG/XÃ *
+                            </label>
+                            <select id="preorderPhuong" name="ward_code" required
+                                class="w-full border-2 border-black px-4 py-4 focus:outline-none focus:border-gray-600 adidas-font bg-white">
+                                <option value="">Chọn Phường/Xã</option>
+                            </select>
+                            <input type="hidden" name="ward_name" id="preorderTenPhuong">
+                        </div>
+                    </div>
+                    <div class="mb-8">
+                        <label for="preorderAddressDetail" class="block text-sm font-bold uppercase tracking-wider text-black mb-3 adidas-font">
+                            ĐỊA CHỈ CỤ THỂ *
+                        </label>
+                        <input type="text" name="address" id="preorderAddressDetail" required
+                            class="w-full border-2 border-black px-4 py-4 focus:outline-none focus:border-gray-600 adidas-font"
+                            placeholder="Số nhà, tên đường...">
+                    </div>
+                    
+                    <!-- Định dạng sách -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-1 h-8 bg-black"></div>
+                            <h3 class="text-xl font-black uppercase tracking-wide text-black">
+                                ĐỊNH DẠNG SÁCH
+                            </h3>
+                        </div>
+                        <select id="preorderFormatSelect" class="w-full px-4 py-4 border-2 border-black focus:outline-none focus:border-gray-600 adidas-font">
+                            <!-- Sẽ được điền bằng JavaScript -->
+                        </select>
+                    </div>
+                    
+                    <!-- Attributes section sẽ được điền dynamic -->
+                    <div id="preorderAttributesSection" class="mb-8">
+                        <!-- Sẽ được điền bằng JavaScript từ các thuộc tính của sách -->
+                    </div>
+                    
+                    <!-- Số lượng -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-1 h-8 bg-black"></div>
+                            <h3 class="text-xl font-black uppercase tracking-wide text-black">
+                                SỐ LƯỢNG
+                            </h3>
+                        </div>
+                        <div class="flex items-center border-2 border-black max-w-[180px]">
+                            <button type="button" onclick="updatePreorderQty(-1)"
+                                    class="px-6 py-4 bg-white hover:bg-gray-100 font-bold adidas-font transition-colors duration-300">
+                                -
+                            </button>
+                            <input type="number" id="preorderQuantity" name="quantity" value="1" min="1" max="5"
+                                   class="w-20 px-4 py-4 text-center border-0 border-l border-r border-black focus:outline-none adidas-font text-lg">
+                            <button type="button" onclick="updatePreorderQty(1)"
+                                    class="px-6 py-4 bg-white hover:bg-gray-100 font-bold adidas-font transition-colors duration-300">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Phương thức thanh toán -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-1 h-8 bg-black"></div>
+                            <h3 class="text-xl font-black uppercase tracking-wide text-black">
+                                PHƯƠNG THỨC THANH TOÁN
+                            </h3>
+                        </div>
+                        <div class="space-y-3">
+                            @foreach($paymentMethods as $method)
+                            <label class="group cursor-pointer">
+                                <div class="relative border-2 border-gray-300 rounded-lg p-4 transition-all duration-300 group-hover:border-black group-hover:shadow-lg">
+                                    <input type="radio" name="payment_method_id" value="{{ $method->id }}"
+                                           class="absolute right-4 top-4 h-5 w-5 accent-black" required>
+                                    <div class="flex items-center gap-3">
+                                        @if(str_contains(strtolower($method->name), 'momo'))
+                                            <svg class="w-8 h-8 text-pink-500" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10z"/>
+                                            </svg>
+                                        @elseif(str_contains(strtolower($method->name), 'vnpay'))
+                                            <svg class="w-8 h-8 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+                                            </svg>
+                                        @elseif(str_contains(strtolower($method->name), 'banking') || str_contains(strtolower($method->name), 'chuyển khoản'))
+                                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                                            </svg>
+                                        @else
+                                            <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+                                            </svg>
+                                        @endif
+                                        <span class="font-bold text-lg adidas-font">{{ $method->name }}</span>
+                                    </div>
+                                    @if($method->description)
+                                        <p class="text-sm text-gray-600 mt-2 ml-11 adidas-font">{{ $method->description }}</p>
+                                    @endif
+                                </div>
+                            </label>
+                            @endforeach
+                        </div>
+                        <div class="mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                </svg>
+                                <div class="text-sm">
+                                    <p class="font-semibold text-blue-800 adidas-font">Lưu ý về thanh toán đặt trước:</p>
+                                    <p class="text-blue-700 adidas-font mt-1">Bạn sẽ thanh toán toàn bộ số tiền ngay khi đặt trước. Sách sẽ được giao đến địa chỉ của bạn khi chính thức phát hành.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Ghi chú -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-1 h-8 bg-black"></div>
+                            <h3 class="text-xl font-black uppercase tracking-wide text-black">
+                                GHI CHÚ
+                            </h3>
+                        </div>
+                        <textarea name="notes" id="preorderNotes" rows="3"
+                                  class="w-full border-2 border-black px-4 py-4 focus:outline-none focus:border-gray-600 adidas-font"
+                                  placeholder="Ghi chú thêm (tùy chọn)..."></textarea>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Book Info Section - Right Side -->
+            <div class="lg:w-1/2 p-8 bg-gray-50 overflow-y-auto max-h-[calc(95vh-160px)]" style="scrollbar-width: thin; scrollbar-color: #000 #f0f0f0;">
+                <div class="space-y-6">
+                    <!-- Book Image -->
+                    <div class="text-center">
+                        <img id="preorderBookImage" src="" alt="Book Cover" 
+                             class="w-48 h-64 mx-auto object-cover border-2 border-black shadow-lg rounded-lg">
+                    </div>
+                    
+                    <!-- Book Details -->
+                    <div class="space-y-4">
+                        <div class="text-center border-b-2 border-black pb-4">
+                            <h4 id="preorderBookTitle" class="text-xl font-bold text-black uppercase tracking-wider adidas-font mb-2"></h4>
+                            <p id="preorderBookAuthor" class="text-base text-gray-600 adidas-font"></p>
+                        </div>
+                        
+                        <div class="space-y-3 text-base">
+                            <div class="flex justify-between items-center py-3 border-b border-gray-300">
+                                <span class="text-gray-700 font-semibold adidas-font">Giá sách:</span>
+                                <span id="preorderBookPrice" class="font-bold text-black adidas-font text-lg">0₫</span>
+                            </div>
+                            <div class="flex justify-between items-center py-3 border-b border-gray-300">
+                                <span class="text-gray-700 font-semibold adidas-font">Phí vận chuyển:</span>
+                                <span class="font-bold text-black adidas-font text-lg">30.000₫</span>
+                            </div>
+                            <div class="flex justify-between items-center py-4 border-t-2 border-black bg-white rounded-lg px-4">
+                                <span class="text-gray-900 font-bold adidas-font text-lg uppercase">Tổng tiền:</span>
+                                <span id="preorderTotalPrice" class="text-xl font-bold text-red-600 adidas-font">30.000₫</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Publication Date -->
+                        <div class="bg-orange-100 p-4 border-2 border-orange-300 rounded-lg">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <i class="fas fa-calendar-alt text-orange-600 text-lg"></i>
+                                <span class="text-sm text-orange-800 font-bold adidas-font uppercase tracking-wider">Dự kiến phát hành:</span>
+                            </div>
+                            <p id="preorderPublicationDate" class="text-base text-orange-700 font-semibold adidas-font"></p>
+                        </div>
+                        
+                        <!-- Special Notice -->
+                        <div class="bg-yellow-50 border-2 border-yellow-300 p-4 rounded-lg">
+                            <p class="text-sm text-yellow-800 adidas-font leading-relaxed">
+                                <i class="fas fa-info-circle mr-2 text-yellow-600"></i>
+                                <strong>Đặt trước để đảm bảo nhận sách ngay khi phát hành. Thanh toán trước để xác nhận đơn hàng.</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer Buttons -->
+        <div class="flex items-center justify-between px-6 py-4 border-t-2 border-black bg-gray-50">
+            <button type="button" id="cancelPreorderBtn" 
+                    class="px-6 py-3 border-2 border-black text-black font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all duration-300 adidas-font">
+                HỦY
+            </button>
+            <button type="submit" form="preorderForm" id="confirmPreorderBtn"
+                    class="px-8 py-3 bg-black text-white font-bold uppercase tracking-wider hover:bg-gray-800 transition-all duration-300 adidas-font">
+                <i class="fas fa-check mr-2"></i>
+                XÁC NHẬN ĐẶT TRƯỚC
+            </button>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
     // Ensure DOM is fully loaded
@@ -1929,6 +2283,39 @@
         const formatSelect = document.getElementById('bookFormatSelect');
         if (formatSelect) {
             formatSelect.addEventListener('change', updatePriceAndStock);
+            
+            // Khởi tạo trạng thái ban đầu
+            const initialOption = formatSelect.options[formatSelect.selectedIndex];
+            const initialFormatName = initialOption.text.toLowerCase();
+            const attributeGroup = document.getElementById('attributeGroup');
+            const quantitySection = document.querySelector('.quantity-section');
+            
+            if (initialFormatName.includes('ebook')) {
+                if (quantitySection) {
+                    quantitySection.style.display = 'none';
+                }
+                
+                // Ẩn tất cả thuộc tính trừ ngôn ngữ cho ebook
+                if (attributeGroup) {
+                    const attributeItems = attributeGroup.querySelectorAll('.attribute-item');
+                    attributeItems.forEach(item => {
+                        const isLanguage = item.getAttribute('data-is-language') === 'true';
+                        if (isLanguage) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                    
+                    // Kiểm tra xem có thuộc tính nào hiển thị không
+                    const visibleAttributes = attributeGroup.querySelectorAll('.attribute-item[style*="block"]');
+                    if (visibleAttributes.length === 0) {
+                        attributeGroup.style.display = 'none';
+                    } else {
+                        attributeGroup.style.display = 'block';
+                    }
+                }
+            }
         }
 
         const attributeSelects = document.querySelectorAll('[name^="attributes["]');
@@ -1964,7 +2351,21 @@
         const addToCartBtn = document.getElementById('addToCartBtn');
         if (addToCartBtn) {
             addToCartBtn.addEventListener('click', function() {
-                addToCart();
+                // Kiểm tra trạng thái sách từ data attribute
+                const isUpcoming = addToCartBtn.getAttribute('data-is-upcoming') === 'true';
+                const buttonText = addToCartBtn.querySelector('span').textContent.trim();
+                
+                console.log('Button clicked:', buttonText, 'Is upcoming:', isUpcoming);
+                
+                if (isUpcoming) {
+                    // Sách sắp ra mắt - mở modal đặt trước
+                    console.log('Opening preorder modal for upcoming book');
+                    openPreorderModal();
+                } else {
+                    // Sách còn hàng - thêm vào giỏ hàng bình thường
+                    console.log('Adding to cart for available book');
+                    addToCart();
+                }
             });
         }
 
@@ -2438,16 +2839,55 @@
         tryShowToastr();
     }
 
-    // Xử lý hiển thị nút đọc thử cho ebook
+    // Xử lý hiển thị nút đọc thử cho ebook và ẩn/hiện thuộc tính
     document.getElementById('bookFormatSelect').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         const formatName = selectedOption.text.toLowerCase();
         const previewSection = document.getElementById('previewSection');
+        const attributeGroup = document.getElementById('attributeGroup');
+        const quantitySection = document.querySelector('.quantity-section');
         
+        // Xử lý preview section cho ebook
         if (formatName.includes('ebook')) {
             previewSection.classList.remove('hidden');
+            if (quantitySection) {
+                quantitySection.style.display = 'none';
+            }
+            
+            // Ẩn tất cả thuộc tính trừ ngôn ngữ cho ebook
+            if (attributeGroup) {
+                const attributeItems = attributeGroup.querySelectorAll('.attribute-item');
+                attributeItems.forEach(item => {
+                    const isLanguage = item.getAttribute('data-is-language') === 'true';
+                    if (isLanguage) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                // Kiểm tra xem có thuộc tính nào hiển thị không
+                const visibleAttributes = attributeGroup.querySelectorAll('.attribute-item[style*="block"]');
+                if (visibleAttributes.length === 0) {
+                    attributeGroup.style.display = 'none';
+                } else {
+                    attributeGroup.style.display = 'block';
+                }
+            }
         } else {
             previewSection.classList.add('hidden');
+            if (quantitySection) {
+                quantitySection.style.display = 'block';
+            }
+            
+            // Hiện tất cả thuộc tính cho sách vật lý
+            if (attributeGroup) {
+                attributeGroup.style.display = 'block';
+                const attributeItems = attributeGroup.querySelectorAll('.attribute-item');
+                attributeItems.forEach(item => {
+                    item.style.display = 'block';
+                });
+            }
         }
     });
 
@@ -2503,6 +2943,515 @@
         const newValue = Math.max(1, currentValue + change);
         input.value = newValue;
     }
+
+    // Preorder Modal Functions
+    let preorderModalInitialized = false;
+    
+    function openPreorderModal() {
+        @auth
+        @else
+            if (typeof toastr !== 'undefined') {
+                toastr.warning('Bạn cần đăng nhập để đặt trước sách', 'Chưa đăng nhập!', {
+                    timeOut: 3000,
+                    positionClass: 'toast-top-right',
+                    closeButton: true,
+                    progressBar: true
+                });
+            } else {
+                alert('Bạn cần đăng nhập để đặt trước sách');
+            }
+            setTimeout(() => {
+                window.location.href = '{{ route("login") }}';
+            }, 1500);
+            return;
+        @endauth
+
+        const modal = document.getElementById('preorderModal');
+        
+        // Only populate book information once
+        if (!preorderModalInitialized) {
+            populatePreorderBookInfo();
+            preorderModalInitialized = true;
+        }
+        
+        // Show modal without locking background scroll
+        modal.classList.remove('hidden');
+    }
+
+    function closePreorderModal() {
+        const modal = document.getElementById('preorderModal');
+        modal.classList.add('hidden');
+        
+        // Reset form
+        document.getElementById('preorderForm').reset();
+        @auth
+        document.getElementById('preorderEmail').value = '{{ auth()->user()->email }}';
+        @endauth
+    }
+
+    function populatePreorderBookInfo() {
+        const bookId = '{{ $book->id }}';
+        const bookTitle = '{{ $book->title }}';
+        const bookAuthor = '{{ $book->authors->first()->name ?? "Không rỗ tác giả" }}';
+        const bookImage = '{{ $book->images->first() ? asset("storage/" . $book->images->first()->image_path) : asset("images/default-book.jpg") }}';
+        const publicationDate = '{{ $book->publication_date ? $book->publication_date->format("d/m/Y") : "Chưa xác định" }}';
+        
+        // Populate basic book info
+        document.getElementById('preorderBookId').value = bookId;
+        document.getElementById('preorderBookTitle').textContent = bookTitle;
+        document.getElementById('preorderBookAuthor').textContent = bookAuthor;
+        
+        // Set book image with error handling
+        const imageElement = document.getElementById('preorderBookImage');
+        if (imageElement) {
+            imageElement.src = bookImage;
+            imageElement.alt = bookTitle;
+            // Add error handler for image loading
+            imageElement.onerror = function() {
+                this.src = '{{ asset("images/default-book.jpg") }}';
+            };
+        }
+        
+        document.getElementById('preorderPublicationDate').textContent = publicationDate;
+        
+        // Populate book formats
+        populatePreorderFormats();
+        
+        // Populate attributes only once
+        populatePreorderAttributes();
+        
+        // Update prices
+        updatePreorderPrices();
+    }
+
+    function populatePreorderFormats() {
+        const formatSelect = document.getElementById('preorderFormatSelect');
+        const mainFormatSelect = document.getElementById('bookFormatSelect');
+        
+        if (mainFormatSelect && formatSelect) {
+            // Clear existing options
+            formatSelect.innerHTML = '';
+            
+            // Copy options from main format select
+            Array.from(mainFormatSelect.options).forEach(option => {
+                const newOption = document.createElement('option');
+                newOption.value = option.value;
+                newOption.textContent = option.textContent;
+                newOption.dataset.price = option.dataset.price || '0';
+                newOption.dataset.discount = option.dataset.discount || '0';
+                
+                // Set selected if it's the currently selected option
+                if (option.selected) {
+                    newOption.selected = true;
+                }
+                
+                formatSelect.appendChild(newOption);
+            });
+            
+            // Add event listener for format change
+            formatSelect.addEventListener('change', function() {
+                document.getElementById('preorderBookFormatId').value = this.value;
+                filterPreorderAttributesByFormat(); // Filter attributes based on format
+                updatePreorderPrices();
+            });
+            
+            // Set initial format ID
+            document.getElementById('preorderBookFormatId').value = formatSelect.value;
+        }
+    }
+
+    function populatePreorderAttributes() {
+        const attributesSection = document.getElementById('preorderAttributesSection');
+        const mainAttributeSelects = document.querySelectorAll('[name^="attributes["]');
+        
+        // Clear existing attributes to prevent duplicates
+        attributesSection.innerHTML = '';
+        
+        // Track processed attributes to avoid duplicates
+        const processedAttributes = new Set();
+        
+        // Copy attributes from main form
+        mainAttributeSelects.forEach(select => {
+            if (select.options.length > 0) {
+                // Get attribute name to check for duplicates
+                const parentLabel = select.closest('.attribute-item')?.querySelector('label');
+                let attributeName = 'Thuộc tính';
+                
+                if (parentLabel) {
+                    attributeName = parentLabel.textContent.replace(':', '').trim();
+                } else {
+                    // Fallback: extract from select name
+                    const nameMatch = select.name.match(/attributes\[(.+)\]/);
+                    if (nameMatch) {
+                        attributeName = nameMatch[1];
+                    }
+                }
+                
+                // Skip if this attribute was already processed
+                if (processedAttributes.has(attributeName)) {
+                    return;
+                }
+                processedAttributes.add(attributeName);
+                
+                const attributeDiv = document.createElement('div');
+                attributeDiv.className = 'preorder-attribute-item mb-6';
+                
+                // Create header section
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'flex items-center gap-4 mb-4';
+                
+                const accentLine = document.createElement('div');
+                accentLine.className = 'w-1 h-6 bg-black';
+                
+                // Create label
+                const label = document.createElement('label');
+                label.className = 'text-lg font-black uppercase tracking-wide text-black adidas-font';
+                label.textContent = attributeName;
+                
+                // Check if this is a language attribute
+                const isLanguage = attributeName.toLowerCase().includes('ngôn ngữ') || 
+                                 attributeName.toLowerCase().includes('language') ||
+                                 select.closest('.attribute-item')?.getAttribute('data-is-language') === 'true';
+                
+                if (isLanguage) {
+                    attributeDiv.setAttribute('data-is-language', 'true');
+                }
+                
+                // Create select
+                const newSelect = document.createElement('select');
+                newSelect.name = select.name;
+                newSelect.className = 'w-full px-4 py-4 border-2 border-black focus:outline-none focus:border-gray-600 adidas-font bg-white text-lg';
+                
+                
+                // Copy options
+                Array.from(select.options).forEach(option => {
+                    const newOption = document.createElement('option');
+                    newOption.value = option.value;
+                    newOption.textContent = option.textContent;
+                    newOption.dataset.price = option.dataset.price || '0';
+                    
+                    if (option.selected) {
+                        newOption.selected = true;
+                    }
+                    
+                    newSelect.appendChild(newOption);
+                });
+                
+                // Add event listener
+                newSelect.addEventListener('change', updatePreorderPrices);
+                
+                // Assemble the header
+                headerDiv.appendChild(accentLine);
+                headerDiv.appendChild(label);
+                
+                // Assemble the attribute div
+                attributeDiv.appendChild(headerDiv);
+                attributeDiv.appendChild(newSelect);
+                attributesSection.appendChild(attributeDiv);
+            }
+        });
+        
+        // Apply initial visibility based on selected format
+        filterPreorderAttributesByFormat();
+    }
+
+    function filterPreorderAttributesByFormat() {
+        const formatSelect = document.getElementById('preorderFormatSelect');
+        const attributeItems = document.querySelectorAll('.preorder-attribute-item');
+        
+        if (formatSelect && formatSelect.selectedOptions[0]) {
+            const selectedFormat = formatSelect.selectedOptions[0].textContent.toLowerCase();
+            const isEbook = selectedFormat.includes('ebook');
+            
+            attributeItems.forEach(item => {
+                const isLanguage = item.getAttribute('data-is-language') === 'true';
+                
+                if (isEbook) {
+                    // For ebook: only show language attributes
+                    if (isLanguage) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                } else {
+                    // For physical books: show all attributes
+                    item.style.display = 'block';
+                }
+            });
+        }
+    }
+
+    function updatePreorderPrices() {
+        const formatSelect = document.getElementById('preorderFormatSelect');
+        const quantity = parseInt(document.getElementById('preorderQuantity').value) || 1;
+        let bookPrice = 0;
+        let discount = 0;
+        
+        // Get format price from preorder modal format select
+        if (formatSelect && formatSelect.selectedOptions[0]) {
+            bookPrice = parseFloat(formatSelect.selectedOptions[0].dataset.price) || 0;
+            discount = parseFloat(formatSelect.selectedOptions[0].dataset.discount) || 0;
+        }
+        
+        // Add attribute prices from preorder modal
+        const attributeSelects = document.querySelectorAll('#preorderAttributesSection select');
+        attributeSelects.forEach(select => {
+            if (select.selectedOptions[0]) {
+                const attributePrice = parseFloat(select.selectedOptions[0].dataset.price) || 0;
+                bookPrice += attributePrice;
+            }
+        });
+        
+        // Calculate final price with discount
+        const discountAmount = bookPrice * (discount / 100);
+        const finalBookPrice = bookPrice - discountAmount;
+        
+        // Calculate total
+        const shippingFee = 30000;
+        const totalPrice = (finalBookPrice * quantity) + shippingFee;
+        
+        // Update display
+        document.getElementById('preorderBookPrice').textContent = new Intl.NumberFormat('vi-VN').format(finalBookPrice) + '₫';
+        document.getElementById('preorderTotalPrice').textContent = new Intl.NumberFormat('vi-VN').format(totalPrice) + '₫';
+    }
+
+    function updatePreorderQty(change) {
+        const input = document.getElementById('preorderQuantity');
+        const currentValue = parseInt(input.value) || 1;
+        const newValue = Math.max(1, Math.min(5, currentValue + change));
+        input.value = newValue;
+        
+        // Update total price
+        updatePreorderTotalPrice();
+    }
+
+    function updatePreorderTotalPrice() {
+        updatePreorderPrices();
+    }
+
+    // Event listeners for preorder modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const closePreorderModalBtn = document.getElementById('closePreorderModal');
+        const cancelPreorderBtn = document.getElementById('cancelPreorderBtn');
+        const preorderModal = document.getElementById('preorderModal');
+        const preorderForm = document.getElementById('preorderForm');
+        const preorderQuantityInput = document.getElementById('preorderQuantity');
+        
+        // Close modal events
+        if (closePreorderModalBtn) {
+            closePreorderModalBtn.addEventListener('click', closePreorderModal);
+        }
+        
+        if (cancelPreorderBtn) {
+            cancelPreorderBtn.addEventListener('click', closePreorderModal);
+        }
+        
+        // Close modal when clicking outside
+        if (preorderModal) {
+            preorderModal.addEventListener('click', function(e) {
+                if (e.target === preorderModal) {
+                    closePreorderModal();
+                }
+            });
+        }
+        
+        // Update total price when quantity changes
+        if (preorderQuantityInput) {
+            preorderQuantityInput.addEventListener('input', updatePreorderTotalPrice);
+        }
+        
+        // Handle form submission
+        if (preorderForm) {
+            preorderForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitPreorder();
+            });
+        }
+    });
+
+    function submitPreorder() {
+        const form = document.getElementById('preorderForm');
+        const formData = new FormData(form);
+        const submitBtn = document.getElementById('confirmPreorderBtn');
+        const originalText = submitBtn.innerHTML;
+        
+        // Validate required fields
+        const requiredFields = ['customer_name', 'phone', 'email', 'province_code', 'district_code', 'ward_code', 'address', 'payment_method_id'];
+        let isValid = true;
+        
+        for (let field of requiredFields) {
+            const input = form.querySelector(`[name="${field}"]`);
+            if (!input || !input.value.trim()) {
+                isValid = false;
+                if (input) {
+                    input.style.borderColor = 'red';
+                    setTimeout(() => {
+                        input.style.borderColor = '';
+                    }, 3000);
+                }
+            }
+        }
+        
+        // Special validation for payment method radio buttons
+        const paymentMethodChecked = form.querySelector('input[name="payment_method_id"]:checked');
+        if (!paymentMethodChecked) {
+            isValid = false;
+            // Highlight payment method section
+            const paymentSection = form.querySelector('input[name="payment_method_id"]').closest('.mb-8');
+            if (paymentSection) {
+                paymentSection.style.border = '2px solid red';
+                setTimeout(() => {
+                    paymentSection.style.border = '';
+                }, 3000);
+            }
+        }
+        
+        if (!isValid) {
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Vui lòng điền đầy đủ thông tin bắt buộc và chọn phương thức thanh toán!', 'Lỗi!');
+            } else {
+                alert('Vui lòng điền đầy đủ thông tin bắt buộc và chọn phương thức thanh toán!');
+            }
+            return;
+        }
+        
+        // Add selected attributes to form data (only visible ones)
+        const selectedAttributes = [];
+        document.querySelectorAll('#preorderAttributesSection select').forEach(select => {
+            // Only include attributes from visible containers
+            const container = select.closest('.preorder-attribute-item');
+            if (select.value && container && container.style.display !== 'none') {
+                selectedAttributes.push(select.value);
+            }
+        });
+        
+        // Add each attribute as separate form data entries
+        selectedAttributes.forEach((attributeValue, index) => {
+            formData.append(`selected_attributes[${index}]`, attributeValue);
+        });
+        
+        // Set hidden field values from selects
+        const provinceSelect = document.getElementById('preorderTinh');
+        const districtSelect = document.getElementById('preorderQuan');
+        const wardSelect = document.getElementById('preorderPhuong');
+        
+        if (provinceSelect.selectedOptions[0]) {
+            formData.set('province_name', provinceSelect.selectedOptions[0].text);
+        }
+        if (districtSelect.selectedOptions[0]) {
+            formData.set('district_name', districtSelect.selectedOptions[0].text);
+        }
+        if (wardSelect.selectedOptions[0]) {
+            formData.set('ward_name', wardSelect.selectedOptions[0].text);
+        }
+        
+        // Disable submit button
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ĐANG XỬ LÝ...';
+        
+        // Send AJAX request
+        fetch('{{ route("preorder.store") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('[name="_token"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.success(data.message, 'Thành công!', {
+                        timeOut: 5000,
+                        positionClass: 'toast-top-right',
+                        closeButton: true,
+                        progressBar: true
+                    });
+                } else {
+                    alert(data.message);
+                }
+                
+                closePreorderModal();
+                form.reset();
+            } else {
+                if (data.errors) {
+                    // Display validation errors
+                    let errorMessage = 'Có lỗi trong dữ liệu:\n';
+                    for (let field in data.errors) {
+                        errorMessage += '- ' + data.errors[field].join('\n- ') + '\n';
+                    }
+                    
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(errorMessage, 'Lỗi validation!');
+                    } else {
+                        alert(errorMessage);
+                    }
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(data.message || 'Có lỗi xảy ra!', 'Lỗi!');
+                    } else {
+                        alert(data.message || 'Có lỗi xảy ra!');
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Có lỗi xảy ra khi gửi yêu cầu!', 'Lỗi!');
+            } else {
+                alert('Có lỗi xảy ra khi gửi yêu cầu!');
+            }
+        })
+        .finally(() => {
+            // Restore button
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+    }
+
+    // Script xử lý địa chỉ cho preorder modal
+    $(document).ready(function() {
+        // Lấy tỉnh thành cho preorder modal
+        $.getJSON('https://provinces.open-api.vn/api/p/', function(provinces) {
+            provinces.forEach(function(province) {
+                $("#preorderTinh").append(`<option value="${province.code}">${province.name}</option>`);
+            });
+        });
+
+        // Xử lý khi chọn tỉnh
+        $("#preorderTinh").change(function() {
+            const provinceCode = $(this).val();
+            $("#preorderTenTinh").val($(this).find("option:selected").text());
+            
+            // Lấy quận/huyện
+            $.getJSON(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`, function(provinceData) {
+                $("#preorderQuan").html('<option value="">Chọn Quận/Huyện</option>');
+                provinceData.districts.forEach(function(district) {
+                    $("#preorderQuan").append(`<option value="${district.code}">${district.name}</option>`);
+                });
+            });
+        });
+
+        // Xử lý khi chọn quận
+        $("#preorderQuan").change(function() {
+            const districtCode = $(this).val();
+            $("#preorderTenQuan").val($(this).find("option:selected").text());
+            
+            // Lấy phường/xã
+            $.getJSON(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`, function(districtData) {
+                $("#preorderPhuong").html('<option value="">Chọn Phường/Xã</option>');
+                districtData.wards.forEach(function(ward) {
+                    $("#preorderPhuong").append(`<option value="${ward.code}">${ward.name}</option>`);
+                });
+            });
+        });
+
+        // Xử lý khi chọn phường
+        $("#preorderPhuong").change(function() {
+            $("#preorderTenPhuong").val($(this).find("option:selected").text());
+        });
+    });
 </script>
 @endpush
 @endsection
