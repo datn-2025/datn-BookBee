@@ -25,11 +25,13 @@ class Book extends Model
         'cover_image',
         'isbn',
         'publication_date',
+        'release_date',
         'page_count'
     ];
 
     protected $casts = [
         'publication_date' => 'date',
+        'release_date' => 'date',
         'page_count' => 'integer'
     ];
 
@@ -97,10 +99,68 @@ class Book extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    public function preorders(): HasMany
+    {
+        return $this->hasMany(Preorder::class);
+    }
+
     public function getAverageRatingAttribute()
     {
         return $this->reviews()->avg('rating') ?? 0;
     }
+
+    /**
+     * Determine book availability status based on release date
+     */
+    public function getAvailabilityStatusAttribute()
+    {
+        // Priority 1: Use release_date if available
+        if ($this->release_date) {
+            $today = now()->startOfDay();
+            $releaseDate = $this->release_date->startOfDay();
+
+            if ($releaseDate->gt($today)) {
+                return 'Sắp ra mắt';
+            } else {
+                return 'Còn hàng';
+            }
+        }
+        
+        // Priority 2: Fall back to publication_date if release_date is not set
+        if ($this->publication_date) {
+            $today = now()->startOfDay();
+            $publicationDate = $this->publication_date->startOfDay();
+
+            if ($publicationDate->gt($today)) {
+                return 'Sắp ra mắt';
+            } else {
+                return 'Còn hàng';
+            }
+        }
+
+        // Default if neither date is set
+        return 'Còn hàng';
+    }
+
+    /**
+     * Check if book is upcoming (release date is in the future)
+     */
+    public function getIsUpcomingAttribute()
+    {
+        // Priority 1: Use release_date if available
+        if ($this->release_date) {
+            return $this->release_date->gt(now()->startOfDay());
+        }
+        
+        // Priority 2: Fall back to publication_date if release_date is not set
+        if ($this->publication_date) {
+            return $this->publication_date->gt(now()->startOfDay());
+        }
+
+        return false;
+    }
+
     public function summary()
     {
         return $this->hasOne(BookSummary::class);
