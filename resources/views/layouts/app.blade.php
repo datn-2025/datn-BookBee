@@ -76,6 +76,27 @@
         -webkit-text-fill-color: transparent;
         background-clip: text;
       }
+      /* Chat notification animation */
+      @keyframes bounce {
+        0%, 20%, 53%, 80%, 100% {
+          animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+          transform: translate3d(0,0,0);
+        }
+        40%, 43% {
+          animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+          transform: translate3d(0, -10px, 0);
+        }
+        70% {
+          animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+          transform: translate3d(0, -7px, 0);
+        }
+        90% {
+          transform: translate3d(0,-2px,0);
+        }
+      }
+      .animate-bounce {
+        animation: bounce 1s;
+      }
     </style>
 </head>
 
@@ -100,6 +121,9 @@
 
     @stack('scripts')
     @include('layouts.partials.footer')
+
+    <!-- Test broadcast script -->
+    <script src="{{ asset('test-broadcast.js') }}"></script>
 
     <!-- Chat script moved to app.js -->
     
