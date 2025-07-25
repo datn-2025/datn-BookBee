@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\AuthorController;
+use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Login\LoginController;
 use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\Admin\WalletController;
@@ -28,6 +29,8 @@ use App\Http\Controllers\Client\OrderClientController;
 use App\Http\Controllers\Client\ProfileClientController;
 use App\Http\Controllers\Client\ReviewClientController;
 use App\Http\Controllers\Client\UserClientController;
+use App\Http\Controllers\Client\RefundController;
+use App\Http\Controllers\Admin\RefundController as AdminRefundController;
 use App\Http\Controllers\Contact\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Login\ActivationController;
@@ -35,8 +38,12 @@ use App\Http\Controllers\Login\GoogleController;
 use App\Http\Controllers\Wishlists\WishlistController;
 use App\Livewire\BalanceChart;
 use App\Livewire\RevenueReport;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
+
+//broadcast route 
+Broadcast::routes(); 
 // Route QR code
 Route::get('storage/private/{filename}', function ($filename) {
     $path = storage_path('app/private/' . $filename);
@@ -56,8 +63,9 @@ Route::get('/vnpay/return', [\App\Http\Controllers\OrderController::class, 'vnpa
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about', [HomeController::class, 'about'])->name('about');
 // Hiển thị danh sách và danh mục
-Route::get('/books/{categoryId?}', [BookController::class, 'index'])->name('books.index');
+Route::get('/books/{slug?}', [BookController::class, 'index'])->name('books.index');
 Route::get('/book/{slug}', [HomeController::class, 'show'])->name('books.show');
+Route::get('/books/{categoryId?}', [BookController::class, 'index'])->name('books.index');
 
 // web.php
 Route::get('/combos', [HomeController::class, 'combos'])->name('combos.index');
@@ -83,9 +91,6 @@ Route::prefix('cart')->group(function () {
     // Route::post('/apply-voucher', [CartController::class, 'applyVoucher'])->name('cart.apply-voucher');
     Route::post('/remove-voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
 });
-
-// preorder
-Route::post('/preorder', [\App\Http\Controllers\PreorderController::class, 'store'])->name('preorder.store');
 
 // danh sach yeu thich
 Route::get('/wishlist', [WishlistController::class, 'getWishlist'])->name('wishlist.index');
@@ -158,12 +163,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}', [OrderClientController::class, 'show'])->name('show');
             Route::put('/{id}', [OrderClientController::class, 'update'])->name('update');
             Route::delete('/{id}', [OrderClientController::class, 'destroy'])->name('destroy');
-        });
-
-        // User preorders management
-        Route::prefix('preorders')->name('preorders.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\PreorderController::class, 'userPreorders'])->name('index');
-            Route::post('/{id}/cancel', [\App\Http\Controllers\PreorderController::class, 'cancel'])->name('cancel');
+            
+            // Refund routes
+            Route::get('/{order}/refund', [RefundController::class, 'create'])->name('refund.create');
+            Route::post('/{order}/refund', [RefundController::class, 'store'])->name('refund.request');
+            Route::get('/{order}/refund/status', [RefundController::class, 'status'])->name('refund.status');
         });
     });
     // Đơn hàng checkout và storex
@@ -207,10 +211,22 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::put('/password/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('password.update');
     });
 
+    // chat real-time
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'index'])->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'show'])->name('show');
+        Route::post('/send', [\App\Http\Controllers\Admin\AdminChatRealTimeController::class, 'send'])->name('send');
+        Route::post('/create-conversation', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'createConversation'])->name('create-conversation');
+        Route::get('/users/active', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'getActiveUsers'])->name('users.active');
+    });
+
     Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard');
     Route::get('/revenue-report', RevenueReport::class)->name('revenue-report');
     Route::get('/balance-chart', BalanceChart::class)->name('balance-chart');
 
+    // Route admin/contacts
+    Route::resource('contacts', \App\Http\Controllers\Admin\ContactController::class);
+    Route::post('contacts/{contact}/reply', [\App\Http\Controllers\Admin\ContactController::class, 'sendReply'])->name('contacts.reply');
     Route::prefix('books')->name('books.')->group(function () {
         Route::get('/', [AdminBookController::class, 'index'])->name('index');
         Route::get('/create', [AdminBookController::class, 'create'])->name('create');
@@ -234,13 +250,36 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/{paymentMethod}/edit', [AdminPaymentMethodController::class, 'edit'])->name('edit');
         Route::put('/{paymentMethod}', [AdminPaymentMethodController::class, 'update'])->name('update');
         Route::delete('/{paymentMethod}', [AdminPaymentMethodController::class, 'destroy'])->name('destroy');
-        // Thêm các route mới
         Route::get('/trash', [AdminPaymentMethodController::class, 'trash'])->name('trash');
         Route::put('/{paymentMethod}/restore', [AdminPaymentMethodController::class, 'restore'])->name('restore');
         Route::delete('/{paymentMethod}/force-delete', [AdminPaymentMethodController::class, 'forceDelete'])->name('force-delete');
-
         Route::get('/history', [AdminPaymentMethodController::class, 'history'])->name('history');
-        Route::put('/{id}/status', [AdminPaymentMethodController::class, 'updateStatus'])->name('updateStatus');
+    });
+    
+    // Route hoàn tiền đơn hàng
+    // Route::prefix('orders')->name('orders.')->group(function () {
+    //     // Route::get('/{id}/refund', [OrderController::class, 'showRefund'])->name('refund.show');
+    //     // Route::post('/{id}/refund', [OrderController::class, 'processRefund'])->name('refund.process');
+    //     // Route::get('/{id}/refund/status', [OrderController::class, 'refundStatus'])->name('refund.status');
+    //     // Route::put('/{id}/status', [AdminPaymentMethodController::class, 'updateStatus'])->name('updateStatus');
+        
+    //     // Routes cho quản lý yêu cầu hoàn tiền
+    //     Route::get('/refunds', [RefundController::class, 'index'])->name('refunds.index');
+    //     Route::get('/refunds/{id}', [RefundController::class, 'show'])->name('refunds.show');
+    //     Route::post('/refunds/{id}/process', [RefundController::class, 'process'])->name('refunds.process');
+        
+    //     // Handle GET access to process route - redirect to show page
+    //     // Route::get('/refunds/{id}/process', function($id) {
+    //     //     return redirect()->route('admin.orders.refunds.show', $id);
+    //     // });
+    // });
+
+    // Admin Refund Management - Chuyên biệt cho RefundController
+    Route::prefix('refunds')->name('refunds.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\RefundController::class, 'index'])->name('index');
+        Route::get('/{refund}', [\App\Http\Controllers\Admin\RefundController::class, 'show'])->name('show');
+        Route::post('/{refund}/process', [\App\Http\Controllers\Admin\RefundController::class, 'process'])->name('process');
+        Route::get('/statistics', [\App\Http\Controllers\Admin\RefundController::class, 'statistics'])->name('statistics');
     });
 
     Route::prefix('wallets')->name('wallets.')->group(function () {
@@ -249,6 +288,22 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/withdraw-history', [\App\Http\Controllers\Admin\WalletController::class, 'withdrawHistory'])->name('withdrawHistory');
         Route::post('/approve/{id}', [WalletController::class, 'approveTransaction'])->name('approveTransaction');
         Route::post('/reject/{id}', [WalletController::class, 'rejectTransaction'])->name('rejectTransaction');
+        
+    //     // Debug page
+    //     Route::get('/debug', function() {
+    //         return view('admin.wallets.debug');
+    //     })->name('debug');
+        
+    //     // Debug routes for wallet refund
+    //     Route::get('/debug-refund/{orderId}', function($orderId) {
+    //         $result = \App\Services\WalletRefundDebugService::debugRefund($orderId);
+    //         return response()->json($result);
+    //     })->name('debug.refund');
+        
+    //     Route::post('/force-refund/{orderId}/{amount}', function($orderId, $amount) {
+    //         $result = \App\Services\WalletRefundDebugService::forceCreateRefundTransaction($orderId, $amount);
+    //         return response()->json(['success' => $result]);
+    //     })->name('force.refund');
     });
 
     // Route admin/categories
@@ -328,6 +383,8 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
 
         Route::get('/export', [VoucherController::class, 'export'])->name('export');
     });
+    // Route admin/vouchers
+    Route::resource('vouchers', VoucherController::class);
 
     // Route admin/attributes
     Route::prefix('attributes')->name('attributes.')->group(function () {
@@ -368,17 +425,6 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::put('/update/{id}', [OrderController::class, 'update'])->name('update');
     });
 
-    // Route admin/preorders
-    Route::prefix('preorders')->name('preorders.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\PreorderController::class, 'index'])->name('index');
-        Route::get('/create', [\App\Http\Controllers\PreorderController::class, 'create'])->name('create');
-        Route::get('/{id}', [\App\Http\Controllers\PreorderController::class, 'show'])->name('show');
-        Route::get('/{id}/edit', [\App\Http\Controllers\PreorderController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [\App\Http\Controllers\PreorderController::class, 'update'])->name('update');
-        Route::delete('/{id}', [\App\Http\Controllers\PreorderController::class, 'destroy'])->name('destroy');
-        Route::post('/{id}/confirm', [\App\Http\Controllers\PreorderController::class, 'confirmAndCreateOrder'])->name('confirm');
-    });
-
     // Route admin/settings
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/', [SettingController::class, 'index'])->name('index');
@@ -392,12 +438,21 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/{id}/pdf', [AdminInvoiceController::class, 'generatePdf'])->name('generate-pdf');
     });
 
+
+
     Route::resource('collections', CollectionController::class);
     Route::post('collections/{collection}/attach-books', [CollectionController::class, 'attachBooks'])->name('collections.attachBooks');
     Route::resource('collections', CollectionController::class);
     Route::delete('collections/{id}/force', [CollectionController::class, 'forceDelete'])->name('collections.forceDelete');
     Route::get('collections-trash', [CollectionController::class, 'trash'])->name('collections.trash');
     Route::post('collections/{id}/restore', [CollectionController::class, 'restore'])->name('collections.restore');
+
+    // Profile admin
+    Route::prefix('profile')->name('profile.')->group(function () {
+    Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
+    Route::put('/update', [ProfileController::class, 'update'])->name('update');
+    Route::put('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
+    });
 });
 
 // Wallet user routes
@@ -409,6 +464,7 @@ Route::middleware('auth')->prefix('wallet')->name('wallet.')->group(function () 
     Route::post('/withdraw', [App\Http\Controllers\WalletController::class, 'withdraw'])->name('withdraw');
     Route::get('/vnpay-return', [App\Http\Controllers\WalletController::class, 'vnpayReturn'])->name('vnpayReturn');
 });
+
 
 // AI Summary routes
 Route::prefix('ai-summary')->name('ai-summary.')->group(function() {
@@ -426,3 +482,4 @@ Route::prefix('ai-summary')->name('ai-summary.')->group(function() {
     Route::get('/combo/status/{combo}', [App\Http\Controllers\AISummaryController::class, 'checkComboStatus'])->name('combo.status');
     Route::post('/combo/chat/{combo}', [App\Http\Controllers\AISummaryController::class, 'chatWithComboAI'])->name('combo.chat');
 });
+

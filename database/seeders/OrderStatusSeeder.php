@@ -19,7 +19,8 @@ class OrderStatusSeeder extends Seeder
             ['name' => 'Thành công'],
             ['name' => 'Giao thất bại'],
             ['name' => 'Đã hủy'],
-            ['name' => 'Hoàn tiền'],
+            ['name' => 'Đang Hoàn Tiền'],
+            ['name' => 'Đã Hoàn Tiền'],
         ];
 
         foreach ($statuses as $status) {

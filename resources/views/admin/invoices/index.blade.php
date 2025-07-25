@@ -150,6 +150,7 @@
                                         <tr>
                                             <th>#</th>
                                             <th>Mã đơn hàng</th>
+                                            <th>Loại hóa đơn</th>
                                             <th>Khách hàng</th>
                                             <th>Phương thức</th>
                                             <th>Tổng tiền</th>
@@ -162,6 +163,13 @@
                                             <tr>
                                                 <td>{{ $invoices->firstItem() + $key }}</td>
                                                 <td class="fw-medium text-primary">#{{ $invoice->order->order_code }}</td>
+                                                <td>
+                                                    @if($invoice->type == 'refund')
+                                                        <span class="badge bg-danger">Hoàn tiền</span>
+                                                    @else
+                                                        <span class="badge bg-success">Thanh toán</span>
+                                                    @endif
+                                                </td>
                                                 <td>
                                                     <div class="fw-medium">{{ $invoice->order->user->name }}</div>
                                                     <small class="text-muted"><i

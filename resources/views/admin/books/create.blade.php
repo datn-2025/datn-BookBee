@@ -310,45 +310,25 @@
                         <!-- Trạng thái và phân loại -->
                         <div class="card mb-3">
                             <div class="card-header">
-                                <h5 class="card-title mb-0">Phân loại</h5>
+                                <h5 class="card-title mb-0">Trạng thái & Phân loại</h5>
                             </div>
                             <div class="card-body">
-                                <!-- Tùy chọn trạng thái -->
                                 <div class="mb-3">
-                                    <label class="form-label">Cách xác định trạng thái sách</label>
-                                    <div class="form-check">
-                                        <input type="radio" name="status_mode" value="auto" class="form-check-input" id="status_auto" checked>
-                                        <label class="form-check-label" for="status_auto">
-                                            <strong>Tự động dựa trên ngày ra mắt</strong>
-                                            <small class="d-block text-muted">
-                                                • Ngày ra mắt > ngày hiện tại → <span class="badge bg-warning">Sắp ra mắt</span><br>
-                                                • Ngày ra mắt ≤ ngày hiện tại → <span class="badge bg-success">Còn hàng</span>
-                                            </small>
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="radio" name="status_mode" value="manual" class="form-check-input" id="status_manual">
-                                        <label class="form-check-label" for="status_manual">
-                                            <strong>Chọn thủ công</strong>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Trường chọn trạng thái thủ công -->
-                                <div class="mb-3" id="manual_status_field" style="display: none;">
-                                    <label for="status" class="form-label">Trạng thái <span class="text-danger">*</span></label>
-                                    <select name="status" id="status" class="form-select @error('status') is-invalid @enderror">
-                                        <option value="">-- Chọn trạng thái --</option>
-                                        <option value="Còn hàng" {{ old('status') == 'Còn hàng' ? 'selected' : '' }}>Còn hàng</option>
-                                        <option value="Sắp ra mắt" {{ old('status') == 'Sắp ra mắt' ? 'selected' : '' }}>Sắp ra mắt</option>
-                                        <option value="Hết hàng tồn kho" {{ old('status') == 'Hết hàng tồn kho' ? 'selected' : '' }}>Hết hàng tồn kho</option>
-                                        <option value="Ngừng kinh doanh" {{ old('status') == 'Ngừng kinh doanh' ? 'selected' : '' }}>Ngừng kinh doanh</option>
+                                    <label for="status" class="form-label">Trạng thái<span
+                                            class="text-danger">*</span></label>
+                                    <select name="status" class="form-select @error('status') is-invalid @enderror">
+                                        <option>--Chọn trạng thái--</option>
+                                        <option value="Còn Hàng" {{ old('status') == 'Còn Hàng' ? 'selected' : '' }}>Còn Hàng</option>
+                                        <option value="Hết Hàng Tồn Kho" {{ old('status') == 'Hết Hàng Tồn Kho' ? 'selected' : '' }}>Hết Hàng Tồn Kho</option>
+                                        <option value="Sắp Ra Mắt" {{ old('status') == 'Sắp Ra Mắt' ? 'selected' : '' }}>Sắp Ra Mắt</option>
+                                        <option value="Ngừng Kinh Doanh" {{ old('status') == 'Ngừng Kinh Doanh' ? 'selected' : '' }}>Ngừng Kinh Doanh</option>
                                     </select>
                                     @error('status')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        <div class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
                                     @enderror
                                 </div>
-                                
                                 <div class="mb-3">
                                     <label for="category_id" class="form-label">Danh mục <span
                                             class="text-danger">*</span></label>
@@ -401,17 +381,6 @@
                                     <input type="date" name="publication_date" class="form-control @error('publication_date') is-invalid @enderror"
                                         id="publication_date" value="{{ old('publication_date') }}">
                                     @error('publication_date')
-                                        <div class="invalid-feedback">
-                                            {{ $message }}
-                                        </div>
-                                    @enderror
-                                </div>
-                                <div class="mb-3">
-                                    <label for="release_date" class="form-label">Ngày ra mắt</label>
-                                    <input type="date" name="release_date" class="form-control @error('release_date') is-invalid @enderror"
-                                        id="release_date" value="{{ old('release_date') }}">
-                                    <div class="form-text">Ngày sách chính thức được bán. Nếu để trống, sẽ sử dụng ngày xuất bản.</div>
-                                    @error('release_date')
                                         <div class="invalid-feedback">
                                             {{ $message }}
                                         </div>
@@ -491,29 +460,6 @@
     document.getElementById('toggle-gift-section').addEventListener('change', function() {
         document.getElementById('gift-section').style.display = this.checked ? '' : 'none';
     });
-
-    // Xử lý hiển thị/ẩn trường chọn trạng thái thủ công
-    function toggleStatusField() {
-        const manualStatusField = document.getElementById('manual_status_field');
-        const statusModeManual = document.getElementById('status_manual');
-        
-        if (statusModeManual.checked) {
-            manualStatusField.style.display = '';
-            // Make status field required when manual mode is selected
-            document.getElementById('status').setAttribute('required', '');
-        } else {
-            manualStatusField.style.display = 'none';
-            // Remove required attribute when auto mode is selected
-            document.getElementById('status').removeAttribute('required');
-        }
-    }
-
-    // Add event listeners for status mode radio buttons
-    document.getElementById('status_auto').addEventListener('change', toggleStatusField);
-    document.getElementById('status_manual').addEventListener('change', toggleStatusField);
-    
-    // Initialize on page load
-    toggleStatusField();
     function initFlatpickr() {
         document.querySelectorAll('.date-range-picker').forEach(function(el) {
             flatpickr(el, {

@@ -170,6 +170,7 @@
                                         <th scope="col">QR Code</th>
                                         <th scope="col">Khách hàng</th>
                                         <th scope="col">Địa chỉ</th>
+                                        <th scope="col">Phương thức nhận hàng</th>
                                         <th scope="col">Tổng tiền</th>
                                         <th scope="col">Trạng thái đơn hàng</th>
                                         <th scope="col">Ngày Tạo</th>
@@ -211,6 +212,13 @@
                                                 {{ $order->address->district ?? 'N/A' }},
                                                 {{ $order->address->city ?? '' }}
                                             </span>
+                                        </td>
+                                        <td class="text-center">
+                                            @if($order->delivery_method === 'pickup')
+                                                <span class="badge bg-info">Nhận tại cửa hàng</span>
+                                            @else
+                                                <span class="badge bg-primary">Giao hàng tận nơi</span>
+                                            @endif
                                         </td>
                                         <td class="fw-medium">{{ number_format($order->total_amount, 0, ',', '.') }}đ
                                         </td>
