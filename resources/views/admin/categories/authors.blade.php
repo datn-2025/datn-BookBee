@@ -33,7 +33,7 @@
                 </div>
             </div>
         </div>
-        <!-- end page title --> 
+        <!-- end page title -->
         <div class="row">
             <div class="col">
                 <div class="card">
@@ -44,8 +44,8 @@
                                 <i class="ri-add-line me-1"></i> Thêm tác giả
                             </a>
                             <a href="{{ route('admin.categories.authors.trash') }}" class="btn btn-outline-danger">
-                               <i class="ri-delete-bin-2-line align-bottom me-1"></i> Thùng rác
-                                @if($trashCount > 0)
+                                <i class="ri-delete-bin-2-line align-bottom me-1"></i> Thùng rác
+                                @if ($trashCount > 0)
                                     <span class="badge bg-light text-danger ms-1">{{ $trashCount }}</span>
                                 @endif
                             </a>
@@ -54,14 +54,16 @@
                     <!-- Bắt đầu Form tìm kiếm -->
                     <div class="row mb-4">
                         <div class="d-flex justify-content-sm-end">
-                            <form action="{{ route('admin.categories.authors.index') }}" method="GET" class="d-flex gap-2">
+                            <form action="{{ route('admin.categories.authors.index') }}" method="GET"
+                                class="d-flex gap-2">
                                 <div class="col-auto">
-                                    <input type="text" name="search_name" class="form-control" placeholder="Tìm kiếm theo tên"
-                                        value="{{ $searchName }}">
+                                    <input type="text" name="search_name" class="form-control"
+                                        placeholder="Tìm kiếm theo tên" value="{{ $searchName }}">
                                 </div>
                                 <div class="col-auto">
                                     <button type="submit" class="btn btn-primary">Tìm kiếm</button>
-                                    <a href="{{ route('admin.categories.authors.index') }}" class="btn btn-secondary">Đặt lại</a>
+                                    <a href="{{ route('admin.categories.authors.index') }}" class="btn btn-secondary">Đặt
+                                        lại</a>
                                 </div>
                             </form>
                         </div>
@@ -87,8 +89,13 @@
                                         <tr>
                                             <td>{{ $authors->firstItem() + $key }}</td>
                                             <td>
-                                                <img src="{{ $author->image ? asset($author->image) : asset('images/default-author.png') }}" alt="{{ $author->name }}" class="rounded"
-                                                    style="width: 50px; height: 50px; object-fit: cover;">
+                                                @if ($author->image)
+                                                    <img src="{{ $author->image ? asset($author->image) : asset('images/default-author.png') }}"
+                                                        alt="{{ $author->name }}" class="rounded"
+                                                        style="width: 50px; height: 50px; object-fit: cover;">
+                                                @else
+                                                    <span class="text-muted">Không có ảnh</span>
+                                                @endif
                                             </td>
                                             <td>{{ $author->name }}</td>
                                             <td>{{ $author->books_count }} cuốn</td>
@@ -129,7 +136,8 @@
                                                             </button>
                                                         </form>
                                                     @else
-                                                        <a href="{{ route('admin.categories.authors.edit', $author->id) }}" class="btn btn-sm btn-light" title="Chỉnh sửa">
+                                                        <a href="{{ route('admin.categories.authors.edit', $author->id) }}"
+                                                            class="btn btn-sm btn-light" title="Chỉnh sửa">
                                                             <i class="ri-pencil-fill align-bottom me-2 text-muted"></i>
                                                         </a>
                                                         <form
@@ -154,14 +162,22 @@
                                     @endforelse
                                 </tbody>
                             </table>
-                        </div>
-
-                        <div class="d-flex justify-content-center mt-4">
-                            {{ $authors->links('pagination::bootstrap-5') }}
+                            <!-- Phân trang -->
+                            <div class="d-flex justify-content-between align-items-center mt-3 px-3">
+                                <div class="text-muted">
+                                    Hiển thị <strong>{{ $authors->firstItem() }}</strong> đến
+                                    <strong>{{ $authors->lastItem() }}</strong> trong tổng số
+                                    <strong>{{ $authors->total() }}</strong> danh mục
+                                </div>
+                                <div>
+                                    {{ $authors->links('pagination::bootstrap-4') }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    {!! Toastr::message() !!}
 @endsection

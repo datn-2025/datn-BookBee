@@ -3,6 +3,17 @@
 @section('title', 'Danh Sách Người Dùng')
 
 @section('content')
+    @if (session('success'))
+        <script>
+            window.addEventListener('DOMContentLoaded', function() {
+                if (typeof toastr !== 'undefined') {
+                    toastr.success(@json(session('success')));
+                } else {
+                    alert(@json(session('success')));
+                }
+            });
+        </script>
+    @endif
     <div class="container-fluid">
         <!-- start page title -->
         <div class="row">
@@ -84,47 +95,64 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach ($users as $key => $user)
+                                            @if ($users->count() > 0)
+                                                @foreach ($users as $key => $user)
+                                                    <tr>
+                                                        <td class="fw-medium">{{ $key + 1 }}</td>
+                                                        <td>{{ $user->name }}</td>
+                                                        <td>
+                                                            <img style="border-radius:50%;"
+                                                                src="{{ $user->avatar ?? 'https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png' }}"
+                                                                width="100px" height="100px" alt=""
+                                                                onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png'">
+                                                        </td>
+                                                        <td>{{ $user->email }}</td>
+                                                        <td>{{ $user->phone }}</td>
+                                                        <td>{{ $user->role ? $user->role->name : 'Chưa phân quyền' }}</td>
+                                                        <td>
+                                                            @if ($user->status === 'Hoạt Động')
+                                                                <span class="badge bg-success">Hoạt Động</span>
+                                                            @elseif($user->status === 'Bị Khóa')
+                                                                <span class="badge bg-danger">Bị Khóa</span>
+                                                            @elseif($user->status === 'Chưa kích Hoạt')
+                                                                <span class="badge bg-warning">Chưa kích Hoạt</span>
+                                                            @else
+                                                                <span class="badge bg-secondary">Không xác định</span>
+                                                            @endif
+                                                        </td>
+                                                        <td>
+                                                            <a href="{{ route('admin.users.show', ['id' => $user->id]) }}"
+                                                                class="link-success fs-15">
+                                                                <i class="ri-eye-fill align-bottom me-2 text-muted"></i>
+                                                            </a>
+
+                                                            <a href="{{ route('admin.users.edit', $user->id) }}"
+                                                                class="link-success fs-15 ">
+                                                                <i class="ri-edit-2-line align-bottom"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            @else
                                                 <tr>
-                                                    <td class="fw-medium">{{ $key + 1 }}</td>
-                                                    <td>{{ $user->name }}</td>
-                                                    <td>
-                                                        <img style="border-radius:50%;"
-                                                            src="{{ $user->avatar ?? 'https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png' }}"
-                                                            width="100px" height="100px" alt=""
-                                                            onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png'">
-                                                    </td>
-                                                    <td>{{ $user->email }}</td>
-                                                    <td>{{ $user->phone }}</td>
-                                                    <td>{{ $user->role ? $user->role->name : 'Chưa phân quyền' }}</td>
-                                                    <td>
-                                                        @if ($user->status === 'Hoạt Động')
-                                                            <span class="badge bg-success">Hoạt Động</span>
-                                                        @elseif($user->status === 'Bị Khóa')
-                                                            <span class="badge bg-danger">Bị Khóa</span>
-                                                        @elseif($user->status === 'Chưa kích Hoạt')
-                                                            <span class="badge bg-warning">Chưa kích Hoạt</span>
-                                                        @else
-                                                            <span class="badge bg-secondary">Không xác định</span>
-                                                        @endif
-                                                    </td>
-                                                    <td>
-                                                        <a href="{{ route('admin.users.show', ['id' => $user->id]) }}"
-                                                            class="link-success fs-15">
-                                                            <i class="las la-eye"></i>
-                                                        </a>
-
-                                                        <a href="{{ route('admin.users.edit', $user->id) }}"
-                                                            class="link-success fs-15 ">
-                                                            <i class="ri-edit-2-line align-bottom"></i>
-                                                        </a>
-
-
-                                                    </td>
+                                                    <td colspan="8" class="text-center text-muted">Không có người dùng
+                                                        nào được tìm thấy.</td>
                                                 </tr>
-                                            @endforeach
+                                            @endif
                                         </tbody>
+
                                     </table>
+                                    <!-- Phân trang -->
+                                    <div class="d-flex justify-content-between align-items-center mt-3 px-3">
+                                        <div class="text-muted">
+                                            Hiển thị <strong>{{ $users->firstItem() }}</strong> đến
+                                            <strong>{{ $users->lastItem() }}</strong> trong tổng số
+                                            <strong>{{ $users->total() }}</strong> danh mục
+                                        </div>
+                                        <div>
+                                            {{ $users->links('pagination::bootstrap-4') }}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -137,7 +165,5 @@
         </div>
 
     </div>
-    <div class="d-flex justify-content-center mt-4">
-        {{ $users->links('pagination::bootstrap-5') }}
-    </div>
+    {!! Toastr::message() !!}
 @endsection
