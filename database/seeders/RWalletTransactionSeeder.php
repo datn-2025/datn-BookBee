@@ -31,7 +31,7 @@ class RWalletTransactionSeeder extends Seeder
                     'withdraw', 'payment' => rand(10000, 300000),  // Rút hoặc thanh toán
                     default => 0
                 };
-                // Tạo giao dịch ví
+
                 WalletTransaction::create([
                     'id' => (string) Str::uuid(),
                     'wallet_id' => $wallet->id,
@@ -39,11 +39,6 @@ class RWalletTransactionSeeder extends Seeder
                     'type' => $type,
                     'description' => $this->generateDescription($type),
                     'related_order_id' => $type === 'payment' && $orders->isNotEmpty() ? $orders->random()->id : null,
-                    'status' => fake()->randomElement(['pending', 'completed', 'failed']),
-                    'payment_method' => fake()->randomElement(['bank_transfer', 'vnpay']),
-                    'bank_name' => fake()->randomElement(['Vietcombank', 'Techcombank', 'BIDV', 'ACB', 'TPBank']),
-                    'bank_number' => fake()->numerify('####-####-####-####'),
-                    'customer_name' => fake()->name(),
                 ]);
             }
         }
