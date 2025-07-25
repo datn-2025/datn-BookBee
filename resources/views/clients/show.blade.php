@@ -524,47 +524,47 @@
                         <div class="space-y-4 pb-6 border-b border-gray-200">
                             <h1 class="product-title combo-title">{{ $combo->name }}</h1>
                         </div>
-                        <div class="grid grid-cols-2 gap-4 mt-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                             <div class="space-y-3">
-                                <div class="flex justify-between text-sm">
+                                <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">SỐ SÁCH</span>
                                     <span class="text-black font-semibold adidas-font">{{ $combo->books->count() }}</span>
                                 </div>
-                                <div class="flex justify-between text-sm">
+                                <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">NGÀY BẮT
                                         ĐẦU</span>
                                     <span
-                                        class="text-black font-semibold adidas-font">{{ optional($combo->start_date)->format('d/m/Y') ?? '-' }}</span>
+                                        class="text-black font-semibold adidas-font truncate">{{ optional($combo->start_date)->format('d/m/Y') ?? '-' }}</span>
                                 </div>
-                                <div class="flex justify-between text-sm">
+                                <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">NGÀY KẾT
                                         THÚC</span>
                                     <span
-                                        class="text-black font-semibold adidas-font">{{ optional($combo->end_date)->format('d/m/Y') ?? '-' }}</span>
+                                        class="text-black font-semibold adidas-font truncate">{{ optional($combo->end_date)->format('d/m/Y') ?? '-' }}</span>
                                 </div>
                             </div>
                             <div class="space-y-3">
-                                <div class="flex justify-between text-sm">
+                                <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">TRẠNG
                                         THÁI</span>
                                     @php
                                         $statusText = $combo->status === 'active' ? 'Đang mở bán' : 'Ngừng bán';
                                         $statusClass = $combo->status === 'active' ? 'status-in-stock' : 'status-out-of-stock';
                                     @endphp
-                                    <span class="font-semibold adidas-font {{ $statusClass }}">{{ $statusText }}</span>
+                                    <span class="font-semibold adidas-font {{ $statusClass }} truncate">{{ $statusText }}</span>
                                 </div>
-                                <div class="flex justify-between text-sm">
+                                <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">GIÁ
                                         COMBO</span>
                                     <span
-                                        class="text-black font-bold text-lg adidas-font">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
+                                        class="text-black font-bold text-lg adidas-font truncate">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
                                 </div>
                             </div>
                         </div>
                         <div class="price-section space-y-4">
-                            <div class="flex items-end space-x-4">
-                                <span
-                                    class="text-4xl font-bold text-black adidas-font">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
+                            <!-- Price and main status -->
+                            <div class="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
+                                <span class="text-4xl font-bold text-black adidas-font">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
                                 @php
                                     $now = now();
                                     $startDate = $combo->start_date ? \Carbon\Carbon::parse($combo->start_date) : null;
@@ -593,21 +593,28 @@
                                         $badgeClass = 'bg-green-50 text-green-700 border-green-200';
                                     }
                                 @endphp
-                                <span class="inline-flex items-center px-3 py-1 text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }}">
-                                    <span class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block"></span>{{ $statusText }}
+                                <span class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }} whitespace-nowrap">
+                                    <span class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block flex-shrink-0"></span>
+                                    <span class="truncate">{{ $statusText }}</span>
                                 </span>
-                                
-                                @if($isActive && $startDate)
-                                    <span class="text-sm text-gray-600 adidas-font">
-                                        (Bắt đầu: {{ $startDate->format('d/m/Y') }})
-                                    </span>
-                                @endif
-                                @if($isActive && $endDate)
-                                    <span class="text-sm text-gray-600 adidas-font">
-                                        (Kết thúc: {{ $endDate->format('d/m/Y') }})
-                                    </span>
-                                @endif
                             </div>
+                            
+                            <!-- Additional date information -->
+                            @if(($isActive && $startDate) || ($isActive && $endDate))
+                                <div class="flex flex-col sm:flex-row gap-2 text-xs sm:text-sm text-gray-600 adidas-font">
+                                    @if($isActive && $startDate)
+                                        <span class="whitespace-nowrap">
+                                            Bắt đầu: {{ $startDate->format('d/m/Y') }}
+                                        </span>
+                                    @endif
+                                    @if($isActive && $endDate)
+                                        <span class="whitespace-nowrap">
+                                            @if($isActive && $startDate)<span class="hidden sm:inline">•</span>@endif
+                                            Kết thúc: {{ $endDate->format('d/m/Y') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                         <!-- Danh sách sách trong combo -->
                         <div class="combo-books-list bg-white border border-gray-100 p-4 mt-6">
@@ -802,7 +809,7 @@
                                     class="font-bold text-black text-base leading-tight group-hover:text-gray-600 transition-colors duration-300 line-clamp-2 min-h-[40px]">
                                     <span class="hover:underline">{{ $related->name }}</span>
                                 </h3>
-                                <p class="text-xs text-gray-600 uppercase tracking-wide font-medium min-h-[18px]">
+                                <p class="text-xs text-gray-600 uppercase tracking-wide font-medium min-h-[18px] truncate">
                                     {{ $related->books->pluck('authors')->flatten()->pluck('name')->unique()->join(', ') ?: 'KHÔNG RÕ TÁC GIẢ' }}
                                 </p>
                                 <div class="flex items-center space-x-2 pt-1">
@@ -888,11 +895,11 @@
                                 <h1 class="product-title book-title">{{ $book->title }}</h1>
                             </div>
                             {{-- Quick Info Grid --}}
-                            <div class="grid grid-cols-2 gap-4 mt-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                                 <div class="space-y-3">
-                                    <div class="flex justify-between text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                         <span class="text-gray-600 font-medium">TÁC GIẢ</span>
-                                        <span class="text-black font-semibold">
+                                        <span class="text-black font-semibold truncate">
                                             @if($book->authors && $book->authors->count())
                                                 {{ $book->authors->pluck('name')->join(', ') }}
                                             @else
@@ -900,27 +907,27 @@
                                             @endif
                                         </span>
                                     </div>
-                                    <div class="flex justify-between text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                         <span class="text-gray-600 font-medium">THƯƠNG HIỆU</span>
-                                        <span class="text-black font-semibold">{{ $book->brand->name ?? 'Không rõ' }}</span>
+                                        <span class="text-black font-semibold truncate">{{ $book->brand->name ?? 'Không rõ' }}</span>
                                     </div>
-                                    <div class="flex justify-between text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                         <span class="text-gray-600 font-medium">ISBN</span>
-                                        <span class="text-black font-semibold">{{ $book->isbn }}</span>
+                                        <span class="text-black font-semibold truncate">{{ $book->isbn }}</span>
                                     </div>
                                 </div>
                                 <div class="space-y-3">
-                                    <div class="flex justify-between text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                         <span class="text-gray-600 font-medium">XUẤT BẢN</span>
                                         <span class="text-black font-semibold">{{ $book->publication_date->format('d/m/Y') }}</span>
                                     </div>
-                                    <div class="flex justify-between text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                         <span class="text-gray-600 font-medium">SỐ TRANG</span>
                                         <span class="text-black font-semibold">{{ $book->page_count }}</span>
                                     </div>
-                                    <div class="flex justify-between text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                         <span class="text-gray-600 font-medium">THỂ LOẠI</span>
-                                        <span class="text-black font-semibold">{{ $book->category->name ?? 'Không rõ' }}</span>
+                                        <span class="text-black font-semibold truncate">{{ $book->category->name ?? 'Không rõ' }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -986,15 +993,15 @@
                                             $badgeClass = 'bg-red-50 text-red-700 border-red-200';
                                         }
                                     @endphp
-                                    <div class="flex items-end space-x-4 mt-2">
+                                    <div class="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4 mt-2">
                                         <span id="stockBadge"
-                                            class="inline-flex items-center px-3 py-1 text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }}">
+                                            class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }} whitespace-nowrap w-fit">
                                             <span id="stockDot"
-                                                class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block"></span>
-                                            <span id="stockText">{{ $statusText }}</span>
+                                                class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block flex-shrink-0"></span>
+                                            <span id="stockText" class="truncate">{{ $statusText }}</span>
                                         </span>
                                         @if(($defaultStock > 0 || $isEbook) && $defaultStock !== -1 && $defaultStock !== -2)
-                                            <span id="stockQuantityDisplay" class="text-sm text-gray-600 adidas-font">
+                                            <span id="stockQuantityDisplay" class="text-xs sm:text-sm text-gray-600 adidas-font whitespace-nowrap">
                                                 (<span class="font-bold text-black" id="productQuantity">{{ $defaultStock }}</span> cuốn
                                                 còn lại)
                                             </span>
