@@ -1,85 +1,137 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold text-gray-900">Yêu cầu hoàn tiền</h1>
-            <a href="{{ route('account.orders.show', $order->id) }}" 
-               class="text-blue-600 hover:text-blue-800 flex items-center">
-                <i class="fas fa-arrow-left mr-2"></i>
-                Quay lại chi tiết đơn hàng
-            </a>
-        </div>
+<div class="min-h-screen bg-white py-16 relative overflow-hidden">
+    <!-- Background Elements - Adidas Style -->
+    <div class="absolute inset-0 pointer-events-none">
+        <div class="absolute top-0 right-0 w-72 h-72 bg-black opacity-3 rounded-none transform rotate-45 translate-x-36 -translate-y-36"></div>
+        <div class="absolute bottom-0 left-0 w-96 h-2 bg-black opacity-10"></div>
+        <div class="absolute top-1/2 left-10 w-1 h-32 bg-black opacity-20"></div>
+    </div>
 
-        <!-- Order Summary Card -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Thông tin đơn hàng #{{ $order->code }}</h2>
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                    <p class="text-sm text-gray-600">Ngày đặt hàng</p>
-                    <p class="font-medium">{{ $order->created_at->format('d/m/Y H:i') }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-600">Tổng tiền</p>
-                    <p class="font-medium text-lg text-red-600">{{ number_format($order->total_amount, 0, ',', '.') }}đ</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-600">Phương thức thanh toán</p>
-                    <p class="font-medium">{{ $order->paymentMethod->name ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-600">Trạng thái thanh toán</p>
-                    <p class="font-medium">{{ $order->paymentStatus->name ?? 'N/A' }}</p>
-                </div>
+    <div class="relative z-10 max-w-4xl mx-auto px-6">
+        <!-- Header - Adidas Style -->
+        <div class="mb-12">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-8 h-0.5 bg-black"></div>
+                <span class="text-xs font-bold uppercase tracking-[0.2em] text-gray-600">
+                    REFUND REQUEST
+                </span>
+            </div>
+            <div class="flex items-center justify-between">
+                <h1 class="text-4xl md:text-5xl font-black uppercase tracking-tight text-black">
+                    YÊU CẦU<br>
+                    <span class="text-gray-400">HOÀN TIỀN</span>
+                </h1>
+                <a href="{{ route('account.orders.show', $order->id) }}" 
+                   class="group bg-black text-white px-6 py-3 font-bold text-xs uppercase tracking-[0.1em] hover:bg-gray-800 transition-all duration-300 flex items-center gap-3">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>QUAY LẠI</span>
+                    <div class="w-4 h-0.5 bg-white transform group-hover:w-8 transition-all duration-300"></div>
+                </a>
             </div>
         </div>
 
-        <!-- Refund Request Form -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-6">Thông tin yêu cầu hoàn tiền</h2>
+        <!-- Order Summary Card - Adidas Style -->
+        <div class="bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden mb-8 group">
+            <!-- Geometric background -->
+            <div class="absolute top-0 right-0 w-16 h-16 bg-gray-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-gray-100 group-hover:scale-110 transition-all duration-500"></div>
             
-            <form method="POST" action="{{ route('account.orders.refund.request', $order->id) }}" class="space-y-6">
-                @csrf
+            <div class="p-8 relative z-10">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-6 h-0.5 bg-black"></div>
+                    <h2 class="text-lg font-bold uppercase tracking-wide text-black">
+                        ĐƠN HÀNG #{{ $order->code }}
+                    </h2>
+                </div>
                 
-                <!-- Reason Selection -->
-                <div>
-                    <label for="reason" class="block text-sm font-medium text-gray-700 mb-1">
-                        Lý do yêu cầu hoàn tiền <span class="text-red-600">*</span>
-                    </label>
-                    <select id="reason" name="reason" required
-                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        <option value="">Chọn lý do</option>
-                        <option value="wrong_item" {{ old('reason') == 'wrong_item' ? 'selected' : '' }}>Sản phẩm không đúng mô tả</option>
-                        <option value="quality_issue" {{ old('reason') == 'quality_issue' ? 'selected' : '' }}>Vấn đề về chất lượng</option>
-                        <option value="shipping_delay" {{ old('reason') == 'shipping_delay' ? 'selected' : '' }}>Giao hàng quá chậm</option>
-                        <option value="wrong_qty" {{ old('reason') == 'wrong_qty' ? 'selected' : '' }}>Số lượng không đúng</option>
-                        <option value="other" {{ old('reason') == 'other' ? 'selected' : '' }}>Lý do khác</option>
-                    </select>
-                    @error('reason')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-1">
+                        <p class="text-xs font-bold uppercase tracking-wider text-gray-600">NGÀY ĐẶT HÀNG</p>
+                        <p class="text-sm font-medium text-black">{{ $order->created_at->format('d/m/Y H:i') }}</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs font-bold uppercase tracking-wider text-gray-600">TỔNG TIỀN</p>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-red-600 text-white px-2 py-1 text-xs font-bold uppercase tracking-wide">
+                                {{ number_format($order->total_amount, 0, ',', '.') }}đ
+                            </span>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs font-bold uppercase tracking-wider text-gray-600">THANH TOÁN</p>
+                        <p class="text-sm font-medium text-black">{{ $order->paymentMethod->name ?? 'N/A' }}</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs font-bold uppercase tracking-wider text-gray-600">TRẠNG THÁI</p>
+                        <p class="text-sm font-medium text-black">{{ $order->paymentStatus->name ?? 'N/A' }}</p>
+                    </div>
                 </div>
+                
+                <!-- Progress indicator -->
+                <div class="absolute bottom-0 left-0 h-1 bg-black w-0 group-hover:w-full transition-all duration-700"></div>
+            </div>
+        </div>
 
-                <!-- Additional Details -->
-                <div>
-                    <label for="details" class="block text-sm font-medium text-gray-700 mb-1">
-                        Chi tiết lý do <span class="text-red-600">*</span>
-                    </label>
-                    <textarea id="details" name="details" rows="4" required
-                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        placeholder="Vui lòng mô tả chi tiết lý do yêu cầu hoàn tiền (ít nhất 20 ký tự)...">{{ old('details') }}</textarea>
-                    @error('details')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+        <!-- Refund Request Form - Adidas Style -->
+        <div class="bg-white border border-gray-100 hover:border-black transition-all duration-500 relative overflow-hidden">
+            <!-- Geometric accent -->
+            <div class="absolute top-0 left-0 w-2 h-full bg-black"></div>
+            
+            <div class="pl-8 pr-8 py-8">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-6 h-0.5 bg-black"></div>
+                    <h2 class="text-lg font-bold uppercase tracking-wide text-black">
+                        THÔNG TIN YÊU CẦU HOÀN TIỀN
+                    </h2>
                 </div>
+                
+                <form method="POST" action="{{ route('account.orders.refund.request', $order->id) }}" class="space-y-8">
+                    @csrf
+                    
+                    <!-- Reason Selection -->
+                    <div>
+                        <label for="reason" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-4">
+                            LÝ DO YÊU CẦU HOÀN TIỀN <span class="text-red-600">*</span>
+                        </label>
+                        <div class="relative">
+                            <select id="reason" name="reason" required
+                                class="block w-full border-2 border-gray-200 focus:border-black focus:ring-0 bg-white px-4 py-3 text-sm font-medium text-black uppercase tracking-wide transition-all duration-300">
+                                <option value="">CHỌN LÝ DO</option>
+                                <option value="wrong_item" {{ old('reason') == 'wrong_item' ? 'selected' : '' }}>SẢN PHẨM KHÔNG ĐÚNG MÔ TẢ</option>
+                                <option value="quality_issue" {{ old('reason') == 'quality_issue' ? 'selected' : '' }}>VẤN ĐỀ VỀ CHẤT LƯỢNG</option>
+                                <option value="shipping_delay" {{ old('reason') == 'shipping_delay' ? 'selected' : '' }}>GIAO HÀNG QUÁ CHẬM</option>
+                                <option value="wrong_qty" {{ old('reason') == 'wrong_qty' ? 'selected' : '' }}>SỐ LƯỢNG KHÔNG ĐÚNG</option>
+                                <option value="other" {{ old('reason') == 'other' ? 'selected' : '' }}>LÝ DO KHÁC</option>
+                            </select>
+                            <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all duration-500 group-focus-within:w-full"></div>
+                        </div>
+                        @error('reason')
+                            <p class="mt-2 text-xs font-bold uppercase tracking-wider text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-                <!-- Refund Method -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-3">
-                        Phương thức hoàn tiền <span class="text-red-600">*</span>
-                    </label>
+                    <!-- Additional Details -->
+                    <div>
+                        <label for="details" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-4">
+                            CHI TIẾT LÝ DO <span class="text-red-600">*</span>
+                        </label>
+                        <div class="relative group">
+                            <textarea id="details" name="details" rows="4" required
+                                class="block w-full border-2 border-gray-200 focus:border-black focus:ring-0 bg-white px-4 py-3 text-sm font-medium text-black transition-all duration-300 resize-none"
+                                placeholder="VUI LÒNG MÔ TẢ CHI TIẾT LÝ DO YÊU CẦU HOÀN TIỀN (ÍT NHẤT 20 KÝ TỰ)...">{{ old('details') }}</textarea>
+                            <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all duration-500 group-focus-within:w-full"></div>
+                        </div>
+                        @error('details')
+                            <p class="mt-2 text-xs font-bold uppercase tracking-wider text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Refund Method -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-6">
+                            PHƯƠNG THỨC HOÀN TIỀN <span class="text-red-600">*</span>
+                        </label>
                     
                     @php
                         $paymentMethod = strtolower($order->paymentMethod->name ?? '');
@@ -87,79 +139,131 @@
                         $defaultMethod = $isVnpayOrder ? 'vnpay' : 'wallet';
                     @endphp
                     
-                    <div class="space-y-3">
-                        <!-- Luôn hiển thị tùy chọn ví -->
-                        <div class="flex items-center">
-                            <input type="radio" id="refund_wallet" name="refund_method" value="wallet" 
-                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" 
-                                   {{ old('refund_method', $defaultMethod) == 'wallet' ? 'checked' : '' }}>
-                            <label for="refund_wallet" class="ml-3 block text-sm font-medium text-gray-700">
-                                Hoàn tiền vào ví
-                                <p class="text-xs text-gray-500 mt-1">Tiền sẽ được cộng vào ví của bạn ngay lập tức</p>
+                        <div class="space-y-4">
+                            <!-- Luôn hiển thị tùy chọn ví -->
+                            <label class="group flex items-start cursor-pointer hover:bg-gray-50 p-4 border border-gray-200 hover:border-black transition-all duration-300">
+                                <input type="radio" id="refund_wallet" name="refund_method" value="wallet" 
+                                       class="w-4 h-4 text-black focus:ring-black border-gray-300 mt-1" 
+                                       {{ old('refund_method', $defaultMethod) == 'wallet' ? 'checked' : '' }}>
+                                <div class="ml-4 flex-1">
+                                    <div class="text-sm font-bold uppercase tracking-wide text-black">
+                                        HOÀN TIỀN VÀO VÍ
+                                    </div>
+                                    <p class="text-xs text-gray-600 mt-1 uppercase tracking-wide">
+                                        TIỀN SẼ ĐƯỢC CỘNG VÀO VÍ CỦA BẠN NGAY LẬP TỨC
+                                    </p>
+                                </div>
+                                <div class="w-0 h-0.5 bg-black group-hover:w-4 transition-all duration-300 mt-2"></div>
                             </label>
+                            
+                            <!-- Chỉ hiển thị VNPay nếu đơn hàng được thanh toán qua VNPay -->
+                            @if($isVnpayOrder)
+                            <label class="group flex items-start cursor-pointer hover:bg-gray-50 p-4 border border-gray-200 hover:border-black transition-all duration-300">
+                                <input type="radio" id="refund_vnpay" name="refund_method" value="vnpay" 
+                                       class="w-4 h-4 text-black focus:ring-black border-gray-300 mt-1"
+                                       {{ old('refund_method', $defaultMethod) == 'vnpay' ? 'checked' : '' }}>
+                                <div class="ml-4 flex-1">
+                                    <div class="text-sm font-bold uppercase tracking-wide text-black">
+                                        HOÀN TIỀN QUA VNPAY 
+                                        <span class="bg-black text-white px-2 py-1 text-xs ml-2">(KHUYẾN NGHỊ)</span>
+                                    </div>
+                                    <p class="text-xs text-gray-600 mt-1 uppercase tracking-wide">
+                                        TIỀN SẼ ĐƯỢC HOÀN VỀ PHƯƠNG THỨC THANH TOÁN BAN ĐẦU TRONG 3-5 NGÀY LÀM VIỆC
+                                    </p>
+                                </div>
+                                <div class="w-0 h-0.5 bg-black group-hover:w-4 transition-all duration-300 mt-2"></div>
+                            </label>
+                            @endif
                         </div>
-                        
-                        <!-- Chỉ hiển thị VNPay nếu đơn hàng được thanh toán qua VNPay -->
+                    
                         @if($isVnpayOrder)
-                        <div class="flex items-center">
-                            <input type="radio" id="refund_vnpay" name="refund_method" value="vnpay" 
-                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                                   {{ old('refund_method', $defaultMethod) == 'vnpay' ? 'checked' : '' }}>
-                            <label for="refund_vnpay" class="ml-3 block text-sm font-medium text-gray-700">
-                                Hoàn tiền qua VNPay 
-                                <span class="text-blue-600 font-medium">(Khuyến nghị)</span>
-                                <p class="text-xs text-gray-500 mt-1">Tiền sẽ được hoàn về phương thức thanh toán ban đầu trong 3-5 ngày làm việc</p>
-                            </label>
+                        <div class="mt-4 bg-gray-50 border-l-4 border-black p-4">
+                            <div class="flex items-start">
+                                <div class="w-2 h-2 bg-black rounded-full mt-2 mr-4 flex-shrink-0"></div>
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-black mb-2">THÔNG TIN</h4>
+                                    <p class="text-xs text-gray-700 uppercase tracking-wide leading-relaxed">
+                                        VÌ ĐƠN HÀNG NÀY ĐƯỢC THANH TOÁN QUA VNPAY, CHÚNG TÔI KHUYẾN NGHỊ HOÀN TIỀN QUA VNPAY ĐỂ ĐẢM BẢO NHANH CHÓNG VÀ AN TOÀN.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                         @endif
-                    </div>
                     
-                    @if($isVnpayOrder)
-                    <div class="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <div class="flex">
-                            <svg class="h-5 w-5 text-blue-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                            </svg>
-                            <div>
-                                <h4 class="text-sm font-medium text-blue-800">Thông tin</h4>
-                                <p class="text-sm text-blue-700 mt-1">Vì đơn hàng này được thanh toán qua VNPay, chúng tôi khuyến nghị hoàn tiền qua VNPay để đảm bảo nhanh chóng và an toàn.</p>
+                        @error('refund_method')
+                            <p class="mt-2 text-xs font-bold uppercase tracking-wider text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-end space-x-6 pt-8 border-t-2 border-gray-100">
+                        <a href="{{ route('account.orders.show', $order->id) }}"
+                           class="group bg-white border-2 border-gray-300 hover:border-black text-black px-8 py-3 font-bold text-xs uppercase tracking-[0.1em] transition-all duration-300 flex items-center gap-3">
+                            <span>HỦY</span>
+                            <div class="w-4 h-0.5 bg-gray-400 group-hover:bg-black group-hover:w-8 transition-all duration-300"></div>
+                        </a>
+                        <button type="submit"
+                            class="group bg-black hover:bg-gray-800 text-white px-8 py-3 font-bold text-xs uppercase tracking-[0.1em] transition-all duration-300 flex items-center gap-3">
+                            <span>GỬI YÊU CẦU HOÀN TIỀN</span>
+                            <div class="w-4 h-0.5 bg-white group-hover:w-8 transition-all duration-300"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Important Notes - Adidas Style -->
+        <div class="bg-black text-white relative overflow-hidden mt-8">
+            <!-- Geometric accent -->
+            <div class="absolute top-0 right-0 w-24 h-24 bg-white opacity-10 transform rotate-45 translate-x-12 -translate-y-12"></div>
+            <div class="absolute bottom-0 left-0 w-32 h-1 bg-white opacity-30"></div>
+            
+            <div class="p-8 relative z-10">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-6 h-0.5 bg-white"></div>
+                    <h3 class="text-lg font-bold uppercase tracking-wide text-white">
+                        ĐIỀU KHOẢN VÀ LƯU Ý
+                    </h3>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 bg-white rounded-full mt-2 flex-shrink-0"></div>
+                            <p class="text-sm font-medium text-white uppercase tracking-wide leading-relaxed">
+                                YÊU CẦU HOÀN TIỀN CHỈ ĐƯỢC XỬ LÝ CHO ĐƠN HÀNG ĐÃ HOÀN THÀNH VÀ ĐÃ THANH TOÁN
+                            </p>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 bg-white rounded-full mt-2 flex-shrink-0"></div>
+                            <div class="text-sm font-medium text-white uppercase tracking-wide leading-relaxed">
+                                <p class="mb-2">THỜI GIAN XỬ LÝ HOÀN TIỀN:</p>
+                                <div class="ml-4 space-y-1">
+                                    <p>• HOÀN VÀO VÍ: NGAY LẬP TỨC SAU KHI ĐƯỢC DUYỆT</p>
+                                    <p>• HOÀN TIỀN VNPAY: 3-5 NGÀY LÀM VIỆC SAU KHI ĐƯỢC DUYỆT</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    @endif
-                    
-                    @error('refund_method')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 bg-white rounded-full mt-2 flex-shrink-0"></div>
+                            <p class="text-sm font-medium text-white uppercase tracking-wide leading-relaxed">
+                                PHƯƠNG THỨC HOÀN TIỀN PHỤ THUỘC VÀO PHƯƠNG THỨC THANH TOÁN BAN ĐẦU
+                            </p>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 bg-white rounded-full mt-2 flex-shrink-0"></div>
+                            <p class="text-sm font-medium text-white uppercase tracking-wide leading-relaxed">
+                                MỌI THẮC MẮC VUI LÒNG LIÊN HỆ HOTLINE: 1900 XXXX
+                            </p>
+                        </div>
+                    </div>
                 </div>
-
-                <!-- Submit Button -->
-                <div class="flex justify-end space-x-4 pt-6 border-t">
-                    <a href="{{ route('account.orders.show', $order->id) }}"
-                       class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Hủy
-                    </a>
-                    <button type="submit"
-                        class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Gửi yêu cầu hoàn tiền
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Important Notes -->
-        <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 class="text-sm font-medium text-blue-800 mb-2">Điều khoản và lưu ý:</h3>
-            <ul class="list-disc list-inside text-sm text-blue-700 space-y-1">
-                <li>Yêu cầu hoàn tiền chỉ được xử lý cho đơn hàng đã hoàn thành thành công và đã thanh toán</li>
-                <li>Thời gian xử lý hoàn tiền:</li>
-                <ul class="list-disc list-inside ml-4 space-y-1">
-                    <li>Hoàn vào ví: Ngay lập tức sau khi được duyệt</li>
-                    <li>Hoàn tiền VNPay: 3-5 ngày làm việc sau khi được duyệt</li>
-                </ul>
-                <li>Phương thức hoàn tiền phụ thuộc vào phương thức thanh toán ban đầu</li>
-                <li>Mọi thắc mắc vui lòng liên hệ hotline: 1900 xxxx</li>
-            </ul>
+                
+                <!-- Bottom accent line -->
+                <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-white via-gray-300 to-transparent opacity-50"></div>
+            </div>
         </div>
     </div>
 </div>
