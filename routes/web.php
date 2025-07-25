@@ -28,6 +28,8 @@ use App\Http\Controllers\Client\OrderClientController;
 use App\Http\Controllers\Client\ProfileClientController;
 use App\Http\Controllers\Client\ReviewClientController;
 use App\Http\Controllers\Client\UserClientController;
+use App\Http\Controllers\Client\RefundController;
+use App\Http\Controllers\Admin\RefundController as AdminRefundController;
 use App\Http\Controllers\Contact\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Login\ActivationController;
@@ -156,6 +158,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}', [OrderClientController::class, 'show'])->name('show');
             Route::put('/{id}', [OrderClientController::class, 'update'])->name('update');
             Route::delete('/{id}', [OrderClientController::class, 'destroy'])->name('destroy');
+            
+            // Refund routes
+            Route::get('/{order}/refund', [RefundController::class, 'create'])->name('refund.create');
+            Route::post('/{order}/refund', [RefundController::class, 'store'])->name('refund.request');
+            Route::get('/{order}/refund/status', [RefundController::class, 'status'])->name('refund.status');
         });
     });
     // Đơn hàng checkout và storex
@@ -229,13 +236,36 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/{paymentMethod}/edit', [AdminPaymentMethodController::class, 'edit'])->name('edit');
         Route::put('/{paymentMethod}', [AdminPaymentMethodController::class, 'update'])->name('update');
         Route::delete('/{paymentMethod}', [AdminPaymentMethodController::class, 'destroy'])->name('destroy');
-        // Thêm các route mới
         Route::get('/trash', [AdminPaymentMethodController::class, 'trash'])->name('trash');
         Route::put('/{paymentMethod}/restore', [AdminPaymentMethodController::class, 'restore'])->name('restore');
         Route::delete('/{paymentMethod}/force-delete', [AdminPaymentMethodController::class, 'forceDelete'])->name('force-delete');
-
         Route::get('/history', [AdminPaymentMethodController::class, 'history'])->name('history');
-        Route::put('/{id}/status', [AdminPaymentMethodController::class, 'updateStatus'])->name('updateStatus');
+    });
+    
+    // Route hoàn tiền đơn hàng
+    // Route::prefix('orders')->name('orders.')->group(function () {
+    //     // Route::get('/{id}/refund', [OrderController::class, 'showRefund'])->name('refund.show');
+    //     // Route::post('/{id}/refund', [OrderController::class, 'processRefund'])->name('refund.process');
+    //     // Route::get('/{id}/refund/status', [OrderController::class, 'refundStatus'])->name('refund.status');
+    //     // Route::put('/{id}/status', [AdminPaymentMethodController::class, 'updateStatus'])->name('updateStatus');
+        
+    //     // Routes cho quản lý yêu cầu hoàn tiền
+    //     Route::get('/refunds', [RefundController::class, 'index'])->name('refunds.index');
+    //     Route::get('/refunds/{id}', [RefundController::class, 'show'])->name('refunds.show');
+    //     Route::post('/refunds/{id}/process', [RefundController::class, 'process'])->name('refunds.process');
+        
+    //     // Handle GET access to process route - redirect to show page
+    //     // Route::get('/refunds/{id}/process', function($id) {
+    //     //     return redirect()->route('admin.orders.refunds.show', $id);
+    //     // });
+    // });
+
+    // Admin Refund Management - Chuyên biệt cho RefundController
+    Route::prefix('refunds')->name('refunds.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\RefundController::class, 'index'])->name('index');
+        Route::get('/{refund}', [\App\Http\Controllers\Admin\RefundController::class, 'show'])->name('show');
+        Route::post('/{refund}/process', [\App\Http\Controllers\Admin\RefundController::class, 'process'])->name('process');
+        Route::get('/statistics', [\App\Http\Controllers\Admin\RefundController::class, 'statistics'])->name('statistics');
     });
 
     Route::prefix('wallets')->name('wallets.')->group(function () {
@@ -244,6 +274,22 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/withdraw-history', [\App\Http\Controllers\Admin\WalletController::class, 'withdrawHistory'])->name('withdrawHistory');
         Route::post('/approve/{id}', [WalletController::class, 'approveTransaction'])->name('approveTransaction');
         Route::post('/reject/{id}', [WalletController::class, 'rejectTransaction'])->name('rejectTransaction');
+        
+    //     // Debug page
+    //     Route::get('/debug', function() {
+    //         return view('admin.wallets.debug');
+    //     })->name('debug');
+        
+    //     // Debug routes for wallet refund
+    //     Route::get('/debug-refund/{orderId}', function($orderId) {
+    //         $result = \App\Services\WalletRefundDebugService::debugRefund($orderId);
+    //         return response()->json($result);
+    //     })->name('debug.refund');
+        
+    //     Route::post('/force-refund/{orderId}/{amount}', function($orderId, $amount) {
+    //         $result = \App\Services\WalletRefundDebugService::forceCreateRefundTransaction($orderId, $amount);
+    //         return response()->json(['success' => $result]);
+    //     })->name('force.refund');
     });
 
     // Route admin/categories

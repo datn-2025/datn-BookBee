@@ -31,6 +31,11 @@
                                     <a href="{{ route('admin.orders.edit', $order->id) }}" class="btn btn-success btn-sm">
                                         <i class="ri-pencil-fill align-middle me-1"></i> Cập nhật trạng thái
                                     </a>
+                                    @if($order->orderStatus->name === 'Thành công' && $order->paymentStatus->name === 'Đã Thanh Toán' && !in_array($order->paymentStatus->name, ['Đang Hoàn Tiền', 'Đã Hoàn Tiền']))
+                                        <a href="{{ route('admin.refunds.show', $order->id) }}" class="btn btn-warning btn-sm">
+                                            <i class="ri-refund-2-line align-middle me-1"></i> Hoàn tiền
+                                        </a>
+                                    @endif
                                     <button type="button" class="btn btn-primary btn-sm">
                                         <i class="ri-printer-fill align-middle me-1"></i> In hóa đơn
                                     </button>
