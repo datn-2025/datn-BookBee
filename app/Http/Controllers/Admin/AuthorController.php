@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Author;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -118,13 +119,14 @@ class AuthorController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255|unique:authors,name',
+                'name' => 'required|string|max:255|unique:authors,name|not_regex:/<.*?>/i',
                 'biography' => 'nullable|string',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
             ], [
                 'name.required' => 'Vui lòng nhập tên tác giả',
                 'name.unique' => 'Tên tác giả đã tồn tại trong hệ thống',
                 'name.max' => 'Tên tác giả không được vượt quá 255 ký tự',
+                'name.not_regex' => 'Tên tác giả không được chứa thẻ HTML.',
                 'biography.string' => 'Tiểu sử phải là chuỗi ký tự',
                 'image.image' => 'File phải là hình ảnh',
                 'image.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif',
@@ -168,13 +170,14 @@ class AuthorController extends Controller
     {
         $author = Author::findOrFail($id);
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:authors,name,' . $author->id,
+            'name' => 'required|string|max:255|not_regex:/<.*?>/i|unique:authors,name,' . $author->id,
             'biography' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ], [
             'name.required' => 'Vui lòng nhập tên tác giả',
             'name.unique' => 'Tên tác giả đã tồn tại trong hệ thống',
             'name.max' => 'Tên tác giả không được vượt quá 255 ký tự',
+            'name.not_regex' => 'Tên tác giả không được chứa thẻ HTML.',
             'biography.string' => 'Tiểu sử phải là chuỗi ký tự',
             'image.image' => 'File phải là hình ảnh',
             'image.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif',
@@ -194,6 +197,14 @@ class AuthorController extends Controller
             $image->storeAs('authors', $filename, 'public');
             $data['image'] = '/storage/authors/' . $filename;
         }
+        // Kiểm tra thay đổi
+            $original = $author->only(['name', 'description', 'image']);
+            $incoming = array_merge($original, Arr::only($data, ['name', 'description', 'image']));
+
+            if ($original === $incoming) {
+                toastr()->info('Không có thay đổi nào cho danh mục sách.');
+                return redirect()->route('admin.categories.authors.index');
+            }
 
         $author->update($data);
         toastr()->success('Cập nhật tác giả thành công');

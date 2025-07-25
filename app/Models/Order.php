@@ -31,6 +31,7 @@ class Order extends Model
         'recipient_email',
         'cancelled_at',
         'cancellation_reason',
+        'delivery_method',
     ];
 
     protected $casts = [
@@ -81,6 +82,11 @@ class Order extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function refundRequests(): HasMany
+    {
+        return $this->hasMany(RefundRequest::class);
+    }
+
     public function appliedVoucher(): HasOne
     {
         return $this->hasOne(AppliedVoucher::class);
@@ -91,10 +97,10 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-     public function shipping()
-    {
-        return $this->hasOne(Shipping::class);
-    }
+    //  public function shipping()
+    // {
+    //     return $this->hasOne(shipping::class);
+    // }
 
     protected static function boot()
     {

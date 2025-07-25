@@ -73,7 +73,7 @@
                         <div class="flex flex-col md:flex-row gap-4 py-4 border-b border-gray-200 last:border-b-0">
                             <!-- Product Info -->
                             <div class="flex-grow flex gap-4">
-                                <img src="{{ $item->book->image_url ?? 'https://via.placeholder.com/100x140' }}"  class="w-20 h-28 object-cover rounded-md flex-shrink-0">
+                                <img src="{{ $item->book->image_url ?? 'https://via.placeholder.com/100x140' }}" class="w-20 h-28 object-cover rounded-md flex-shrink-0">
                                 <div>
                                     <p class="text-sm text-gray-600">Số lượng: {{ $item->quantity }}</p>
                                     <p class="text-sm text-gray-600">Giá: <span class="font-semibold">{{ number_format($item->price, 0, ',', '.') }} đ</span></p>

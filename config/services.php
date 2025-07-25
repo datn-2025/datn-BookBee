@@ -38,6 +38,7 @@ return [
         'tmn_code' => env('VNP_TMNCODE'),
         'hash_secret' => env('VNP_HASHSECRET'),
         'url' => env('VNP_URL'),
+        'return_url' => 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction',
     ],
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
