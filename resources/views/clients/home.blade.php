@@ -674,7 +674,7 @@
                         <!-- Image -->
                         <div class="aspect-[3/4] bg-gray-50 overflow-hidden relative">
                             @if($upcomingBook->images->count() > 0)
-                                <img src="{{ asset('storage/' . $upcomingBook->images->first()->image_path) }}" 
+                                <img src="{{ asset('storage/' . $upcomingBook->images->first()->image_url) }}" 
                                      alt="{{ $upcomingBook->title }}" 
                                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100">
                             @else
