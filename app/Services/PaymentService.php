@@ -5,9 +5,17 @@ namespace App\Services;
 use App\Models\Payment;
 use App\Models\PaymentStatus;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class PaymentService
 {
+    protected $invoiceService;
+
+    public function __construct(InvoiceService $invoiceService)
+    {
+        $this->invoiceService = $invoiceService;
+    }
+
     public function createPayment(array $data)
     {
         return Payment::create([
@@ -38,6 +46,24 @@ class PaymentService
         $payment->order->update([
             'payment_status_id' => $paymentStatus->id
         ]);
+
+        // Tự động tạo hóa đơn khi thanh toán thành công
+        if ($status === 'paid' || $paymentStatus->name === 'Đã Thanh Toán') {
+            try {
+                $this->invoiceService->processInvoiceForPaidOrder($payment->order);
+                Log::info('Invoice created automatically for paid order', [
+                    'order_id' => $payment->order->id,
+                    'payment_id' => $payment->id
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to create invoice for paid order', [
+                    'order_id' => $payment->order->id,
+                    'payment_id' => $payment->id,
+                    'error' => $e->getMessage()
+                ]);
+                // Không throw exception để không ảnh hưởng đến luồng thanh toán
+            }
+        }
 
         return $payment;
     }

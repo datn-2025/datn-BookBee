@@ -653,6 +653,7 @@
                             <button type="button" class="quantity-btn-enhanced" onclick="updateComboQty(1)">
                                 <i class="fas fa-plus"></i>
                             </button>
+
                         </div>
                     </div>
                     <button type="button" id="addComboToCartBtn" data-combo-id="{{ $combo->id }}" class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font"
@@ -858,6 +859,70 @@
                                     <div class="w-2 h-2 bg-black rounded-full"></div>
                                     <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
                                     <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+
+                        <!-- Form mua combo -->
+                        <form action="{{ route('cart.add') }}" method="POST" class="mt-8">
+                            @csrf
+                            <input type="hidden" name="combo_id" value="{{ $combo->id }}">
+                            <input type="hidden" name="type" value="combo">
+                            <div class="mb-6">
+                                <label class="block text-sm font-bold text-black uppercase tracking-wider mb-3 adidas-font">Số
+                                    lượng</label>
+                                <div class="flex items-center w-fit">
+                                    <button type="button" class="quantity-btn-enhanced" id="comboDecrementBtn">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="number" name="quantity" id="comboQuantity" value="1" min="1"
+                                        class="quantity-input-enhanced adidas-font" />
+                                    <button type="button" class="quantity-btn-enhanced" id="comboIncrementBtn">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="submit"
+                                class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font"
+                                @php
+                                    $now = now();
+                                    $startDate = $combo->start_date ? \Carbon\Carbon::parse($combo->start_date) : null;
+                                    $endDate = $combo->end_date ? \Carbon\Carbon::parse($combo->end_date) : null;
+                                    $isActive = $combo->status === 'active' && 
+                                              (!$startDate || $now >= $startDate) && 
+                                              (!$endDate || $now <= $endDate);
+                                @endphp
+                                @if(!$isActive) disabled style="opacity:0.6;pointer-events:none;" @endif>
+                                <i class="fas fa-shopping-bag mr-3"></i>
+                                <span>THÊM VÀO GIỎ HÀNG</span>
+                            </button>
+                            <!-- Wishlist Button -->
+                            <button type="button"
+                                class="wishlist-btn w-full h-14 border-2 border-black text-black font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center mt-3 adidas-font">
+                                <i class="far fa-heart mr-3"></i>
+                                <span>YÊU THÍCH</span>
+                            </button>
+                            <!-- Enhanced Share Section -->
+                            <div class="share-section pt-8 border-t border-gray-200 mt-8">
+                                <h3 class="text-sm font-bold text-black uppercase tracking-wider mb-6">Chia sẻ sản phẩm</h3>
+                                <div class="flex space-x-4">
+                                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}"
+                                        target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                                        <i class="fab fa-facebook-f"></i>
+                                    </a>
+                                    <a href="https://twitter.com/intent/tweet?url={{ urlencode(url()->current()) }}"
+                                        target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                                        <i class="fab fa-twitter"></i>
+                                    </a>
+                                    <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ urlencode(url()->current()) }}"
+                                        target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                                        <i class="fab fa-linkedin-in"></i>
+                                    </a>
+                                    <a href="https://api.whatsapp.com/send?text={{ urlencode(url()->current()) }}"
+                                        target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </a>
+                                    <a href="https://t.me/share/url?url={{ urlencode(url()->current()) }}" target="_blank"
+                                        class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
+                                        <i class="fab fa-telegram-plane"></i>
+                                    </a>
                                 </div>
                             </div>
                         @endif
@@ -1177,8 +1242,41 @@
                                         </div>
                                     </div>
 
-                                    <!-- Accent Line -->
-                                    <div class="w-1 bg-gray-200 group-hover/item:bg-black transition-all duration-300 self-stretch"></div>
+                                @endif
+                                <!-- Wishlist Button -->
+                                <div class="absolute top-2 right-2">
+                                    <button
+                                        class="w-10 h-10 bg-white bg-opacity-90 flex items-center justify-center border border-gray-200 hover:bg-black hover:text-white hover:border-black transition-all duration-300 transform hover:scale-110"
+                                        onclick="event.stopPropagation();">
+                                        <i class="far fa-heart text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="p-2">
+                                <h3
+                                    class="font-bold text-black text-base leading-tight group-hover:text-gray-600 transition-colors duration-300 line-clamp-2 min-h-[40px]">
+                                    <span class="hover:underline">{{ $related->name }}</span>
+                                </h3>
+                                <p class="text-xs text-gray-600 uppercase tracking-wide font-medium min-h-[18px] truncate">
+                                    {{ $related->books->pluck('authors')->flatten()->pluck('name')->unique()->join(', ') ?: 'KHÔNG RÕ TÁC GIẢ' }}
+                                </p>
+                                <div class="flex items-center space-x-2 pt-1">
+                                    <span class="text-lg font-bold text-black">
+                                        {{ number_format($related->combo_price, 0, ',', '.') }}₫
+                                    </span>
+                                </div>
+                                <div class="pt-1">
+                                    <button onclick="event.stopPropagation(); addRelatedToCart('{{ $related->id }}')"
+                                        class="adidas-btn-enhanced w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center {{ $relatedStock <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800' }}"
+                                        {{ $relatedStock <= 0 ? 'disabled' : '' }}>
+                                        <span class="relative flex items-center space-x-1">
+                                            <i class="fas fa-shopping-cart text-xs"></i>
+                                            <span>{{ $relatedStock <= 0 ? 'HẾT HÀNG' : 'THÊM VÀO GIỎ' }}</span>
+                                            <i
+                                                class="fas fa-arrow-right text-xs transform group-hover/btn:translate-x-1 transition-transform duration-300"></i>
+                                        </span>
+                                    </button>
+
                                 </div>
                                 
                                 @if(!$loop->last)
@@ -1244,6 +1342,79 @@
                                     <label for="attribute_{{ $attrVal->id }}" class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">
                                         {{ $attributeName }}
                                     </label>
+                        {{-- Enhanced Product Info --}}
+                        <div class="space-y-8 adidas-font lg:pl-8">
+                            {{-- Product Header --}}
+                            <div class="space-y-4 pb-6 border-b border-gray-200">
+                                <h1 class="product-title book-title">{{ $book->title }}</h1>
+                            </div>
+                            {{-- Quick Info Grid --}}
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                                <div class="space-y-3">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
+                                        <span class="text-gray-600 font-medium">TÁC GIẢ</span>
+                                        <span class="text-black font-semibold truncate">
+                                            @if($book->authors && $book->authors->count())
+                                                {{ $book->authors->pluck('name')->join(', ') }}
+                                            @else
+                                                Không rõ
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
+                                        <span class="text-gray-600 font-medium">THƯƠNG HIỆU</span>
+                                        <span class="text-black font-semibold truncate">{{ $book->brand->name ?? 'Không rõ' }}</span>
+                                    </div>
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
+                                        <span class="text-gray-600 font-medium">ISBN</span>
+                                        <span class="text-black font-semibold truncate">{{ $book->isbn }}</span>
+                                    </div>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
+                                        <span class="text-gray-600 font-medium">XUẤT BẢN</span>
+                                        <span class="text-black font-semibold">{{ $book->publication_date->format('d/m/Y') }}</span>
+                                    </div>
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
+                                        <span class="text-gray-600 font-medium">SỐ TRANG</span>
+                                        <span class="text-black font-semibold">{{ $book->page_count }}</span>
+                                    </div>
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
+                                        <span class="text-gray-600 font-medium">THỂ LOẠI</span>
+                                        <span class="text-black font-semibold truncate">{{ $book->category->name ?? 'Không rõ' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {{-- Price Section --}}
+                            @php
+                                $formats = $book->formats->sortByDesc(fn($f) => $f->format_name === 'Ebook');
+                                $defaultFormat = $formats->first();
+                                $defaultPrice = $defaultFormat->price ?? $book->price;
+                                $defaultStock = $defaultFormat->stock ?? $book->stock;
+                                $discount = $defaultFormat->discount ?? 0;
+                                $finalPrice = $defaultPrice - ($defaultPrice * ($discount / 100));
+                            @endphp
+                            <div class="price-section space-y-4">
+                                <div class="flex items-end space-x-4">
+                                    <span id="bookPrice" data-base-price="{{ $defaultPrice }}"
+                                        class="text-4xl font-bold text-black adidas-font">{{ number_format($finalPrice, 0, ',', '.') }}₫</span>
+                                    @if ($discount > 0)
+                                        <span id="originalPrice"
+                                            class="text-xl text-gray-500 line-through adidas-font">{{ number_format($defaultPrice, 0, ',', '.') }}₫</span>
+                                        <span id="discountText"
+                                            class="bg-red-600 text-white px-3 py-1 text-sm font-bold adidas-font uppercase tracking-wider">-<span
+                                                id="discountPercent">{{ $discount }}</span>%</span>
+                                    @else
+                                        <span id="originalPrice" class="text-xl text-gray-500 line-through adidas-font"
+                                            style="display: none;"></span>
+                                        <span id="discountText"
+                                            class="bg-red-600 text-white px-3 py-1 text-sm font-bold adidas-font uppercase tracking-wider"
+                                            style="display: none;">
+                                            -<span id="discountPercent">0</span>%
+                                        </span>
+                                    @endif
+                                    <!-- Stock Status with Enhanced Design -->
+
                                     @php
                                         $filteredValues = \App\Models\BookAttributeValue::with('attributeValue')
                                             ->where('book_id', $book->id)
@@ -1252,6 +1423,74 @@
                                             })
                                             ->get();
                                     @endphp
+
+                                    <div class="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4 mt-2">
+                                        <span id="stockBadge"
+                                            class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }} whitespace-nowrap w-fit">
+                                            <span id="stockDot"
+                                                class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block flex-shrink-0"></span>
+                                            <span id="stockText" class="truncate">{{ $statusText }}</span>
+                                        </span>
+                                        @if(($defaultStock > 0 || $isEbook) && $defaultStock !== -1 && $defaultStock !== -2)
+                                            <span id="stockQuantityDisplay" class="text-xs sm:text-sm text-gray-600 adidas-font whitespace-nowrap">
+                                                (<span class="font-bold text-black" id="productQuantity">{{ $defaultStock }}</span> cuốn
+                                                còn lại)
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quà tặng kèm -->
+                            @if(isset($bookGifts) && $bookGifts->count())
+                                <div class="book-gifts-section mt-8">
+                                    <h3
+                                        class="text-lg font-bold text-black mb-3 flex items-center adidas-font uppercase tracking-wider">
+                                        <i class="fas fa-gift text-base mr-2 text-black"></i>Quà tặng kèm
+                                    </h3>
+                                    <ul class="space-y-3">
+                                        @foreach($bookGifts as $gift)
+                                            <li
+                                                class="flex items-start gap-4 p-4 bg-white border border-gray-200 hover:border-black transition-all duration-200 shadow-sm">
+                                                @if($gift->gift_image)
+                                                    <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="{{ $gift->gift_name }}"
+                                                        class="w-16 h-16 object-cover shadow border border-gray-200">
+                                                @else
+                                                    <span
+                                                        class="w-16 h-16 flex items-center justify-center bg-gray-100 text-2xl border border-gray-200"><i
+                                                            class="fas fa-gift"></i></span>
+                                                @endif
+                                                <div class="flex-1">
+                                                    <div class="font-semibold text-black text-base adidas-font">{{ $gift->gift_name }}</div>
+                                                    @if($gift->gift_description)
+                                                        <div class="text-sm text-gray-700 mt-1">{{ $gift->gift_description }}</div>
+                                                    @endif
+                                                    @if($gift->quantity > 0)
+                                                        <div class="text-xs text-green-700 mt-1">Số lượng: {{ $gift->quantity }}</div>
+                                                    @endif
+                                                    @if($gift->start_date || $gift->end_date)
+                                                        <div class="text-xs text-gray-500 mt-1 flex flex-wrap gap-2">
+                                                            @if($gift->start_date)
+                                                                <span>Bắt đầu: {{ Carbon::parse($gift->start_date)->format('d/m/Y') }}</span>
+                                                            @endif
+                                                            @if($gift->end_date)
+                                                                <span>Kết thúc: {{ Carbon::parse($gift->end_date)->format('d/m/Y') }}</span>
+                                                            @endif
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            <!-- Enhanced Format Selection -->
+                            @if ($book->formats->count())
+                                <div class="format-selection space-y-3">
+                                    <label for="bookFormatSelect"
+                                        class="block text-sm font-bold text-black uppercase tracking-wider">Định dạng sách</label>
+
                                     <div class="relative">
                                         <select name="attributes[{{ $attrVal->id }}]"
                                                 id="attribute_{{ $attrVal->id }}"
@@ -1777,6 +2016,24 @@
             <div id="previewLimitNotice" class="hidden absolute bottom-4 left-4 right-4 text-center bg-black text-white font-bold py-3 px-6 adidas-font uppercase tracking-wider">
                 <i class="fas fa-lock mr-2"></i>
                 HÃY MUA ĐỂ TẬN HƯỞNG TRỌN BỘ!
+            <!-- Nội dung đọc thử -->
+            <div id="previewContent" class="flex-1 overflow-y-auto px-0 py-0 relative bg-gray-50"
+                style="scroll-behavior:smooth;">
+                <div id="previewPages" class="h-full">
+                    <!-- Nội dung đọc thử sẽ được load ở đây -->
+                    @if(isset($book))
+                        <iframe id="previewIframe" src="{{ asset('storage/book/book_' . $book->id . '.pdf') }}"
+                            class="w-full h-[80vh] border-none bg-white"></iframe>
+                    @else
+                        <iframe id="previewIframe" src=""
+                            class="w-full h-[80vh] border-none bg-white"></iframe>
+                    @endif
+                </div>
+                <div id="previewLimitNotice"
+                    class="hidden absolute bottom-4 left-4 right-4 text-center bg-black text-white font-bold py-3 px-6 adidas-font uppercase tracking-wider">
+                    <i class="fas fa-lock mr-2"></i>
+                    HÃY MUA ĐỂ TẬN HƯỞNG TRỌN BỘ!
+                </div>
             </div>
         </div>
     </div>
@@ -2218,6 +2475,59 @@
                 } else if (stock === 0) {
                     stockText = 'HẾT HÀNG';
                     stockClass = 'status-out-of-stock font-semibold';
+
+            // Update price and stock based on selected format and attributes
+            function updatePriceAndStock() {
+                const formatSelect = document.getElementById('bookFormatSelect');
+                const bookPriceElement = document.getElementById('bookPrice');
+                
+                // Kiểm tra nếu không phải trang book thì return
+                if (!bookPriceElement) {
+                    return;
+                }
+                
+                const basePrice = parseFloat(bookPriceElement.dataset.basePrice) || 0;
+                let finalPrice = basePrice;
+                let stock = 0;
+                let discount = 0;
+                let isEbook = false;
+
+                // Get format data
+                if (formatSelect && formatSelect.selectedOptions[0]) {
+                    const selectedOption = formatSelect.selectedOptions[0];
+                    finalPrice = parseFloat(selectedOption.dataset.price) || basePrice;
+                    stock = parseInt(selectedOption.dataset.stock) || 0;
+                    discount = parseFloat(selectedOption.dataset.discount) || 0;
+                    const selectedText = selectedOption.textContent.trim().toLowerCase();
+                    isEbook = selectedText.includes('ebook');
+                }
+                // Add attribute extra costs
+                const attributeSelects = document.querySelectorAll('[name^="attributes["]');
+                attributeSelects.forEach(select => {
+                    if (select.selectedOptions[0]) {
+                        const extraPrice = parseFloat(select.selectedOptions[0].dataset.price) || 0;
+                        finalPrice += extraPrice;
+                    }
+                });
+                // Calculate final price with discount
+                const discountAmount = finalPrice * (discount / 100);
+                const priceAfterDiscount = finalPrice - discountAmount;
+                // Update price display
+                bookPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(priceAfterDiscount) + '₫';
+                const originalPriceElement = document.getElementById('originalPrice');
+                const discountTextElement = document.getElementById('discountText');
+                const discountPercentElement = document.getElementById('discountPercent');
+                if (discount > 0) {
+                    if (originalPriceElement) {
+                        originalPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(finalPrice) + '₫';
+                        originalPriceElement.style.display = 'inline';
+                    }
+                    if (discountTextElement) {
+                        discountTextElement.style.display = 'inline';
+                    }
+                    if (discountPercentElement) {
+                        discountPercentElement.textContent = discount;
+                    }
                 } else {
                     stockText = 'CÒN HÀNG';
                     stockClass = 'status-in-stock font-semibold';
@@ -2436,6 +2746,27 @@
             const selectedText = formatSelect.selectedOptions[0].textContent.trim().toLowerCase();
             isEbook = selectedText.includes('ebook');
         }
+            // Add to cart function
+            function addToCart() {
+                // Check if we're on book page (not combo page)
+                @if(!isset($combo) && isset($book))
+                    // Check if user is logged in
+                    @auth
+                    @else
+                            if (typeof toastr !== 'undefined') {
+                            toastr.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
+                        } else {
+                            alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
+                        }
+                        setTimeout(() => {
+                            window.location.href = '{{ route("login") }}';
+                        }, 1500);
+                        return;
+                    @endauth
+
+                    // Get form data
+                    const bookId = '{{ $book->id }}';
+                    const quantity = parseInt(document.getElementById('quantity').value) || 1;
 
         // Get selected attributes
         const attributes = {};
@@ -2646,6 +2977,84 @@
                             timeOut: 2000,
                             onclick: function() {
                                 window.location.href = '{{ route("cart.index") }}';
+
+                // Disable button and show loading
+                const addToCartBtn = document.getElementById('addToCartBtn');
+                const originalText = addToCartBtn.textContent;
+                addToCartBtn.disabled = true;
+                addToCartBtn.textContent = 'Đang thêm...';
+
+                // Send request
+                fetch('{{ route("cart.add") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        book_id: bookId,
+                        quantity: quantity,
+                        book_format_id: bookFormatId,
+                        attributes: attributes
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                console.log('Non-JSON response:', text);
+                                throw new Error('Server returned non-JSON response');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success('Đã thêm sản phẩm vào giỏ hàng!');
+                            } else {
+                                alert('Đã thêm sản phẩm vào giỏ hàng!');
+                            }
+
+                            // Dispatch cart count update event
+                            if (typeof data.cart_count !== 'undefined') {
+                                document.dispatchEvent(new CustomEvent('cartItemAdded', {
+                                    detail: { count: data.cart_count }
+                                }));
+                            } else {
+                                // Fallback: refresh cart count from server
+                                if (window.CartCountManager && typeof window.CartCountManager.refreshFromServer === 'function') {
+                                    window.CartCountManager.refreshFromServer();
+                                }
+                            }
+                        } else if (data.error) {
+                            if (typeof toastr !== 'undefined') {
+                                // Kiểm tra nếu là lỗi trộn lẫn loại sản phẩm
+                                if (data.cart_type) {
+                                    if (data.cart_type === 'physical_books') {
+                                        toastr.warning(data.error, 'Giỏ hàng có sách vật lý!', {
+                                            timeOut: 6000,
+                                            closeButton: true,
+                                            progressBar: true,
+                                            positionClass: 'toast-top-right'
+                                        });
+                                    } else if (data.cart_type === 'ebooks') {
+                                        toastr.warning(data.error, 'Giỏ hàng có sách điện tử!', {
+                                            timeOut: 6000,
+                                            closeButton: true,
+                                            progressBar: true,
+                                            positionClass: 'toast-top-right'
+                                        });
+                                    }
+                                } else {
+                                    toastr.error(data.error);
+                                }
+                            } else {
+                                // Fallback alert if toastr is not available
+                                alert(data.error);
                             }
                         });
                     }
@@ -2660,9 +3069,13 @@
                         closeButton: true,
                         progressBar: true
                     });
-                } else {
-                    alert(data.error);
-                }
+                @else
+                    // This is combo page, addToCart function should not be called
+                    console.warn('addToCart function called on combo page');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning('Chức năng này chỉ khả dụng trên trang sách đơn');
+                    }
+                @endif
             }
         })
         .catch(error => {
@@ -2768,6 +3181,119 @@
                             timeOut: 2000,
                             onclick: function() {
                                 window.location.href = '{{ route("cart.index") }}';
+                    setTimeout(() => {
+                        window.location.href = '{{ route("login") }}';
+                    }, 1500);
+                    return;
+                @endauth
+
+                // Default quantity for related products
+                const quantity = 1;
+
+                // Find the button that was clicked
+                const button = event.target.closest('button');
+                const originalText = button.innerHTML;
+
+                // Disable button and show loading
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ĐANG THÊM...';
+
+                // Send request
+                fetch('{{ route("cart.add") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        book_id: bookId,
+                        book_format_id: null, // Use default format
+                        quantity: quantity,
+                        attribute_value_ids: JSON.stringify([]),
+                        attributes: {}
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                console.log('Non-JSON response:', text);
+                                throw new Error('Server returned non-JSON response');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Show success notification
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success(data.success, 'Thành công!', {
+                                    timeOut: 3000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
+                            } else {
+                                alert(data.success);
+                            }
+
+                            // Dispatch cart count update event
+                            if (typeof data.cart_count !== 'undefined') {
+                                document.dispatchEvent(new CustomEvent('cartItemAdded', {
+                                    detail: { count: data.cart_count }
+                                }));
+                            } else {
+                                // Fallback: refresh cart count from server
+                                if (window.CartCountManager && typeof window.CartCountManager.refreshFromServer === 'function') {
+                                    window.CartCountManager.refreshFromServer();
+                                }
+                            }
+
+                            // Show cart count update notification
+                            setTimeout(() => {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.info('Xem giỏ hàng của bạn', 'Tip', {
+                                        timeOut: 2000,
+                                        onclick: function () {
+                                            window.location.href = '{{ route("cart.index") }}';
+                                        }
+                                    });
+                                }
+                            }, 1000);
+
+                        } else if (data.error) {
+                            // Show error notification
+                            if (typeof toastr !== 'undefined') {
+                                // Kiểm tra nếu là lỗi trộn lẫn loại sản phẩm
+                                if (data.cart_type) {
+                                    if (data.cart_type === 'physical_books') {
+                                        toastr.warning(data.error, 'Giỏ hàng có sách vật lý!', {
+                                            timeOut: 6000,
+                                            positionClass: 'toast-top-right',
+                                            closeButton: true,
+                                            progressBar: true
+                                        });
+                                    } else if (data.cart_type === 'ebooks') {
+                                        toastr.warning(data.error, 'Giỏ hàng có sách điện tử!', {
+                                            timeOut: 6000,
+                                            positionClass: 'toast-top-right',
+                                            closeButton: true,
+                                            progressBar: true
+                                        });
+                                    }
+                                } else {
+                                    toastr.error(data.error, 'Lỗi!', {
+                                        timeOut: 5000,
+                                        positionClass: 'toast-top-right',
+                                        closeButton: true,
+                                        progressBar: true
+                                    });
+                                }
+                            } else {
+                                alert(data.error);
                             }
                         });
                     }
@@ -2854,6 +3380,43 @@
                     const isLanguage = item.getAttribute('data-is-language') === 'true';
                     if (isLanguage) {
                         item.style.display = 'block';
+
+            // Xử lý hiển thị nút đọc thử cho ebook
+            const bookFormatSelectElement = document.getElementById('bookFormatSelect');
+            if (bookFormatSelectElement) {
+                bookFormatSelectElement.addEventListener('change', function () {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const formatName = selectedOption.text.toLowerCase();
+                    const previewSection = document.getElementById('previewSection');
+
+                    if (formatName.includes('ebook')) {
+                        previewSection.classList.remove('hidden');
+                    } else {
+                        previewSection.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Xử lý modal đọc thử lấy đúng file sample_file_url
+            const previewBtn = document.querySelector('#previewSection a');
+            const previewModal = document.getElementById('previewModal');
+            const closePreviewModal = document.getElementById('closePreviewModal');
+            const previewContent = document.getElementById('previewContent');
+            const previewLimitNotice = document.getElementById('previewLimitNotice');
+            const previewIframe = document.getElementById('previewIframe');
+            const formatSelect = document.getElementById('bookFormatSelect');
+
+            if (previewBtn && previewModal && closePreviewModal && formatSelect && previewIframe) {
+                previewBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const selectedOption = formatSelect.options[formatSelect.selectedIndex];
+                    const sampleUrl = selectedOption.getAttribute('data-sample-url');
+                    const allowSample = selectedOption.getAttribute('data-allow-sample') === '1';
+                    if (allowSample && sampleUrl) {
+                        previewIframe.src = sampleUrl;
+                        previewModal.classList.remove('hidden');
+                        previewLimitNotice.classList.add('hidden');
+                        previewContent.scrollTop = 0;
                     } else {
                         item.style.display = 'none';
                     }
@@ -3479,6 +4042,262 @@
             $("#preorderTenPhuong").val($(this).find("option:selected").text());
         });
     });
-</script>
-@endpush
+            // Handle combo quantity controls
+            @if(isset($combo))
+            const comboQuantityInput = document.getElementById('comboQuantity');
+            const comboIncrementBtn = document.getElementById('comboIncrementBtn');
+            const comboDecrementBtn = document.getElementById('comboDecrementBtn');
+
+            if (comboQuantityInput && comboIncrementBtn && comboDecrementBtn) {
+                // Function to update button states
+                function updateComboButtonStates() {
+                    const value = parseInt(comboQuantityInput.value) || 1;
+                    const min = parseInt(comboQuantityInput.min) || 1;
+                    
+                    comboDecrementBtn.disabled = value <= min;
+                    comboDecrementBtn.style.opacity = value <= min ? '0.5' : '1';
+                    
+                    // No max limit for combo items - they check date validation instead
+                    comboIncrementBtn.disabled = false;
+                    comboIncrementBtn.style.opacity = '1';
+                }
+
+                // Increment button handler
+                comboIncrementBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const currentValue = parseInt(comboQuantityInput.value) || 1;
+                    comboQuantityInput.value = currentValue + 1;
+                    updateComboButtonStates();
+                });
+
+                // Decrement button handler
+                comboDecrementBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const currentValue = parseInt(comboQuantityInput.value) || 1;
+                    const min = parseInt(comboQuantityInput.min) || 1;
+                    
+                    if (currentValue > min) {
+                        comboQuantityInput.value = currentValue - 1;
+                        updateComboButtonStates();
+                    }
+                });
+
+                // Input validation
+                comboQuantityInput.addEventListener('input', function() {
+                    let value = parseInt(this.value) || 1;
+                    const min = parseInt(this.min) || 1;
+                    
+                    if (value < min) {
+                        value = min;
+                        this.value = value;
+                    }
+                    
+                    updateComboButtonStates();
+                });
+
+                comboQuantityInput.addEventListener('blur', function() {
+                    if (!this.value || parseInt(this.value) < 1) {
+                        this.value = 1;
+                        updateComboButtonStates();
+                    }
+                });
+
+                // Initialize button states
+                updateComboButtonStates();
+            }
+
+            // Handle combo form submission
+            const comboForm = document.querySelector('form[action="{{ route("cart.add") }}"]');
+            if (comboForm) {
+                comboForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Check if user is logged in
+                    @auth
+                    @else
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Vui lòng đăng nhập để thêm combo vào giỏ hàng!');
+                        } else {
+                            alert('Vui lòng đăng nhập để thêm combo vào giỏ hàng!');
+                        }
+                        setTimeout(() => {
+                            window.location.href = '{{ route("login") }}';
+                        }, 1500);
+                        return;
+                    @endauth
+
+                    // Get form data and convert to URLSearchParams for better debugging
+                    const formData = new FormData(comboForm);
+                    const urlParams = new URLSearchParams();
+                    
+                    // Convert FormData to URLSearchParams
+                    for (let pair of formData.entries()) {
+                        urlParams.append(pair[0], pair[1]);
+                    }
+                    
+                    const submitBtn = comboForm.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerHTML;
+                    
+                    // Debug form data
+                    console.log('=== COMBO FORM DEBUG ===');
+                    console.log('Form action:', comboForm.action);
+                    console.log('Form method:', comboForm.method);
+                    console.log('Form data as string:', urlParams.toString());
+                    
+                    // Check CSRF token
+                    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                    const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
+                    console.log('CSRF token available:', !!csrfToken);
+                    console.log('CSRF token (first 10 chars):', csrfToken ? csrfToken.substring(0, 10) + '...' : 'N/A');
+                    
+                    if (!csrfToken) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Lỗi bảo mật: Không tìm thấy CSRF token. Vui lòng tải lại trang!', 'Lỗi!');
+                        } else {
+                            alert('Lỗi bảo mật: Không tìm thấy CSRF token. Vui lòng tải lại trang!');
+                        }
+                        return;
+                    }
+                    
+                    // Disable button and show loading
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-3"></i><span>Đang thêm...</span>';
+
+                    // Use fetch with URLSearchParams body (simpler debugging)
+                    fetch('{{ route("cart.add") }}', {
+                        method: 'POST',
+                        body: urlParams,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    })
+                    .then(response => {
+                        console.log('=== RESPONSE DEBUG ===');
+                        console.log('Status:', response.status);
+                        console.log('Status text:', response.statusText);
+                        console.log('Headers:');
+                        response.headers.forEach((value, key) => {
+                            console.log(`${key}: ${value}`);
+                        });
+                        
+                        // Check if response is OK
+                        if (!response.ok) {
+                            // For non-200 responses, get the text to see what's wrong
+                            return response.text().then(text => {
+                                console.log('Error response body (first 500 chars):', text.substring(0, 500));
+                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            });
+                        }
+                        
+                        // Check content type
+                        const contentType = response.headers.get('content-type');
+                        console.log('Content-Type:', contentType);
+                        
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                console.log('=== NON-JSON RESPONSE ===');
+                                console.log('Response length:', text.length);
+                                console.log('First 1000 chars:', text.substring(0, 1000));
+                                
+                                // Try to extract Laravel error information
+                                if (text.includes('validation') || text.includes('ValidationException')) {
+                                    throw new Error('Validation Error: Dữ liệu gửi lên không hợp lệ');
+                                } else if (text.includes('500 | Server Error') || text.includes('ErrorException')) {
+                                    throw new Error('Server Error: Lỗi server nội bộ');
+                                } else if (text.includes('419 | Page Expired') || text.includes('CSRF')) {
+                                    throw new Error('CSRF Error: Token đã hết hạn, vui lòng tải lại trang');
+                                } else {
+                                    throw new Error('Server trả về HTML thay vì JSON');
+                                }
+                            });
+                        }
+                        
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success(data.success, 'Thành công!', {
+                                    timeOut: 3000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
+                            } else {
+                                alert(data.success);
+                            }
+
+                            // Dispatch cart count update event
+                            if (typeof data.cart_count !== 'undefined') {
+                                document.dispatchEvent(new CustomEvent('cartItemAdded', {
+                                    detail: { count: data.cart_count }
+                                }));
+                            }
+
+                            // Show cart count update notification
+                            setTimeout(() => {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.info('Xem giỏ hàng của bạn', 'Tip', {
+                                        timeOut: 2000,
+                                        onclick: function () {
+                                            window.location.href = '{{ route("cart.index") }}';
+                                        }
+                                    });
+                                }
+                            }, 1000);
+
+                        } else if (data.error) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(data.error, 'Lỗi!', {
+                                    timeOut: 5000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
+                            } else {
+                                alert(data.error);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Combo form submission error:', error);
+                        
+                        let errorMessage = 'Có lỗi xảy ra khi thêm combo vào giỏ hàng';
+                        
+                        if (error.message.includes('non-JSON response')) {
+                            errorMessage = 'Lỗi server: Server trả về HTML thay vì JSON. Có thể có lỗi validation hoặc server error.';
+                        } else if (error.message.includes('HTTP error! status: 422')) {
+                            errorMessage = 'Lỗi validation: Dữ liệu gửi lên không hợp lệ';
+                        } else if (error.message.includes('HTTP error! status: 500')) {
+                            errorMessage = 'Lỗi server nội bộ: Vui lòng thử lại sau';
+                        } else if (error.message.includes('HTTP error')) {
+                            errorMessage = `Lỗi kết nối: ${error.message}`;
+                        }
+                        
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(errorMessage, 'Lỗi!', {
+                                timeOut: 5000,
+                                positionClass: 'toast-top-right',
+                                closeButton: true,
+                                progressBar: true
+                            });
+                        } else {
+                            alert(errorMessage);
+                        }
+                    })
+                    .finally(() => {
+                        // Re-enable button
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    });
+                });
+            }
+            @endif
+
+
+        </script>
+    @endpush
 @endsection

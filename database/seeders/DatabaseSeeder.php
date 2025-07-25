@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            SettingsSeeder::class,    
+            SettingsSeeder::class,
             // // Thêm Settings trước
             // RoleSeeder::class,
             // ActiveUserSeeder::class,
@@ -63,6 +63,8 @@ class DatabaseSeeder extends Seeder
             RAttributeValueSeeder::class,
             RNewsArticleSeeder::class,
             RBookSeeder::class,
+            RCollectionSeeder::class,
+            RBookCollectionSeeder::class,
             AuthorBookSeeder::class,
             RAddressSeeder::class,
             PaymentMethodSeeder::class,
@@ -79,7 +81,10 @@ class DatabaseSeeder extends Seeder
             InvoiceSeeder::class,
             RInvoiceItemSeeder::class,
             RWalletSeeder::class,
-            RWalletTransactionSeeder::class
+            RWalletTransactionSeeder::class,
+            ConversationSeeder::class,
+            MessageSeeder::class,
+            MessageReadSeeder::class,
         ]);
     }
 }

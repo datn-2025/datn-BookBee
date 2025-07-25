@@ -3,11 +3,14 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\Invoice;
+use App\Models\RefundRequest;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Mail\OrderConfirmation;
 use App\Mail\OrderInvoice;
 use App\Mail\EbookPurchaseConfirmation;
+use App\Mail\RefundInvoiceMail;
 
 class EmailService
 {
@@ -25,6 +28,20 @@ class EmailService
 
         Mail::to($order->user->email)
             ->send(new OrderInvoice($order));
+    }
+
+    public function sendRefundInvoice(Invoice $invoice, RefundRequest $refundRequest)
+    {
+        // Load các relationship cần thiết
+        $invoice->load([
+            'order.user', 
+            'order.orderItems.book', 
+            'order.address',
+            'items.book'
+        ]);
+
+        Mail::to($invoice->order->user->email)
+            ->queue(new RefundInvoiceMail($invoice, $refundRequest));
     }
 
     public function sendEbookPurchaseConfirmation(Order $order)

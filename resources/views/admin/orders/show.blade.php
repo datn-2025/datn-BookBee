@@ -31,6 +31,11 @@
                                     <a href="{{ route('admin.orders.edit', $order->id) }}" class="btn btn-success btn-sm">
                                         <i class="ri-pencil-fill align-middle me-1"></i> Cập nhật trạng thái
                                     </a>
+                                    @if($order->orderStatus->name === 'Thành công' && $order->paymentStatus->name === 'Đã Thanh Toán' && !in_array($order->paymentStatus->name, ['Đang Hoàn Tiền', 'Đã Hoàn Tiền']))
+                                        <a href="{{ route('admin.refunds.show', $order->id) }}" class="btn btn-warning btn-sm">
+                                            <i class="ri-refund-2-line align-middle me-1"></i> Hoàn tiền
+                                        </a>
+                                    @endif
                                     <button type="button" class="btn btn-primary btn-sm">
                                         <i class="ri-printer-fill align-middle me-1"></i> In hóa đơn
                                     </button>
@@ -125,6 +130,23 @@
                                                         <div class="flex-grow-1">
                                                             <h6 class="mb-1 fs-14">Thành phố:</h6>
                                                             <p class="text-muted mb-0">{{ $order->address->city }}</p>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                                <li>
+                                                    <div class="d-flex">
+                                                        <div class="flex-shrink-0 text-muted">
+                                                            <i class="ri-truck-line me-1 fs-16 align-middle"></i>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-1 fs-14">Phương thức nhận hàng:</h6>
+                                                            <p class="text-muted mb-0">
+                                                                @if($order->delivery_method === 'pickup')
+                                                                    <span class="badge bg-info">Nhận tại cửa hàng</span>
+                                                                @else
+                                                                    <span class="badge bg-primary">Giao hàng tận nơi</span>
+                                                                @endif
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </li>
