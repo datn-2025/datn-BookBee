@@ -201,6 +201,8 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'index'])->name('index');
         Route::get('/{id}', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'show'])->name('show');
         Route::post('/send', [\App\Http\Controllers\Admin\AdminChatRealTimeController::class, 'send'])->name('send');
+        Route::post('/create-conversation', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'createConversation'])->name('create-conversation');
+        Route::get('/users/active', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'getActiveUsers'])->name('users.active');
     });
 
     Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard');
@@ -405,4 +407,75 @@ Route::middleware('auth')->prefix('wallet')->name('wallet.')->group(function () 
     Route::get('/withdraw', [App\Http\Controllers\WalletController::class, 'showWithdrawForm'])->name('withdraw.form');
     Route::post('/withdraw', [App\Http\Controllers\WalletController::class, 'withdraw'])->name('withdraw');
     Route::get('/vnpay-return', [App\Http\Controllers\WalletController::class, 'vnpayReturn'])->name('vnpayReturn');
+});
+
+// Test Pusher connection
+Route::get('/test-pusher', function() {
+    try {
+        // Kiểm tra config
+        $config = config('broadcasting.connections.pusher');
+        
+        \Illuminate\Support\Facades\Log::info('Pusher configuration check', [
+            'driver' => $config['driver'] ?? 'not set',
+            'key' => $config['key'] ?? 'not set',
+            'secret' => substr($config['secret'] ?? 'not set', 0, 4) . '***',
+            'app_id' => $config['app_id'] ?? 'not set',
+            'cluster' => $config['options']['cluster'] ?? 'not set',
+            'host' => $config['options']['host'] ?? 'not set',
+            'broadcast_default' => config('broadcasting.default')
+        ]);
+        
+        // Tạo Pusher instance manually
+        $options = [
+            'cluster' => $config['options']['cluster'],
+            'encrypted' => true,
+            'host' => $config['options']['host'],
+            'port' => $config['options']['port'],
+            'scheme' => $config['options']['scheme'],
+        ];
+        
+        $pusher = new \Pusher\Pusher(
+            $config['key'],
+            $config['secret'],
+            $config['app_id'],
+            $options
+        );
+        
+        // Test với một trigger đơn giản
+        $testData = [
+            'message' => 'Test message from Laravel',
+            'timestamp' => now()->toDateTimeString()
+        ];
+        
+        $result = $pusher->trigger('test-channel', 'test-event', $testData);
+        
+        \Illuminate\Support\Facades\Log::info('Pusher trigger test result', [
+            'result' => $result,
+            'test_data' => $testData
+        ]);
+        
+        return response()->json([
+            'status' => 'success',
+            'config' => [
+                'app_id' => $config['app_id'] ?? 'not set',
+                'key' => $config['key'] ?? 'not set',
+                'cluster' => $config['options']['cluster'] ?? 'not set',
+                'broadcast_default' => config('broadcasting.default')
+            ],
+            'trigger_result' => $result
+        ]);
+        
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Pusher test failed', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'status' => 'error',
+            'error' => $e->getMessage(),
+            'line' => $e->getLine(),
+            'file' => basename($e->getFile())
+        ], 500);
+    }
 });
