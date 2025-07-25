@@ -11,6 +11,7 @@ use App\Models\OrderItemAttributeValue;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use App\Models\Cart;
+use App\Models\RefundRequest;
 
 class OrderService
 {
@@ -236,6 +237,8 @@ class OrderService
             // Không throw exception nữa, chỉ log và trả về true
             // để hệ thống có thể tiếp tục xử lý
             return true;
+        }
+    }
 
     /**
      * Tạo đơn hàng với OrderItems và thuộc tính sản phẩm
