@@ -977,15 +977,8 @@
                         <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}" alt="{{ $book->title }}" id="mainImage" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </div>
                     @if ($book->images->count() > 1)
-                    <div class="grid grid-cols-5 gap-3 mt-4">
-                        @foreach ($book->images as $index => $image)
-                            <div class="relative group cursor-pointer {{ $index === 0 ? 'ring-2 ring-black' : '' }}" onclick="changeMainImage('{{ asset('storage/' . $image->image_url) }}', this)">
-                                <div class="aspect-square bg-white border border-gray-200 overflow-hidden transition-all duration-300 hover:border-black">
-                                    <img src="{{ asset('storage/' . $image->image_url) }}" alt="{{ $book->title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
+  
+                    
                     @endif
                 </div>
             </div>
@@ -2993,33 +2986,50 @@
         const bookId = '{{ $book->id }}';
         const bookTitle = '{{ $book->title }}';
         const bookAuthor = '{{ $book->authors->first()->name ?? "Không rỗ tác giả" }}';
-        const bookImage = '{{ $book->images->first() ? asset("storage/" . $book->images->first()->image_path) : asset("images/default-book.jpg") }}';
+        const bookImage = '{{ $book->images->first() ? asset("storage/" . $book->images->first()->image_url) : asset("images/default-book.jpg") }}';
         const publicationDate = '{{ $book->publication_date ? $book->publication_date->format("d/m/Y") : "Chưa xác định" }}';
-        
+
         // Populate basic book info
         document.getElementById('preorderBookId').value = bookId;
         document.getElementById('preorderBookTitle').textContent = bookTitle;
         document.getElementById('preorderBookAuthor').textContent = bookAuthor;
-        
-        // Set book image with error handling
+
+        // Set book image with robust error handling
         const imageElement = document.getElementById('preorderBookImage');
         if (imageElement) {
             imageElement.src = bookImage;
             imageElement.alt = bookTitle;
-            // Add error handler for image loading
-            imageElement.onerror = function() {
-                this.src = '{{ asset("images/default-book.jpg") }}';
-            };
+            // Remove any previous error handler
+            imageElement.onerror = null;
+            // Add error handler for image loading (fallback to default)
+            imageElement.addEventListener('error', function handleImageError() {
+                if (this.src !== '{{ asset("images/default-book.jpg") }}') {
+                    this.src = '{{ asset("images/default-book.jpg") }}';
+                    this.alt = 'Không có ảnh';
+                } else {
+                    // If even default image fails, show fallback text
+                    this.style.display = 'none';
+                    const fallbackText = document.createElement('div');
+                    fallbackText.textContent = 'Không có ảnh';
+                    fallbackText.className = 'text-center text-gray-500';
+                    this.parentNode.appendChild(fallbackText);
+                }
+            });
         }
-        
+
+        // Update label to match admin terminology
+        const publicationLabel = document.getElementById('preorderPublicationLabel');
+        if (publicationLabel) {
+            publicationLabel.textContent = 'NGÀY RA MẮT (ADMIN):';
+        }
         document.getElementById('preorderPublicationDate').textContent = publicationDate;
-        
+
         // Populate book formats
         populatePreorderFormats();
-        
+
         // Populate attributes only once
         populatePreorderAttributes();
-        
+
         // Update prices
         updatePreorderPrices();
     }
