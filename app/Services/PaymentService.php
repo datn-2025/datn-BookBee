@@ -74,4 +74,23 @@ class PaymentService
         // For now, just simulate successful payment
         return $this->updatePaymentStatus($payment, 'paid');
     }
+
+    /**
+     * Create payment record for preorder
+     */
+    public function createPreorderPayment(array $data)
+    {
+        // For preorders, we'll create a simplified payment record
+        // This could be stored in a separate preorder_payments table if needed
+        return Payment::create([
+            'id' => (string) Str::uuid(),
+            'order_id' => null, // No order yet for preorders
+            'transaction_id' => $data['transaction_id'],
+            'payment_method_id' => $data['payment_method_id'],
+            'amount' => $data['amount'],
+            'payment_status_id' => $data['payment_status_id'],
+            'paid_at' => $data['paid_at'] ?? null,
+            'notes' => 'Preorder payment for ID: ' . $data['preorder_id']
+        ]);
+    }
 }
