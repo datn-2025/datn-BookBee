@@ -45,7 +45,12 @@ class Preorder extends Model
         'expected_delivery_date',
         'confirmed_at',
         'shipped_at',
-        'delivered_at'
+        'delivered_at',
+        'preorder_code',
+        'payment_status',
+        'vnpay_transaction_id',
+        'cancellation_reason',
+        'cancelled_at'
     ];
 
     protected $casts = [
