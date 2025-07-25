@@ -614,27 +614,60 @@ class CartController extends Controller
 
                 Log::info('Updating existing cart:', ['old_quantity' => $existingCart->quantity, 'new_quantity' => $newQuantity]);
 
-                DB::table('carts')
-                    ->where('id', $existingCart->id)
-                    ->update([
-                        'quantity' => $newQuantity,
-                        'price' => $combo->combo_price,
-                        'updated_at' => now()
+                try {
+                    $updateResult = DB::table('carts')
+                        ->where('id', $existingCart->id)
+                        ->update([
+                            'quantity' => $newQuantity,
+                            'price' => $combo->combo_price,
+                            'updated_at' => now()
+                        ]);
+
+                    Log::info('Cart update result:', ['affected_rows' => $updateResult]);
+
+                    // Get updated cart count
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+
+                    Log::info('Cart count calculated:', ['cart_count' => $cartCount]);
+
+                    $successMessage = 'Đã thêm ' . $quantity . ' combo "' . $combo->name . '" vào giỏ hàng';
+
+                    // Check if request wants JSON
+                    $wantsJson = request()->wantsJson();
+                    $hasAjaxHeader = request()->ajax();
+                    $acceptsJson = request()->accepts(['application/json']);
+                    
+                    Log::info('Response format check:', [
+                        'wantsJson' => $wantsJson,
+                        'hasAjaxHeader' => $hasAjaxHeader,
+                        'acceptsJson' => $acceptsJson,
+                        'headers' => request()->headers->all()
                     ]);
 
-                // Get updated cart count
-                $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
-
-                $successMessage = 'Đã thêm ' . $quantity . ' combo "' . $combo->name . '" vào giỏ hàng';
-
-                if (request()->wantsJson()) {
-                    return response()->json([
-                        'success' => $successMessage,
-                        'current_quantity' => $newQuantity,
-                        'cart_count' => (int) $cartCount
+                    if ($wantsJson || $hasAjaxHeader) {
+                        $response = response()->json([
+                            'success' => $successMessage,
+                            'current_quantity' => $newQuantity,
+                            'cart_count' => (int) $cartCount
+                        ]);
+                        
+                        Log::info('Returning JSON response:', $response->getData(true));
+                        return $response;
+                    }
+                    
+                    Log::info('Returning redirect response');
+                    return back()->with('success', $successMessage);
+                } catch (\Exception $dbException) {
+                    Log::error('Database error in cart update:', [
+                        'error' => $dbException->getMessage(),
+                        'trace' => $dbException->getTraceAsString()
                     ]);
+                    
+                    if (request()->wantsJson()) {
+                        return response()->json(['error' => 'Lỗi cập nhật giỏ hàng: ' . $dbException->getMessage()], 500);
+                    }
+                    return back()->with('error', 'Lỗi cập nhật giỏ hàng: ' . $dbException->getMessage());
                 }
-                return back()->with('success', $successMessage);
             } else {
                 // Thêm combo mới vào giỏ hàng
                 Log::info('Adding new combo to cart:', [
@@ -669,15 +702,31 @@ class CartController extends Controller
                 // Get updated cart count
                 $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
 
+                Log::info('Cart count after insert:', ['cart_count' => $cartCount]);
+
                 $successMessage = 'Đã thêm combo "' . $combo->name . '" vào giỏ hàng';
 
-                if (request()->wantsJson()) {
-                    return response()->json([
+                // Check if request wants JSON
+                $wantsJson = request()->wantsJson();
+                $hasAjaxHeader = request()->ajax();
+                
+                Log::info('Response format check (new combo):', [
+                    'wantsJson' => $wantsJson,
+                    'hasAjaxHeader' => $hasAjaxHeader
+                ]);
+
+                if ($wantsJson || $hasAjaxHeader) {
+                    $response = response()->json([
                         'success' => $successMessage,
                         'current_quantity' => $quantity,
                         'cart_count' => (int) $cartCount
                     ]);
+                    
+                    Log::info('Returning JSON response (new combo):', $response->getData(true));
+                    return $response;
                 }
+                
+                Log::info('Returning redirect response (new combo)');
                 return back()->with('success', $successMessage);
             }
 
