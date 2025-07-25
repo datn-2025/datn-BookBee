@@ -50,8 +50,8 @@
                         <h2 class="text-lg font-medium text-gray-900 mb-4">Thông tin nhận hàng</h2>
                         <div class="space-y-2 text-sm text-gray-600">
                             <p><span class="font-medium">Phương thức:</span> Nhận tại cửa hàng</p>
-                            <p><span class="font-medium">Người nhận:</span> {{ $order->recipient_name ?? $order->shippingAddress->full_name ?? 'Không có thông tin' }}</p>
-                            <p><span class="font-medium">Số điện thoại:</span> {{ $order->recipient_phone ?? $order->shippingAddress->phone ?? '' }}</p>
+                            <p><span class="font-medium">Người nhận:</span> {{ $order->recipient_name ?? $order->address->recipient_name ?? 'Không có thông tin' }}</p>
+                            <p><span class="font-medium">Số điện thoại:</span> {{ $order->recipient_phone ?? $order->address->phone ?? '' }}</p>
                             <p><span class="font-medium">Địa chỉ cửa hàng:</span> 123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh</p>
                             <p><span class="font-medium">Giờ mở cửa:</span> 8:00 - 22:00 (Thứ 2 - Chủ nhật)</p>
                             <p class="text-blue-600 font-medium">Vui lòng mang theo mã đơn hàng {{ $order->order_code }} khi đến nhận sách.</p>
@@ -60,12 +60,12 @@
                         <h2 class="text-lg font-medium text-gray-900 mb-4">Địa chỉ giao hàng</h2>
                         <div class="space-y-2 text-sm text-gray-600">
                             <p><span class="font-medium">Phương thức:</span> Giao hàng tận nơi</p>
-                            <p class="font-medium">{{ $order->recipient_name ?? $order->shippingAddress->full_name ?? 'Không có thông tin' }}</p>
-                            <p>{{ $order->recipient_phone ?? $order->shippingAddress->phone ?? '' }}</p>
-                            <p>{{ $order->shippingAddress->address ?? '' }}</p>
-                            <p>{{ $order->shippingAddress->ward ?? '' }}, 
-                               {{ $order->shippingAddress->district ?? '' }}, 
-                               {{ $order->shippingAddress->city ?? '' }}</p>
+                            <p class="font-medium">{{ $order->recipient_name ?? $order->address->recipient_name ?? 'Không có thông tin' }}</p>
+                            <p>{{ $order->recipient_phone ?? $order->address->phone ?? '' }}</p>
+                            <p>{{ $order->address->address_detail ?? '' }}</p>
+                            <p>{{ $order->address->ward ?? '' }}, 
+                               {{ $order->address->district ?? '' }}, 
+                               {{ $order->address->city ?? '' }}</p>
                         </div>
                         @endif
                     </div>
@@ -78,29 +78,79 @@
                         @foreach($order->orderItems as $item)
                             <div class="flex items-start border-b border-gray-100 pb-6">
                                 <div class="flex-shrink-0 h-24 w-24 rounded-md overflow-hidden bg-gray-200">
-                                    @if($item->book->images->isNotEmpty())
-                                        <img src="{{ asset('storage/' . $item->book->images->first()->path) }}" 
-                                             alt="{{ $item->book->title }}" 
-                                             class="h-full w-full object-cover">
+                                    @if($item->isCombo())
+                                        {{-- Hiển thị ảnh combo --}}
+                                        @if($item->collection && $item->collection->cover_image)
+                                            <img src="{{ asset('storage/' . $item->collection->cover_image) }}" 
+                                                 alt="{{ $item->collection->name }}" 
+                                                 class="h-full w-full object-cover">
+                                        @else
+                                            <div class="h-full w-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center">
+                                                <svg class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                </svg>
+                                            </div>
+                                        @endif
                                     @else
-                                        <div class="h-full w-full bg-gray-300 flex items-center justify-center">
-                                            <svg class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                        </div>
+                                        {{-- Hiển thị ảnh sách --}}
+                                        @if($item->book && $item->book->images->isNotEmpty())
+                                            <img src="{{ asset('storage/' . $item->book->images->first()->path) }}" 
+                                                 alt="{{ $item->book->title }}" 
+                                                 class="h-full w-full object-cover">
+                                        @else
+                                            <div class="h-full w-full bg-gray-300 flex items-center justify-center">
+                                                <svg class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                        @endif
                                     @endif
                                 </div>
                                 <div class="ml-4 flex-1">
-                                    <h3 class="text-base font-medium text-gray-900">
-                                        {{ $item->book->title }}
-                                    </h3>
+                                    @if($item->isCombo())
+                                        {{-- Hiển thị thông tin combo --}}
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                COMBO
+                                            </span>
+                                        </div>
+                                        <h3 class="text-base font-medium text-gray-900">
+                                            {{ $item->collection->name ?? 'Combo không xác định' }}
+                                        </h3>
+                                        @if($item->collection && $item->collection->description)
+                                            <p class="mt-1 text-sm text-gray-500">
+                                                {{ Str::limit($item->collection->description, 100) }}
+                                            </p>
+                                        @endif
+                                    @else
+                                        {{-- Hiển thị thông tin sách --}}
+                                        <h3 class="text-base font-medium text-gray-900">
+                                            @if($item->is_combo)
+                                            {{ $item->collection->name ?? 'Combo không xác định' }}
+                                            <small class="text-muted">(Combo)</small>
+                                        @else
+                                            {{ $item->book->title ?? 'Sách không xác định' }}
+                                            @if($item->bookFormat)
+                                                <small class="text-muted">({{ $item->bookFormat->format_name }})</small>
+                                            @endif
+                                        @endif
+                                        </h3>
+                                        @if($item->bookFormat)
+                                            <p class="mt-1 text-sm text-gray-500">
+                                                Định dạng: {{ $item->bookFormat->format_name }}
+                                            </p>
+                                        @endif
+                                    @endif
+                                    
                                     <p class="mt-1 text-sm text-gray-500">
                                         Số lượng: {{ $item->quantity }}
                                     </p>
                                     <p class="mt-1 text-sm font-medium text-gray-900">
                                         {{ number_format($item->price) }} đ
                                     </p>
-                                    @if($item->review)
+                                    
+                                    {{-- Chỉ hiển thị đánh giá cho sách lẻ --}}
+                                    @if(!$item->isCombo() && $item->review)
                                         <div class="mt-2 text-sm text-gray-600">
                                             <p>Đánh giá: {{ $item->review->rating }} sao</p>
                                             <p class="mt-1">{{ $item->review->comment }}</p>

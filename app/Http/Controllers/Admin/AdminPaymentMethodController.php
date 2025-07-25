@@ -8,8 +8,10 @@ use App\Models\Payment;
 use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
 use App\Models\BookFormat;
+use App\Services\InvoiceService;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -128,6 +130,17 @@ class AdminPaymentMethodController extends Controller
 
                 if ($hasEbook) {
                     Mail::to($order->user->email)->send(new EbookPurchaseConfirmation($order));
+                }
+                
+                // Tạo và gửi hóa đơn khi thanh toán thành công
+                try {
+                    app(\App\Services\InvoiceService::class)->processInvoiceForPaidOrder($order);
+                    Log::info('Invoice created and sent for admin-confirmed payment', ['order_id' => $order->id]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create invoice for admin-confirmed payment', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage()
+                    ]);
                 }
             }
         }

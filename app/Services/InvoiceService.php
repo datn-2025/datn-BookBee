@@ -53,13 +53,27 @@ class InvoiceService
 
             // Tạo chi tiết hóa đơn từ order items
             foreach ($order->orderItems as $orderItem) {
-                InvoiceItem::create([
-                    'id' => (string) Str::uuid(),
-                    'invoice_id' => $invoice->id,
-                    'book_id' => $orderItem->book_id,
-                    'quantity' => $orderItem->quantity,
-                    'price' => $orderItem->price
-                ]);
+                // Xử lý combo items (book_id = null) và book items
+                if ($orderItem->is_combo && $orderItem->collection_id) {
+                    // Đối với combo, tạo invoice item với collection info
+                    InvoiceItem::create([
+                        'id' => (string) Str::uuid(),
+                        'invoice_id' => $invoice->id,
+                        'book_id' => null, // Combo không có book_id
+                        'collection_id' => $orderItem->collection_id,
+                        'quantity' => $orderItem->quantity,
+                        'price' => $orderItem->price
+                    ]);
+                } else {
+                    // Đối với sách lẻ
+                    InvoiceItem::create([
+                        'id' => (string) Str::uuid(),
+                        'invoice_id' => $invoice->id,
+                        'book_id' => $orderItem->book_id,
+                        'quantity' => $orderItem->quantity,
+                        'price' => $orderItem->price
+                    ]);
+                }
             }
 
             Log::info('Invoice created successfully', [
@@ -105,15 +119,27 @@ class InvoiceService
             // dd($refundRequest, $order->total_amount);
             if ($refundRequest && $amount == $order->total_amount) {
                 // Hoàn tiền toàn bộ - copy tất cả items
-                // dd($order->orderItems);
                 foreach ($order->orderItems as $orderItem) {
-                    InvoiceItem::create([
-                        'id' => (string) Str::uuid(),
-                        'invoice_id' => $invoice->id,
-                        'book_id' => $orderItem->book_id,
-                        'quantity' => -$orderItem->quantity, // Số âm để phân biệt
-                        'price' => $orderItem->price
-                    ]);
+                    if ($orderItem->is_combo && $orderItem->collection_id) {
+                        // Đối với combo
+                        InvoiceItem::create([
+                            'id' => (string) Str::uuid(),
+                            'invoice_id' => $invoice->id,
+                            'book_id' => null,
+                            'collection_id' => $orderItem->collection_id,
+                            'quantity' => -$orderItem->quantity, // Số âm để phân biệt
+                            'price' => $orderItem->price
+                        ]);
+                    } else {
+                        // Đối với sách lẻ
+                        InvoiceItem::create([
+                            'id' => (string) Str::uuid(),
+                            'invoice_id' => $invoice->id,
+                            'book_id' => $orderItem->book_id,
+                            'quantity' => -$orderItem->quantity, // Số âm để phân biệt
+                            'price' => $orderItem->price
+                        ]);
+                    }
                 }
             } else {
                 // Hoàn tiền một phần hoặc không có chi tiết cụ thể

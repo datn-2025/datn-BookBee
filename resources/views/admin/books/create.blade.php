@@ -197,14 +197,10 @@
                             <small class="text-muted">Bạn phải chọn ít nhất một định dạng sách (Sách vật lý hoặc Ebook).</small>
                         </div>
 
-                        @error('format')
-                            <div class="alert alert-danger mb-3">
-                                {{ $message }}
-                            </div>
-                        @enderror
-                        <div class="alert alert-info mb-3" id="format_validation_message" style="display: none;">
-                            Vui lòng kích hoạt ít nhất một định dạng sách.
-                        </div>
+                        <div class="alert alert-info mb-3">
+            <i class="ri-information-line me-2"></i>
+            <strong>Lưu ý:</strong> Bạn có thể chọn một hoặc cả hai định dạng sách (Sách vật lý và/hoặc Ebook).
+        </div>
                         <!-- Thuộc tính sản phẩm -->
                         <div class="card mb-3">
                             <div class="card-header">
@@ -218,22 +214,29 @@
                                         <label class="form-label">{{ $attribute->name }}</label>
                                         <div class="attribute-group">
                                             <div class="input-group mb-2">
-                                                <select class="form-select attribute-select"
-                                                    data-attribute-name="{{ $attribute->name }}"
-                                                    data-attribute-id="{{ $attribute->id }}">
-                                                    <option value="">-- Chọn {{ strtolower($attribute->name) }} --
-                                                    </option>
-                                                    @foreach($attribute->values as $value)
-                                                    <option value="{{ $value->id }}"
-                                                        data-value-name="{{ $value->value }}">{{ $value->value }}
-                                                    </option>
-                                                    @endforeach
-                                                </select>
-                                                <input type="number" class="form-control attribute-extra-price"
-                                                    placeholder="Giá thêm" min="0" value="0">
-                                                <button type="button"
-                                                    class="btn btn-primary add-attribute-value">Thêm</button>
-                                            </div>
+                                    <select class="form-select attribute-select"
+                                        data-attribute-name="{{ $attribute->name }}"
+                                        data-attribute-id="{{ $attribute->id }}">
+                                        <option value="">-- Chọn {{ strtolower($attribute->name) }} --
+                                        </option>
+                                        @foreach($attribute->values as $value)
+                                        <option value="{{ $value->id }}"
+                                            data-value-name="{{ $value->value }}">{{ $value->value }}
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="input-group-text bg-light border-0 px-2">
+                                        <i class="ri-money-dollar-circle-line text-success me-1"></i>
+                                        <small class="text-muted">Giá thêm (VNĐ)</small>
+                                    </div>
+                                    <input type="number" class="form-control attribute-extra-price"
+                                        placeholder="0" min="0" value="0" style="max-width: 120px;">
+                                    <button type="button"
+                                        class="btn btn-primary add-attribute-value"><i class="ri-add-line me-1"></i>Thêm</button>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-info"><i class="ri-information-line me-1"></i>Nhập giá thêm cho thuộc tính này (ví dụ: màu đỏ +5000đ, size XL +10000đ)</small>
+                                </div>
                                             <div class="selected-values mt-2">
                                                 @if(old('attribute_values'))
                                                     @foreach(old('attribute_values') as $value)
@@ -267,39 +270,47 @@
                                 </div>
                             </div>
                             <div class="card-body" id="gift-section" style="display:none;">
-                                <div class="mb-3 row">
-                                    <div id="book-gifts-list">
-                                        <div class="row mb-2 align-items-end gift-row">
-                                            <div class="col-md-3 d-flex align-items-center">
-                                                <p style="margin-left: 30px">Thời gian tặng quà</p>
-                                            </div>
-                                            <div class="col-md-9">
-                                                <input type="text" name="date_range" class="form-control date-range-picker" placeholder="Chọn khoảng ngày" autocomplete="off">
-                                                <input type="hidden" name="start_date" class="start-date">
-                                                <input type="hidden" name="end_date" class="end-date">
-                                            </div>
-                                        </div>
-                                        <div class="row mb-2 mt-4 align-items-end gift-row">
-                                            <div class="col-md-3">
-                                                <select name="book_id" class="form-select" >
-                                                    <option value="">-- Chọn sách --</option>
-                                                    @foreach($allBooks as $book)
-                                                        <option value="{{ $book->id }}">{{ $book->title }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <input type="text" name="gift_name" class="form-control" placeholder="Tên quà tặng">
-                                            </div>
-                                            <div class="col-md-3">
-                                                <input type="text" name="gift_description" class="form-control" placeholder="Mô tả (tuỳ chọn)">
-                                            </div>
-                                            <div class="col-md-3">
-                                                <input type="number" name="quantity" class="form-control" placeholder="Số lượng" min="0">
-                                            </div>
-                                        </div>
+                                <div class="alert alert-info mb-3">
+                                    <i class="ri-gift-line me-2"></i>
+                                    <strong>Thông tin quà tặng kèm theo sách</strong>
+                                    <p class="mb-0 mt-1">Thiết lập quà tặng đặc biệt cho khách hàng mua sách trong khoảng thời gian nhất định.</p>
+                                </div>
+                                
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label"><i class="ri-calendar-line me-1"></i>Thời gian áp dụng quà tặng</label>
+                                        <input type="text" name="date_range" class="form-control date-range-picker" placeholder="Chọn khoảng thời gian tặng quà" autocomplete="off">
+                                        <input type="hidden" name="start_date" class="start-date">
+                                        <input type="hidden" name="end_date" class="end-date">
+                                        <small class="text-muted">Chọn khoảng thời gian khách hàng mua sách sẽ được tặng quà</small>
                                     </div>
-                                    {{-- <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="add-gift-btn">+ Thêm quà tặng</button> --}}
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="ri-book-line me-1"></i>Sách áp dụng (tùy chọn)</label>
+                                        <select name="book_id" class="form-select">
+                                            <option value="">-- Áp dụng cho tất cả sách --</option>
+                                            @foreach($allBooks as $book)
+                                                <option value="{{ $book->id }}">{{ $book->title }}</option>
+                                            @endforeach
+                                        </select>
+                                        <small class="text-muted">Để trống nếu muốn áp dụng cho tất cả sách</small>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="ri-gift-2-line me-1"></i>Tên quà tặng <span class="text-danger">*</span></label>
+                                        <input type="text" name="gift_name" class="form-control" placeholder="Ví dụ: Bookmark đặc biệt, Túi canvas...">
+                                    </div>
+                                    
+                                    <div class="col-md-8">
+                                        <label class="form-label"><i class="ri-file-text-line me-1"></i>Mô tả quà tặng</label>
+                                        <textarea name="gift_description" class="form-control" rows="2" placeholder="Mô tả chi tiết về quà tặng (màu sắc, chất liệu, kích thước...)"></textarea>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <label class="form-label"><i class="ri-stack-line me-1"></i>Số lượng quà tặng</label>
+                                        <input type="number" name="quantity" class="form-control" placeholder="100" min="0">
+                                        <small class="text-muted">Số lượng quà tặng có sẵn</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -345,12 +356,18 @@
                                     @enderror
                                 </div>
                                 <div class="mb-3">
-                                    <label for="author_id" class="form-label">Tác giả <span class="text-danger">*</span></label>
-                                    <select name="author_ids[]" id="author_id" class="form-select aiz-selectpicker" data-live-search="true" multiple data-selected-text-format="count" title="Tìm tác giả...">
+                                    <label for="author_id" class="form-label"><i class="ri-user-line me-1"></i>Tác giả <span class="text-danger">*</span></label>
+                                    <select name="author_ids[]" id="author_id" class="form-select select2-authors" multiple>
                                         @foreach($authors as $author)
                                             <option value="{{ $author->id }}" {{ (collect(old('author_ids'))->contains($author->id)) ? 'selected' : '' }}>{{ $author->name }}</option>
                                         @endforeach
                                     </select>
+                                    <small class="text-muted"><i class="ri-information-line me-1"></i>Có thể chọn một hoặc nhiều tác giả. Gõ để tìm kiếm nhanh.</small>
+                                    @error('author_ids')
+                                        <div class="invalid-feedback d-block">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                 </div>
 
                                 {{-- <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -449,13 +466,15 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 @endpush
 
 @push('scripts')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/rangePlugin.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     document.getElementById('toggle-gift-section').addEventListener('change', function() {
         document.getElementById('gift-section').style.display = this.checked ? '' : 'none';
@@ -499,45 +518,27 @@
     document.getElementById('has_ebook').addEventListener('change', toggleFormatSections);
     toggleFormatSections(); // Gọi khi load trang để giữ trạng thái
 
-    // Khi submit, kiểm tra phải chọn ít nhất 1 định dạng sách
-    document.querySelector('form').addEventListener('submit', function(e) {
-        var hasPhysical = document.getElementById('has_physical').checked;
-        var hasEbook = document.getElementById('has_ebook').checked;
-        var formatMsg = document.getElementById('format_validation_message');
-        if (!hasPhysical && !hasEbook) {
-            e.preventDefault();
-            formatMsg.style.display = '';
-            formatMsg.textContent = 'Vui lòng kích hoạt ít nhất một định dạng sách.';
-            window.scrollTo({top: formatMsg.offsetTop - 100, behavior: 'smooth'});
-        } else {
-            formatMsg.style.display = 'none';
-        }
+    // Khởi tạo Select2 cho chọn tác giả
+    $(document).ready(function() {
+        $('.select2-authors').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Tìm kiếm và chọn tác giả...',
+            allowClear: true,
+            width: '100%',
+            language: {
+                noResults: function() {
+                    return 'Không tìm thấy tác giả nào';
+                },
+                searching: function() {
+                    return 'Đang tìm kiếm...';
+                },
+                removeAllItems: function() {
+                    return 'Xóa tất cả';
+                }
+            }
+        });
     });
 
-    // Nếu có lỗi validate liên quan định dạng, KHÔNG tự động bật phần định dạng nữa
-    // Đã có thông báo lỗi phía trên phần định dạng sách
-    AIZ.plugins = {
-    bootstrapSelect: function (refresh = "") {
-            $(".aiz-selectpicker").each(function (el) {
-                var $this = $(this);
-                if(!$this.parent().hasClass('bootstrap-select')){
-                    var selected = $this.data('selected');
-                    if( typeof selected !== 'undefined' ){
-                        $this.val(selected);
-                    }
-                    $this.selectpicker({
-                        size: 5,
-                        noneSelectedText: AIZ.local.nothing_selected,
-                        virtualScroll: false
-                    });
-                }
-                if (refresh === "refresh") {
-                    $this.selectpicker("refresh");
-                }
-                if (refresh === "destroy") {
-                    $this.selectpicker("destroy");
-                }
-            });
-        },}
+    // jQuery đã được load từ đầu
 </script>
 @endpush

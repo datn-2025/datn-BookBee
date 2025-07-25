@@ -599,6 +599,38 @@ class CartController extends Controller
                 return back()->with('error', $errorMsg);
             }
 
+            // Kiểm tra số lượng tồn kho combo
+            if ($combo->combo_stock !== null) {
+                // Lấy tổng số lượng combo đã có trong giỏ hàng
+                $existingQuantity = DB::table('carts')
+                    ->where('user_id', Auth::id())
+                    ->where('collection_id', $collectionId)
+                    ->where('is_combo', true)
+                    ->sum('quantity');
+                
+                $totalRequestedQuantity = $existingQuantity + $quantity;
+                
+                if ($combo->combo_stock <= 0) {
+                    $errorMsg = 'Combo đã hết hàng';
+                    if (request()->wantsJson()) {
+                        return response()->json(['error' => $errorMsg], 422);
+                    }
+                    return back()->with('error', $errorMsg);
+                }
+                
+                if ($totalRequestedQuantity > $combo->combo_stock) {
+                    $errorMsg = "Số lượng yêu cầu vượt quá số lượng tồn kho. Tồn kho hiện tại: {$combo->combo_stock}, bạn đã có {$existingQuantity} trong giỏ hàng";
+                    if (request()->wantsJson()) {
+                        return response()->json([
+                            'error' => $errorMsg,
+                            'available_stock' => $combo->combo_stock,
+                            'current_in_cart' => $existingQuantity
+                        ], 422);
+                    }
+                    return back()->with('error', $errorMsg);
+                }
+            }
+
             // Kiểm tra xem combo đã có trong giỏ hàng chưa
             $existingCart = DB::table('carts')
                 ->where('user_id', Auth::id())
@@ -806,7 +838,21 @@ class CartController extends Controller
                 }
 
                 if ($quantity > 0) {
-                    // Update combo quantity (không giới hạn số lượng)
+                    // Kiểm tra số lượng tồn kho combo
+                    if ($combo->combo_stock !== null) {
+                        if ($combo->combo_stock <= 0) {
+                            return response()->json(['error' => 'Combo đã hết hàng'], 422);
+                        }
+                        
+                        if ($quantity > $combo->combo_stock) {
+                            return response()->json([
+                                'error' => "Số lượng yêu cầu vượt quá số lượng tồn kho. Tồn kho hiện tại: {$combo->combo_stock}",
+                                'available_stock' => $combo->combo_stock
+                            ], 422);
+                        }
+                    }
+                    
+                    // Update combo quantity
                     DB::table('carts')
                         ->where('user_id', Auth::id())
                         ->where('collection_id', $collectionId)

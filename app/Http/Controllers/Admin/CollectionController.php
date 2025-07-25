@@ -59,12 +59,13 @@ class CollectionController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'combo_price' => 'nullable|numeric|min:0',
+            'combo_stock' => 'nullable|integer|min:0',
             'books' => 'required|array|min:1',
             'books.*' => 'exists:books,id',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'description' => 'nullable|string',
         ]);
-        $data = $request->only(['name', 'start_date', 'end_date', 'combo_price', 'description']);
+        $data = $request->only(['name', 'start_date', 'end_date', 'combo_price', 'combo_stock', 'description']);
         $data['slug'] = Str::slug($data['name']);
         $data['id'] = Str::uuid(); // Tạo UUID cho ID
         if ($request->hasFile('cover_image')) {
@@ -105,12 +106,13 @@ class CollectionController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'combo_price' => 'nullable|numeric|min:0',
+            'combo_stock' => 'nullable|integer|min:0',
             'books' => 'required|array|min:1',
             'books.*' => 'exists:books,id',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'description' => 'nullable|string',
         ]);
-        $data = $request->only(['name', 'start_date', 'end_date', 'combo_price', 'description']);
+        $data = $request->only(['name', 'start_date', 'end_date', 'combo_price', 'combo_stock', 'description']);
         $data['slug'] = Str::slug($data['name']);
         if ($request->hasFile('cover_image')) {
             $data['cover_image'] = $request->file('cover_image')->store('collections', 'public');
