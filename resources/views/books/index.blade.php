@@ -301,20 +301,6 @@
                       {{ $books->total() }} ITEMS
                     </div>
                   </div>
-                  
-                  <div class="flex items-center space-x-6">
-                    <span class="text-sm font-bold text-gray-600 uppercase tracking-wider">Sắp xếp:</span>
-                    <select onchange="location = this.value;" 
-                            class="bg-white border-2 border-gray-200 px-6 py-3 text-black font-medium focus:border-black focus:outline-none transition-all duration-300 hover:border-gray-400">
-                      <option value="">Nổi bật</option>
-                      <option value="name_asc">Tên A-Z</option>
-                      <option value="name_desc">Tên Z-A</option>
-                      <option value="price_asc">Giá thấp đến cao</option>
-                      <option value="price_desc">Giá cao đến thấp</option>
-                      <option value="rating_desc">Đánh giá cao nhất</option>
-                      <option value="rating_asc">Đánh giá thấp nhất</option>
-                    </select>
-                  </div>
                 </div>
                 
                 <!-- Results info -->
@@ -434,20 +420,8 @@
 
                     <!-- Bottom Section -->
                     <div class="space-y-4">
-                      <!-- Rating & Status -->
+                      <!-- Status -->
                       <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-1">
-                          @php
-                            $ratingRounded = round($book->avg_rating ?? 0);
-                          @endphp
-                          @for ($i = 1; $i <= 5; $i++)
-                          <svg class="w-3 h-3 {{ $i <= $ratingRounded ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                          </svg>
-                          @endfor
-                          <span class="text-xs text-gray-600 ml-1">({{ number_format($book->avg_rating ?? 0, 1) }})</span>
-                        </div>
-                        
                         <div class="flex items-center space-x-1">
                           @php
                             $physicalStock = $book->physical_stock ?? 0;
@@ -610,20 +584,8 @@
                         @endif
                       </div>
 
-                      <!-- Bottom Row: Rating, Status, Price -->
+                      <!-- Bottom Row: Status, Price -->
                       <div class="flex items-center justify-between border-t border-gray-100 pt-4">
-                        <!-- Rating -->
-                        <div class="flex items-center space-x-2">
-                          <div class="flex space-x-1">
-                            @for ($i = 1; $i <= 5; $i++)
-                            <svg class="w-4 h-4 {{ $i <= $ratingRounded ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                            </svg>
-                            @endfor
-                          </div>
-                          <span class="text-sm font-bold text-black">({{ number_format($book->avg_rating ?? 0, 1) }})</span>
-                        </div>
-
                         <!-- Status -->
                         <div class="flex items-center space-x-2">
                           @switch($bookStatus)
