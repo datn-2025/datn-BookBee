@@ -10,7 +10,7 @@
 
         .message-file {
             border: 1px solid #e0e0e0;
-            border-radius: 8px;
+            border -radius: 8px;      
         }
 
         .message-file:hover {
@@ -51,6 +51,168 @@
             }
         }
 
+        /* Chat introduction styles */
+        .chat-introduction {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem 1rem;
+            text-align: center;
+            color: white;
+            border-radius: 15px;
+            margin: 1rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chat-introduction::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shine 3s infinite;
+        }
+
+        .chat-introduction .celebration-icons {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+            z-index: 2;
+            position: relative;
+        }
+
+        .chat-introduction .user-avatar {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(255,255,255,0.3);
+            margin: 0 auto 1rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            z-index: 2;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        .chat-introduction .user-avatar:hover {
+            transform: scale(1.1);
+        }
+
+        .chat-introduction .intro-text {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+            z-index: 2;
+            position: relative;
+        }
+
+        .chat-introduction .start-chat-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            z-index: 2;
+            position: relative;
+        }
+
+        .chat-introduction .start-chat-btn:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .quick-sticker {
+            padding: 0.5rem;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            margin: 0 0.25rem;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .quick-sticker:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.2) rotate(10deg);
+        }
+
+        .quick-sticker:active {
+            transform: scale(1.5) rotate(0deg);
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes shine {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chat-introduction {
+                margin: 0.5rem;
+                padding: 1.5rem 0.75rem;
+            }
+            
+            .chat-introduction .user-avatar {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .chat-introduction .intro-text {
+                font-size: 1rem;
+            }
+            
+            .chat-introduction .celebration-icons {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Message day separator */
+        .message-date-separator {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        .message-date-separator::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e5e5e5;
+        }
+
+        .message-date-separator .date-badge {
+            background: #f8f9fa;
+            padding: 0.25rem 1rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            color: #6c757d;
+            position: relative;
+            display: inline-block;
+        }
+
         /* Auto scroll */
         .chat-conversation {
             scroll-behavior: smooth;
@@ -76,12 +238,47 @@
         .btn[wire\:loading] {
             pointer-events: none;
         }
+
+        /* Admin Emoji Picker Styles */
+        #emoji-picker {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
+        }
+
+        #emoji-picker.hidden {
+            display: none !important;
+        }
+
+        #emoji-picker .grid button {
+            transition: all 0.2s ease;
+        }
+
+        #emoji-picker .grid button:hover {
+            background-color: #f3f4f6 !important;
+            transform: scale(1.1);
+        }
+
+        #emoji-picker .grid button:active {
+            transform: scale(0.95);
+        }
+
+        /* Responsive emoji picker */
+        @media (max-width: 768px) {
+            #emoji-picker {
+                width: 240px !important;
+                max-height: 160px !important;
+            }
+            
+            #emoji-picker .grid {
+                grid-template-columns: repeat(6, 1fr) !important;
+            }
+        }
     </style>
 
     @if ($selectedConversation)
-    <div class="chat-content d-flex flex-column h-100">
-        <!-- Topbar -->
-        <div class="p-3 user-chat-topbar flex-shrink-0" style="border-bottom: 1px solid #dee2e6;">
+    <div class="chat-container">
+        <!-- Chat Header -->
+        <div class="chat-header">
                         <div class="row align-items-center">
                             <div class="col-sm-4 col-8">
                                 <div class="d-flex align-items-center">
@@ -172,9 +369,77 @@
                         </div>
         </div>
 
-        <!-- Chat content -->
-        <div class="chat-conversation p-3" id="chat-conversation" style="height: 400px; overflow-y: auto; background-color: #f8f9fa;">
-            <div id="elmLoader" class="text-center py-4"></div>
+        <!-- Chat Body -->
+        <div class="chat-body">
+            <div class="chat-conversation" id="chat-conversation" style="background-color: #f8f9fa;">
+                <div id="elmLoader" class="text-center py-4"></div>
+            
+            @if($this->isNewConversation())
+                <!-- Chat Introduction -->
+                <div class="chat-introduction">
+                    <div class="celebration-icons">
+                        🎉 ✨ 💬 🌟 🎊
+                    </div>
+                    
+                    <div class="user-avatar">
+                        <img src="{{ $selectedConversation->customer->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($selectedConversation->customer->name) . '&background=random&color=fff&size=200' }}" 
+                             alt="{{ $selectedConversation->customer->name }}" 
+                             class="rounded-circle w-100 h-100 object-fit-cover">
+                    </div>
+                    
+                    <h4 class="mb-2">🎉 Chào mừng {{ $selectedConversation->customer->name }}!</h4>
+                    
+                    <div class="intro-text">
+                        <p class="mb-2">Bạn và {{ $selectedConversation->customer->name }} đã kết nối thành công!</p>
+                        <div class="user-info mb-3">
+                            <p class="mb-1">
+                                <i class="bx bx-envelope me-1"></i>{{ $selectedConversation->customer->email }}
+                            </p>
+                            @if($selectedConversation->customer->phone)
+                                <p class="mb-1">
+                                    <i class="bx bx-phone me-1"></i>{{ $selectedConversation->customer->phone }}
+                                </p>
+                            @endif
+                            <p class="small mb-0 opacity-75">
+                                <i class="bx bx-calendar me-1"></i>
+                                Khách hàng từ: {{ $selectedConversation->customer->created_at->format('d/m/Y') }}
+                            </p>
+                        </div>
+                        <p class="small mb-0 opacity-75">
+                            💬 Cuộc trò chuyện này được tạo để hỗ trợ bạn tốt nhất
+                        </p>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button class="btn start-chat-btn" onclick="scrollToBottom()">
+                            <i class="bx bx-message-square-detail me-2"></i>
+                            Bắt đầu trò chuyện
+                        </button>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="opacity-75">
+                            Chọn một sticker dưới đây để bắt đầu trò chuyện
+                        </small>
+                    </div>
+                    
+                    <!-- Quick stickers -->
+                    <div class="d-flex justify-content-center gap-2 mt-3">
+                        <span class="quick-sticker" onclick="sendQuickMessage('👋')" style="font-size: 2rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">👋</span>
+                        <span class="quick-sticker" onclick="sendQuickMessage('😊')" style="font-size: 2rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">😊</span>
+                        <span class="quick-sticker" onclick="sendQuickMessage('🤝')" style="font-size: 2rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">🤝</span>
+                        <span class="quick-sticker" onclick="sendQuickMessage('👍')" style="font-size: 2rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">👍</span>
+                    </div>
+                </div>
+                
+                <!-- Date separator for new conversation -->
+                <div class="message-date-separator mt-4">
+                    <span class="date-badge">
+                        {{ now()->format('d/m/Y') }} - Cuộc trò chuyện bắt đầu
+                    </span>
+                </div>
+            @endif
+            
             @php $previousDate = null; @endphp
             <ul class="list-unstyled chat-conversation-list" id="message-container" wire:key="messages-{{ count($chatMessages) }}">
                             @foreach ($chatMessages as $message)
@@ -210,7 +475,7 @@
                                             </div>
                                         @endif
 
-                                        <div id='message-container' class="user-chat-content">
+                                        <div class="user-chat-content">
                                             <div class="ctext-wrap">
                                                 <div class="ctext-wrap-content {{ $bgColor }}"
                                                     id="{{ $message->id }}"
@@ -317,17 +582,26 @@
                                 <small class="text-muted ms-2">đang soạn tin nhắn...</small>
                             </div>
                         </div>
+            </div>
         </div>
-        <!-- chat input -->
-        <div class="chat-input-section flex-shrink-0 p-3" style="border-top: 1px solid #dee2e6;">
+
+        <!-- Chat Footer -->
+        <div class="chat-footer">
             <!-- Giao diện form -->
             <form wire:submit.prevent="sendMessage">
                 <div class="row g-0 align-items-center">
                     <!-- Emoji -->
                     <div class="col-auto pe-2">
-                        <button type="button" class="btn btn-light rounded-circle p-2">
+                        <button type="button" class="btn btn-light rounded-circle p-2" id="emoji-toggle">
                             <i class="bx bx-smile fs-4 text-primary"></i>
                         </button>
+                        
+                        <!-- Emoji Picker -->
+                        <div id="emoji-picker" class="position-absolute bg-white border rounded shadow-lg p-3 hidden" style="bottom: 60px; left: 0; width: 280px; max-height: 200px; overflow-y: auto; z-index: 1000;">
+                            <div class="grid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px;">
+                                <!-- Emojis will be populated by JavaScript -->
+                            </div>
+                        </div>
                     </div>
 
                     <!-- File upload -->
@@ -366,7 +640,9 @@
                                 placeholder="Type your message..." 
                                 wire:model="message_content"
                                 autocomplete="off"
-                                id="messageInputField">
+                                id="messageInputField"
+                                wire:keydown.enter="sendMessage"
+                                onkeydown="handleEnterKey(event)">
                         </div>
                     </div>
 
@@ -409,12 +685,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Alert for copy clipboard -->
-        <div class="alert alert-warning alert-dismissible copyclipboard-alert px-4 fade show"
-            id="copyClipBoard" role="alert" style="position: absolute; top: 20px; right: 20px; z-index: 1000; display: none;">
-            Message copied
         </div>
     </div>
 
@@ -532,93 +802,221 @@
                 </div>
             </div>
         </div>
-</div>
+    </div>
 
-<script>
-    // Pass conversation ID to JavaScript for Echo listening
-    window.currentConversationId = '{{ $selectedConversation->id ?? null }}';
-    
-    // Auto scroll to bottom when component loads
-    document.addEventListener('livewire:load', function() {
-        setTimeout(function() {
-            scrollToBottom();
-        }, 100);
-    });
-
-    // Function to scroll to bottom of chat conversation
-    function scrollToBottom() {
-        const chatContainer = document.getElementById('chat-conversation');
-        if (chatContainer) {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-    }
-
-    // Listen for new messages and scroll to bottom
-    document.addEventListener('livewire:updated', function() {
-        setTimeout(function() {
-            scrollToBottom();
-        }, 100);
-    });
-
-    // Listen for Livewire scroll-to-bottom event
-    window.addEventListener('scroll-to-bottom', function() {
-        scrollToBottom();
-    });
-
-    // Laravel Echo real-time listening
-    @if($selectedConversation)
-    if (typeof window.Echo !== 'undefined' && window.currentConversationId) {
-        console.log('Setting up Echo listener for conversation:', window.currentConversationId);
+    <!-- Script section - di chuyển vào trong div root -->
+    <script>
+        // Setup biến cho chat-realtime.js
+        window.currentConversationId = '{{ $selectedConversation->id ?? null }}';
+        console.log('💬 Chat realtime Blade loaded, conversation ID:', window.currentConversationId);
         
-        // Debug Echo connection
-        console.log('Echo object:', window.Echo);
+        // Emoji list for admin chat
+        const adminEmojis = [
+            '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣',
+            '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰',
+            '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜',
+            '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏',
+            '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣',
+            '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠',
+            '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨',
+            '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥',
+            '👍', '👎', '👌', '🤌', '🤏', '✌️', '🤞', '🤟',
+            '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️',
+            '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅',
+            '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍',
+            '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖',
+            '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️'
+        ];
         
-        const channelName = 'bookbee.' + window.currentConversationId;
-        console.log('Listening to channel:', channelName);
-        
-        window.Echo.channel(channelName)
-            .listen('MessageSent', (e) => {
-                console.log('🔥 New message received via Echo:', e);
-                console.log('Message data:', e.message);
+        // Initialize admin emoji picker
+        function initAdminEmojiPicker() {
+            const emojiPicker = document.getElementById('emoji-picker');
+            const emojiGrid = emojiPicker.querySelector('.grid');
+            
+            if (!emojiGrid) return;
+            
+            emojiGrid.innerHTML = '';
+            
+            adminEmojis.forEach(emoji => {
+                const emojiBtn = document.createElement('button');
+                emojiBtn.type = 'button';
+                emojiBtn.textContent = emoji;
+                emojiBtn.className = 'btn btn-sm btn-outline-light hover:bg-gray-100 p-1 rounded cursor-pointer';
+                emojiBtn.style.cssText = 'border: none; font-size: 1.2rem; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;';
                 
-                // Trigger Livewire to refresh messages
+                emojiBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    insertEmojiToAdminInput(emoji);
+                    emojiPicker.classList.add('hidden');
+                });
+                
+                emojiGrid.appendChild(emojiBtn);
+            });
+        }
+        
+        // Insert emoji to admin input field
+        function insertEmojiToAdminInput(emoji) {
+            const messageInput = document.getElementById('messageInputField');
+            if (messageInput) {
+                const currentValue = messageInput.value || '';
+                const newValue = currentValue + emoji;
+                messageInput.value = newValue;
+                
+                // Trigger Livewire update
                 if (window.Livewire && @this) {
-                    console.log('Calling messageReceived method...');
-                    @this.call('messageReceived', e.message)
-                        .then(() => {
-                            console.log('✅ messageReceived method called successfully');
-                        })
-                        .catch((error) => {
-                            console.error('❌ Error calling messageReceived:', error);
-                        });
+                    @this.set('message_content', newValue);
                 }
                 
-                // Scroll to bottom after message is added
-                setTimeout(scrollToBottom, 200);
-            })
-            .error((error) => {
-                console.error('Echo channel error:', error);
-            });
-    } else {
-        console.warn('Echo not available:', {
-            Echo: typeof window.Echo,
-            conversationId: window.currentConversationId
-        });
-    }
-    @endif
-
-    // Function to show image modal
-    function showImageModal(src, title) {
-        const modal = document.getElementById('imageModal');
-        const modalImage = document.getElementById('modalImage');
-        const modalTitle = document.getElementById('imageModalLabel');
-        
-        if (modal && modalImage) {
-            modalImage.src = src;
-            if (modalTitle) modalTitle.textContent = title || 'Image';
-            
-            const bootstrapModal = new bootstrap.Modal(modal);
-            bootstrapModal.show();
+                messageInput.focus();
+            }
         }
-    }
-</script>
+        
+        // Setup admin emoji toggle
+        function setupAdminEmojiToggle() {
+            const emojiToggle = document.getElementById('emoji-toggle');
+            const emojiPicker = document.getElementById('emoji-picker');
+            
+            if (!emojiToggle || !emojiPicker) return;
+            
+            emojiToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                emojiPicker.classList.toggle('hidden');
+            });
+            
+            // Close emoji picker when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!emojiToggle.contains(e.target) && !emojiPicker.contains(e.target)) {
+                    emojiPicker.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Handle Enter key for sending messages
+        function handleEnterKey(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                
+                // Trigger Livewire sendMessage method
+                if (window.Livewire && @this) {
+                    @this.call('sendMessage');
+                }
+            }
+        }
+        
+        // Send quick message (sticker/emoji)
+        function sendQuickMessage(content) {
+            if (window.Livewire && @this) {
+                // Set the message content
+                @this.set('message_content', content);
+                // Send the message
+                @this.call('sendMessage');
+            }
+        }
+        
+        // Scroll to bottom function - Optimized
+        function scrollToBottom() {
+            const chatContainer = document.getElementById('chat-conversation');
+            if (chatContainer) {
+                // Simple and reliable scroll
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+        
+        // Test scroll function
+        function testScroll() {
+            const chatContainer = document.getElementById('chat-conversation');
+            if (chatContainer) {
+                console.log('✅ Chat container found');
+                console.log('📏 ScrollHeight:', chatContainer.scrollHeight);
+                console.log('📏 ClientHeight:', chatContainer.clientHeight);
+                console.log('📍 ScrollTop:', chatContainer.scrollTop);
+                console.log('🔄 Can scroll:', chatContainer.scrollHeight > chatContainer.clientHeight);
+                
+                // Test scroll capability
+                const maxScroll = chatContainer.scrollHeight - chatContainer.clientHeight;
+                console.log('🎯 Max scroll position:', maxScroll);
+            } else {
+                console.log('❌ Chat container not found');
+            }
+        }
+        
+        // Force scroll function
+        function forceScrollEnable() {
+            const chatContainer = document.getElementById('chat-conversation');
+            if (chatContainer) {
+                // Force CSS properties via JavaScript
+                chatContainer.style.overflowY = 'scroll';
+                chatContainer.style.height = '450px';
+                chatContainer.style.maxHeight = '450px';
+                chatContainer.style.minHeight = '450px';
+                chatContainer.style.display = 'block';
+                chatContainer.style.position = 'relative';
+                
+                console.log('🔧 Force scroll applied');
+                console.log('📏 Final height:', chatContainer.offsetHeight);
+                console.log('📏 Scroll height:', chatContainer.scrollHeight);
+                console.log('💡 Should scroll:', chatContainer.scrollHeight > chatContainer.offsetHeight);
+                
+                return chatContainer.scrollHeight > chatContainer.offsetHeight;
+            }
+            return false;
+        }
+        
+        // Auto scroll to bottom when new messages arrive
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Chat scroll setup initialized');
+            
+            // Initialize admin emoji picker
+            initAdminEmojiPicker();
+            setupAdminEmojiToggle();
+            
+            // Test scroll after page load
+            setTimeout(() => {
+                forceScrollEnable();
+                testScroll();
+                scrollToBottom();
+            }, 500);
+            
+            // Listen for Livewire updates
+            if (window.Livewire) {
+                window.Livewire.on('messageProcessed', function() {
+                    setTimeout(scrollToBottom, 100);
+                });
+            }
+            
+            // Simple scroll monitoring
+            const chatContainer = document.getElementById('chat-conversation');
+            if (chatContainer) {
+                // Log scroll events for debugging
+                chatContainer.addEventListener('scroll', function() {
+                    const scrollPercent = (this.scrollTop / (this.scrollHeight - this.clientHeight) * 100).toFixed(1);
+                    console.log(`📍 Scroll: ${scrollPercent}%`);
+                });
+                
+                // Ensure scrolling works
+                console.log('✅ Scroll events attached');
+            }
+        });
+        
+        // Add some animation effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate celebration icons
+            const celebrationIcons = document.querySelector('.celebration-icons');
+            if (celebrationIcons) {
+                celebrationIcons.style.animation = 'bounce 2s infinite';
+            }
+            
+            // Add hover effects to quick stickers
+            document.querySelectorAll('.quick-sticker').forEach(sticker => {
+                sticker.addEventListener('click', function() {
+                    // Add click animation
+                    this.style.transform = 'scale(1.5)';
+                    setTimeout(() => {
+                        this.style.transform = 'scale(1)';
+                    }, 150);
+                });
+            });
+        });
+    </script>
+
+</div>
