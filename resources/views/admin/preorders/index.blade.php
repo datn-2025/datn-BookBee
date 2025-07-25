@@ -82,7 +82,8 @@
                                 <th scope="col">Số lượng</th>
                                 <th scope="col">Tổng tiền</th>
                                 <th scope="col">Phương thức thanh toán</th>
-                                <th scope="col">Trạng thái</th>
+                                <th scope="col">Trạng thái thanh toán</th>
+                                {{-- <th scope="col">Trạng thái đơn hàng</th> --}}
                                 <th scope="col">Ngày đặt</th>
                                 <th scope="col" style="width: 100px;">Thao tác</th>
                             </tr>
@@ -182,10 +183,30 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <span class="badge bg-{{ $preorder->status_color }}-subtle text-{{ $preorder->status_color }}">
-                                        {{ $preorder->status_label }}
-                                    </span>
+                                    @if($preorder->payment_status)
+                                        @if($preorder->payment_status == 'Đã Thanh Toán')
+                                            <span class="badge bg-success-subtle text-success">
+                                                <i class="ri-check-line me-1"></i>Đã thanh toán
+                                            </span>
+                                            @if($preorder->vnpay_transaction_id)
+                                                <br><small class="text-muted">VNPay: {{ substr($preorder->vnpay_transaction_id, 0, 10) }}...</small>
+                                            @endif
+                                        @elseif($preorder->payment_status == 'Thất Bại')
+                                            <span class="badge bg-danger-subtle text-danger">
+                                                <i class="ri-close-line me-1"></i>Thất bại
+                                            </span>
+                                        @else
+                                            <span class="badge bg-warning-subtle text-warning">
+                                                <i class="ri-time-line me-1"></i>{{ $preorder->payment_status }}
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="badge bg-secondary-subtle text-secondary">
+                                            <i class="ri-question-line me-1"></i>Chưa thanh toán
+                                        </span>
+                                    @endif
                                 </td>
+
                                 <td>
                                     {{ $preorder->created_at->format('d/m/Y') }}
                                     <br>
