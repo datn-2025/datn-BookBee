@@ -524,47 +524,47 @@
                         <div class="space-y-4 pb-6 border-b border-gray-200">
                             <h1 class="product-title combo-title">{{ $combo->name }}</h1>
                         </div>
-                        <div class="grid grid-cols-2 gap-4 mt-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                             <div class="space-y-3">
-                                <div class="flex justify-between text-sm">
+                                <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">SỐ SÁCH</span>
                                     <span class="text-black font-semibold adidas-font">{{ $combo->books->count() }}</span>
                                 </div>
-                                <div class="flex justify-between text-sm">
+                                <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">NGÀY BẮT
                                         ĐẦU</span>
                                     <span
-                                        class="text-black font-semibold adidas-font">{{ optional($combo->start_date)->format('d/m/Y') ?? '-' }}</span>
+                                        class="text-black font-semibold adidas-font truncate">{{ optional($combo->start_date)->format('d/m/Y') ?? '-' }}</span>
                                 </div>
-                                <div class="flex justify-between text-sm">
+                                <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">NGÀY KẾT
                                         THÚC</span>
                                     <span
-                                        class="text-black font-semibold adidas-font">{{ optional($combo->end_date)->format('d/m/Y') ?? '-' }}</span>
+                                        class="text-black font-semibold adidas-font truncate">{{ optional($combo->end_date)->format('d/m/Y') ?? '-' }}</span>
                                 </div>
                             </div>
                             <div class="space-y-3">
-                                <div class="flex justify-between text-sm">
+                                <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">TRẠNG
                                         THÁI</span>
                                     @php
                                         $statusText = $combo->status === 'active' ? 'Đang mở bán' : 'Ngừng bán';
                                         $statusClass = $combo->status === 'active' ? 'status-in-stock' : 'status-out-of-stock';
                                     @endphp
-                                    <span class="font-semibold adidas-font {{ $statusClass }}">{{ $statusText }}</span>
+                                    <span class="font-semibold adidas-font {{ $statusClass }} truncate">{{ $statusText }}</span>
                                 </div>
-                                <div class="flex justify-between text-sm">
+                                <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">GIÁ
                                         COMBO</span>
                                     <span
-                                        class="text-black font-bold text-lg adidas-font">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
+                                        class="text-black font-bold text-lg adidas-font truncate">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
                                 </div>
                             </div>
                         </div>
                         <div class="price-section space-y-4">
-                            <div class="flex items-end space-x-4">
-                                <span
-                                    class="text-4xl font-bold text-black adidas-font">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
+                            <!-- Price and main status -->
+                            <div class="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
+                                <span class="text-4xl font-bold text-black adidas-font">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
                                 @php
                                     $now = now();
                                     $startDate = $combo->start_date ? \Carbon\Carbon::parse($combo->start_date) : null;
@@ -593,21 +593,28 @@
                                         $badgeClass = 'bg-green-50 text-green-700 border-green-200';
                                     }
                                 @endphp
-                                <span class="inline-flex items-center px-3 py-1 text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }}">
-                                    <span class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block"></span>{{ $statusText }}
+                                <span class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }} whitespace-nowrap">
+                                    <span class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block flex-shrink-0"></span>
+                                    <span class="truncate">{{ $statusText }}</span>
                                 </span>
-                                
-                                @if($isActive && $startDate)
-                                    <span class="text-sm text-gray-600 adidas-font">
-                                        (Bắt đầu: {{ $startDate->format('d/m/Y') }})
-                                    </span>
-                                @endif
-                                @if($isActive && $endDate)
-                                    <span class="text-sm text-gray-600 adidas-font">
-                                        (Kết thúc: {{ $endDate->format('d/m/Y') }})
-                                    </span>
-                                @endif
                             </div>
+                            
+                            <!-- Additional date information -->
+                            @if(($isActive && $startDate) || ($isActive && $endDate))
+                                <div class="flex flex-col sm:flex-row gap-2 text-xs sm:text-sm text-gray-600 adidas-font">
+                                    @if($isActive && $startDate)
+                                        <span class="whitespace-nowrap">
+                                            Bắt đầu: {{ $startDate->format('d/m/Y') }}
+                                        </span>
+                                    @endif
+                                    @if($isActive && $endDate)
+                                        <span class="whitespace-nowrap">
+                                            @if($isActive && $startDate)<span class="hidden sm:inline">•</span>@endif
+                                            Kết thúc: {{ $endDate->format('d/m/Y') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                         <!-- Danh sách sách trong combo -->
                         <div class="combo-books-list bg-white border border-gray-100 p-4 mt-6">
@@ -802,7 +809,7 @@
                                     class="font-bold text-black text-base leading-tight group-hover:text-gray-600 transition-colors duration-300 line-clamp-2 min-h-[40px]">
                                     <span class="hover:underline">{{ $related->name }}</span>
                                 </h3>
-                                <p class="text-xs text-gray-600 uppercase tracking-wide font-medium min-h-[18px]">
+                                <p class="text-xs text-gray-600 uppercase tracking-wide font-medium min-h-[18px] truncate">
                                     {{ $related->books->pluck('authors')->flatten()->pluck('name')->unique()->join(', ') ?: 'KHÔNG RÕ TÁC GIẢ' }}
                                 </p>
                                 <div class="flex items-center space-x-2 pt-1">
@@ -888,11 +895,11 @@
                                 <h1 class="product-title book-title">{{ $book->title }}</h1>
                             </div>
                             {{-- Quick Info Grid --}}
-                            <div class="grid grid-cols-2 gap-4 mt-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                                 <div class="space-y-3">
-                                    <div class="flex justify-between text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                         <span class="text-gray-600 font-medium">TÁC GIẢ</span>
-                                        <span class="text-black font-semibold">
+                                        <span class="text-black font-semibold truncate">
                                             @if($book->authors && $book->authors->count())
                                                 {{ $book->authors->pluck('name')->join(', ') }}
                                             @else
@@ -900,27 +907,27 @@
                                             @endif
                                         </span>
                                     </div>
-                                    <div class="flex justify-between text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                         <span class="text-gray-600 font-medium">THƯƠNG HIỆU</span>
-                                        <span class="text-black font-semibold">{{ $book->brand->name ?? 'Không rõ' }}</span>
+                                        <span class="text-black font-semibold truncate">{{ $book->brand->name ?? 'Không rõ' }}</span>
                                     </div>
-                                    <div class="flex justify-between text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                         <span class="text-gray-600 font-medium">ISBN</span>
-                                        <span class="text-black font-semibold">{{ $book->isbn }}</span>
+                                        <span class="text-black font-semibold truncate">{{ $book->isbn }}</span>
                                     </div>
                                 </div>
                                 <div class="space-y-3">
-                                    <div class="flex justify-between text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                         <span class="text-gray-600 font-medium">XUẤT BẢN</span>
                                         <span class="text-black font-semibold">{{ $book->publication_date->format('d/m/Y') }}</span>
                                     </div>
-                                    <div class="flex justify-between text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                         <span class="text-gray-600 font-medium">SỐ TRANG</span>
                                         <span class="text-black font-semibold">{{ $book->page_count }}</span>
                                     </div>
-                                    <div class="flex justify-between text-sm">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                         <span class="text-gray-600 font-medium">THỂ LOẠI</span>
-                                        <span class="text-black font-semibold">{{ $book->category->name ?? 'Không rõ' }}</span>
+                                        <span class="text-black font-semibold truncate">{{ $book->category->name ?? 'Không rõ' }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -986,15 +993,15 @@
                                             $badgeClass = 'bg-red-50 text-red-700 border-red-200';
                                         }
                                     @endphp
-                                    <div class="flex items-end space-x-4 mt-2">
+                                    <div class="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4 mt-2">
                                         <span id="stockBadge"
-                                            class="inline-flex items-center px-3 py-1 text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }}">
+                                            class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }} whitespace-nowrap w-fit">
                                             <span id="stockDot"
-                                                class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block"></span>
-                                            <span id="stockText">{{ $statusText }}</span>
+                                                class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block flex-shrink-0"></span>
+                                            <span id="stockText" class="truncate">{{ $statusText }}</span>
                                         </span>
                                         @if(($defaultStock > 0 || $isEbook) && $defaultStock !== -1 && $defaultStock !== -2)
-                                            <span id="stockQuantityDisplay" class="text-sm text-gray-600 adidas-font">
+                                            <span id="stockQuantityDisplay" class="text-xs sm:text-sm text-gray-600 adidas-font whitespace-nowrap">
                                                 (<span class="font-bold text-black" id="productQuantity">{{ $defaultStock }}</span> cuốn
                                                 còn lại)
                                             </span>
@@ -1614,6 +1621,7 @@
                     <div id="pdfCanvas" class="bg-white shadow-lg border border-gray-300 rounded-lg overflow-hidden">
                         <!-- PDF will be rendered here -->
                     </div>
+
                 </div>
                 
                 <!-- Fallback iframe for compatibility -->
@@ -1723,7 +1731,14 @@
             // Update price and stock based on selected format and attributes
             function updatePriceAndStock() {
                 const formatSelect = document.getElementById('bookFormatSelect');
-                const basePrice = parseFloat(document.getElementById('bookPrice').dataset.basePrice) || 0;
+                const bookPriceElement = document.getElementById('bookPrice');
+                
+                // Kiểm tra nếu không phải trang book thì return
+                if (!bookPriceElement) {
+                    return;
+                }
+                
+                const basePrice = parseFloat(bookPriceElement.dataset.basePrice) || 0;
                 let finalPrice = basePrice;
                 let stock = 0;
                 let discount = 0;
@@ -1750,7 +1765,7 @@
                 const discountAmount = finalPrice * (discount / 100);
                 const priceAfterDiscount = finalPrice - discountAmount;
                 // Update price display
-                document.getElementById('bookPrice').textContent = new Intl.NumberFormat('vi-VN').format(priceAfterDiscount) + '₫';
+                bookPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(priceAfterDiscount) + '₫';
                 const originalPriceElement = document.getElementById('originalPrice');
                 const discountTextElement = document.getElementById('discountText');
                 const discountPercentElement = document.getElementById('discountPercent');
@@ -1925,23 +1940,25 @@
 
             // Add to cart function
             function addToCart() {
-                // Check if user is logged in
-                @auth
-                @else
-                        if (typeof toastr !== 'undefined') {
-                        toastr.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
-                    } else {
-                        alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
-                    }
-                    setTimeout(() => {
-                        window.location.href = '{{ route("login") }}';
-                    }, 1500);
-                    return;
-                @endauth
+                // Check if we're on book page (not combo page)
+                @if(!isset($combo) && isset($book))
+                    // Check if user is logged in
+                    @auth
+                    @else
+                            if (typeof toastr !== 'undefined') {
+                            toastr.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
+                        } else {
+                            alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
+                        }
+                        setTimeout(() => {
+                            window.location.href = '{{ route("login") }}';
+                        }, 1500);
+                        return;
+                    @endauth
 
-                // Get form data
-                const bookId = '{{ $book->id }}';
-                const quantity = parseInt(document.getElementById('quantity').value) || 1;
+                    // Get form data
+                    const bookId = '{{ $book->id }}';
+                    const quantity = parseInt(document.getElementById('quantity').value) || 1;
 
                 // Get selected format
                 const formatSelect = document.getElementById('bookFormatSelect');
@@ -2018,7 +2035,19 @@
                         attributes: attributes
                     })
                 })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                console.log('Non-JSON response:', text);
+                                throw new Error('Server returned non-JSON response');
+                            });
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.success) {
                             if (typeof toastr !== 'undefined') {
@@ -2079,6 +2108,13 @@
                         addToCartBtn.disabled = false;
                         addToCartBtn.textContent = originalText;
                     });
+                @else
+                    // This is combo page, addToCart function should not be called
+                    console.warn('addToCart function called on combo page');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning('Chức năng này chỉ khả dụng trên trang sách đơn');
+                    }
+                @endif
             }
 
             // Add related product to cart function
@@ -2128,7 +2164,19 @@
                         attributes: {}
                     })
                 })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                console.log('Non-JSON response:', text);
+                                throw new Error('Server returned non-JSON response');
+                            });
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.success) {
                             // Show success notification
@@ -2221,17 +2269,20 @@
             }
 
             // Xử lý hiển thị nút đọc thử cho ebook
-            document.getElementById('bookFormatSelect').addEventListener('change', function () {
-                const selectedOption = this.options[this.selectedIndex];
-                const formatName = selectedOption.text.toLowerCase();
-                const previewSection = document.getElementById('previewSection');
+            const bookFormatSelectElement = document.getElementById('bookFormatSelect');
+            if (bookFormatSelectElement) {
+                bookFormatSelectElement.addEventListener('change', function () {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const formatName = selectedOption.text.toLowerCase();
+                    const previewSection = document.getElementById('previewSection');
 
-                if (formatName.includes('ebook')) {
-                    previewSection.classList.remove('hidden');
-                } else {
-                    previewSection.classList.add('hidden');
-                }
-            });
+                    if (formatName.includes('ebook')) {
+                        previewSection.classList.remove('hidden');
+                    } else {
+                        previewSection.classList.add('hidden');
+                    }
+                });
+            }
 
             // Enhanced PDF Preview Modal with Modern Features
             const previewBtn = document.querySelector('#previewBtn');
@@ -2606,28 +2657,100 @@
                         return;
                     @endauth
 
+                    // Get form data and convert to URLSearchParams for better debugging
                     const formData = new FormData(comboForm);
+                    const urlParams = new URLSearchParams();
+                    
+                    // Convert FormData to URLSearchParams
+                    for (let pair of formData.entries()) {
+                        urlParams.append(pair[0], pair[1]);
+                    }
+                    
                     const submitBtn = comboForm.querySelector('button[type="submit"]');
                     const originalText = submitBtn.innerHTML;
+                    
+                    // Debug form data
+                    console.log('=== COMBO FORM DEBUG ===');
+                    console.log('Form action:', comboForm.action);
+                    console.log('Form method:', comboForm.method);
+                    console.log('Form data as string:', urlParams.toString());
+                    
+                    // Check CSRF token
+                    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                    const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
+                    console.log('CSRF token available:', !!csrfToken);
+                    console.log('CSRF token (first 10 chars):', csrfToken ? csrfToken.substring(0, 10) + '...' : 'N/A');
+                    
+                    if (!csrfToken) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Lỗi bảo mật: Không tìm thấy CSRF token. Vui lòng tải lại trang!', 'Lỗi!');
+                        } else {
+                            alert('Lỗi bảo mật: Không tìm thấy CSRF token. Vui lòng tải lại trang!');
+                        }
+                        return;
+                    }
                     
                     // Disable button and show loading
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-3"></i><span>Đang thêm...</span>';
 
+                    // Use fetch with URLSearchParams body (simpler debugging)
                     fetch('{{ route("cart.add") }}', {
                         method: 'POST',
-                        body: formData,
+                        body: urlParams,
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/x-www-form-urlencoded'
                         }
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Combo form response:', data); // Debug logging
+                    .then(response => {
+                        console.log('=== RESPONSE DEBUG ===');
+                        console.log('Status:', response.status);
+                        console.log('Status text:', response.statusText);
+                        console.log('Headers:');
+                        response.headers.forEach((value, key) => {
+                            console.log(`${key}: ${value}`);
+                        });
                         
+                        // Check if response is OK
+                        if (!response.ok) {
+                            // For non-200 responses, get the text to see what's wrong
+                            return response.text().then(text => {
+                                console.log('Error response body (first 500 chars):', text.substring(0, 500));
+                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            });
+                        }
+                        
+                        // Check content type
+                        const contentType = response.headers.get('content-type');
+                        console.log('Content-Type:', contentType);
+                        
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                console.log('=== NON-JSON RESPONSE ===');
+                                console.log('Response length:', text.length);
+                                console.log('First 1000 chars:', text.substring(0, 1000));
+                                
+                                // Try to extract Laravel error information
+                                if (text.includes('validation') || text.includes('ValidationException')) {
+                                    throw new Error('Validation Error: Dữ liệu gửi lên không hợp lệ');
+                                } else if (text.includes('500 | Server Error') || text.includes('ErrorException')) {
+                                    throw new Error('Server Error: Lỗi server nội bộ');
+                                } else if (text.includes('419 | Page Expired') || text.includes('CSRF')) {
+                                    throw new Error('CSRF Error: Token đã hết hạn, vui lòng tải lại trang');
+                                } else {
+                                    throw new Error('Server trả về HTML thay vì JSON');
+                                }
+                            });
+                        }
+                        
+                        return response.json();
+                    })
+                    .then(data => {
                         if (data.success) {
                             if (typeof toastr !== 'undefined') {
-                                console.log('Showing toastr success message'); // Debug
                                 toastr.success(data.success, 'Thành công!', {
                                     timeOut: 3000,
                                     positionClass: 'toast-top-right',
@@ -2635,7 +2758,6 @@
                                     progressBar: true
                                 });
                             } else {
-                                console.log('Toastr not available, using alert'); // Debug
                                 alert(data.success);
                             }
 
@@ -2659,7 +2781,6 @@
                             }, 1000);
 
                         } else if (data.error) {
-                            console.log('Showing toastr error message:', data.error); // Debug
                             if (typeof toastr !== 'undefined') {
                                 toastr.error(data.error, 'Lỗi!', {
                                     timeOut: 5000,
@@ -2668,24 +2789,34 @@
                                     progressBar: true
                                 });
                             } else {
-                                console.log('Toastr not available, using alert'); // Debug
                                 alert(data.error);
                             }
-                        } else {
-                            console.log('Unknown response format:', data); // Debug
                         }
                     })
                     .catch(error => {
-                        console.error('Combo form submission error:', error); // Debug
+                        console.error('Combo form submission error:', error);
+                        
+                        let errorMessage = 'Có lỗi xảy ra khi thêm combo vào giỏ hàng';
+                        
+                        if (error.message.includes('non-JSON response')) {
+                            errorMessage = 'Lỗi server: Server trả về HTML thay vì JSON. Có thể có lỗi validation hoặc server error.';
+                        } else if (error.message.includes('HTTP error! status: 422')) {
+                            errorMessage = 'Lỗi validation: Dữ liệu gửi lên không hợp lệ';
+                        } else if (error.message.includes('HTTP error! status: 500')) {
+                            errorMessage = 'Lỗi server nội bộ: Vui lòng thử lại sau';
+                        } else if (error.message.includes('HTTP error')) {
+                            errorMessage = `Lỗi kết nối: ${error.message}`;
+                        }
+                        
                         if (typeof toastr !== 'undefined') {
-                            toastr.error('Có lỗi xảy ra khi thêm combo vào giỏ hàng', 'Lỗi mạng!', {
+                            toastr.error(errorMessage, 'Lỗi!', {
                                 timeOut: 5000,
                                 positionClass: 'toast-top-right',
                                 closeButton: true,
                                 progressBar: true
                             });
                         } else {
-                            alert('Có lỗi xảy ra khi thêm combo vào giỏ hàng');
+                            alert(errorMessage);
                         }
                     })
                     .finally(() => {
