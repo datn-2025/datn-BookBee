@@ -32,10 +32,44 @@
 
         <!-- Input area -->
         <div class="p-4 border-t border-gray-200 bg-white">
+            <!-- File preview area -->
+            <div id="file-preview" class="hidden mb-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <img id="preview-image" class="w-12 h-12 rounded object-cover" style="display: none;">
+                        <span id="preview-filename" class="text-sm text-gray-600"></span>
+                    </div>
+                    <button type="button" id="remove-file" class="text-red-500 hover:text-red-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
             <form id="chat-form" class="flex items-center space-x-2" autocomplete="off">
+                <!-- Emoji button -->
+                <button type="button" id="emoji-toggle" 
+                    class="text-gray-500 hover:text-gray-700 transition-colors focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+
+                <!-- File upload button -->
+                <label for="file-input" class="cursor-pointer text-gray-500 hover:text-gray-700 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                    </svg>
+                </label>
+                <input type="file" id="file-input" class="hidden" accept="image/*">
+
                 <input type="text" id="chat-input" 
                     class="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:border-black"
                     placeholder="Nhập tin nhắn..." autocomplete="off">
+                
                 <button type="submit" 
                     class="bg-black text-white rounded-full p-2 hover:bg-gray-800 transition-colors focus:outline-none">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,6 +78,13 @@
                     </svg>
                 </button>
             </form>
+
+            <!-- Emoji picker -->
+            <div id="emoji-picker" class="hidden mt-2 p-3 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                <div class="grid grid-cols-8 gap-2 text-xl">
+                    <!-- Emoji sẽ được populate bằng JavaScript -->
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -51,3 +92,5 @@
 @if(Auth::check())
     <div id="chat-user-info" data-user-id="{{ Auth::id() }}" data-user-name="{{ Auth::user()->name }}" style="display:none;"></div>
 @endif
+
+<script src="{{ asset('js/chat.js') }}"></script>
