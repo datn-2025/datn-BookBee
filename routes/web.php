@@ -17,7 +17,6 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\AuthorController;
-use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Login\LoginController;
 use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\Admin\WalletController;
@@ -38,12 +37,8 @@ use App\Http\Controllers\Login\GoogleController;
 use App\Http\Controllers\Wishlists\WishlistController;
 use App\Livewire\BalanceChart;
 use App\Livewire\RevenueReport;
-use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
-
-//broadcast route 
-Broadcast::routes(); 
 // Route QR code
 Route::get('storage/private/{filename}', function ($filename) {
     $path = storage_path('app/private/' . $filename);
@@ -209,15 +204,6 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/', [\App\Http\Controllers\Admin\AdminProfileController::class, 'index'])->name('index');
         Route::put('/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updateProfile'])->name('update');
         Route::put('/password/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('password.update');
-    });
-
-    // chat real-time
-    Route::prefix('chat')->name('chat.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'index'])->name('index');
-        Route::get('/{id}', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'show'])->name('show');
-        Route::post('/send', [\App\Http\Controllers\Admin\AdminChatRealTimeController::class, 'send'])->name('send');
-        Route::post('/create-conversation', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'createConversation'])->name('create-conversation');
-        Route::get('/users/active', [\App\Http\Controllers\Admin\AdminChatrealtimeController::class, 'getActiveUsers'])->name('users.active');
     });
 
     Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard');
@@ -446,13 +432,6 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::delete('collections/{id}/force', [CollectionController::class, 'forceDelete'])->name('collections.forceDelete');
     Route::get('collections-trash', [CollectionController::class, 'trash'])->name('collections.trash');
     Route::post('collections/{id}/restore', [CollectionController::class, 'restore'])->name('collections.restore');
-
-    // Profile admin
-    Route::prefix('profile')->name('profile.')->group(function () {
-    Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
-    Route::put('/update', [ProfileController::class, 'update'])->name('update');
-    Route::put('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
-    });
 });
 
 // Wallet user routes
@@ -464,7 +443,6 @@ Route::middleware('auth')->prefix('wallet')->name('wallet.')->group(function () 
     Route::post('/withdraw', [App\Http\Controllers\WalletController::class, 'withdraw'])->name('withdraw');
     Route::get('/vnpay-return', [App\Http\Controllers\WalletController::class, 'vnpayReturn'])->name('vnpayReturn');
 });
-
 
 // AI Summary routes
 Route::prefix('ai-summary')->name('ai-summary.')->group(function() {
@@ -482,4 +460,3 @@ Route::prefix('ai-summary')->name('ai-summary.')->group(function() {
     Route::get('/combo/status/{combo}', [App\Http\Controllers\AISummaryController::class, 'checkComboStatus'])->name('combo.status');
     Route::post('/combo/chat/{combo}', [App\Http\Controllers\AISummaryController::class, 'chatWithComboAI'])->name('combo.chat');
 });
-
