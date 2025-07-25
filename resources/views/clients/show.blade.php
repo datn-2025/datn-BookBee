@@ -3370,19 +3370,36 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.success(data.message, 'Thành công!', {
-                        timeOut: 5000,
-                        positionClass: 'toast-top-right',
-                        closeButton: true,
-                        progressBar: true
-                    });
+                // Kiểm tra nếu là thanh toán VNPay
+                if (data.redirect_to_vnpay && data.vnpay_url) {
+                    // Chuyển hướng đến VNPay
+                    if (typeof toastr !== 'undefined') {
+                        toastr.info('Đang chuyển hướng đến VNPay...', 'Thanh toán');
+                    }
+                    
+                    // Đóng modal và chuyển hướng
+                    closePreorderModal();
+                    
+                    // Delay nhỏ để user thấy thông báo
+                    setTimeout(() => {
+                        window.location.href = data.vnpay_url;
+                    }, 1000);
                 } else {
-                    alert(data.message);
+                    // Thanh toán thường (không phải VNPay)
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(data.message, 'Thành công!', {
+                            timeOut: 5000,
+                            positionClass: 'toast-top-right',
+                            closeButton: true,
+                            progressBar: true
+                        });
+                    } else {
+                        alert(data.message);
+                    }
+                    
+                    closePreorderModal();
+                    form.reset();
                 }
-                
-                closePreorderModal();
-                form.reset();
             } else {
                 if (data.errors) {
                     // Display validation errors
