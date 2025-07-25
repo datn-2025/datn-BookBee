@@ -3,18 +3,15 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-
-use App\Events\UserCreated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
-use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasFactory, Notifiable;
 
     protected $table = 'users';
 
@@ -34,8 +31,7 @@ class User extends Authenticatable
         'avatar',
         'activation_token',
         'activation_expires',
-        'google_id',
-        'last_seen'
+        'google_id'
     ];
 
     /**
@@ -58,7 +54,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'last_seen' => 'datetime'
         ];
     }
 
@@ -70,30 +65,6 @@ class User extends Authenticatable
     public function isActive()
     {
         return $this->status === 'Hoạt Động';
-    }
-
-    /**
-     * Kiểm tra admin có đang online không (hoạt động trong 5 phút gần đây)
-     */
-    public function isOnline($minutesThreshold = 5)
-    {
-        if (!$this->last_seen) {
-            return false;
-        }
-        
-        return $this->last_seen->diffInMinutes(now()) <= $minutesThreshold;
-    }
-
-    /**
-     * Kiểm tra admin có đang hoạt động không (hoạt động trong X phút gần đây)
-     */
-    public function isActiveWithin($minutes = 15)
-    {
-        if (!$this->last_seen) {
-            return false;
-        }
-        
-        return $this->last_seen->diffInMinutes(now()) <= $minutes;
     }
 
     public function role()
@@ -149,18 +120,4 @@ class User extends Authenticatable
     {
         return $this->hasOne(\App\Models\Wallet::class);
     }
-
-    public function conversationsAsCustomer()
-    {
-        return $this->hasMany(\App\Models\Conversation::class, 'customer_id');
-    }
-
-    public function conversationsAsAdmin()
-    {
-        return $this->hasMany(\App\Models\Conversation::class, 'admin_id');
-    }
-
-    protected $dispatchesEvents = [
-        'created' => UserCreated::class,
-    ];
 }

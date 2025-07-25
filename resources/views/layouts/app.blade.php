@@ -9,15 +9,13 @@
     <title>{{ get_setting() ? get_setting()->name_website : 'BookBee' }} - @yield('title')</title>
     <link rel="shortcut icon" href="{{ asset('storage/' . (get_setting() ? get_setting()->favicon : 'default_favicon.ico')) }}" />
 
-   
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    
 
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
@@ -189,34 +187,11 @@
         -webkit-text-fill-color: transparent;
         background-clip: text;
       }
-      /* Chat notification animation */
-      @keyframes bounce {
-        0%, 20%, 53%, 80%, 100% {
-          animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
-          transform: translate3d(0,0,0);
-        }
-        40%, 43% {
-          animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
-          transform: translate3d(0, -10px, 0);
-        }
-        70% {
-          animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
-          transform: translate3d(0, -7px, 0);
-        }
-        90% {
-          transform: translate3d(0,-2px,0);
-        }
-      }
-      .animate-bounce {
-        animation: bounce 1s;
-      }
     </style>
 </head>
 
 <body style="margin:0; min-height:100vh;">
     @include('layouts.partials.navbar')
-    <div id="notification" class=" alert mx-3 invisible" >
-    </div>
     @yield('content')
 
     {!! Toastr::message() !!}
@@ -224,17 +199,8 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    {{-- Chat Widget --}}
-    @include('components.chat-widget')
-
     @stack('scripts')
     @include('layouts.partials.footer')
-
-    <!-- Test broadcast script -->
-    <script src="{{ asset('test-broadcast.js') }}"></script>
-
-    <!-- Chat script moved to app.js -->
-    
     <script>
        $(document).ready(function() {
     // Lấy tỉnh thành

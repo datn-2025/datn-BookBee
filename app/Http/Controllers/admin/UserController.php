@@ -7,7 +7,6 @@ use App\Mail\UserStatusUpdated;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -16,13 +15,9 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-
         $query = User::with('role')->select('id', 'name', 'avatar', 'email', 'phone', 'role_id', 'status')
-            ->whereHas('role', function ($q) {
-                $q->whereIn('name', ['User', 'Staff']);
-            })
-            ->orderByDesc('created_at') // Sắp xếp người dùng mới nhất lên đầu
             ->where('id', '!=', Auth::id()); // Loại bỏ tài khoản đang đăng nhập
+
         // Tìm kiếm theo text
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -42,7 +37,6 @@ class UserController extends Controller
 
         return view('admin.users.index', compact('users'));
     }
-
 
     public function show($id)
     {
@@ -91,17 +85,6 @@ class UserController extends Controller
         $oldRole = $user->role ? $user->role->name : 'Chưa phân quyền';
         $oldStatus = $user->status;
 
-        // Kiểm tra thay đổi
-        $original = $user->only(['role_id', 'status']);
-        $incoming = [
-            'role_id' => $request->input('role_id'),
-            'status' => $request->input('status'),
-        ];
-        if ($original === $incoming) {
-            Toastr()->info('Không có thay đổi nào cho người dùng.');
-            return redirect()->route('admin.users.index');
-        }
-
         // Cập nhật thông tin
         $user->update([
             'role_id' => $request->role_id,
@@ -126,6 +109,6 @@ class UserController extends Controller
         }
 
         return redirect()->route('admin.users.index', $user->id)
-            ->with('success', 'Cập nhật người dùng thành công');
+            ->with('success', 'Cập nhật thành công');
     }
 }

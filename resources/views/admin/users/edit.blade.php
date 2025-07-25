@@ -23,7 +23,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <form action="{{ route('admin.users.update', $user->id) }}" method="POST" onsubmit="return disableSubmitOnce(this)">
+                    <form action="{{ route('admin.users.update', $user->id) }}" method="POST">
                         @csrf
                         @method('PUT')
                         
@@ -92,20 +92,3 @@
     </div>
 </div>
 @endsection
-@push('scripts')
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        // Chống submit nhiều lần
-        document.querySelectorAll("form[onsubmit]").forEach(form => {
-            form.onsubmit = () => {
-                const btn = form.querySelector("button[type=submit]");
-                if (btn && !btn.disabled) {
-                    btn.disabled = true;
-                    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Đang xử lý...`;
-                }
-                return true;
-            };
-        });
-    });
-</script>
-@endpush  
