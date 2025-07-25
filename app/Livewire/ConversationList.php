@@ -1,54 +1,58 @@
-<?php
-
+<?php 
 namespace App\Livewire;
 
-use App\Models\Conversation;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use App\Models\Conversation;
+use Illuminate\Support\Facades\Log;
 
 class ConversationList extends Component
 {
     public $conversations = [];
-    public $selectedConversationId = null;
+    public $refreshKey = 0;
+    public $selectedConversationId;
 
-    protected $listeners = ['conversationUpdated' => 'refreshConversations'];
+    protected $listeners = [
+        'refreshConversations' => 'loadConversations',
+        // 'echo:bookbee.global,MessageSent' => 'handleGlobalMessage'
+    ];
 
     public function mount()
     {
         $this->loadConversations();
-        
-        // Lấy conversation ID hiện tại từ route
-        if (request()->route('id')) {
-            $this->selectedConversationId = request()->route('id');
-        }
     }
 
     public function loadConversations()
     {
-        $this->conversations = Conversation::with(['customer', 'messages' => function($query) {
-            $query->latest()->limit(1);
-        }])
-        ->where('admin_id', Auth::id())
-        ->orderBy('last_message_at', 'desc')
-        ->get();
-    }
-
-    public function switchConversation($conversationId)
-    {
-        $this->selectedConversationId = $conversationId;
+        $currentUserId = auth('admin')->id();
         
-        // Emit event để parent component biết conversation nào được chọn
-        $this->emit('conversationSelected', $conversationId);
+        $this->conversations = Conversation::with([
+                'customer', 
+                'messages' => fn ($q) => $q->latest()->take(1) // Chỉ lấy tin nhắn mới nhất
+            ])
+            ->withCount(['messages as unread_messages_count' => function ($query) use ($currentUserId) {
+                // Chỉ đếm tin nhắn KHÔNG PHẢI từ admin hiện tại và chưa được admin đọc
+                $query->where('sender_id', '!=', $currentUserId)
+                    ->whereDoesntHave('reads', function($q) use ($currentUserId) {
+                        $q->where('user_id', $currentUserId);
+                    });
+            }])
+            ->orderByDesc('last_message_at')
+            ->get();
         
-        // Cập nhật URL mà không reload trang
-        $this->dispatch('updateUrl', [
-            'url' => route('admin.chat.show', $conversationId)
+        // Update refresh key để trigger re-render
+        $this->refreshKey = time();
+        
+        // Log để debug
+        Log::info('ConversationList loaded', [
+            'count' => $this->conversations->count(),
+            'refreshKey' => $this->refreshKey,
+            'currentUserId' => $currentUserId
         ]);
     }
 
-
-    public function refreshConversations()
+    public function handleGlobalMessage($payload)
     {
+        Log::info('Global message received in ConversationList', ['payload' => $payload]);
         $this->loadConversations();
     }
 
@@ -56,4 +60,4 @@ class ConversationList extends Component
     {
         return view('livewire.conversation-list');
     }
-} 
+}
