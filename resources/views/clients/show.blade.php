@@ -1567,8 +1567,13 @@
                 style="scroll-behavior:smooth;">
                 <div id="previewPages" class="h-full">
                     <!-- Nội dung đọc thử sẽ được load ở đây -->
-                    <iframe id="previewIframe" src="{{ asset('storage/book/book_' . $book->id . '.pdf') }}"
-                        class="w-full h-[80vh] border-none bg-white"></iframe>
+                    @if(isset($book))
+                        <iframe id="previewIframe" src="{{ asset('storage/book/book_' . $book->id . '.pdf') }}"
+                            class="w-full h-[80vh] border-none bg-white"></iframe>
+                    @else
+                        <iframe id="previewIframe" src=""
+                            class="w-full h-[80vh] border-none bg-white"></iframe>
+                    @endif
                 </div>
                 <div id="previewLimitNotice"
                     class="hidden absolute bottom-4 left-4 right-4 text-center bg-black text-white font-bold py-3 px-6 adidas-font uppercase tracking-wider">
@@ -1641,7 +1646,14 @@
             // Update price and stock based on selected format and attributes
             function updatePriceAndStock() {
                 const formatSelect = document.getElementById('bookFormatSelect');
-                const basePrice = parseFloat(document.getElementById('bookPrice').dataset.basePrice) || 0;
+                const bookPriceElement = document.getElementById('bookPrice');
+                
+                // Kiểm tra nếu không phải trang book thì return
+                if (!bookPriceElement) {
+                    return;
+                }
+                
+                const basePrice = parseFloat(bookPriceElement.dataset.basePrice) || 0;
                 let finalPrice = basePrice;
                 let stock = 0;
                 let discount = 0;
@@ -1668,7 +1680,7 @@
                 const discountAmount = finalPrice * (discount / 100);
                 const priceAfterDiscount = finalPrice - discountAmount;
                 // Update price display
-                document.getElementById('bookPrice').textContent = new Intl.NumberFormat('vi-VN').format(priceAfterDiscount) + '₫';
+                bookPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(priceAfterDiscount) + '₫';
                 const originalPriceElement = document.getElementById('originalPrice');
                 const discountTextElement = document.getElementById('discountText');
                 const discountPercentElement = document.getElementById('discountPercent');
@@ -1843,23 +1855,25 @@
 
             // Add to cart function
             function addToCart() {
-                // Check if user is logged in
-                @auth
-                @else
-                        if (typeof toastr !== 'undefined') {
-                        toastr.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
-                    } else {
-                        alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
-                    }
-                    setTimeout(() => {
-                        window.location.href = '{{ route("login") }}';
-                    }, 1500);
-                    return;
-                @endauth
+                // Check if we're on book page (not combo page)
+                @if(!isset($combo) && isset($book))
+                    // Check if user is logged in
+                    @auth
+                    @else
+                            if (typeof toastr !== 'undefined') {
+                            toastr.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
+                        } else {
+                            alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
+                        }
+                        setTimeout(() => {
+                            window.location.href = '{{ route("login") }}';
+                        }, 1500);
+                        return;
+                    @endauth
 
-                // Get form data
-                const bookId = '{{ $book->id }}';
-                const quantity = parseInt(document.getElementById('quantity').value) || 1;
+                    // Get form data
+                    const bookId = '{{ $book->id }}';
+                    const quantity = parseInt(document.getElementById('quantity').value) || 1;
 
                 // Get selected format
                 const formatSelect = document.getElementById('bookFormatSelect');
@@ -1936,7 +1950,19 @@
                         attributes: attributes
                     })
                 })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                console.log('Non-JSON response:', text);
+                                throw new Error('Server returned non-JSON response');
+                            });
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.success) {
                             if (typeof toastr !== 'undefined') {
@@ -1997,6 +2023,13 @@
                         addToCartBtn.disabled = false;
                         addToCartBtn.textContent = originalText;
                     });
+                @else
+                    // This is combo page, addToCart function should not be called
+                    console.warn('addToCart function called on combo page');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning('Chức năng này chỉ khả dụng trên trang sách đơn');
+                    }
+                @endif
             }
 
             // Add related product to cart function
@@ -2046,7 +2079,19 @@
                         attributes: {}
                     })
                 })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                console.log('Non-JSON response:', text);
+                                throw new Error('Server returned non-JSON response');
+                            });
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.success) {
                             // Show success notification
@@ -2139,17 +2184,20 @@
             }
 
             // Xử lý hiển thị nút đọc thử cho ebook
-            document.getElementById('bookFormatSelect').addEventListener('change', function () {
-                const selectedOption = this.options[this.selectedIndex];
-                const formatName = selectedOption.text.toLowerCase();
-                const previewSection = document.getElementById('previewSection');
+            const bookFormatSelectElement = document.getElementById('bookFormatSelect');
+            if (bookFormatSelectElement) {
+                bookFormatSelectElement.addEventListener('change', function () {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const formatName = selectedOption.text.toLowerCase();
+                    const previewSection = document.getElementById('previewSection');
 
-                if (formatName.includes('ebook')) {
-                    previewSection.classList.remove('hidden');
-                } else {
-                    previewSection.classList.add('hidden');
-                }
-            });
+                    if (formatName.includes('ebook')) {
+                        previewSection.classList.remove('hidden');
+                    } else {
+                        previewSection.classList.add('hidden');
+                    }
+                });
+            }
 
             // Xử lý modal đọc thử lấy đúng file sample_file_url
             const previewBtn = document.querySelector('#previewSection a');
@@ -2280,28 +2328,100 @@
                         return;
                     @endauth
 
+                    // Get form data and convert to URLSearchParams for better debugging
                     const formData = new FormData(comboForm);
+                    const urlParams = new URLSearchParams();
+                    
+                    // Convert FormData to URLSearchParams
+                    for (let pair of formData.entries()) {
+                        urlParams.append(pair[0], pair[1]);
+                    }
+                    
                     const submitBtn = comboForm.querySelector('button[type="submit"]');
                     const originalText = submitBtn.innerHTML;
+                    
+                    // Debug form data
+                    console.log('=== COMBO FORM DEBUG ===');
+                    console.log('Form action:', comboForm.action);
+                    console.log('Form method:', comboForm.method);
+                    console.log('Form data as string:', urlParams.toString());
+                    
+                    // Check CSRF token
+                    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                    const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
+                    console.log('CSRF token available:', !!csrfToken);
+                    console.log('CSRF token (first 10 chars):', csrfToken ? csrfToken.substring(0, 10) + '...' : 'N/A');
+                    
+                    if (!csrfToken) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Lỗi bảo mật: Không tìm thấy CSRF token. Vui lòng tải lại trang!', 'Lỗi!');
+                        } else {
+                            alert('Lỗi bảo mật: Không tìm thấy CSRF token. Vui lòng tải lại trang!');
+                        }
+                        return;
+                    }
                     
                     // Disable button and show loading
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-3"></i><span>Đang thêm...</span>';
 
+                    // Use fetch with URLSearchParams body (simpler debugging)
                     fetch('{{ route("cart.add") }}', {
                         method: 'POST',
-                        body: formData,
+                        body: urlParams,
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/x-www-form-urlencoded'
                         }
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Combo form response:', data); // Debug logging
+                    .then(response => {
+                        console.log('=== RESPONSE DEBUG ===');
+                        console.log('Status:', response.status);
+                        console.log('Status text:', response.statusText);
+                        console.log('Headers:');
+                        response.headers.forEach((value, key) => {
+                            console.log(`${key}: ${value}`);
+                        });
                         
+                        // Check if response is OK
+                        if (!response.ok) {
+                            // For non-200 responses, get the text to see what's wrong
+                            return response.text().then(text => {
+                                console.log('Error response body (first 500 chars):', text.substring(0, 500));
+                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            });
+                        }
+                        
+                        // Check content type
+                        const contentType = response.headers.get('content-type');
+                        console.log('Content-Type:', contentType);
+                        
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                console.log('=== NON-JSON RESPONSE ===');
+                                console.log('Response length:', text.length);
+                                console.log('First 1000 chars:', text.substring(0, 1000));
+                                
+                                // Try to extract Laravel error information
+                                if (text.includes('validation') || text.includes('ValidationException')) {
+                                    throw new Error('Validation Error: Dữ liệu gửi lên không hợp lệ');
+                                } else if (text.includes('500 | Server Error') || text.includes('ErrorException')) {
+                                    throw new Error('Server Error: Lỗi server nội bộ');
+                                } else if (text.includes('419 | Page Expired') || text.includes('CSRF')) {
+                                    throw new Error('CSRF Error: Token đã hết hạn, vui lòng tải lại trang');
+                                } else {
+                                    throw new Error('Server trả về HTML thay vì JSON');
+                                }
+                            });
+                        }
+                        
+                        return response.json();
+                    })
+                    .then(data => {
                         if (data.success) {
                             if (typeof toastr !== 'undefined') {
-                                console.log('Showing toastr success message'); // Debug
                                 toastr.success(data.success, 'Thành công!', {
                                     timeOut: 3000,
                                     positionClass: 'toast-top-right',
@@ -2309,7 +2429,6 @@
                                     progressBar: true
                                 });
                             } else {
-                                console.log('Toastr not available, using alert'); // Debug
                                 alert(data.success);
                             }
 
@@ -2333,7 +2452,6 @@
                             }, 1000);
 
                         } else if (data.error) {
-                            console.log('Showing toastr error message:', data.error); // Debug
                             if (typeof toastr !== 'undefined') {
                                 toastr.error(data.error, 'Lỗi!', {
                                     timeOut: 5000,
@@ -2342,24 +2460,34 @@
                                     progressBar: true
                                 });
                             } else {
-                                console.log('Toastr not available, using alert'); // Debug
                                 alert(data.error);
                             }
-                        } else {
-                            console.log('Unknown response format:', data); // Debug
                         }
                     })
                     .catch(error => {
-                        console.error('Combo form submission error:', error); // Debug
+                        console.error('Combo form submission error:', error);
+                        
+                        let errorMessage = 'Có lỗi xảy ra khi thêm combo vào giỏ hàng';
+                        
+                        if (error.message.includes('non-JSON response')) {
+                            errorMessage = 'Lỗi server: Server trả về HTML thay vì JSON. Có thể có lỗi validation hoặc server error.';
+                        } else if (error.message.includes('HTTP error! status: 422')) {
+                            errorMessage = 'Lỗi validation: Dữ liệu gửi lên không hợp lệ';
+                        } else if (error.message.includes('HTTP error! status: 500')) {
+                            errorMessage = 'Lỗi server nội bộ: Vui lòng thử lại sau';
+                        } else if (error.message.includes('HTTP error')) {
+                            errorMessage = `Lỗi kết nối: ${error.message}`;
+                        }
+                        
                         if (typeof toastr !== 'undefined') {
-                            toastr.error('Có lỗi xảy ra khi thêm combo vào giỏ hàng', 'Lỗi mạng!', {
+                            toastr.error(errorMessage, 'Lỗi!', {
                                 timeOut: 5000,
                                 positionClass: 'toast-top-right',
                                 closeButton: true,
                                 progressBar: true
                             });
                         } else {
-                            alert('Có lỗi xảy ra khi thêm combo vào giỏ hàng');
+                            alert(errorMessage);
                         }
                     })
                     .finally(() => {
