@@ -19,4 +19,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/messages', [ConversationController::class, 'index']);
     Route::post('/messages', [ConversationController::class, 'store']);
     Route::delete('/messages/{id}', [ConversationController::class, 'destroy']);
+    
+    // Thêm route để tạo conversation mới
+    Route::post('/conversations', [ConversationController::class, 'createConversation']);
 });
