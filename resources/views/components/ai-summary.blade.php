@@ -1,11 +1,20 @@
 {{-- AI Summary Component - Adidas Style --}}
-<div id="ai-summary-container" data-book-id="{{ $book->id }}" class="ai-summary-section">
+@php
+    $isCombo = isset($combo);
+    $item = $isCombo ? $combo : $book;
+    $itemType = $isCombo ? 'combo' : 'book';
+    $dataAttribute = $isCombo ? 'data-combo-id' : 'data-book-id';
+@endphp
+
+<div id="{{ $isCombo ? 'ai-combo-summary-container' : 'ai-summary-container' }}" {{ $dataAttribute }}="{{ $item->id }}" class="ai-summary-section">
     {{-- Content will be loaded by JavaScript --}}
     <div class="text-center">
         <div class="bg-white border-2 border-black relative overflow-hidden group">
             <!-- Header Badge -->
             <div class="bg-black text-white px-6 py-3 text-center">
-                <span class="text-sm font-bold uppercase tracking-wider">AI SUMMARY</span>
+                <span class="text-sm font-bold uppercase tracking-wider">
+                    {{ $isCombo ? 'AI SUMMARY - COMBO' : 'AI SUMMARY' }}
+                </span>
             </div>
             
             <!-- Loading Content -->
@@ -33,7 +42,11 @@
 </div>
 
 @push('scripts')
-    <script src="{{ asset('js/ai-summary-adidas.js') }}"></script>
+    @if(isset($combo))
+        <script src="{{ asset('js/combo-ai-summary.js') }}"></script>
+    @else
+        <script src="{{ asset('js/ai-summary-adidas.js') }}"></script>
+    @endif
 @endpush
 
 <style>
@@ -337,6 +350,75 @@
 }
 
 .ai-chat-send {
+    padding: 0.75rem 1.5rem;
+    min-width: 120px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+/* Combo AI Summary Specific Styles */
+#ai-combo-summary-container {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.combo-ai-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    border: 2px solid #000;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #000;
+}
+
+.combo-ai-section-title:hover {
+    background: #000;
+    color: #fff;
+}
+
+.combo-ai-section-title i:first-child {
+    margin-right: 0.75rem;
+}
+
+.combo-ai-section-title i:last-child {
+    transition: transform 0.3s ease;
+}
+
+.combo-ai-chat-container {
+    border-top: 2px solid #000;
+    margin-top: 2rem;
+    padding-top: 2rem;
+}
+
+.combo-ai-chat-input {
+    flex: 1;
+    border: 2px solid #000;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    resize: none;
+    min-height: 48px;
+    max-height: 120px;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.combo-ai-chat-input:focus {
+    outline: none;
+    border-color: #333;
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+}
+
+.combo-char-count {
+    font-size: 0.75rem;
+    color: #666;
+}
+
+.send-combo-chat-btn {
     padding: 0.75rem 1.5rem;
     min-width: 120px;
     font-size: 0.875rem;
