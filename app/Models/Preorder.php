@@ -79,11 +79,6 @@ class Preorder extends Model
         return $this->belongsTo(PaymentMethod::class);
     }
 
-    public function order(): \Illuminate\Database\Eloquent\Relations\HasOne
-    {
-        return $this->hasOne(Order::class);
-    }
-
     // Accessor for displaying selected attributes
     public function getSelectedAttributesDisplayAttribute(): string
     {
