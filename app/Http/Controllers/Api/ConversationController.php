@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
+use App\Services\AutoReplyService;
 use Illuminate\Http\Request;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -53,10 +54,18 @@ class ConversationController extends Controller
             'conversation_id' => 'nullable|exists:conversations,id',
             'customer_id' => 'required_without:conversation_id|exists:users,id',
             'admin_id' => 'required_without:conversation_id|exists:users,id',
-            'content' => 'required|string',
+            'content' => 'nullable|string',
             'type' => 'nullable|string|in:text,image,file',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // Max 5MB
             'file_path' => 'nullable|string'
         ]);
+
+        // Validate that either content or image is provided
+        if (!$request->content && !$request->hasFile('image')) {
+            return response()->json([
+                'message' => 'Vui lòng nhập nội dung tin nhắn hoặc chọn ảnh'
+            ], 422);
+        }
 
         DB::beginTransaction();
 
@@ -77,12 +86,23 @@ class ConversationController extends Controller
                 );
             }
 
+            // Handle file upload
+            $filePath = null;
+            $messageType = $request->type ?? 'text';
+            
+            if ($request->hasFile('image')) {
+                $file = $request->file('image');
+                $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $filePath = $file->storeAs('chat-images', $fileName, 'public');
+                $messageType = 'image';
+            }
+
             // Tạo tin nhắn mới
             $message = new Message([
                 'sender_id' => $request->sender_id, // Use sender_id from request
-                'content' => $request->content,
-                'type' => $request->type ?? 'text',
-                'file_path' => $request->file_path
+                'content' => $request->content ?? ($messageType === 'image' ? 'Đã gửi một hình ảnh' : ''),
+                'type' => $messageType,
+                'file_path' => $filePath ?? $request->file_path
             ]);
 
             $conversation->messages()->save($message);
@@ -90,9 +110,14 @@ class ConversationController extends Controller
             // Cập nhật thời gian tin nhắn cuối
             $conversation->update(['last_message_at' => now()]);
 
-
-            // Broadcast event
-             broadcast(new MessageSent($message))->toOthers();
+            // Broadcast event - bỏ toOthers() để đảm bảo broadcast
+            broadcast(new MessageSent($message));
+            
+            \Illuminate\Support\Facades\Log::info('Message sent and broadcasted', [
+                'message_id' => $message->id,
+                'sender_id' => $message->sender_id,
+                'conversation_id' => $message->conversation_id
+            ]);
 
             // Cập nhật last_seen cho user
             $user = \Illuminate\Support\Facades\Auth::user();
@@ -100,11 +125,16 @@ class ConversationController extends Controller
                 $user->update(['last_seen' => now()]);
             }
 
+            // Kiểm tra và gửi tin nhắn tự động nếu cần
+            $autoReplyService = new AutoReplyService();
+            $autoReplyService->checkAndSendAutoReply($conversation, $message);
+
             DB::commit();
             // Trả về dữ liệu cho frontend
             return response()->json([
                 'message' => 'Gửi tin nhắn thành công',
                 'conversation' => $conversation->load(['customer', 'admin']),
+                'conversation_id' => $conversation->id,
                 'new_message' => $message->load(['sender.role'])
             ], 201);
         } catch (\Exception $e) {
@@ -112,6 +142,56 @@ class ConversationController extends Controller
 
             return response()->json([
                 'message' => 'Lỗi khi gửi tin nhắn',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Create a new conversation between customer and admin.
+     */
+    public function createConversation(Request $request)
+    {
+        $request->validate([
+            'customer_id' => 'required|exists:users,id',
+            'admin_id' => 'required|exists:users,id'
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            // Kiểm tra xem conversation đã tồn tại chưa
+            $existingConversation = Conversation::where('customer_id', $request->customer_id)
+                ->where('admin_id', $request->admin_id)
+                ->first();
+
+            if ($existingConversation) {
+                // Nếu đã có conversation, trả về conversation đó
+                return response()->json([
+                    'message' => 'Cuộc trò chuyện đã tồn tại',
+                    'conversation' => $existingConversation->load(['customer', 'admin'])
+                ], 200);
+            }
+
+            // Tạo conversation mới
+            $conversation = Conversation::create([
+                'customer_id' => $request->customer_id,
+                'admin_id' => $request->admin_id,
+                'last_message_at' => now()
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Tạo cuộc trò chuyện thành công',
+                'conversation' => $conversation->load(['customer', 'admin'])
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Lỗi khi tạo cuộc trò chuyện',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -142,5 +222,5 @@ class ConversationController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-        }
+    }
 }
