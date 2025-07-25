@@ -18,6 +18,11 @@ class Message extends Model
         'content',
         'type',
         'file_path',
+        'is_auto_reply',
+    ];
+
+    protected $casts = [
+        'is_auto_reply' => 'boolean',
     ];
 
     // Quan hệ với cuộc hội thoại
