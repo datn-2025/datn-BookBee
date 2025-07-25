@@ -87,14 +87,14 @@
                         <div class="col-sm-3">
                             <select name="status" class="form-select">
                                 <option value="">Tất cả trạng thái</option>
-                                <option value="Còn hàng" {{ request('status') == 'Còn hàng' ? 'selected' : '' }}>
-                                    Còn hàng</option>
-                                <option value="Hết hàng tồn kho" {{ request('status') == 'Hết hàng tồn kho' ? 'selected' : '' }}>
-                                    Hết hàng tồn kho</option>
-                                <option value="Sắp ra mắt" {{ request('status') == 'Sắp ra mắt' ? 'selected' : '' }}>
-                                    Sắp ra mắt</option>
-                                <option value="Ngừng kinh doanh" {{ request('status') == 'Ngừng kinh doanh' ? 'selected' : '' }}>
-                                    Ngừng kinh doanh</option>
+                                <option value="Còn Hàng" {{ request('status') == 'Còn Hàng' ? 'selected' : '' }}>
+                                    Còn Hàng</option>
+                                <option value="Hết Hàng Tồn Kho" {{ request('status') == 'Hết Hàng Tồn Kho' ? 'selected' : '' }}>
+                                    Hết Hàng Tồn Kho</option>
+                                <option value="Sắp Ra Mắt" {{ request('status') == 'Sắp Ra Mắt' ? 'selected' : '' }}>
+                                    Sắp Ra Mắt</option>
+                                <option value="Ngừng Kinh Doanh" {{ request('status') == 'Ngừng Kinh Doanh' ? 'selected' : '' }}>
+                                    Ngừng Kinh Doanh</option>
                             </select>
                         </div>
                         <div class="col-lg-3">
@@ -145,25 +145,21 @@
                             @foreach ($books as $key => $book)                            @php
                                 // Get status badge class based on book status
                                 switch($book->status) {
-                                    case 'Còn hàng':
-                                        $statusText = 'Còn hàng';
+                                    case 'Còn Hàng':
+                                        $statusText = 'Còn Hàng';
                                         $statusClass = 'badge bg-success';
                                         break;
-                                    case 'Hết hàng tồn kho':
-                                        $statusText = 'Hết hàng tồn kho';
+                                    case 'Hết Hàng Tồn Kho':
+                                        $statusText = 'Hết Hàng Tồn Kho';
                                         $statusClass = 'badge bg-dark';
                                         break;
-                                    case 'Ngừng kinh doanh':
-                                        $statusText = 'Ngừng kinh doanh';
+                                    case 'Ngừng Kinh Doanh':
+                                        $statusText = 'Ngừng Kinh Doanh';
                                         $statusClass = 'badge bg-warning';
-                                        break;
-                                    case 'Sắp ra mắt':
-                                        $statusText = 'Sắp ra mắt';
-                                        $statusClass = 'badge bg-info';
                                         break;
                                     default:
                                         $statusText = $book->status;
-                                        $statusClass = 'badge bg-secondary';
+                                        $statusClass = 'badge bg-danger';
                                 }
                             @endphp
                             <tr>
