@@ -724,11 +724,7 @@
             document.querySelector('#toast-container')?.remove();
         }
     </script>
-
-    {{-- ================== CHAT JS ================== --}}
-    <script src="{{ asset('js/chat-init.js') }}"></script>
-    <script src="{{ asset('js/chat.js') }}"></script>
-    <script src="{{ asset('js/chat-realtime.js') }}"></script>
+    
 
     {{-- ================== LIVEWIRE & PAGE-SPECIFIC SCRIPTS ================== --}}
     @livewireScripts
