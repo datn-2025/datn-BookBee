@@ -100,10 +100,16 @@
                                                 <i class="ri-smartphone-line text-primary me-2"></i>
                                             @elseif(stripos($preorder->paymentMethod->name, 'ví điện tử') !== false)
                                                 <i class="ri-wallet-3-line text-warning me-2"></i>
+                                            @elseif(stripos($preorder->paymentMethod->name, 'khi nhận hàng') !== false || stripos($preorder->paymentMethod->name, 'cod') !== false || stripos($preorder->paymentMethod->name, 'tiền mặt') !== false)
+                                                <i class="ri-hand-coin-line text-success me-2"></i>
                                             @else
                                                 <i class="ri-money-dollar-circle-line text-info me-2"></i>
                                             @endif
-                                            <span class="badge bg-info-subtle text-info">{{ $preorder->paymentMethod->name }}</span>
+                                            @if(stripos($preorder->paymentMethod->name, 'khi nhận hàng') !== false || stripos($preorder->paymentMethod->name, 'cod') !== false || stripos($preorder->paymentMethod->name, 'tiền mặt') !== false)
+                                                <span class="badge bg-success-subtle text-success">{{ $preorder->paymentMethod->name }}</span>
+                                            @else
+                                                <span class="badge bg-info-subtle text-info">{{ $preorder->paymentMethod->name }}</span>
+                                            @endif
                                         </div>
                                         @if($preorder->paymentMethod->description)
                                             <small class="text-muted d-block mt-1">{{ $preorder->paymentMethod->description }}</small>
@@ -113,6 +119,60 @@
                                     @endif
                                 </td>
                             </tr>
+                            <tr>
+                                <th>Trạng thái TT:</th>
+                                <td>
+                                    @if($preorder->payment_status)
+                                        @if($preorder->payment_status == 'Đã Thanh Toán')
+                                            <span class="badge bg-success-subtle text-success">
+                                                <i class="ri-check-line me-1"></i>Đã thanh toán
+                                            </span>
+                                            @if($preorder->confirmed_at)
+                                                <br><small class="text-muted">{{ $preorder->confirmed_at->format('d/m/Y H:i') }}</small>
+                                            @endif
+                                        @elseif($preorder->payment_status == 'Thất Bại')
+                                            <span class="badge bg-danger-subtle text-danger">
+                                                <i class="ri-close-line me-1"></i>Thất bại
+                                            </span>
+                                            @if($preorder->cancellation_reason)
+                                                <br><small class="text-muted">{{ $preorder->cancellation_reason }}</small>
+                                            @endif
+                                        @else
+                                            <span class="badge bg-warning-subtle text-warning">
+                                                <i class="ri-time-line me-1"></i>{{ $preorder->payment_status }}
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="badge bg-secondary-subtle text-secondary">
+                                            <i class="ri-question-line me-1"></i>Chưa thanh toán
+                                        </span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @if($preorder->vnpay_transaction_id)
+                            <tr>
+                                <th>Mã GD VNPay:</th>
+                                <td>
+                                    <code class="text-primary">{{ $preorder->vnpay_transaction_id }}</code>
+                                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ $preorder->vnpay_transaction_id }}')"
+                                            title="Sao chép mã giao dịch">
+                                        <i class="ri-file-copy-line"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            @endif
+                            @if($preorder->preorder_code)
+                            <tr>
+                                <th>Mã đặt trước:</th>
+                                <td>
+                                    <code class="text-info">{{ $preorder->preorder_code }}</code>
+                                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ $preorder->preorder_code }}')"
+                                            title="Sao chép mã đặt trước">
+                                        <i class="ri-file-copy-line"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            @endif
                         </table>
                     </div>
                     <div class="col-md-6">
@@ -387,6 +447,31 @@
             document.body.appendChild(form);
             form.submit();
         }
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            // Show success message
+            if (typeof toastr !== 'undefined') {
+                toastr.success('Đã sao chép: ' + text, 'Thành công!');
+            } else {
+                alert('Đã sao chép: ' + text);
+            }
+        }, function(err) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            if (typeof toastr !== 'undefined') {
+                toastr.success('Đã sao chép: ' + text, 'Thành công!');
+            } else {
+                alert('Đã sao chép: ' + text);
+            }
+        });
     }
 </script>
 @endpush
