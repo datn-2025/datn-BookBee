@@ -685,7 +685,8 @@
                             
                             <!-- Overlay effect -->
                             <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"></div>
-                        </div>
+                        </div
+                        >
                         
                         <!-- Content -->
                         <div class="p-4 space-y-3">
