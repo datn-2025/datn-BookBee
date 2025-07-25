@@ -11,7 +11,7 @@ class OrderItem extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'id', 'order_id', 'book_id', 'book_format_id', 'quantity', 'price', 'total',
+        'id', 'order_id', 'book_id', 'book_format_id', 'collection_id', 'is_combo', 'item_type', 'quantity', 'price', 'total',
     ];
 
     public function order()
@@ -37,5 +37,41 @@ class OrderItem extends Model
             'order_item_id',
             'attribute_value_id'
         );
+    }
+
+    public function collection()
+    {
+        return $this->belongsTo(Collection::class);
+    }
+
+    protected $casts = [
+        'is_combo' => 'boolean',
+    ];
+
+    /**
+     * Kiểm tra xem item này có phải là combo không
+     */
+    public function isCombo(): bool
+    {
+        return $this->is_combo === true;
+    }
+
+    /**
+     * Lấy tên sản phẩm (sách hoặc combo)
+     */
+    public function getItemName(): string
+    {
+        if ($this->isCombo()) {
+            return $this->collection->name ?? 'Combo không xác định';
+        }
+        return $this->book->title ?? 'Sách không xác định';
+    }
+
+    /**
+     * Lấy giá của item
+     */
+    public function getItemPrice(): float
+    {
+        return $this->price;
     }
 }

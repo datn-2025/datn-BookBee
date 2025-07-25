@@ -11,6 +11,7 @@ use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
 use App\Models\Payment; // Thêm import Payment
 use App\Models\User;
+use App\Models\Wallet;
 use App\Models\OrderCancellation; // Added for order cancellation
 use App\Models\OrderItemAttributeValue; // Added for order item attributes
 use Illuminate\Support\Str;
@@ -57,6 +58,8 @@ class OrderController extends Controller
     public function checkout(Request $request)
     {
         $user = Auth::user();
+        
+        $wallet = Wallet::where('user_id', $user->id)->first();
         $addresses = $user->addresses;
         $vouchers = $this->voucherService->getAvailableVouchers($user);
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
@@ -71,7 +74,7 @@ class OrderController extends Controller
 
         foreach ($cartItems as $item) {
             if ($item->bookFormat) {
-                // Kiểm tra format_name đ��� xác định loại sách
+                // Kiểm tra format_name để xác định loại sách
                 if (strtolower($item->bookFormat->format_name) === 'ebook') {
                     $hasEbook = true;
                 } else {
@@ -102,6 +105,7 @@ class OrderController extends Controller
 
         return view('orders.checkout', compact(
             'addresses',
+            'wallet',
             'vouchers',
             'paymentMethods',
             'cartItems',
@@ -112,7 +116,6 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        // dd($request->all());
         $user = Auth::user();
         $rules = [
             'voucher_code' => 'nullable|exists:vouchers,code',
@@ -124,12 +127,12 @@ class OrderController extends Controller
 
             // Address rules
             'address_id' => [
-                'required_without:new_address_city_name', // Bắt buộc khi không có địa chỉ mới
+                'required_without:new_address_city_name',
                 'nullable',
                 'exists:addresses,id,user_id,' . ($user ? $user->id : 'NULL')
             ],
 
-            // New address rules (chỉ bắt buộc khi không có address_id)
+            // New address rules
             'new_recipient_name' => [
                 'required_without:address_id',
                 'nullable',
@@ -174,136 +177,63 @@ class OrderController extends Controller
         ];
 
         $request->validate($rules);
-        $addressIdToUse = null;
-        $newAddressCreated = false;
+        $newAddressCreated = !$request->address_id;
 
         try {
             DB::beginTransaction();
-            // Determine if creating a new address or using an existing one
-            if ($request->address_id) {
-                $addressIdToUse = $request->input('address_id');
-            } else {
-                $address = Address::create([
-                    'user_id' => $user->id,
-                    'address_detail' => $request->input('new_address_detail'),
-                    'city' => $request->input('new_address_city_name'),
-                    'district' => $request->input('new_address_district_name'),
-                    'ward' => $request->input('new_address_ward_name'),
-                    'is_default' => false
+            
+            // Sử dụng OrderService để xử lý toàn bộ quá trình tạo đơn hàng
+            $orderResult = $this->orderService->processOrderCreationWithWallet($request, $user);
+            $order = $orderResult['order'];
+            $paymentMethod = $orderResult['payment_method'];
+            $cartItems = $orderResult['cart_items'];
+            $isWalletPayment = $orderResult['is_wallet_payment'];
+
+            // Xử lý thanh toán bằng ví điện tử
+            if ($isWalletPayment) {
+                // Xử lý thanh toán ví
+                $this->orderService->processWalletPayment($order, $user);
+                
+                // Tạo payment record cho ví
+                $payment = $this->paymentService->createPayment([
+                    'order_id' => $order->id,
+                    'transaction_id' => $order->order_code . '_WALLET',
+                    'payment_method_id' => $request->payment_method_id,
+                    'payment_status_id' => $order->payment_status_id,
+                    'amount' => $order->total_amount,
+                    'paid_at' => now()
                 ]);
-                $addressIdToUse = $address->id;
-            }
-
-            if (!$addressIdToUse) {
-                throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
-            }
-
-            // Lấy thông tin giỏ hàng của người dùng và kiểm tra tính hợp lệ
-            $cartItems = $user->cart()
-                ->with(['book', 'bookFormat'])
-                ->whereNotNull('book_id')
-                ->whereNotNull('book_format_id')
-                ->get();
-
-            // Log thông tin cart items để debug
-            \Log::info('Cart Items:', $cartItems->toArray());
-
-            if ($cartItems->isEmpty()) {
-                DB::rollBack();
-                return redirect()->back()->with('error', 'Giỏ hàng của bạn đang trống.');
-            }
-
-            $orderStatus = OrderStatus::where('name', 'Chờ xác nhận')->firstOrFail();
-            $paymentStatus = PaymentStatus::where('name', 'Chờ Xử Lý')->firstOrFail();
-
-            $subtotal = $cartItems->sum(function ($item) {
-                return $item->price * $item->quantity;
-            });
-
-            $actualDiscountAmount = $request->discount_amount_applied;
-            if ($request->filled('applied_voucher_code')) {
-                $voucher = Voucher::where('code', $request->applied_voucher_code)->first();
-                // dd($voucher->id);
-                if ($voucher) {
-                    Log::info("Attempting to validate voucher: {$voucher->code}");
-                    $now = now();
-                    if ($voucher->status != 'active') {
-                        Toastr::error('Mã giảm giá không còn hiệu lực');
-                        return redirect()->back();
-                    }
-
-                    if ($voucher->quantity !== null && $voucher->quantity <= 0) {
-                        Toastr::error('Mã giảm giá đã hết số lượng áp dụng');
-                        return redirect()->back();
-                    }
-
-                    if ($voucher->start_date && $voucher->start_date > $now) {
-                        Toastr::error('Mã giảm giá chỉ có hiệu lực từ ngày ' . $voucher->start_date->format('d/m/Y'));
-                        return redirect()->back();
-                    }
-
-                    if ($voucher->end_date && $voucher->end_date < $now) {
-                        Toastr::error('Mã giảm giá đã hết hạn sử dụng');
-                        return redirect()->back();
-                    }
-
-                    if ($voucher->min_purchase_amount && $subtotal < $voucher->min_purchase_amount) {
-                        Toastr::error('Đơn hàng chưa đạt giá trị tối thiểu ' . number_format($voucher->min_purchase_amount) . 'đ để áp dụng mã');
-                        return redirect()->back();
-                    }
-
-                    $voucherId = $voucher->id;
-                } else {
-                    Log::warning("Voucher '{$request->voucher_code}' not found.");
+                
+                // Xóa giỏ hàng sau khi thanh toán thành công
+                $this->orderService->clearUserCart($user);
+                
+                DB::commit();
+                
+                // Tạo mã QR và gửi email xác nhận
+                $this->qrCodeService->generateOrderQrCode($order);
+                $this->emailService->sendOrderConfirmation($order);
+                
+                // Tạo hóa đơn ngay lập tức cho thanh toán ví
+                $this->invoiceService->createInvoiceForOrder($order);
+                
+                $successMessage = 'Đặt hàng và thanh toán bằng ví thành công!';
+                if ($newAddressCreated) {
+                    $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
                 }
+                
+                Toastr::success($successMessage);
+                return redirect()->route('orders.show', $order->id);
             }
-            $paymentMethod = PaymentMethod::findOrFail($request->payment_method_id);
-//            dd($paymentMethod);
-            // Tính tổng tiền cuối cùng
-            $finalTotalAmount = $subtotal + $request->shipping_fee_applied - $actualDiscountAmount;
-
+            
             // Nếu thanh toán VNPay, tạo order trước rồi chuyển hướng
             if ($paymentMethod->name == 'Thanh toán vnpay') {
-                // Chuẩn bị dữ liệu cho order
-                $orderData = [
-                    'user_id' => $user->id,
-                    'order_code' => 'BBE-' . time(),
-                    'address_id' => $addressIdToUse,
-                    'recipient_name' => $request->new_recipient_name,
-                    'recipient_phone' => $request->new_phone,
-                    'recipient_email' => $request->new_email,
-                    'payment_method_id' => $request->payment_method_id,
-                    'voucher_id' => $voucherId ?? null,
-                    'note' => $request->note,
-                    'order_status_id' => $orderStatus->id,
-                    'payment_status_id' => $paymentStatus->id,
-                    'total_amount' => $finalTotalAmount,
-                    'shipping_fee' => $request->delivery_method === 'pickup' ? 0 : $request->shipping_fee_applied,
-                    'discount_amount' => (int) $actualDiscountAmount,
-
-                    'delivery_method' => $request->delivery_method,
-                ]);
-
-                // Tạo OrderItems
-            foreach ($cartItems as $cartItem) {
-                // Kiểm tra và log thông tin từng cart item
-                Log::info('Processing cart item:', [
-                    'cart_item_id' => $cartItem->id,
-                    'book_id' => $cartItem->book_id,
-                    'book_format_id' => $cartItem->book_format_id,
-                    'quantity' => $cartItem->quantity,
-                    'price' => $cartItem->price
-                ]);
-
-
-                // Tạo order sử dụng OrderService
-                $order = $this->orderService->createOrderWithItems($orderData, $cartItems);
-
                 // Tạo mã QR cho đơn hàng
                 $this->qrCodeService->generateOrderQrCode($order);
+                
                 // Commit transaction trước khi chuyển đến VNPay
                 DB::commit();
-                // Dữ liệu để truy��n cho VNPay
+                
+                // Dữ liệu để truyền cho VNPay
                 $vnpayData = [
                     'order_id' => $order->id,
                     'payment_status_id' => $order->payment_status_id,
@@ -312,103 +242,49 @@ class OrderController extends Controller
                     'amount' => $order->total_amount,
                     'order_info' => "Thanh toán đơn hàng " . $order->order_code,
                 ];
-//                dd($vnpayData);
+                
                 return $this->vnpay_payment($vnpayData);
             }
-            $finalTotalAmount = $subtotal + $request->shipping_fee_applied - $actualDiscountAmount;
-//            dd($request->new_email);
-            
-            // Chuẩn bị dữ liệu cho order
-            $orderData = [
-                'user_id' => $user->id,
-                'order_code' => 'BBE-' . time(),
-                'address_id' => $addressIdToUse,
-                'recipient_name' => $request->new_recipient_name,
-                'recipient_phone' => $request->new_phone,
-                'recipient_email' => $request->new_email,
-                'payment_method_id' => $request->payment_method_id,
-                'voucher_id' => $voucherId ?? null,
-                'note' => $request->note,
-                'order_status_id' => $orderStatus->id,
-                'payment_status_id' => $paymentStatus->id,
-                'total_amount' => $finalTotalAmount,
-                'shipping_fee' => $request->delivery_method === 'pickup' ? 0 : $request->shipping_fee_applied,
-                'discount_amount' => (int) $actualDiscountAmount,
 
-                'delivery_method' => $request->delivery_method,
-            ]);
-//            dd($order->recipient_email);
-
-            // Create OrderItems
-            foreach ($cartItems as $cartItem) {
-                // Kiểm tra dữ liệu cart item
-                if (!$cartItem->book_id || !$cartItem->book_format_id) {
-                    Log::error('Invalid cart item data:', [
-                        'cart_item_id' => $cartItem->id,
-                        'book_id' => $cartItem->book_id,
-                        'book_format_id' => $cartItem->book_format_id
-                    ]);
-                    throw new \Exception('Dữ liệu giỏ hàng không hợp lệ.');
-                }
-
-                $orderItem = OrderItem::create([
-                    'id' => (string) Str::uuid(),
-                    'order_id' => $order->id,
-                    'book_id' => $cartItem->book_id,
-                    'book_format_id' => $cartItem->book_format_id,
-                    'quantity' => $cartItem->quantity,
-                    'price' => $cartItem->price,
-                    'total' => $cartItem->quantity * $cartItem->price,
-                ]);
-
-
-            // Tạo order sử dụng OrderService
-            $order = $this->orderService->createOrderWithItems($orderData, $cartItems);
-
+            // Xử lý thanh toán thường (COD)
             $payment = $this->paymentService->createPayment([
                 'order_id' => $order->id,
                 'transaction_id' => $order->order_code,
                 'payment_method_id' => $request->payment_method_id,
                 'payment_status_id' => $order->payment_status_id,
                 'amount' => $order->total_amount,
-                'paid_at' => now() // Set paid_at ngay lập tức cho thanh toán thường
+                'paid_at' => now()
             ]);
+            
+            // Xóa giỏ hàng sau khi tạo đơn hàng thành công
+            $this->orderService->clearUserCart($user);
+            
             DB::commit();
-            // Generate and save QR Code using QrCodeService
+            
+            // Tạo mã QR và gửi email xác nhận
             $this->qrCodeService->generateOrderQrCode($order);
             $this->emailService->sendOrderConfirmation($order);
             
-            // Tạo và gửi hóa đơn cho thanh toán COD
-            try {
-                $this->invoiceService->processInvoiceForPaidOrder($order);
-                Log::info('Invoice created and sent for COD order', ['order_id' => $order->id]);
-            } catch (\Exception $e) {
-                Log::error('Failed to create invoice for COD order', [
-                    'order_id' => $order->id,
-                    'error' => $e->getMessage()
-                ]);
-            }
+            // Lưu ý: Hóa đơn cho COD sẽ được tạo khi admin xác nhận thanh toán
+            Log::info('COD order created successfully - Invoice will be created when payment is confirmed by admin', ['order_id' => $order->id]);
             
             $successMessage = 'Đặt hàng thành công!';
-
-            // Clear the user's cart after successful order
-//            $user->cart()->delete();
-
-            Toastr::success($successMessage);
             if ($newAddressCreated) {
                 $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
             }
+            
+            Toastr::success($successMessage);
             return redirect()->route('orders.show', $order->id);
+            
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Toastr::error('Lỗi khi tạo đơn hàng 1' . $e->getMessage());
             DB::rollBack();
+            Toastr::error('Lỗi validation: ' . $e->getMessage());
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Lỗi khi tạo đơn hàng 2' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
-            Toastr::error('Lỗi khi tạo đơn hàng 2' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
-            return redirect()->back()
-                ->with('error', 'Có lỗi xảy ra khi đặt hàng: ' . $e->getMessage());
+            Log::error('Lỗi khi tạo đơn hàng: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            Toastr::error($e->getMessage());
+            return redirect()->back()->with('error', 'Có lỗi xảy ra khi đặt hàng: ' . $e->getMessage());
         }
     }
 
@@ -421,12 +297,14 @@ class OrderController extends Controller
         $order->load([
             'orderItems.book.images',
             'orderItems.bookFormat',
+            'orderItems.collection',
             'orderStatus',
             'paymentStatus',
             'payments.paymentMethod',
             'address',
             'user',
-            'paymentMethod'
+            'paymentMethod',
+            'voucher'
         ]);
 
         return view('orders.show', compact('order'));
@@ -439,28 +317,8 @@ class OrderController extends Controller
             ->with(['orderStatus', 'paymentStatus'])
             ->orderByDesc('created_at')
             ->paginate(7);
-//        dd($orders);
         return view('orders.index', compact('orders'));
     }
-
-    // public function applyVoucher(Request $request)
-    // {
-    //     // dd($request->all());
-    //     Log::debug('ApplyVoucher Request Data:', $request->all());
-    //     $request->validate([
-    //         'voucher_code' => 'required|exists:vouchers,code',
-    //         'subtotal' => 'required|numeric|min:0'
-    //     ]);
-
-    //     $voucher = Voucher::where('code', $request->voucher_code)->first();
-    //     // dd($voucher);
-    //     $discount = $this->voucherService->calculateDiscount($voucher, $request->subtotal);
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'discount_amount' => $discount
-    //     ]);
-    // }
 
     public function applyVoucher(Request $request)
     {
@@ -497,9 +355,9 @@ class OrderController extends Controller
     public function cancel(Request $request)
     {
         $request->validate([
-            'reason' => 'nullable|array|min:1', // Người dùng phải chọn ít nhất một lý do
-            'reason.*' => 'string|max:255', // Đảm bảo mỗi lý do là chuỗi hợp lệ
-            'other_reason' => 'nullable|string|max:255', // Nếu có "Lý do khác", kiểm tra riêng
+            'reason' => 'nullable|array|min:1',
+            'reason.*' => 'string|max:255',
+            'other_reason' => 'nullable|string|max:255',
         ]);
 
         $order = Order::findOrFail($request->order_id);
@@ -510,10 +368,8 @@ class OrderController extends Controller
             Toastr::error('Bạn không có quyền hủy đơn hàng này.');
             return redirect()->back()->with('error', 'Bạn không có quyền hủy đơn hàng này.');
         }
-        // dd($request->order_id, $order->orderStatus->name);
 
-        // Check if order status allows cancellation (e.g., not 'Đang giao hàng', 'Đã giao', 'Đã hủy')
-        // You might need to adjust these status names based on your OrderStatusSeeder
+        // Check if order status allows cancellation
         $cancellableStatuses = ['Chờ xác nhận'];
         if (!in_array($order->orderStatus->name, $cancellableStatuses)) {
             Toastr::error('Không thể hủy đơn hàng ở trạng thái hiện tại: ' . $order->orderStatus->name);
@@ -527,19 +383,18 @@ class OrderController extends Controller
             if (!empty($request->input('other_reason'))) {
                 $selectedReasons[] = "Lý do khác: " . $request->input('other_reason');
             }
+            
             // Create OrderCancellation record
             OrderCancellation::create([
                 'order_id' => $order->id,
-                'reason' => implode(", ", $selectedReasons), // Lưu danh s��ch lý do dưới dạng chuỗi
+                'reason' => implode(", ", $selectedReasons),
                 'cancelled_by' => $user->id,
                 'cancelled_at' => now(),
-                // 'refund_status' will use its default 'not_applicable'
             ]);
 
             // Update Order status to 'Cancelled'
             $cancelledStatus = OrderStatus::where('name', 'Đã hủy')->first();
             if (!$cancelledStatus) {
-                // Fallback or error if 'Đã hủy' status doesn't exist
                 Log::error('Order status "Đã hủy" not found.');
                 Toastr::error('Lỗi hệ thống: Trạng thái hủy đơn hàng không tồn tại.');
                 DB::rollBack();
@@ -555,9 +410,6 @@ class OrderController extends Controller
 
             DB::commit();
 
-            // Optionally, send a cancellation email
-            // $this->emailService->sendOrderCancellationEmail($order);
-
             Toastr::success('Đơn hàng đã được hủy thành công.');
             return redirect()->route('orders.index')->with('success', 'Đơn hàng đã được hủy thành công.');
         } catch (\Exception $e) {
@@ -567,16 +419,16 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Có lỗi xảy ra khi hủy đơn hàng.');
         }
     }
+    
     public function vnpay_payment($data)
     {
         $vnp_TmnCode = config('services.vnpay.tmn_code');
         $vnp_HashSecret = config('services.vnpay.hash_secret');
         $vnp_Url = config('services.vnpay.url');
-//        $vnp_Returnurl = "http://127.0.0.1:8000/orders/{$data['order_id']}"; // Đúng route xử lý callback
-        $vnp_Returnurl = route("vnpay.return"); // Đúng route xử lý callbackz
-        $vnp_TxnRef = $data['order_code']; // Sử dụng order_code làm transaction reference
+        $vnp_Returnurl = route("vnpay.return");
+        $vnp_TxnRef = $data['order_code'];
         $vnp_OrderInfo = $data['order_info'];
-        $vnp_Amount = (int)($data['amount'] * 100); // VNPay yêu cầu amount * 100
+        $vnp_Amount = (int)($data['amount'] * 100);
         $vnp_Locale = "vn";
         $vnp_BankCode = "NCB";
         $vnp_IpAddr = $_SERVER['REMOTE_ADDR'];
@@ -648,8 +500,8 @@ class OrderController extends Controller
 
         // Lấy thông tin từ VNPay response
         $vnp_ResponseCode = $request->vnp_ResponseCode;
-        $vnp_TxnRef = $request->vnp_TxnRef; // order_code
-        $vnp_Amount = $request->vnp_Amount / 100; // Chia 100 vì VNPay nhân 100
+        $vnp_TxnRef = $request->vnp_TxnRef;
+        $vnp_Amount = $request->vnp_Amount / 100;
         $vnp_TransactionNo = $request->vnp_TransactionNo;
 
         try {
@@ -670,7 +522,7 @@ class OrderController extends Controller
                               ->first();
 
             if ($vnp_ResponseCode === '00') {
-                // Thanh toán thành công - cập nhật trạng thái thành "Đã Thanh Toán"
+                // Thanh toán thành công
                 $paymentStatus = PaymentStatus::where('name', 'Đã Thanh Toán')->first();
                 
                 if (!$paymentStatus) {
@@ -681,8 +533,8 @@ class OrderController extends Controller
                 if ($payment) {
                     $payment->update([
                         'payment_status_id' => $paymentStatus->id,
-                        'paid_at' => now(), // Set thời gian thanh toán
-                        'transaction_id' => $vnp_TransactionNo // Cập nhật với transaction ID từ VNPay
+                        'paid_at' => now(),
+                        'transaction_id' => $vnp_TransactionNo
                     ]);
                     
                     Log::info('Payment updated successfully', [
@@ -725,7 +577,7 @@ class OrderController extends Controller
 
                 DB::commit();
 
-                Toastr::success('Thanh toán thành công! Đơn hàng của b��n đã được xác nhận.');
+                Toastr::success('Thanh toán thành công! Đơn hàng của bạn đã được xác nhận.');
                 return redirect()->route('orders.show', $order->id);
 
             } else {

@@ -16,6 +16,8 @@ class Cart extends Model
         'user_id',
         'book_id',
         'book_format_id',
+        'collection_id',
+        'is_combo',
         'quantity',
         'attribute_value_ids',
         'price'
@@ -24,7 +26,8 @@ class Cart extends Model
     protected $casts = [
         'quantity' => 'integer',
         'price' => 'decimal:2',
-        'attribute_value_ids' => 'array'
+        'attribute_value_ids' => 'array',
+        'is_combo' => 'boolean'
     ];
 
     public $incrementing = false;
@@ -54,5 +57,10 @@ class Cart extends Model
     public function bookFormat(): BelongsTo
     {
         return $this->belongsTo(BookFormat::class);
+    }
+
+    public function collection(): BelongsTo
+    {
+        return $this->belongsTo(Collection::class);
     }
 }

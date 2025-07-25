@@ -94,7 +94,7 @@ class OrderController extends Controller
 
         // Get order items with their attribute values
         $orderItems = OrderItem::where('order_id', $id)
-            ->with(['book', 'attributeValues.attribute', 'bookFormat'])
+            ->with(['book', 'attributeValues.attribute', 'bookFormat', 'collection'])
             ->get();
         foreach ($orderItems as $item) {
             $bookFormat = optional($item->bookFormat)->format_name;  // Safely access 'name' of 'bookFormat'

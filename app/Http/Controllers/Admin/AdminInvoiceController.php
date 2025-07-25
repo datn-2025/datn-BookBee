@@ -41,7 +41,7 @@ class AdminInvoiceController extends Controller
                 //   ->where('order_status_id', 'completed'); // Thêm điều kiện lọc đơn hàng đã hoàn thành
             },
             'items' => function($q) {
-                $q->with(['book', 'book.authors']);
+                $q->with(['book', 'book.authors', 'collection']);
             }
         ]);      
         // Gom các điều kiện tìm kiếm liên quan đến order và user
@@ -79,7 +79,7 @@ class AdminInvoiceController extends Controller
 
     public function show($id)
     {
-        $invoice = Invoice::with(['order', 'order.user', 'items.book'])
+        $invoice = Invoice::with(['order', 'order.user', 'items.book', 'items.collection'])
             ->findOrFail($id);
         
         return view('admin.invoices.show', compact('invoice'));
@@ -87,7 +87,7 @@ class AdminInvoiceController extends Controller
 
     public function generatePdf($id)
     {
-        $invoice = Invoice::with(['order', 'order.user', 'items.book'])
+        $invoice = Invoice::with(['order', 'order.user', 'items.book', 'items.collection'])
             ->findOrFail($id);
 
         $pdf = PDF::loadView('admin.invoices.pdf', compact('invoice'));

@@ -15,7 +15,16 @@ class EmailService
 {
     public function sendOrderConfirmation(Order $order)
     {
-        $order->load(['user', 'orderItems.book', 'address']);
+        // Load relationships cho cả sách lẻ và combo
+        $order->load([
+            'user', 
+            'orderItems.book', 
+            'orderItems.bookFormat',
+            'orderItems.collection', 
+            'address',
+            'orderStatus',
+            'paymentMethod'
+        ]);
 
         Mail::to($order->user->email)
             ->send(new OrderConfirmation($order));
@@ -23,7 +32,17 @@ class EmailService
 
     public function sendOrderInvoice(Order $order)
     {
-        $order->load(['user', 'orderItems.book', 'address', 'payments.paymentMethod']);
+        // Load relationships cho cả sách lẻ và combo
+        $order->load([
+            'user', 
+            'orderItems.book', 
+            'orderItems.bookFormat',
+            'orderItems.collection',
+            'address', 
+            'payments.paymentMethod',
+            'orderStatus',
+            'paymentMethod'
+        ]);
 
         Mail::to($order->user->email)
             ->send(new OrderInvoice($order));
@@ -45,14 +64,19 @@ class EmailService
 
     public function sendEbookPurchaseConfirmation(Order $order)
     {
-        // Load relationships needed for the email
-        $order->load(['user', 'orderItems.book.author', 'orderItems.bookFormat']);
+        // Load relationships cho cả sách lẻ và combo
+        $order->load([
+            'user', 
+            'orderItems.book.authors', 
+            'orderItems.bookFormat',
+            'orderItems.collection'
+        ]);
 
-        // Check if order contains any ebooks
+        // Check if order contains any ebooks (chỉ áp dụng cho sách lẻ, không phải combo)
         $hasEbooks = $order->orderItems->some(function ($item) {
-            return $item->bookFormat && $item->bookFormat->format_name === 'Ebook';
+            return !$item->is_combo && $item->bookFormat && $item->bookFormat->format_name === 'Ebook';
         });
-        // dd($hasEbooks);
+        
         if (!$hasEbooks) {
             return;
         }

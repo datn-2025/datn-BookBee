@@ -70,7 +70,13 @@
             @foreach($order->orderItems as $item)
                 @if($item->bookFormat && $item->bookFormat->format_name === 'Ebook')
                 <div class="book-item">
-                    <h4>{{ $item->book->title }}</h4>
+                    <h4>
+                                    @if($item->is_combo)
+                                        {{ $item->collection->name ?? 'Combo không xác định' }}
+                                    @else
+                                        {{ $item->book->title ?? 'Sách không xác định' }}
+                                    @endif
+                                </h4>
                     <p>Định dạng: Ebook</p>
                     <p>Tác giả: {{ $item->book->authors->first()->name }}</p>
                     <a href="{{ asset('storage/' . $item->bookFormat->file_url) }}" class="button" target="_blank">

@@ -79,8 +79,8 @@
                             <div class="flex items-start border-b border-gray-100 pb-6">
                                 <div class="flex-shrink-0 h-24 w-24 rounded-md overflow-hidden bg-gray-200">
                                     @if($item->book->images->isNotEmpty())
-                                        <img src="{{ asset('storage/' . $item->book->images->first()->path) }}" 
-                                             alt="{{ $item->book->title }}" 
+                                        <img src="{{ $item->is_combo ? ($item->collection->image ?? asset('images/default-combo.jpg')) : ($item->book->images->isNotEmpty() ? asset('storage/' . $item->book->images->first()->path) : asset('images/default-book.jpg')) }}" 
+                                             alt="{{ $item->is_combo ? ($item->collection->name ?? 'Combo') : ($item->book->title ?? 'Sách') }}" 
                                              class="h-full w-full object-cover">
                                     @else
                                         <div class="h-full w-full bg-gray-300 flex items-center justify-center">
@@ -92,7 +92,15 @@
                                 </div>
                                 <div class="ml-4 flex-1">
                                     <h3 class="text-base font-medium text-gray-900">
-                                        {{ $item->book->title }}
+                                        @if($item->is_combo)
+                                            {{ $item->collection->name ?? 'Combo không xác định' }}
+                                            <span class="text-sm text-gray-500">(Combo)</span>
+                                        @else
+                                            {{ $item->book->title ?? 'Sách không xác định' }}
+                                            @if($item->bookFormat)
+                                                <span class="text-sm text-gray-500">({{ $item->bookFormat->format_name }})</span>
+                                            @endif
+                                        @endif
                                     </h3>
                                     <p class="mt-1 text-sm text-gray-500">
                                         Số lượng: {{ $item->quantity }}

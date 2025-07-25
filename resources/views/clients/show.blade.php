@@ -1064,13 +1064,17 @@
                                             @if($ebookFormat)
                                                 <option value="{{ $ebookFormat->id }}" data-price="{{ $ebookFormat->price }}"
                                                     data-stock="{{ $ebookFormat->stock }}" data-discount="{{ $ebookFormat->discount }}"
-                                                    data-format="{{ $ebookFormat->format_name }}" selected>{{ $ebookFormat->format_name }}
+                                                    data-format="{{ $ebookFormat->format_name }}"
+                                                    data-sample-url="{{ $ebookFormat->sample_file_url ? asset('storage/' . $ebookFormat->sample_file_url) : '' }}"
+                                                    data-allow-sample="{{ $ebookFormat->allow_sample_read ? '1' : '0' }}" selected>{{ $ebookFormat->format_name }}
                                                 </option>
                                             @endif
                                             @foreach($otherFormats as $format)
                                                 <option value="{{ $format->id }}" data-price="{{ $format->price }}"
                                                     data-stock="{{ $format->stock }}" data-discount="{{ $format->discount }}"
-                                                    data-format="{{ $format->format_name }}">
+                                                    data-format="{{ $format->format_name }}"
+                                                    data-sample-url="{{ $format->sample_file_url ? asset('storage/' . $format->sample_file_url) : '' }}"
+                                                    data-allow-sample="{{ $format->allow_sample_read ? '1' : '0' }}">
                                                     {{ $format->format_name }}
                                                 </option>
                                             @endforeach
@@ -1081,7 +1085,7 @@
                                     </div>
                                     <!-- Preview Button for Ebook -->
                                     <div id="previewSection" class="@if(!$isEbook) hidden @endif mt-4">
-                                        <a href="#"
+                                        <a href="#" id="previewBtn"
                                             class="adidas-btn w-full h-12 bg-blue-600 text-white font-bold text-sm uppercase tracking-wider transition-all duration-300 flex items-center justify-center hover:bg-blue-700 adidas-font">
                                             <i class="fas fa-book-reader mr-2"></i>
                                             <span>ĐỌC THỬ</span>
@@ -1552,28 +1556,106 @@
             </div>
         @endif
 
-    <!-- Modal Đọc Thử Ebook -->
-    <div id="previewModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
-        <div
-            class="bg-white shadow-lg max-w-5xl w-[90vw] max-h-[95vh] flex flex-col relative overflow-hidden border-2 border-black">
-            <!-- Header -->
-            <div class="flex items-center justify-between px-8 py-4 border-b-2 border-black bg-black text-white">
-                <h3 class="text-xl font-bold text-white uppercase tracking-wider adidas-font">ĐỌC THỬ SÁCH</h3>
-                <button id="closePreviewModal"
-                    class="text-white hover:text-gray-300 text-3xl font-bold focus:outline-none adidas-font transition-colors duration-300">&times;</button>
-            </div>
-            <!-- Nội dung đọc thử -->
-            <div id="previewContent" class="flex-1 overflow-y-auto px-0 py-0 relative bg-gray-50"
-                style="scroll-behavior:smooth;">
-                <div id="previewPages" class="h-full">
-                    <!-- Nội dung đọc thử sẽ được load ở đây -->
-                    <iframe id="previewIframe" src="{{ asset('storage/book/book_' . $book->id . '.pdf') }}"
-                        class="w-full h-[80vh] border-none bg-white"></iframe>
+    <!-- Modal Đọc Thử Ebook - Enhanced Modern Design -->
+    <div id="previewModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 hidden backdrop-blur-sm">
+        <div class="bg-white w-full max-w-7xl h-full max-h-[95vh] flex flex-col shadow-2xl border border-gray-200 rounded-lg overflow-hidden">
+            <!-- Enhanced Header -->
+            <div class="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-900 to-black text-white border-b">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-book-open text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold uppercase tracking-wider adidas-font">Đọc thử sách</h3>
+                        <p class="text-sm text-gray-300 adidas-font">{{ $book->title ?? '' }}</p>
+                    </div>
                 </div>
-                <div id="previewLimitNotice"
-                    class="hidden absolute bottom-4 left-4 right-4 text-center bg-black text-white font-bold py-3 px-6 adidas-font uppercase tracking-wider">
-                    <i class="fas fa-lock mr-2"></i>
-                    HÃY MUA ĐỂ TẬN HƯỞNG TRỌN BỘ!
+                <div class="flex items-center space-x-4">
+                    <!-- PDF Controls -->
+                    <div class="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2">
+                        <button id="zoomOut" class="text-white hover:text-blue-300 transition-colors p-1" title="Thu nhỏ">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                        <span id="zoomLevel" class="text-white text-sm font-medium min-w-[50px] text-center">100%</span>
+                        <button id="zoomIn" class="text-white hover:text-blue-300 transition-colors p-1" title="Phóng to">
+                            <i class="fas fa-search-plus"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2">
+                        <button id="prevPage" class="text-white hover:text-blue-300 transition-colors p-1" title="Trang trước">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span id="pageInfo" class="text-white text-sm font-medium min-w-[60px] text-center">1 / 1</span>
+                        <button id="nextPage" class="text-white hover:text-blue-300 transition-colors p-1" title="Trang sau">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <button id="fullscreenBtn" class="text-white hover:text-blue-300 transition-colors p-2" title="Toàn màn hình">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button id="closePreviewModal" class="text-white hover:text-red-400 text-2xl font-bold focus:outline-none transition-colors duration-300 p-2" title="Đóng">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Enhanced Content Area -->
+            <div id="previewContent" class="flex-1 relative bg-gray-100 overflow-hidden">
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="absolute inset-0 flex items-center justify-center bg-white z-10">
+                    <div class="flex flex-col items-center space-y-4">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                        <p class="text-gray-600 font-medium adidas-font">Đang tải nội dung...</p>
+                    </div>
+                </div>
+                
+                <!-- PDF Viewer Container -->
+                <div id="pdfViewerContainer" class="w-full h-full flex flex-col items-center overflow-auto bg-gray-200 p-4" style="scroll-behavior: smooth;">
+                    <div id="pdfCanvas" class="bg-white shadow-lg border border-gray-300 rounded-lg overflow-hidden">
+                        <!-- PDF will be rendered here -->
+                    </div>
+                </div>
+                
+                <!-- Fallback iframe for compatibility -->
+                <iframe id="previewIframe" src="{{ asset('storage/book/book_' . $book->id . '.pdf') }}"
+                    class="w-full h-full border-none bg-white hidden"></iframe>
+                
+                <!-- Enhanced Limit Notice -->
+                <div id="previewLimitNotice" class="hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/90 to-transparent p-6">
+                    <div class="text-center text-white">
+                        <div class="inline-flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 border border-white/20">
+                            <i class="fas fa-lock text-yellow-400 text-lg"></i>
+                            <span class="font-bold text-lg adidas-font uppercase tracking-wider">Mua sách để đọc toàn bộ nội dung</span>
+                            <i class="fas fa-arrow-right text-yellow-400"></i>
+                        </div>
+                        <p class="text-sm text-gray-300 mt-2 adidas-font">Bạn đang xem phiên bản giới hạn</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Enhanced Footer -->
+            <div class="bg-gray-50 border-t px-6 py-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4 text-sm text-gray-600">
+                        <span class="flex items-center space-x-1">
+                            <i class="fas fa-eye text-blue-600"></i>
+                            <span class="adidas-font">Chế độ xem thử</span>
+                        </span>
+                        <span class="flex items-center space-x-1">
+                            <i class="fas fa-file-pdf text-red-600"></i>
+                            <span class="adidas-font">Định dạng PDF</span>
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button id="downloadSample" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors adidas-font flex items-center space-x-2">
+                            <i class="fas fa-download"></i>
+                            <span>Tải mẫu</span>
+                        </button>
+                        <button id="buyNowFromPreview" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold transition-colors adidas-font flex items-center space-x-2">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>Mua ngay</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2151,47 +2233,291 @@
                 }
             });
 
-            // Xử lý modal đọc thử lấy đúng file sample_file_url
-            const previewBtn = document.querySelector('#previewSection a');
+            // Enhanced PDF Preview Modal with Modern Features
+            const previewBtn = document.querySelector('#previewBtn');
             const previewModal = document.getElementById('previewModal');
             const closePreviewModal = document.getElementById('closePreviewModal');
             const previewContent = document.getElementById('previewContent');
             const previewLimitNotice = document.getElementById('previewLimitNotice');
             const previewIframe = document.getElementById('previewIframe');
             const formatSelect = document.getElementById('bookFormatSelect');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const pdfViewerContainer = document.getElementById('pdfViewerContainer');
+            const pdfCanvas = document.getElementById('pdfCanvas');
+            
+            // PDF.js variables
+            let pdfDoc = null;
+            let pageNum = 1;
+            let pageRendering = false;
+            let pageNumPending = null;
+            let scale = 1.0;
+            let canvas = null;
+            let ctx = null;
+            
+            // PDF Controls
+            const zoomInBtn = document.getElementById('zoomIn');
+            const zoomOutBtn = document.getElementById('zoomOut');
+            const zoomLevel = document.getElementById('zoomLevel');
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            const pageInfo = document.getElementById('pageInfo');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const downloadSampleBtn = document.getElementById('downloadSample');
+            const buyNowBtn = document.getElementById('buyNowFromPreview');
 
-            if (previewBtn && previewModal && closePreviewModal && formatSelect && previewIframe) {
+            // Initialize PDF viewer
+            function initPDFViewer() {
+                if (!canvas) {
+                    canvas = document.createElement('canvas');
+                    ctx = canvas.getContext('2d');
+                    pdfCanvas.appendChild(canvas);
+                }
+            }
+
+            // Render a page
+            function renderPage(num) {
+                pageRendering = true;
+                
+                pdfDoc.getPage(num).then(function(page) {
+                    const viewport = page.getViewport({scale: scale});
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    const renderContext = {
+                        canvasContext: ctx,
+                        viewport: viewport
+                    };
+                    
+                    const renderTask = page.render(renderContext);
+                    
+                    renderTask.promise.then(function() {
+                        pageRendering = false;
+                        if (pageNumPending !== null) {
+                            renderPage(pageNumPending);
+                            pageNumPending = null;
+                        }
+                        
+                        // Update page info
+                        pageInfo.textContent = `${num} / ${pdfDoc.numPages}`;
+                        
+                        // Update navigation buttons
+                        prevPageBtn.disabled = (num <= 1);
+                        nextPageBtn.disabled = (num >= pdfDoc.numPages);
+                        
+                        // Show limit notice after a few pages
+                        if (num >= 3) {
+                            previewLimitNotice.classList.remove('hidden');
+                        }
+                    });
+                });
+            }
+
+            // Queue page rendering
+            function queueRenderPage(num) {
+                if (pageRendering) {
+                    pageNumPending = num;
+                } else {
+                    renderPage(num);
+                }
+            }
+
+            // Load PDF document
+            function loadPDF(url) {
+                loadingSpinner.classList.remove('hidden');
+                pdfViewerContainer.classList.add('hidden');
+                previewIframe.classList.add('hidden');
+                
+                // Try to load with PDF.js first
+                if (typeof pdfjsLib !== 'undefined') {
+                    pdfjsLib.getDocument(url).promise.then(function(pdf) {
+                        pdfDoc = pdf;
+                        pageNum = 1;
+                        
+                        initPDFViewer();
+                        renderPage(pageNum);
+                        
+                        loadingSpinner.classList.add('hidden');
+                        pdfViewerContainer.classList.remove('hidden');
+                        
+                        // Update zoom level display
+                        zoomLevel.textContent = Math.round(scale * 100) + '%';
+                        
+                    }).catch(function(error) {
+                        console.log('PDF.js failed, falling back to iframe:', error);
+                        fallbackToIframe(url);
+                    });
+                } else {
+                    // Fallback to iframe if PDF.js is not available
+                    fallbackToIframe(url);
+                }
+            }
+            
+            // Fallback to iframe
+            function fallbackToIframe(url) {
+                previewIframe.src = url;
+                loadingSpinner.classList.add('hidden');
+                pdfViewerContainer.classList.add('hidden');
+                previewIframe.classList.remove('hidden');
+                
+                // Hide PDF controls for iframe mode
+                document.querySelectorAll('.bg-white\/10').forEach(el => el.style.display = 'none');
+            }
+
+            if (previewBtn && previewModal && closePreviewModal && formatSelect) {
+                // Open preview modal
                 previewBtn.addEventListener('click', function (e) {
                     e.preventDefault();
                     const selectedOption = formatSelect.options[formatSelect.selectedIndex];
                     const sampleUrl = selectedOption.getAttribute('data-sample-url');
                     const allowSample = selectedOption.getAttribute('data-allow-sample') === '1';
+                    
                     if (allowSample && sampleUrl) {
-                        previewIframe.src = sampleUrl;
                         previewModal.classList.remove('hidden');
                         previewLimitNotice.classList.add('hidden');
-                        previewContent.scrollTop = 0;
+                        loadPDF(sampleUrl);
                     } else {
-                        alert('Không có file đọc thử cho định dạng này!');
+                        if (typeof toastr !== 'undefined') {
+                            toastr.warning('Không có file đọc thử cho định dạng này!');
+                        } else {
+                            alert('Không có file đọc thử cho định dạng này!');
+                        }
                     }
                 });
+                
+                // Close modal
                 closePreviewModal.addEventListener('click', function () {
                     previewModal.classList.add('hidden');
                     previewIframe.src = '';
+                    if (pdfDoc) {
+                        pdfDoc = null;
+                        pageNum = 1;
+                        scale = 1.0;
+                    }
                 });
+                
+                // Close on backdrop click
                 previewModal.addEventListener('click', function (e) {
                     if (e.target === previewModal) {
                         previewModal.classList.add('hidden');
                         previewIframe.src = '';
+                        if (pdfDoc) {
+                            pdfDoc = null;
+                            pageNum = 1;
+                            scale = 1.0;
+                        }
                     }
                 });
-                previewContent.addEventListener('scroll', function () {
-                    const scrollBottom = previewContent.scrollTop + previewContent.clientHeight;
-                    const scrollHeight = previewContent.scrollHeight;
-                    if (scrollBottom >= scrollHeight - 10) {
-                        previewLimitNotice.classList.remove('hidden');
-                    } else {
-                        previewLimitNotice.classList.add('hidden');
+                
+                // PDF Controls Event Listeners
+                if (zoomInBtn) {
+                    zoomInBtn.addEventListener('click', function() {
+                        if (pdfDoc && scale < 3.0) {
+                            scale += 0.25;
+                            zoomLevel.textContent = Math.round(scale * 100) + '%';
+                            queueRenderPage(pageNum);
+                        }
+                    });
+                }
+                
+                if (zoomOutBtn) {
+                    zoomOutBtn.addEventListener('click', function() {
+                        if (pdfDoc && scale > 0.5) {
+                            scale -= 0.25;
+                            zoomLevel.textContent = Math.round(scale * 100) + '%';
+                            queueRenderPage(pageNum);
+                        }
+                    });
+                }
+                
+                if (prevPageBtn) {
+                    prevPageBtn.addEventListener('click', function() {
+                        if (pdfDoc && pageNum > 1) {
+                            pageNum--;
+                            queueRenderPage(pageNum);
+                        }
+                    });
+                }
+                
+                if (nextPageBtn) {
+                    nextPageBtn.addEventListener('click', function() {
+                        if (pdfDoc && pageNum < pdfDoc.numPages) {
+                            pageNum++;
+                            queueRenderPage(pageNum);
+                        }
+                    });
+                }
+                
+                if (fullscreenBtn) {
+                    fullscreenBtn.addEventListener('click', function() {
+                        if (previewModal.requestFullscreen) {
+                            previewModal.requestFullscreen();
+                        } else if (previewModal.webkitRequestFullscreen) {
+                            previewModal.webkitRequestFullscreen();
+                        } else if (previewModal.msRequestFullscreen) {
+                            previewModal.msRequestFullscreen();
+                        }
+                    });
+                }
+                
+                if (downloadSampleBtn) {
+                    downloadSampleBtn.addEventListener('click', function() {
+                        const selectedOption = formatSelect.options[formatSelect.selectedIndex];
+                        const sampleUrl = selectedOption.getAttribute('data-sample-url');
+                        if (sampleUrl) {
+                            const link = document.createElement('a');
+                            link.href = sampleUrl;
+                            link.download = 'sample.pdf';
+                            link.click();
+                        }
+                    });
+                }
+                
+                if (buyNowBtn) {
+                    buyNowBtn.addEventListener('click', function() {
+                        previewModal.classList.add('hidden');
+                        // Scroll to add to cart section
+                        const addToCartSection = document.querySelector('.add-to-cart-section, #addToCartSection');
+                        if (addToCartSection) {
+                            addToCartSection.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    });
+                }
+                
+                // Keyboard navigation
+                document.addEventListener('keydown', function(e) {
+                    if (!previewModal.classList.contains('hidden')) {
+                        switch(e.key) {
+                            case 'Escape':
+                                previewModal.classList.add('hidden');
+                                break;
+                            case 'ArrowLeft':
+                                if (pdfDoc && pageNum > 1) {
+                                    pageNum--;
+                                    queueRenderPage(pageNum);
+                                }
+                                break;
+                            case 'ArrowRight':
+                                if (pdfDoc && pageNum < pdfDoc.numPages) {
+                                    pageNum++;
+                                    queueRenderPage(pageNum);
+                                }
+                                break;
+                            case '+':
+                            case '=':
+                                if (pdfDoc && scale < 3.0) {
+                                    scale += 0.25;
+                                    zoomLevel.textContent = Math.round(scale * 100) + '%';
+                                    queueRenderPage(pageNum);
+                                }
+                                break;
+                            case '-':
+                                if (pdfDoc && scale > 0.5) {
+                                    scale -= 0.25;
+                                    zoomLevel.textContent = Math.round(scale * 100) + '%';
+                                    queueRenderPage(pageNum);
+                                }
+                                break;
+                        }
                     }
                 });
             }

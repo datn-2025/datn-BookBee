@@ -83,7 +83,17 @@
                 <tbody>
                     @foreach($order->orderItems as $item)
                     <tr>
-                        <td>{{ $item->book->title }}</td>
+                        <td>
+                            @if($item->is_combo)
+                                {{ $item->collection->name ?? 'Combo không xác định' }}
+                                <small>(Combo)</small>
+                            @else
+                                {{ $item->book->title ?? 'Sách không xác định' }}
+                                @if($item->bookFormat)
+                                    <small>({{ $item->bookFormat->format_name }})</small>
+                                @endif
+                            @endif
+                        </td>
                         <td>{{ $item->quantity }}</td>
                         <td>{{ number_format($item->price) }} VNĐ</td>
                         <td>{{ number_format($item->total) }} VNĐ</td>

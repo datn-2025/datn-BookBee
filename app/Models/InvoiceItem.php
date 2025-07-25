@@ -13,6 +13,7 @@ class InvoiceItem extends Model
     protected $fillable = [
         'invoice_id',
         'book_id',
+        'collection_id',
         'quantity',
         'price'
     ];
@@ -33,6 +34,27 @@ class InvoiceItem extends Model
     public function book(): BelongsTo
     {
         return $this->belongsTo(Book::class);
+    }
+
+    public function collection(): BelongsTo
+    {
+        return $this->belongsTo(Collection::class);
+    }
+
+    /**
+     * Lấy tên item (sách hoặc combo)
+     */
+    public function getItemName(): string
+    {
+        if ($this->collection_id && $this->collection) {
+            return $this->collection->name;
+        }
+        
+        if ($this->book_id && $this->book) {
+            return $this->book->title;
+        }
+        
+        return 'Sản phẩm không xác định';
     }
 
     protected static function boot()
