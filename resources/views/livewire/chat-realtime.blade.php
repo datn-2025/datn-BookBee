@@ -807,7 +807,7 @@
     <!-- Script section - di chuyển vào trong div root -->
     <script>
         // Setup biến cho chat-realtime.js
-        window.currentConversationId = '{{ $selectedConversation->id ?? null }}';
+        window.currentConversationId = {!! json_encode($selectedConversation->id ?? null) !!};
         console.log('💬 Chat realtime Blade loaded, conversation ID:', window.currentConversationId);
         
         // Emoji list for admin chat
