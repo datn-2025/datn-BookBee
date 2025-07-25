@@ -99,12 +99,6 @@ class Book extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
-
-    public function preorders(): HasMany
-    {
-        return $this->hasMany(Preorder::class);
-    }
-
     public function getAverageRatingAttribute()
     {
         return $this->reviews()->avg('rating') ?? 0;
