@@ -46,11 +46,13 @@
                                 <label class="form-label">Trạng thái phản hồi</label>
                                 <select name="admin_response" class="form-select">
                                     <option value="">Tất cả</option>
-                                    <option value="responded"
-                                        {{ request('admin_response') == 'responded' ? 'selected' : '' }}>Đã phản hồi
+                                    <option value="responded" value="responded"
+                                        {{ old('admin_response', request('admin_response')) === 'responded' ? 'selected' : '' }}>
+                                        Đã phản hồi
                                     </option>
-                                    <option value="not_responded"
-                                        {{ request('admin_response') == 'not_responded' ? 'selected' : '' }}>Chưa phản hồi
+                                    <option value="not_responded" value="not_responded"
+                                        {{ old('admin_response', request('admin_response')) === 'not_responded' ? 'selected' : '' }}>
+                                        Chưa phản hồi
                                     </option>
                                 </select>
                             </div>
@@ -58,20 +60,23 @@
                                 <label class="form-label">Trạng thái hiển thị</label>
                                 <select name="status" class="form-select">
                                     <option value="">Tất cả</option>
-                                    <option value="visible" {{ request('status') == 'visible' ? 'selected' : '' }}>Hiện
+                                    <option value="visible"
+                                        {{ old('status', request('status')) === 'visible' ? 'selected' : '' }}>Hiện
                                     </option>
-                                    <option value="hidden" {{ request('status') == 'hidden' ? 'selected' : '' }}>Ẩn</option>
+                                    <option value="hidden"
+                                        {{ old('status', request('status')) === 'hidden' ? 'selected' : '' }}>Ẩn</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Tên Sách</label>
                                 <input type="text" name="product_name" class="form-control"
-                                    value="{{ request('product_name') }}" placeholder="Tên sản phẩm">
+                                    value="{{ old('product_name', request('product_name')) }}" placeholder="Tên sản phẩm">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Tên khách hàng</label>
                                 <input type="text" name="customer_name" class="form-control"
-                                    value="{{ request('customer_name') }}" placeholder="Tên khách hàng">
+                                    value="{{ old('customer_name', request('customer_name')) }}"
+                                    placeholder="Tên khách hàng">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Số sao đánh giá</label>
@@ -79,16 +84,15 @@
                                     <option value="">Tất cả</option>
                                     @foreach (range(5, 1) as $i)
                                         <option value="{{ $i }}"
-                                            {{ request('rating') == $i ? 'selected' : '' }}>
-                                            {{ str_repeat('★', $i) }}{{ str_repeat('☆', 5 - $i) }} ({{ $i }}
-                                            sao)
+                                            {{ (int) old('rating', request('rating')) === $i ? 'selected' : '' }}>
+                                            {{ str_repeat('★', $i) }}{{ str_repeat('☆', 5 - $i) }} ({{ $i }} sao)
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label">Nội dung bình luận</label>
-                                <input type="text" name="cmt" class="form-control" value="{{ request('cmt') }}"
+                                <input type="text" name="cmt" class="form-control"    value="{{ old('cmt', request('cmt')) }}"
                                     placeholder="Tìm theo nội dung đánh giá hoặc phản hồi">
                             </div>
                             <div class="col-md-3 d-flex align-items-end">
@@ -185,7 +189,7 @@
                                         <strong>{{ $reviews->total() }}</strong> đánh giá
                                     </div>
                                     <div>
-                                        {{ $reviews->appends(request()->query())->links('pagination::bootstrap-4') }}
+                                        {{ $reviews->withQueryString()->links('pagination::bootstrap-4') }}
                                     </div>
                                 </div>
                             @endif
