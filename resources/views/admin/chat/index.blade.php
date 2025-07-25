@@ -2,12 +2,15 @@
 
 @section('title', 'Chat Real Time')
 
+@push('styles')
+<link href="{{ asset('css/chat.css') }}" rel="stylesheet" type="text/css" />
+@endpush
+
 @section('content')
     <style>
-        
-
         .chat-wrapper {
-            height: 80vh; /* chiều cao vừa phải thay vì 100vh */
+            height: 80vh;
+            /* chiều cao vừa phải thay vì 100vh */
         }
 
         /* Đảm bảo chat-content có layout đúng */
@@ -66,7 +69,8 @@
             overflow-y: auto !important;
             overflow-x: hidden;
             padding: 1rem;
-            height: 60vh !important; /* height cố định đơn giản */
+            height: 60vh !important;
+            /* height cố định đơn giản */
             max-height: 60vh !important;
         }
 
@@ -79,7 +83,7 @@
             bottom: 0 !important;
         }
 
-        
+
 
         /* Sidebar đơn giản */
         .chat-leftsidebar {
@@ -87,7 +91,8 @@
         }
 
         .chat-room-list {
-            height: 60vh; /* đơn giản hóa */
+            height: 60vh;
+            /* đơn giản hóa */
             overflow-y: auto;
         }
 
@@ -123,7 +128,59 @@
             opacity: 0.5;
         }
 
+        /* Contact list styling */
+        .contact-item {
+            border-bottom: 1px solid #f1f1f1;
+            transition: background-color 0.2s ease;
+        }
 
+        .contact-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .contact-item:last-child {
+            border-bottom: none;
+        }
+
+        .start-conversation-btn {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .start-conversation-btn:hover {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        /* Search box styling trong contacts tab */
+        #contacts .search-box {
+            position: relative;
+        }
+
+        #contacts .search-box .search-icon {
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            color: #6c757d;
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        #contacts .search-box input {
+            padding-right: 40px;
+        }
+
+        /* Animation cho contact items */
+        .contact-item {
+            transition: all 0.2s ease;
+        }
+
+        .contact-item.hidden {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
     </style>
     <div class="page-content">
         <div class="container-fluid">
@@ -186,35 +243,83 @@
                                 </div>
 
                                 <div class="chat-message-list">
-                                    <livewire:conversation-list />
+                                    <livewire:conversation-list :selectedConversationId="$selectedConversation?->id" />
                                 </div>
 
-                                <div class="d-flex align-items-center px-4 mt-4 pt-2 mb-2">
-                                    <div class="flex-grow-1">
-                                        <h4 class="mb-0 fs-11 text-muted text-uppercase">Channels</h4>
-                                    </div>
-                                    <div class="flex-shrink-0">
-                                        <div data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-placement="bottom"
-                                            title="Create group">
-                                            <!-- Button trigger modal -->
-                                            <button type="button" class="btn btn-soft-success btn-sm">
-                                                <i class="ri-add-line align-bottom"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="chat-message-list">
-
-                                    <ul class="list-unstyled chat-list chat-user-list mb-0" id="channelList">
-                                    </ul>
-                                </div>
                                 <!-- End chat-message-list -->
                             </div>
                         </div>
                         <div class="tab-pane" id="contacts" role="tabpanel">
                             <div class="chat-room-list pt-3" data-simplebar>
-                                <div class="sort-contact">
+                                <div class="d-flex align-items-center px-4 mb-2">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0 fs-11 text-muted text-uppercase">Active Users</h6>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <span class="badge bg-success-subtle text-success">{{ $activeUsers->count() ?? 0 }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Search box for contacts -->
+                                <div class="px-4 pb-2">
+                                    <div class="search-box">
+                                        <input type="text" class="form-control bg-light border-light" 
+                                               placeholder="Tìm kiếm người dùng..." 
+                                               id="contactSearch">
+                                        <i class="ri-search-2-line search-icon"></i>
+                                    </div>
+                                </div>
+
+                                <div class="contact-list" id="contactList">
+                                    @if(isset($activeUsers) && $activeUsers->count() > 0)
+                                        @foreach($activeUsers as $user)
+                                            <div class="d-flex align-items-center px-4 py-2 contact-item" 
+                                                 data-user-id="{{ $user->id }}" 
+                                                 data-user-name="{{ $user->name }}"
+                                                 data-user-email="{{ $user->email }}"
+                                                 data-search-text="{{ strtolower($user->name . ' ' . $user->email) }}"
+                                                 style="cursor: pointer;">
+                                                <div class="flex-shrink-0 me-3">
+                                                    <div class="position-relative">
+                                                        <img src="{{ $user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random&color=fff&size=200' }}" 
+                                                             alt="{{ $user->name }}" 
+                                                             class="rounded-circle avatar-xs">
+                                                        @if($user->isOnline())
+                                                            <span class="position-absolute bottom-0 end-0 badge border-2 border-white rounded-circle bg-success p-1">
+                                                                <span class="visually-hidden">Online</span>
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="flex-grow-1 overflow-hidden">
+                                                    <h5 class="text-truncate fs-14 mb-0">{{ $user->name }}</h5>
+                                                    <p class="text-truncate text-muted fs-13 mb-0">{{ $user->email }}</p>
+                                                    <p class="text-truncate text-muted fs-12 mb-0">
+                                                        @if($user->isOnline())
+                                                            <i class="bx bxs-circle text-success fs-10 me-1"></i>Online
+                                                        @elseif($user->isActiveWithin(60))
+                                                            <i class="bx bxs-circle text-warning fs-10 me-1"></i>Away
+                                                        @else
+                                                            <i class="bx bxs-circle text-muted fs-10 me-1"></i>Offline
+                                                        @endif
+                                                    </p>
+                                                </div>
+                                                <div class="flex-shrink-0">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary start-conversation-btn">
+                                                        <i class="bx bx-message-square-add"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @else
+                                        <div class="text-center py-4">
+                                            <div class="mb-2">
+                                                <i class="bx bx-user-x display-6 text-muted"></i>
+                                            </div>
+                                            <h5 class="fs-16 fw-semibold">Không có người dùng nào</h5>
+                                            <p class="text-muted mb-0">Chưa có người dùng hoạt động trong hệ thống</p>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -266,5 +371,116 @@
     @endsection
 
     @push('scripts')
+        <script src="{{ asset('js/chat-realtime.js') }}"></script>
+        <script>
+            // Xử lý tạo cuộc trò chuyện mới khi click vào contact
+            document.addEventListener('DOMContentLoaded', function() {
+                // Handle contact search
+                const contactSearch = document.getElementById('contactSearch');
+                const contactItems = document.querySelectorAll('.contact-item');
+                
+                if (contactSearch) {
+                    contactSearch.addEventListener('input', function() {
+                        const searchTerm = this.value.toLowerCase().trim();
+                        
+                        contactItems.forEach(item => {
+                            const searchText = item.dataset.searchText || '';
+                            const userName = item.dataset.userName || '';
+                            const userEmail = item.dataset.userEmail || '';
+                            
+                            const isMatch = searchText.includes(searchTerm) || 
+                                          userName.toLowerCase().includes(searchTerm) || 
+                                          userEmail.toLowerCase().includes(searchTerm);
+                            
+                            if (isMatch || searchTerm === '') {
+                                item.style.display = 'flex';
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        });
+                        
+                        // Update count
+                        const visibleItems = Array.from(contactItems).filter(item => 
+                            item.style.display !== 'none'
+                        );
+                        const countBadge = document.querySelector('#contacts .badge');
+                        if (countBadge) {
+                            countBadge.textContent = visibleItems.length;
+                        }
+                    });
+                }
 
+                // Handle start conversation button click
+                document.addEventListener('click', function(e) {
+                    if (e.target.closest('.start-conversation-btn')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const contactItem = e.target.closest('.contact-item');
+                        const userId = contactItem.dataset.userId;
+                        const userName = contactItem.dataset.userName;
+                        const userEmail = contactItem.dataset.userEmail;
+                        
+                        if (!userId) {
+                            console.error('User ID not found');
+                            return;
+                        }
+                        
+                        // Disable button to prevent double click
+                        const btn = e.target.closest('.start-conversation-btn');
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i>';
+                        
+                        // Create conversation
+                        fetch('{{ route("admin.chat.create-conversation") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({
+                                customer_id: userId
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Show success message
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.success(data.message);
+                                }
+                                
+                                // Redirect to conversation
+                                setTimeout(() => {
+                                    window.location.href = data.redirect_url;
+                                }, 500);
+                            } else {
+                                throw new Error(data.message || 'Có lỗi xảy ra');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(error.message || 'Có lỗi xảy ra khi tạo cuộc trò chuyện');
+                            }
+                            
+                            // Re-enable button
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="bx bx-message-square-add"></i>';
+                        });
+                    }
+                });
+                
+                // Handle contact item click (not just the button)
+                document.addEventListener('click', function(e) {
+                    const contactItem = e.target.closest('.contact-item');
+                    if (contactItem && !e.target.closest('.start-conversation-btn')) {
+                        // Show user info tooltip or modal if needed
+                        const userName = contactItem.dataset.userName;
+                        const userEmail = contactItem.dataset.userEmail;
+                        console.log('Clicked on user:', userName, userEmail);
+                    }
+                });
+            });
+        </script>
     @endpush
