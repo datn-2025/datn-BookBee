@@ -3,10 +3,12 @@
 namespace App\Livewire;
 
 use App\Events\MessageSent;
+use App\Livewire\ConversationList;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\MessageRead;
 use App\Models\User;
+use App\Services\AutoReplyService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -29,17 +31,27 @@ class ChatRealtime extends Component
     // Listeners
     protected $listeners = [
         'refreshMessages' => 'loadMessages',
-        'conversationSelected' => 'switchConversation'
+        'conversationSelected' => 'switchConversation',
+        'handleIncomingMessage' => 'handleIncomingMessage'
     ];
 
     public function getListeners()
     {
+        $listeners = $this->listeners;
+        
         if ($this->selectedConversation) {
-            return array_merge($this->listeners, [
-                "echo:bookbee.{$this->selectedConversation->id},MessageSent" => 'messageReceived'
+            // Đăng ký listener cho conversation channel
+            $conversationChannel = "echo:bookbee.{$this->selectedConversation->id},MessageSent";
+            $listeners[$conversationChannel] = 'messageReceived';
+            
+            Log::info('ChatRealtime listener registered', [
+                'conversation_id' => $this->selectedConversation->id,
+                'channel' => "bookbee.{$this->selectedConversation->id}",
+                'listener' => $conversationChannel
             ]);
         }
-        return $this->listeners;
+        
+        return $listeners;
     }
 
     public function mount($selectedConversation = null)
@@ -49,6 +61,16 @@ class ChatRealtime extends Component
             $this->loadMessages();
             $this->markMessagesAsRead();
         }
+    }
+
+    public function hasMessages()
+    {
+        return $this->chatMessages && count($this->chatMessages) > 0;
+    }
+
+    public function isNewConversation()
+    {
+        return !$this->hasMessages();
     }
 
     public function loadMessages()
@@ -66,16 +88,42 @@ class ChatRealtime extends Component
         $this->selectedConversation->update(['last_message_at' => now()]);
     }
 
-    public function messageReceived($payload)
+    public function handleIncomingMessage($payload)
     {
+        Log::info('ChatRealtime handleIncomingMessage called', [
+            'payload' => $payload,
+            'conversation_id' => $this->selectedConversation?->id,
+            'current_user_id' => Auth::guard('admin')->user()?->id ?: Auth::user()?->id
+        ]);
+        
         // Chỉ thêm tin nhắn nếu không phải từ người dùng hiện tại
         $currentUser = Auth::guard('admin')->user() ?: Auth::user();
         $currentUserId = $currentUser ? $currentUser->id : null;
         
-        if ($payload['sender_id'] !== $currentUserId) {
+        if (isset($payload['sender_id']) && $payload['sender_id'] !== $currentUserId) {
+            Log::info('Processing new message in admin chat', [
+                'sender_id' => $payload['sender_id'],
+                'current_user_id' => $currentUserId,
+                'conversation_id' => $payload['conversation_id'] ?? null
+            ]);
+            
             $this->loadMessages(); // Reload để lấy tin nhắn mới
             $this->dispatch('scroll-to-bottom');
+            
+            // Dispatch event để refresh conversation list
+            $this->dispatch('refreshConversations')->to(ConversationList::class);
+        } else {
+            Log::info('Skipping message - from current user', [
+                'sender_id' => $payload['sender_id'] ?? null,
+                'current_user_id' => $currentUserId
+            ]);
         }
+    }
+
+    // Backward compatibility
+    public function messageReceived($payload)
+    {
+        return $this->handleIncomingMessage($payload);
     }
 
     public function switchConversation($conversationId)
@@ -118,7 +166,10 @@ class ChatRealtime extends Component
 
         $message->save();
 
-        // Clear input sau khi gửi
+        // Đánh dấu admin đang hoạt động
+        AutoReplyService::markAdminAsActive($currentUserId);
+
+        // Clear input ngay sau khi lưu message
         $this->message_content = '';
         $this->messageInput = '';
 
@@ -128,20 +179,25 @@ class ChatRealtime extends Component
         // Broadcast event
         broadcast(new MessageSent($message))->toOthers();
 
-        // Update conversation
+        // Update conversation last_message_at
         $this->selectedConversation->update(['last_message_at' => now()]);
-
+        
         // Dispatch event để refresh conversation list
-        $this->dispatch('conversationUpdated');
+        $this->dispatch('refreshConversations')->to(ConversationList::class);
         
         // Scroll to bottom
         $this->dispatch('scroll-to-bottom');
         
-        // Show success feedback
+        // Show success feedback and trigger animations
         $this->dispatch('message-sent');
-    }
+        $this->dispatch('messageProcessed');
 
-    public function markMessagesAsRead()
+        
+        Log::info('ChatRealtime sendMessage completed', [
+            'message_id' => $message->id,
+            'cleared_input' => empty($this->message_content)
+        ]);
+    }    public function markMessagesAsRead()
     {
         if (!$this->selectedConversation) {
             return;
