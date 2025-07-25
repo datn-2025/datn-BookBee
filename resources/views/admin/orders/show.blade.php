@@ -31,6 +31,11 @@
                                     <a href="{{ route('admin.orders.edit', $order->id) }}" class="btn btn-success btn-sm">
                                         <i class="ri-pencil-fill align-middle me-1"></i> Cập nhật trạng thái
                                     </a>
+                                    @if($order->orderStatus->name === 'Thành công' && $order->paymentStatus->name === 'Đã Thanh Toán' && !in_array($order->paymentStatus->name, ['Đang Hoàn Tiền', 'Đã Hoàn Tiền']))
+                                        <a href="{{ route('admin.refunds.show', $order->id) }}" class="btn btn-warning btn-sm">
+                                            <i class="ri-refund-2-line align-middle me-1"></i> Hoàn tiền
+                                        </a>
+                                    @endif
                                     <button type="button" class="btn btn-primary btn-sm">
                                         <i class="ri-printer-fill align-middle me-1"></i> In hóa đơn
                                     </button>
@@ -125,6 +130,23 @@
                                                         <div class="flex-grow-1">
                                                             <h6 class="mb-1 fs-14">Thành phố:</h6>
                                                             <p class="text-muted mb-0">{{ $order->address->city }}</p>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                                <li>
+                                                    <div class="d-flex">
+                                                        <div class="flex-shrink-0 text-muted">
+                                                            <i class="ri-truck-line me-1 fs-16 align-middle"></i>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-1 fs-14">Phương thức nhận hàng:</h6>
+                                                            <p class="text-muted mb-0">
+                                                                @if($order->delivery_method === 'pickup')
+                                                                    <span class="badge bg-info">Nhận tại cửa hàng</span>
+                                                                @else
+                                                                    <span class="badge bg-primary">Giao hàng tận nơi</span>
+                                                                @endif
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </li>
@@ -360,7 +382,7 @@
             <div class="col-xl-3">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Thông tin thanh toán</h5>
+                        <h5 class="card-title mb-0">Thông tin đơn hàng</h5>
                     </div>
                     <div class="card-body">
                         <div class="mb-4">
@@ -395,7 +417,7 @@
                                 </div>
                             </div>
                         </div>
-                        @if(isset($order->payments) && count($order->payments) > 0 && $order->paymentStatus->name == 'Đã thanh toán')
+                        @if(isset($order->payments) && count($order->payments) > 0 && $order->paymentStatus->name == 'Đã Thanh Toán')
                         <div class="mb-4">
                             <h6 class="mb-2">Lịch sử thanh toán</h6>
                             <div class="border rounded p-3">
@@ -456,6 +478,41 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Thông tin hủy hàng --}}
+                        @if($order->cancelled_at && in_array($order->orderStatus->name, ['Đã hủy', 'Đã Hủy']))
+                        <div class="mb-4">
+                            <div class="d-flex mb-2">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar-sm">
+                                        <div class="avatar-title bg-light text-danger rounded-circle shadow fs-3">
+                                            <i class="ri-close-circle-line"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">Ngày hủy hàng</h6>
+                                    <p class="text-muted mb-0">{{ $order->cancelled_at->format('d/m/Y H:i') }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex mb-2">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar-sm">
+                                        <div class="avatar-title bg-light text-warning rounded-circle shadow fs-3">
+                                            <i class="ri-information-line"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">Lý do hủy hàng</h6>
+                                    <p class="text-muted mb-0">{{ $order->cancellation_reason ?? 'Không có lý do cụ thể' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
 

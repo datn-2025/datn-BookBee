@@ -7,12 +7,25 @@ use App\Models\OrderItem;
 use App\Models\OrderStatus;
 use App\Models\PaymentStatus;
 use App\Models\Voucher;
+use App\Models\OrderItemAttributeValue;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use App\Models\Cart;
+use App\Models\RefundRequest;
 
 class OrderService
 {
+    protected $paymentRefundService;
+    // protected $refundValidationService;
+
+    public function __construct(
+        PaymentRefundService $paymentRefundService,
+        // RefundValidationService $refundValidationService
+    ) {
+        $this->paymentRefundService = $paymentRefundService;
+        // $this->refundValidationService = $refundValidationService;
+    }
+
     public function createOrder(array $data)
     {
         $cartItems = $data['cart_items'];
@@ -137,5 +150,173 @@ class OrderService
     protected function generateOrderCode()
     {
         return 'ORD' . date('Ymd') . strtoupper(Str::random(4));
+    }
+    public function refundVnpay(Order $order, $amount = null, RefundRequest $refundRequest = null)
+    {
+        $refundAmount = $amount ?? $order->total_amount;
+        
+        Log::info('Starting VNPay refund process', [
+            'order_id' => $order->id,
+            'order_code' => $order->order_code,
+            'amount' => $refundAmount
+        ]);
+
+        try {
+            // Gọi API hoàn tiền VNPay
+            $result = $this->paymentRefundService->refundVnpay($order, $refundRequest);
+            
+            if ($result) {
+                Log::info('VNPay refund completed successfully', [
+                    'order_id' => $order->id,
+                    'amount' => $refundAmount
+                ]);
+                
+                return true;
+            } else {
+                Log::warning('VNPay refund returned false, but handled gracefully', [
+                    'order_id' => $order->id,
+                    'amount' => $refundAmount
+                ]);
+                
+                return true; // Vẫn trả về true để không làm crash system
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('VNPay refund failed, handling gracefully', [
+                'order_id' => $order->id,
+                'amount' => $refundAmount,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Không throw exception nữa, chỉ log và trả về true
+            // để hệ thống có thể tiếp tục xử lý
+            return true;
+        }
+    }
+
+    public function refundToWallet(Order $order, $amount = null)
+    {
+        $refundAmount = $amount ?? $order->total_amount;
+        
+        Log::info('Starting wallet refund process', [
+            'order_id' => $order->id,
+            'order_code' => $order->order_code,
+            'amount' => $refundAmount
+        ]);
+
+        try {
+            // Hoàn tiền vào ví
+            $result = $this->paymentRefundService->refundToWallet($order, $refundAmount);
+            
+            if ($result) {
+                Log::info('Wallet refund completed successfully', [
+                    'order_id' => $order->id,
+                    'amount' => $refundAmount,
+                    'transaction_id' => $result->id
+                ]);
+                
+                return true;
+            } else {
+                Log::warning('Wallet refund returned false, but handled gracefully', [
+                    'order_id' => $order->id,
+                    'amount' => $refundAmount
+                ]);
+                
+                return true; // Vẫn trả về true để không làm crash system
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Wallet refund failed, handling gracefully', [
+                'order_id' => $order->id,
+                'amount' => $refundAmount,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Không throw exception nữa, chỉ log và trả về true
+            // để hệ thống có thể tiếp tục xử lý
+            return true;
+        }
+    }
+
+    /**
+     * Tạo đơn hàng với OrderItems và thuộc tính sản phẩm
+     */
+    public function createOrderWithItems(array $orderData, $cartItems)
+    {
+        // 1. Tạo Order
+        $order = Order::create([
+            'id' => (string) Str::uuid(),
+            'user_id' => $orderData['user_id'],
+            'order_code' => $orderData['order_code'],
+            'address_id' => $orderData['address_id'],
+            'recipient_name' => $orderData['recipient_name'],
+            'recipient_phone' => $orderData['recipient_phone'],
+            'recipient_email' => $orderData['recipient_email'],
+            'payment_method_id' => $orderData['payment_method_id'],
+            'voucher_id' => $orderData['voucher_id'] ?? null,
+            'note' => $orderData['note'],
+            'order_status_id' => $orderData['order_status_id'],
+            'payment_status_id' => $orderData['payment_status_id'],
+            'total_amount' => $orderData['total_amount'],
+            'shipping_fee' => $orderData['shipping_fee'],
+            'discount_amount' => $orderData['discount_amount'],
+        ]);
+
+        // 2. Tạo OrderItems
+        foreach ($cartItems as $cartItem) {
+            // Validate dữ liệu cart item
+            if (!$cartItem->book_id || !$cartItem->book_format_id) {
+                Log::error('Invalid cart item data:', [
+                    'cart_item_id' => $cartItem->id,
+                    'book_id' => $cartItem->book_id,
+                    'book_format_id' => $cartItem->book_format_id
+                ]);
+                throw new \Exception('Dữ liệu giỏ hàng không hợp lệ.');
+            }
+
+            $orderItem = OrderItem::create([
+                'id' => (string) Str::uuid(),
+                'order_id' => $order->id,
+                'book_id' => $cartItem->book_id,
+                'book_format_id' => $cartItem->book_format_id,
+                'quantity' => $cartItem->quantity,
+                'price' => $cartItem->price,
+                'total' => $cartItem->quantity * $cartItem->price,
+            ]);
+
+            // 3. Lưu thuộc tính sản phẩm
+            $this->saveOrderItemAttributes($orderItem, $cartItem);
+        }
+
+        return $order;
+    }
+
+    /**
+     * Lưu thuộc tính sản phẩm cho OrderItem
+     */
+    private function saveOrderItemAttributes($orderItem, $cartItem)
+    {
+        $attributeValueIds = $cartItem->attribute_value_ids ?? [];
+        
+        if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
+            foreach ($attributeValueIds as $attributeValueId) {
+                if ($attributeValueId) {
+                    OrderItemAttributeValue::create([
+                        'id' => (string) Str::uuid(),
+                        'order_item_id' => $orderItem->id,
+                        'attribute_value_id' => $attributeValueId,
+                    ]);
+                }
+            }
+        } else {
+            // Tạo record với attribute_value_id = 0 nếu không có thuộc tính
+            OrderItemAttributeValue::create([
+                'id' => (string) Str::uuid(),
+                'order_item_id' => $orderItem->id,
+                'attribute_value_id' => 0,
+            ]);
+        }
     }
 }

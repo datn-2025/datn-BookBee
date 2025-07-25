@@ -65,6 +65,7 @@ class DatabaseSeeder extends Seeder
             RBookSeeder::class,
             RCollectionSeeder::class,
             RBookCollectionSeeder::class,
+            AuthorBookSeeder::class,
             RAddressSeeder::class,
             PaymentMethodSeeder::class,
             PaymentStatusSeeder::class,

@@ -10,15 +10,26 @@ use App\Models\OrderStatus;
 use App\Models\PaymentStatus;
 use App\Models\User;
 use App\Models\Address;
+use App\Services\OrderService;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Jobs\SendOrderStatusUpdatedMail;
 
+
+
 class OrderController extends Controller
 {
+    protected $orderService;
+
+    public function __construct(OrderService $orderService)
+    {
+        $this->orderService = $orderService;
+    }
+
     public function index(Request $request)
     {
         $query = Order::with(['user', 'address', 'orderStatus', 'paymentStatus'])
@@ -113,11 +124,272 @@ class OrderController extends Controller
         return view('admin.orders.edit', compact('order', 'orderStatuses', 'paymentStatuses'));
     }
 
+    public function showRefund($id)
+    {
+        try {
+            $order = Order::with(['user', 'orderStatus', 'paymentStatus', 'paymentMethod'])
+                         ->findOrFail($id);
+
+            // Kiểm tra điều kiện hoàn tiền - Thay đổi: Cho phép hoàn tiền với đơn hàng "Thành công"
+            if ($order->orderStatus->name !== 'Thành công') {
+                Toastr::error('Chỉ có thể hoàn tiền cho đơn hàng đã hoàn thành thành công', 'Lỗi');
+                return redirect()->route('admin.orders.show', $id);
+            }
+
+            if (in_array($order->paymentStatus->name, ['Đang Hoàn Tiền', 'Đã Hoàn Tiền'])) {
+                Toastr::error('Đơn hàng đã được hoàn tiền hoặc đang trong quá trình hoàn tiền', 'Lỗi');
+                return redirect()->route('admin.orders.show', $id);
+            }
+
+            if ($order->paymentStatus->name !== 'Đã Thanh Toán') {
+                Toastr::error('Chỉ có thể hoàn tiền cho đơn hàng đã thanh toán', 'Lỗi');
+                return redirect()->route('admin.orders.show', $id);
+            }
+
+            return view('admin.orders.refund', compact('order'));
+        } catch (\Exception $e) {
+            Log::error('Error showing refund form: ' . $e->getMessage());
+            Toastr::error('Có lỗi xảy ra khi hiển thị form hoàn tiền', 'Lỗi');
+            return redirect()->route('admin.orders.index');
+        }
+    }
+
+    public function processRefund(Request $request, $id)
+    {
+        $request->validate([
+            'refund_method' => 'required|in:wallet,vnpay',
+            'refund_amount' => 'required|numeric|min:0',
+            'refund_reason' => 'required|string|max:1000',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $order = Order::findOrFail($id);
+            
+            // Validate refund conditions
+            if ($order->orderStatus->name !== 'Thành công') {
+                throw new \Exception('Chỉ có thể hoàn tiền cho đơn hàng đã hoàn thành thành công');
+            }
+
+            if ($order->paymentStatus->name === 'Đã Hoàn Tiền') {
+                throw new \Exception('Đơn hàng này đã được hoàn tiền trước đó');
+            }
+
+            if ($request->refund_amount > $order->total_amount) {
+                throw new \Exception('Số tiền hoàn không được vượt quá tổng tiền đơn hàng');
+            }
+
+            // Process refund based on method
+            if ($request->refund_method === 'wallet') {
+                $this->orderService->refundToWallet($order, $request->refund_amount);
+            } else {
+                $this->orderService->refundVnpay($order, $request->refund_amount);
+            }
+
+            // Log refund information
+            Log::info('Order refund processed', [
+                'order_id' => $order->id,
+                'amount' => $request->refund_amount,
+                'method' => $request->refund_method,
+                'reason' => $request->refund_reason,
+                'processed_by' => auth()->id()
+            ]);
+
+            DB::commit();
+            Toastr::success('Hoàn tiền đơn hàng thành công', 'Thành công');
+            return redirect()->route('admin.orders.show', $id);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error processing refund: ' . $e->getMessage());
+            Toastr::error($e->getMessage(), 'Lỗi');
+            return back()->withInput();
+        }
+    }
+
+    /**
+     * Danh sách yêu cầu hoàn tiền
+     */
+    public function refundList(Request $request)
+    {
+        $query = \App\Models\RefundRequest::with(['order.user', 'order.orderStatus', 'order.paymentStatus']);
+
+        // Filter by search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('order', function($q) use ($search) {
+                $q->where('order_code', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $refunds = $query->latest()->paginate(20);
+
+        return view('admin.orders.refunds.index', compact('refunds'));
+    }
+
+    /**
+     * Chi tiết yêu cầu hoàn tiền
+     */
+    public function refundDetail($id)
+    {
+        $refund = \App\Models\RefundRequest::with(['order.user', 'order.orderStatus', 'order.paymentStatus', 'order.paymentMethod'])
+            ->findOrFail($id);
+
+        return view('admin.orders.refunds.show', compact('refund'));
+    }
+
+    /**
+     * Xử lý yêu cầu hoàn tiền
+     */
+    public function processRefundRequest(Request $request, $id)
+    {
+        dd($request->all());
+        $request->validate([
+            'status' => 'required|in:completed,rejected',
+            'admin_note' => 'required|string|max:1000',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $refund = \App\Models\RefundRequest::findOrFail($id);
+            $order = $refund->order;
+
+            if ($request->status === 'completed') {
+                // Cập nhật trạng thái payment của order thành "Đang Hoàn Tiền"
+                $refundingStatus = PaymentStatus::where('name', 'Đang Hoàn Tiền')->first();
+                if ($refundingStatus) {
+                    $order->update(['payment_status_id' => $refundingStatus->id]);
+                }
+
+                // Xử lý hoàn tiền theo phương thức được chọn
+                if ($refund->refund_method === 'vnpay') {
+                    // Hoàn tiền qua VNPay
+                    try {
+                        $this->orderService->refundVnpay($order, $refund->amount);
+                        Log::info('VNPay refund processed successfully via admin', [
+                            'order_id' => $order->id,
+                            'refund_id' => $refund->id,
+                            'amount' => $refund->amount
+                        ]);
+                    } catch (\Exception $vnpayError) {
+                        Log::warning('VNPay refund failed but continuing process', [
+                            'order_id' => $order->id,
+                            'refund_id' => $refund->id,
+                            'error' => $vnpayError->getMessage()
+                        ]);
+                        // Không throw exception, chỉ log warning và tiếp tục
+                    }
+                } elseif ($refund->refund_method === 'wallet') {
+                    // Hoàn tiền vào ví
+                    Log::info('Starting wallet refund via admin approval', [
+                        'refund_id' => $refund->id,
+                        'order_id' => $order->id,
+                        'user_id' => $order->user_id,
+                        'amount' => $refund->amount
+                    ]);
+                    
+                    try {
+                        $result = $this->orderService->refundToWallet($order, $refund->amount);
+                        Log::info('Wallet refund processed successfully via admin', [
+                            'order_id' => $order->id,
+                            'refund_id' => $refund->id,
+                            'amount' => $refund->amount,
+                            'result' => $result
+                        ]);
+                    } catch (\Exception $walletError) {
+                        Log::warning('Wallet refund failed but continuing process', [
+                            'order_id' => $order->id,
+                            'refund_id' => $refund->id,
+                            'error' => $walletError->getMessage(),
+                            'trace' => $walletError->getTraceAsString()
+                        ]);
+                        // Không throw exception, chỉ log warning và tiếp tục
+                    }
+                }
+
+                // Cập nhật trạng thái payment của order thành "Đã Hoàn Tiền"
+                $refundedStatus = PaymentStatus::where('name', 'Đã Hoàn Tiền')->first();
+                if ($refundedStatus) {
+                    $order->update(['payment_status_id' => $refundedStatus->id]);
+                }
+            }
+
+            // Cập nhật yêu cầu hoàn tiền
+            $refund->update([
+                'status' => $request->status,
+                'admin_note' => $request->admin_note,
+                'processed_at' => now(),
+            ]);
+
+            // Gửi thông báo cho khách hàng (qua order user relationship)
+            // $order->user->notify(new \App\Notifications\RefundStatusUpdatedNotification($refund));
+
+            // Log hoạt động
+            Log::info('Refund request processed', [
+                'refund_id' => $refund->id,
+                'order_id' => $order->id,
+                'status' => $request->status,
+                'processed_by' => auth('admin')->id()
+            ]);
+
+            DB::commit();
+            Toastr::success('Yêu cầu hoàn tiền đã được xử lý thành công', 'Thành công');
+            return redirect()->route('admin.refunds.index');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error processing refund request', [
+                'refund_id' => $refund->id ?? 'unknown',
+                'order_id' => $order->id ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            Toastr::error('Có lỗi xảy ra khi xử lý yêu cầu hoàn tiền. Vui lòng thử lại sau.', 'Lỗi');
+            return back()->withInput();
+        }
+    }
+
+    public function refundStatus($id)
+    {
+        try {
+            $order = Order::with(['payments' => function($query) {
+                $query->where('type', 'refund')->latest();
+            }])->findOrFail($id);
+
+            $lastRefundPayment = $order->payments->first();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'status' => $lastRefundPayment ? $lastRefundPayment->status : null,
+                    'amount' => $lastRefundPayment ? $lastRefundPayment->amount : 0,
+                    'processed_at' => $lastRefundPayment ? $lastRefundPayment->created_at->format('d/m/Y H:i:s') : null
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error checking refund status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi kiểm tra trạng thái hoàn tiền'
+            ], 500);
+        }
+    }
+
     public function update(Request $request, $id)
     {
         $request->validate([
             'order_status_id' => 'required|exists:order_statuses,id',
             'payment_status_id' => 'required|exists:payment_statuses,id',
+            'cancellation_reason' => 'nullable|string|max:1000',
         ]);
 
         try {
@@ -128,16 +400,30 @@ class OrderController extends Controller
             $newStatus = OrderStatus::findOrFail($request->order_status_id)->name;
             $allowed = OrderStatusHelper::getNextStatuses($currentStatus);
 
+            // Kiểm tra nếu trạng thái mới là "Đã hủy" thì yêu cầu lý do hủy hàng
+            if ($newStatus === 'Đã hủy' && empty($request->cancellation_reason)) {
+                Toastr::error('Vui lòng nhập lý do hủy hàng khi đổi trạng thái thành "Đã hủy"', 'Lỗi');
+                return back()->withInput();
+            }
+
             // ✅ Kiểm tra hợp lệ TRƯỚC khi cập nhật
             if (!in_array($newStatus, $allowed)) {
                 Toastr::error("Trạng thái mới không hợp lệ với trạng thái hiện tại", 'Lỗi');
                 return back()->withInput();
             }
 
-            $order->update([
+            $updateData = [
                 'order_status_id' => $request->order_status_id,
                 'payment_status_id' => $request->payment_status_id,
-            ]);
+            ];
+
+            // Nếu trạng thái mới là "Đã hủy", thiết lập ngày hủy và lý do hủy
+            if ($newStatus === 'Đã hủy') {
+                $updateData['cancelled_at'] = now();
+                $updateData['cancellation_reason'] = $request->cancellation_reason;
+            }
+
+            $order->update($updateData);
 
             // Ghi log
             Log::info("Order {$order->id} status changed from {$currentStatus} to {$newStatus} by admin");
@@ -186,4 +472,5 @@ class OrderController extends Controller
     //         Log::error('Error generating QR code: ' . $e->getMessage());
     //     }
     // }
+    
 }

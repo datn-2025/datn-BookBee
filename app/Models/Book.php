@@ -56,6 +56,12 @@ class Book extends Model
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
+
+    public function authors(): BelongsToMany
+    {
+        return $this->belongsToMany(Author::class, 'author_books');
+    }
+
     public function formats(): HasMany
     {
         return $this->hasMany(BookFormat::class);
@@ -95,16 +101,19 @@ class Book extends Model
     {
         return $this->reviews()->avg('rating') ?? 0;
     }
-    public function gifts()
+    public function summary()
+    {
+        return $this->hasOne(BookSummary::class);
+    }
+
+    public function hasSummary()
+    {
+        return $this->summary()->exists();
+    }
+
+    public function gifts(): HasMany
     {
         return $this->hasMany(BookGift::class);
     }
-    public function authors()
-    {
-        return $this->belongsToMany(Author::class, 'author_books');
-    }
-    public function collections()
-    {
-        return $this->belongsToMany(Collection::class, 'book_collections');
-    }
+    
 }

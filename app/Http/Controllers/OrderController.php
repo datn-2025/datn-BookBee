@@ -16,6 +16,7 @@ use App\Models\OrderItemAttributeValue; // Added for order item attributes
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
+use App\Services\InvoiceService;
 use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Services\QrCodeService;
@@ -35,19 +36,22 @@ class OrderController extends Controller
     protected $paymentService;
     protected $emailService;
     protected $qrCodeService;
+    protected $invoiceService;
 
     public function __construct(
         OrderService $orderService,
         VoucherService $voucherService,
         PaymentService $paymentService,
         EmailService $emailService,
-        QrCodeService $qrCodeService
+        QrCodeService $qrCodeService,
+        InvoiceService $invoiceService
     ) {
         $this->orderService = $orderService;
         $this->voucherService = $voucherService;
         $this->paymentService = $paymentService;
         $this->emailService = $emailService;
         $this->qrCodeService = $qrCodeService;
+        $this->invoiceService = $invoiceService;
     }
 
     public function checkout(Request $request)
@@ -113,7 +117,8 @@ class OrderController extends Controller
         $rules = [
             'voucher_code' => 'nullable|exists:vouchers,code',
             'payment_method_id' => 'required|exists:payment_methods,id',
-            'shipping_method' => 'required|in:standard,express',
+            'delivery_method' => 'required|in:delivery,pickup',
+            'shipping_method' => 'required_if:delivery_method,delivery|in:standard,express',
             'shipping_fee_applied' => 'required|numeric',
             'note' => 'nullable|string|max:500',
 
@@ -193,8 +198,15 @@ class OrderController extends Controller
                 throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
             }
 
-            // Lấy thông tin giỏ hàng của người dùng
-            $cartItems = $user->cart()->with(['book.images', 'bookFormat'])->get();
+            // Lấy thông tin giỏ hàng của người dùng và kiểm tra tính hợp lệ
+            $cartItems = $user->cart()
+                ->with(['book', 'bookFormat'])
+                ->whereNotNull('book_id')
+                ->whereNotNull('book_format_id')
+                ->get();
+
+            // Log thông tin cart items để debug
+            \Log::info('Cart Items:', $cartItems->toArray());
 
             if ($cartItems->isEmpty()) {
                 DB::rollBack();
@@ -252,9 +264,8 @@ class OrderController extends Controller
 
             // Nếu thanh toán VNPay, tạo order trước rồi chuyển hướng
             if ($paymentMethod->name == 'Thanh toán vnpay') {
-                // Tạo order trước khi chuyển đến VNPay
-                $order = Order::create([
-                    'id' => (string) Str::uuid(),
+                // Chuẩn bị dữ liệu cho order
+                $orderData = [
                     'user_id' => $user->id,
                     'order_code' => 'BBE-' . time(),
                     'address_id' => $addressIdToUse,
@@ -267,36 +278,26 @@ class OrderController extends Controller
                     'order_status_id' => $orderStatus->id,
                     'payment_status_id' => $paymentStatus->id,
                     'total_amount' => $finalTotalAmount,
-                    'shipping_fee' => $request->shipping_fee_applied,
+                    'shipping_fee' => $request->delivery_method === 'pickup' ? 0 : $request->shipping_fee_applied,
                     'discount_amount' => (int) $actualDiscountAmount,
+
+                    'delivery_method' => $request->delivery_method,
                 ]);
 
                 // Tạo OrderItems
-                foreach ($cartItems as $cartItem) {
-                    $orderItem = OrderItem::create([
-                        'id' => (string) Str::uuid(),
-                        'order_id' => $order->id,
-                        'book_id' => $cartItem->book_id,
-                        'book_format_id' => $cartItem->book_format_id,
-                        'quantity' => $cartItem->quantity,
-                        'price' => $cartItem->price,
-                        'total' => $cartItem->quantity * $cartItem->price,
-                    ]);
+            foreach ($cartItems as $cartItem) {
+                // Kiểm tra và log thông tin từng cart item
+                Log::info('Processing cart item:', [
+                    'cart_item_id' => $cartItem->id,
+                    'book_id' => $cartItem->book_id,
+                    'book_format_id' => $cartItem->book_format_id,
+                    'quantity' => $cartItem->quantity,
+                    'price' => $cartItem->price
+                ]);
 
-                    // Lưu thuộc tính sản phẩm
-                    $attributeValueIds = $cartItem->attribute_value_ids ?? [];
-                    if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
-                        foreach ($attributeValueIds as $attributeValueId) {
-                            if ($attributeValueId) {
-                                OrderItemAttributeValue::create([
-                                    'id' => (string) Str::uuid(),
-                                    'order_item_id' => $orderItem->id,
-                                    'attribute_value_id' => $attributeValueId,
-                                ]);
-                            }
-                        }
-                    }
-                }
+
+                // Tạo order sử dụng OrderService
+                $order = $this->orderService->createOrderWithItems($orderData, $cartItems);
 
                 // Tạo mã QR cho đơn hàng
                 $this->qrCodeService->generateOrderQrCode($order);
@@ -316,28 +317,40 @@ class OrderController extends Controller
             }
             $finalTotalAmount = $subtotal + $request->shipping_fee_applied - $actualDiscountAmount;
 //            dd($request->new_email);
-            $order = Order::create([
-                'id' => (string) Str::uuid(),
+            
+            // Chuẩn bị dữ liệu cho order
+            $orderData = [
                 'user_id' => $user->id,
-                'order_code' => 'BBE-' . time(), // Consider a more robust unique order code generation
+                'order_code' => 'BBE-' . time(),
                 'address_id' => $addressIdToUse,
                 'recipient_name' => $request->new_recipient_name,
                 'recipient_phone' => $request->new_phone,
                 'recipient_email' => $request->new_email,
-                // 'shipping_method' => $request->shipping_method,
                 'payment_method_id' => $request->payment_method_id,
-                'voucher_id' => $voucherId ?? null, // Changed to voucher_id
+                'voucher_id' => $voucherId ?? null,
                 'note' => $request->note,
                 'order_status_id' => $orderStatus->id,
                 'payment_status_id' => $paymentStatus->id,
                 'total_amount' => $finalTotalAmount,
-                'shipping_fee' => $request->shipping_fee_applied,
+                'shipping_fee' => $request->delivery_method === 'pickup' ? 0 : $request->shipping_fee_applied,
                 'discount_amount' => (int) $actualDiscountAmount,
+
+                'delivery_method' => $request->delivery_method,
             ]);
 //            dd($order->recipient_email);
 
             // Create OrderItems
             foreach ($cartItems as $cartItem) {
+                // Kiểm tra dữ liệu cart item
+                if (!$cartItem->book_id || !$cartItem->book_format_id) {
+                    Log::error('Invalid cart item data:', [
+                        'cart_item_id' => $cartItem->id,
+                        'book_id' => $cartItem->book_id,
+                        'book_format_id' => $cartItem->book_format_id
+                    ]);
+                    throw new \Exception('Dữ liệu giỏ hàng không hợp lệ.');
+                }
+
                 $orderItem = OrderItem::create([
                     'id' => (string) Str::uuid(),
                     'order_id' => $order->id,
@@ -348,31 +361,9 @@ class OrderController extends Controller
                     'total' => $cartItem->quantity * $cartItem->price,
                 ]);
 
-                // ---- START: Added logic for saving order item attributes ----
-                // IMPORTANT: Adjust '$cartItem->attribute_value_ids' if your cart item structure is different
-                // For example, if attributes are in $cartItem->options['selected_attributes']
-                // then use: $attributeValueIds = $cartItem->options['selected_attributes'] ?? [];
-                $attributeValueIds = $cartItem->attribute_value_ids ?? [];
-                // dd($attributeValueIds);
-                if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
-                    foreach ($attributeValueIds as $attributeValueId) {
-                        if ($attributeValueId) { // Ensure ID is not null or empty
-                            // dd($attributeValueId);
-                            OrderItemAttributeValue::create([
-                                'id' => (string) Str::uuid(), // Assuming your pivot table also uses UUIDs for its PK
-                                'order_item_id' => $orderItem->id,
-                                'attribute_value_id' => $attributeValueId,
-                            ]);
-                        }
-                    }
-                } else {
-                    OrderItemAttributeValue::create([
-                        'id' => (string) Str::uuid(),
-                        'order_item_id' => $orderItem->id,
-                        'attribute_value_id' => 0,  // Save null into the attribute_value_id column
-                    ]);
-                }
-            }
+
+            // Tạo order sử dụng OrderService
+            $order = $this->orderService->createOrderWithItems($orderData, $cartItems);
 
             $payment = $this->paymentService->createPayment([
                 'order_id' => $order->id,
@@ -386,6 +377,18 @@ class OrderController extends Controller
             // Generate and save QR Code using QrCodeService
             $this->qrCodeService->generateOrderQrCode($order);
             $this->emailService->sendOrderConfirmation($order);
+            
+            // Tạo và gửi hóa đơn cho thanh toán COD
+            try {
+                $this->invoiceService->processInvoiceForPaidOrder($order);
+                Log::info('Invoice created and sent for COD order', ['order_id' => $order->id]);
+            } catch (\Exception $e) {
+                Log::error('Failed to create invoice for COD order', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+            
             $successMessage = 'Đặt hàng thành công!';
 
             // Clear the user's cart after successful order
@@ -542,8 +545,13 @@ class OrderController extends Controller
                 DB::rollBack();
                 return redirect()->back()->with('error', 'Lỗi hệ thống khi hủy đơn hàng.');
             }
-            $order->order_status_id = $cancelledStatus->id;
-            $order->save();
+            
+            // Cập nhật đơn hàng với thông tin hủy
+            $order->update([
+                'order_status_id' => $cancelledStatus->id,
+                'cancelled_at' => now(),
+                'cancellation_reason' => implode(", ", $selectedReasons)
+            ]);
 
             DB::commit();
 
@@ -662,14 +670,24 @@ class OrderController extends Controller
                               ->first();
 
             if ($vnp_ResponseCode === '00') {
-                // Thanh toán thành công - nhưng set trạng thái là "Chưa thanh toán"
-                $paymentStatus = PaymentStatus::where('name', 'Chưa thanh toán')->first();
+                // Thanh toán thành công - cập nhật trạng thái thành "Đã Thanh Toán"
+                $paymentStatus = PaymentStatus::where('name', 'Đã Thanh Toán')->first();
+                
+                if (!$paymentStatus) {
+                    Log::error('Payment status "Đã Thanh Toán" not found');
+                    throw new \Exception('Trạng thái thanh toán không tồn tại');
+                }
 
                 if ($payment) {
                     $payment->update([
                         'payment_status_id' => $paymentStatus->id,
-                        'paid_at' => null, // Không set paid_at
+                        'paid_at' => now(), // Set thời gian thanh toán
                         'transaction_id' => $vnp_TransactionNo // Cập nhật với transaction ID từ VNPay
+                    ]);
+                    
+                    Log::info('Payment updated successfully', [
+                        'payment_id' => $payment->id,
+                        'transaction_id' => $vnp_TransactionNo
                     ]);
                 }
 
@@ -677,12 +695,28 @@ class OrderController extends Controller
                 $order->update([
                     'payment_status_id' => $paymentStatus->id
                 ]);
+                
+                Log::info('Order payment status updated to "Đã Thanh Toán"', [
+                    'order_id' => $order->id,
+                    'order_code' => $order->order_code
+                ]);
 
                 // Xóa giỏ hàng sau khi thanh toán thành công
                 Auth::user()->cart()->delete();
 
                 // Gửi email xác nhận
                 $this->emailService->sendOrderConfirmation($order);
+                
+                // Tạo và gửi hóa đơn cho thanh toán VNPay thành công
+                try {
+                    $this->invoiceService->processInvoiceForPaidOrder($order);
+                    Log::info('Invoice created and sent for VNPay order', ['order_id' => $order->id]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create invoice for VNPay order', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
 
                 // Tạo QR code nếu chưa có
                 if (!$order->qr_code) {
@@ -708,7 +742,9 @@ class OrderController extends Controller
                 // Cập nhật trạng thái đơn hàng thành "Đã hủy"
                 $order->update([
                     'order_status_id' => $cancelledStatus->id,
-                    'payment_status_id' => $failedPaymentStatus->id
+                    'payment_status_id' => $failedPaymentStatus->id,
+                    'cancelled_at' => now(),
+                    'cancellation_reason' => 'Thanh toán VNPay thất bại - Mã lỗi: ' . $vnp_ResponseCode
                 ]);
 
                 // Tạo bản ghi hủy đơn hàng

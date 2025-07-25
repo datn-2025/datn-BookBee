@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class AdminInvoiceController extends Controller
 {  
@@ -21,19 +21,27 @@ class AdminInvoiceController extends Controller
         //         $q->with(['book', 'book.author']);
         //     }
         // ]);  
-        // Lọc chỉ lấy các invoice có order với trạng thái 'Thành công'
-        $query->whereHas('order', function($q) {
-            $q->whereHas('orderStatus', function($q) {
-                $q->where('name', 'Thành công');
-            });
-        });
+        // Lọc theo loại hóa đơn
+        if ($request->filled('invoice_type')) {
+            $query->where('type', $request->invoice_type);
+        }
+        
+        // Hiển thị tất cả hóa đơn (bỏ lọc theo trạng thái 'Thành công')
+        // $query->where(function($q) {
+        //     $q->where('type', 'refund')
+        //       ->orWhereHas('order', function($orderQ) {
+        //           $orderQ->whereHas('orderStatus', function($statusQ) {
+        //               $statusQ->where('name', 'Thành công');
+        //           });
+        //       });
+        // });
         $query->with([
             'order' => function($q) {
                 $q->with(['user', 'address', 'paymentMethod']);
                 //   ->where('order_status_id', 'completed'); // Thêm điều kiện lọc đơn hàng đã hoàn thành
             },
             'items' => function($q) {
-                $q->with(['book', 'book.author']);
+                $q->with(['book', 'book.authors']);
             }
         ]);      
         // Gom các điều kiện tìm kiếm liên quan đến order và user

@@ -7,6 +7,39 @@ document.addEventListener('DOMContentLoaded', function() {
         offset: 100
     });
 
+    // Tab switching functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+            
+            // Remove active classes from all buttons
+            tabButtons.forEach(btn => {
+                btn.classList.remove('bg-black', 'text-white');
+                btn.classList.add('bg-gray-100', 'text-black', 'hover:bg-gray-200');
+            });
+            
+            // Add active class to clicked button
+            this.classList.remove('bg-gray-100', 'text-black', 'hover:bg-gray-200');
+            this.classList.add('bg-black', 'text-white');
+            
+            // Hide all tab contents
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+                content.classList.remove('block');
+            });
+            
+            // Show target tab content
+            const targetContent = document.getElementById(targetTab);
+            if (targetContent) {
+                targetContent.classList.remove('hidden');
+                targetContent.classList.add('block');
+            }
+        });
+    });
+
     // Counter animation
     function animateCounter(element, target, duration = 2000) {
         let start = 0;

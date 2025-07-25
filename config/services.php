@@ -38,11 +38,20 @@ return [
         'tmn_code' => env('VNP_TMNCODE'),
         'hash_secret' => env('VNP_HASHSECRET'),
         'url' => env('VNP_URL'),
+        'return_url' => 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction',
     ],
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT'),
+    ],
+
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+    ],
+
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
     ],
 
 ];

@@ -67,7 +67,7 @@ class AdminReviewController extends Controller
                 $q->withCount('reviews')
                   ->withAvg('reviews', 'rating')
                   ->withSum('orderItems as sold_count', 'quantity')
-                  ->with(['author', 'brand', 'category']);
+                  ->with(['authors', 'brand', 'category']);
             },
             'user'
         ]);
