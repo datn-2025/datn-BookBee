@@ -172,11 +172,19 @@ class CartController extends Controller
     public function addToCart(Request $request)
     {
         if (!Auth::check()) {
-            return response()->json(['error' => 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.'], 401);
+            if (request()->wantsJson()) {
+                return response()->json(['error' => 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.'], 401);
+            }
+            return back()->with('error', 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.');
         }
 
         try {
-            // Validate request data
+            // Check if this is a combo request - support multiple ways to detect combo
+            if ($request->has(['combo_id', 'collection_id']) || $request->input('type') === 'combo') {
+                return $this->addComboToCart($request);
+            }
+
+            // Validate request data for books
             $validated = $request->validate([
                 'book_id' => 'required|exists:books,id',
                 'quantity' => 'required|integer|min:1',
@@ -474,35 +482,56 @@ class CartController extends Controller
                 }
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'error' => 'Dữ liệu không hợp lệ: ' . implode(', ', $e->validator->errors()->all())
-            ], 422);
+            $errorMsg = 'Dữ liệu không hợp lệ: ' . implode(', ', $e->validator->errors()->all());
+            if (request()->wantsJson()) {
+                return response()->json(['error' => $errorMsg], 422);
+            }
+            return back()->with('error', $errorMsg);
         } catch (\Exception $e) {
             Log::error('Error in addToCart:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            return response()->json(['error' => 'Có lỗi xảy ra khi thêm vào giỏ hàng'], 500);
+            
+            $errorMsg = 'Có lỗi xảy ra khi thêm vào giỏ hàng';
+            if (request()->wantsJson()) {
+                return response()->json(['error' => $errorMsg], 500);
+            }
+            return back()->with('error', $errorMsg);
         }
     }
 
     public function addComboToCart(Request $request)
     {
         if (!Auth::check()) {
-            return response()->json(['error' => 'Bạn cần đăng nhập để thêm combo vào giỏ hàng.'], 401);
+            if (request()->wantsJson()) {
+                return response()->json(['error' => 'Bạn cần đăng nhập để thêm combo vào giỏ hàng.'], 401);
+            }
+            return back()->with('error', 'Bạn cần đăng nhập để thêm combo vào giỏ hàng.');
         }
 
         try {
             Log::info('addComboToCart called with data:', $request->all());
 
-            // Validate request data
+            // Validate request data - accept both combo_id and collection_id
             $validated = $request->validate([
-                'collection_id' => 'required|exists:collections,id',
-                'quantity' => 'required|integer|min:1'
+                'combo_id' => 'nullable|exists:collections,id',
+                'collection_id' => 'nullable|exists:collections,id',
+                'quantity' => 'required|integer|min:1',
+                'type' => 'nullable|string'
             ]);
 
-            $collectionId = $validated['collection_id'];
+            // Use combo_id if available, otherwise use collection_id
+            $collectionId = $validated['combo_id'] ?? $validated['collection_id'];
+            
+            if (!$collectionId) {
+                if (request()->wantsJson()) {
+                    return response()->json(['error' => 'Dữ liệu không hợp lệ: Không tìm thấy ID combo'], 422);
+                }
+                return back()->with('error', 'Dữ liệu không hợp lệ: Không tìm thấy ID combo');
+            }
+
             $quantity = $validated['quantity'];
 
             Log::info('Validated data:', ['collection_id' => $collectionId, 'quantity' => $quantity]);
@@ -539,23 +568,35 @@ class CartController extends Controller
                     $endDate = $expiredCombo->end_date ? \Carbon\Carbon::parse($expiredCombo->end_date) : null;
 
                     if ($startDate && $now < $startDate) {
-                        return response()->json([
-                            'error' => 'Combo chưa bắt đầu. Thời gian bắt đầu: ' . $startDate->format('d/m/Y H:i')
-                        ], 422);
+                        $errorMsg = 'Combo chưa bắt đầu. Thời gian bắt đầu: ' . $startDate->format('d/m/Y H:i');
+                        if (request()->wantsJson()) {
+                            return response()->json(['error' => $errorMsg], 422);
+                        }
+                        return back()->with('error', $errorMsg);
                     }
 
                     if ($endDate && $now > $endDate) {
-                        return response()->json([
-                            'error' => 'Combo đã kết thúc. Thời gian kết thúc: ' . $endDate->format('d/m/Y H:i')
-                        ], 422);
+                        $errorMsg = 'Combo đã kết thúc. Thời gian kết thúc: ' . $endDate->format('d/m/Y H:i');
+                        if (request()->wantsJson()) {
+                            return response()->json(['error' => $errorMsg], 422);
+                        }
+                        return back()->with('error', $errorMsg);
                     }
 
                     if ($expiredCombo->status !== 'active') {
-                        return response()->json(['error' => 'Combo hiện không khả dụng'], 422);
+                        $errorMsg = 'Combo hiện không khả dụng';
+                        if (request()->wantsJson()) {
+                            return response()->json(['error' => $errorMsg], 422);
+                        }
+                        return back()->with('error', $errorMsg);
                     }
                 }
 
-                return response()->json(['error' => 'Combo không tồn tại hoặc không còn khả dụng'], 404);
+                $errorMsg = 'Combo không tồn tại hoặc không còn khả dụng';
+                if (request()->wantsJson()) {
+                    return response()->json(['error' => $errorMsg], 404);
+                }
+                return back()->with('error', $errorMsg);
             }
 
             // Kiểm tra xem combo đã có trong giỏ hàng chưa
@@ -586,11 +627,14 @@ class CartController extends Controller
 
                 $successMessage = 'Đã thêm ' . $quantity . ' combo "' . $combo->name . '" vào giỏ hàng';
 
-                return response()->json([
-                    'success' => $successMessage,
-                    'current_quantity' => $newQuantity,
-                    'cart_count' => (int) $cartCount
-                ]);
+                if (request()->wantsJson()) {
+                    return response()->json([
+                        'success' => $successMessage,
+                        'current_quantity' => $newQuantity,
+                        'cart_count' => (int) $cartCount
+                    ]);
+                }
+                return back()->with('success', $successMessage);
             } else {
                 // Thêm combo mới vào giỏ hàng
                 Log::info('Adding new combo to cart:', [
@@ -627,11 +671,14 @@ class CartController extends Controller
 
                 $successMessage = 'Đã thêm combo "' . $combo->name . '" vào giỏ hàng';
 
-                return response()->json([
-                    'success' => $successMessage,
-                    'current_quantity' => $quantity,
-                    'cart_count' => (int) $cartCount
-                ]);
+                if (request()->wantsJson()) {
+                    return response()->json([
+                        'success' => $successMessage,
+                        'current_quantity' => $quantity,
+                        'cart_count' => (int) $cartCount
+                    ]);
+                }
+                return back()->with('success', $successMessage);
             }
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -639,16 +686,24 @@ class CartController extends Controller
                 'errors' => $e->validator->errors()->all(),
                 'request_data' => $request->all()
             ]);
-            return response()->json([
-                'error' => 'Dữ liệu không hợp lệ: ' . implode(', ', $e->validator->errors()->all())
-            ], 422);
+            
+            $errorMsg = 'Dữ liệu không hợp lệ: ' . implode(', ', $e->validator->errors()->all());
+            if (request()->wantsJson()) {
+                return response()->json(['error' => $errorMsg], 422);
+            }
+            return back()->with('error', $errorMsg);
         } catch (\Exception $e) {
             Log::error('Error in addComboToCart:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            return response()->json(['error' => 'Có lỗi xảy ra khi thêm combo vào giỏ hàng'], 500);
+            
+            $errorMsg = 'Có lỗi xảy ra khi thêm combo vào giỏ hàng';
+            if (request()->wantsJson()) {
+                return response()->json(['error' => $errorMsg], 500);
+            }
+            return back()->with('error', $errorMsg);
         }
     }
 

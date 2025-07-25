@@ -264,9 +264,8 @@ class OrderController extends Controller
 
             // Nếu thanh toán VNPay, tạo order trước rồi chuyển hướng
             if ($paymentMethod->name == 'Thanh toán vnpay') {
-                // Tạo order trước khi chuyển đến VNPay
-                $order = Order::create([
-                    'id' => (string) Str::uuid(),
+                // Chuẩn bị dữ liệu cho order
+                $orderData = [
                     'user_id' => $user->id,
                     'order_code' => 'BBE-' . time(),
                     'address_id' => $addressIdToUse,
@@ -281,6 +280,7 @@ class OrderController extends Controller
                     'total_amount' => $finalTotalAmount,
                     'shipping_fee' => $request->delivery_method === 'pickup' ? 0 : $request->shipping_fee_applied,
                     'discount_amount' => (int) $actualDiscountAmount,
+
                     'delivery_method' => $request->delivery_method,
                 ]);
 
@@ -295,33 +295,9 @@ class OrderController extends Controller
                     'price' => $cartItem->price
                 ]);
 
-                // Validate dữ liệu cart item
-                if (!$cartItem->book_id || !$cartItem->book_format_id) {
-                    throw new \Exception('Dữ liệu sản phẩm trong giỏ hàng không hợp lệ.');
-                }
 
-                $orderItem = OrderItem::create([
-                    'id' => (string) Str::uuid(),
-                    'order_id' => $order->id,
-                    'book_id' => $cartItem->book_id,
-                    'book_format_id' => $cartItem->book_format_id,
-                    'quantity' => $cartItem->quantity,
-                    'price' => $cartItem->price,
-                    'total' => $cartItem->quantity * $cartItem->price,
-                ]);                    // Lưu thuộc tính sản phẩm
-                    $attributeValueIds = $cartItem->attribute_value_ids ?? [];
-                    if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
-                        foreach ($attributeValueIds as $attributeValueId) {
-                            if ($attributeValueId) {
-                                OrderItemAttributeValue::create([
-                                    'id' => (string) Str::uuid(),
-                                    'order_item_id' => $orderItem->id,
-                                    'attribute_value_id' => $attributeValueId,
-                                ]);
-                            }
-                        }
-                    }
-                }
+                // Tạo order sử dụng OrderService
+                $order = $this->orderService->createOrderWithItems($orderData, $cartItems);
 
                 // Tạo mã QR cho đơn hàng
                 $this->qrCodeService->generateOrderQrCode($order);
@@ -341,23 +317,24 @@ class OrderController extends Controller
             }
             $finalTotalAmount = $subtotal + $request->shipping_fee_applied - $actualDiscountAmount;
 //            dd($request->new_email);
-            $order = Order::create([
-                'id' => (string) Str::uuid(),
+            
+            // Chuẩn bị dữ liệu cho order
+            $orderData = [
                 'user_id' => $user->id,
-                'order_code' => 'BBE-' . time(), // Consider a more robust unique order code generation
+                'order_code' => 'BBE-' . time(),
                 'address_id' => $addressIdToUse,
                 'recipient_name' => $request->new_recipient_name,
                 'recipient_phone' => $request->new_phone,
                 'recipient_email' => $request->new_email,
-                // 'shipping_method' => $request->shipping_method,
                 'payment_method_id' => $request->payment_method_id,
-                'voucher_id' => $voucherId ?? null, // Changed to voucher_id
+                'voucher_id' => $voucherId ?? null,
                 'note' => $request->note,
                 'order_status_id' => $orderStatus->id,
                 'payment_status_id' => $paymentStatus->id,
                 'total_amount' => $finalTotalAmount,
                 'shipping_fee' => $request->delivery_method === 'pickup' ? 0 : $request->shipping_fee_applied,
                 'discount_amount' => (int) $actualDiscountAmount,
+
                 'delivery_method' => $request->delivery_method,
             ]);
 //            dd($order->recipient_email);
@@ -384,27 +361,9 @@ class OrderController extends Controller
                     'total' => $cartItem->quantity * $cartItem->price,
                 ]);
 
-                // ---- START: Added logic for saving order item attributes ----
-                $attributeValueIds = $cartItem->attribute_value_ids ?? [];
-                if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
-                    foreach ($attributeValueIds as $attributeValueId) {
-                        if ($attributeValueId) { // Ensure ID is not null or empty
-                            // dd($attributeValueId);
-                            OrderItemAttributeValue::create([
-                                'id' => (string) Str::uuid(), // Assuming your pivot table also uses UUIDs for its PK
-                                'order_item_id' => $orderItem->id,
-                                'attribute_value_id' => $attributeValueId,
-                            ]);
-                        }
-                    }
-                } else {
-                    OrderItemAttributeValue::create([
-                        'id' => (string) Str::uuid(),
-                        'order_item_id' => $orderItem->id,
-                        'attribute_value_id' => 0,  // Save null into the attribute_value_id column
-                    ]);
-                }
-            }
+
+            // Tạo order sử dụng OrderService
+            $order = $this->orderService->createOrderWithItems($orderData, $cartItems);
 
             $payment = $this->paymentService->createPayment([
                 'order_id' => $order->id,
