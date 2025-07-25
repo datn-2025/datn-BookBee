@@ -11,7 +11,7 @@ class OrderItem extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'id', 'order_id', 'book_id', 'quantity', 'price', 'total',
+        'id', 'order_id', 'book_id', 'book_format_id', 'quantity', 'price', 'total',
     ];
 
     public function order()
@@ -22,6 +22,11 @@ class OrderItem extends Model
     public function book()
     {
         return $this->belongsTo(Book::class);
+    }
+
+    public function bookFormat()
+    {
+        return $this->belongsTo(BookFormat::class);
     }
 
     public function attributeValues()

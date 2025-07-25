@@ -29,42 +29,26 @@
         <div class="col-lg-3 col-6">
             <div class="small-box bg-warning">
                 <div class="inner">
-                    <h3>{{ $expiredVouchers }}</h3>
-                    <p>Voucher sắp hết hạn</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-danger">
-                <div class="inner">
-                    <h3>{{ $usedVouchers }}</h3>
-                    <p>Voucher đã sử dụng</p>
+                    <h3>{{ $inactiveVouchers }}</h3>
+                    <p>Voucher Không hoạt động</p>
                 </div>
                 <div class="icon">
                     <i class="fas fa-times-circle"></i>
                 </div>
             </div>
         </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>{{ $usedVouchersCount }}</h3>
+                    <p>Lượt sử dụng</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-history"></i>
+                </div>
+            </div>
+        </div>
     </div>
-
-    {{-- Display Flash Messages (Added here for index page specifically) --}}
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    {{-- End Display Flash Messages --}}
 
     <div class="row">
         <div class="col-12">
@@ -82,7 +66,7 @@
                 </div>
                 <div class="card-body">
                     <!-- Search and Filter Form -->
-                    <form action="{{ route('admin.vouchers.index') }}" method="GET" class="mb-4">
+                    <form action="{{ route('admin.vouchers.index') }}" method="GET" class="mb-4" id="filter-form">
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="form-group">
@@ -94,10 +78,9 @@
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <select name="status" class="form-control">
-                                        <option value="">Trạng thái</option>
-                                        <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Đang hoạt động</option>
-                                        <option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Hết hạn</option>
-                                        <option value="upcoming" {{ request('status') == 'upcoming' ? 'selected' : '' }}>Sắp diễn ra</option>
+                                        <option value="">Tất cả trạng thái</option>
+                                        <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Hoạt động</option>
+                                        <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Không hoạt động</option>
                                     </select>
                                 </div>
                             </div>
@@ -132,7 +115,6 @@
                             <thead>
                                 <tr>
                                     <th>Mã</th>
-                                    <th>Mô tả</th>
                                     <th>Giảm giá</th>
                                     <th>Điều kiện</th>
                                     <th>Thời hạn</th>
@@ -145,7 +127,6 @@
                                 @forelse($vouchers as $voucher)
                                 <tr>
                                     <td>{{ $voucher->code }}</td>
-                                    <td>{{ Str::limit($voucher->description, 50) }}</td>
                                     <td>
                                         {{ $voucher->discount_percent }}%
                                         @if($voucher->max_discount)
@@ -154,9 +135,6 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if($voucher->min_order_value)
-                                            <div>Đơn tối thiểu: {{ number_format($voucher->min_order_value) }}đ</div>
-                                        @endif
                                         @foreach($voucher->conditions as $condition)
                                             <div>
                                                 @switch($condition->type)
@@ -187,14 +165,10 @@
                                         {{ $voucher->applied_vouchers_count }}/{{ $voucher->quantity }}
                                     </td>
                                     <td>
-                                        @if($voucher->isValid())
-                                            <span class="badge badge-success">Hoạt động</span>
-                                        @elseif($voucher->valid_to < now())
-                                            <span class="badge badge-danger">Hết hạn</span>
-                                        @elseif($voucher->valid_from > now())
-                                            <span class="badge badge-info">Sắp diễn ra</span>
+                                        @if($voucher->status === 'active')
+                                            <span class="badge badge-success text-dark">Hoạt động</span>
                                         @else
-                                            <span class="badge badge-warning">Không hoạt động</span>
+                                            <span class="badge badge-warning text-dark">Không hoạt động</span>
                                         @endif
                                     </td>
                                     <td>
@@ -231,11 +205,41 @@
 
                     <!-- Pagination -->
                     <div class="mt-3">
-                        {{ $vouchers->links('layouts.pagination') }}
+                        {{ $vouchers->withQueryString()->links('layouts.pagination') }}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        // Lắng nghe click trên các liên kết phân trang bên trong .pagination
+        $('.pagination').on('click', 'a.page-link', function(e) {
+            e.preventDefault(); // Ngăn chặn hành vi mặc định
+
+            var url = $(this).attr('href');
+            var pageMatch = url.match(/page=(\d+)/); // Tìm số trang trong URL
+
+            if (pageMatch && pageMatch[1]) {
+                var page = pageMatch[1];
+                var form = $('#filter-form'); // Lấy form lọc
+
+                // Thêm hoặc cập nhật input hidden cho số trang
+                var pageInput = form.find('input[name="page"]');
+                if (pageInput.length === 0) {
+                    pageInput = $('<input type="hidden" name="page">');
+                    form.append(pageInput);
+                }
+                pageInput.val(page);
+
+                // Submit form
+                form.submit();
+            }
+        });
+    });
+</script>
+@endpush
 @endsection

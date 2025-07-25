@@ -18,6 +18,7 @@ class InvoiceSeeder extends Seeder
             Invoice::updateOrCreate(
                 ['order_id' => $order->id],
                 [
+                    'type' => 'sale', // Hóa đơn bán hàng
                     'invoice_date' => now(),
                     'total_amount' => $order->total_amount,
                 ]

@@ -61,14 +61,14 @@
                                             @csrf
                                             @method('PUT')
                                             <button type="submit" class="btn btn-sm btn-success" title="Khôi phục" onclick="return confirm('Khôi phục thương hiệu này?')">
-                                                <i class="ri-reply-line align-bottom me-1"></i> Khôi phục
+                                                <i class="ri-reply-line align-bottom me-1"></i> 
                                             </button>
                                         </form>
                                         <form action="{{ route('admin.categories.brands.force-delete', $brand->id) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-danger" title="Xóa vĩnh viễn" onclick="return confirm('Xóa vĩnh viễn thương hiệu này?')">
-                                                <i class="ri-delete-bin-2-line align-bottom me-1"></i> Xóa vĩnh viễn
+                                                <i class="ri-delete-bin-2-line align-bottom me-1"></i>
                                             </button>
                                         </form>
                                     </div>

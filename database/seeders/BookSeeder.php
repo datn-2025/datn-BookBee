@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
 use App\Models\Book;
 use App\Models\BookFormat;
 use App\Models\BookImage;
@@ -10,29 +11,44 @@ use App\Models\BookAttributeValue;
 use App\Models\Category;
 use App\Models\Author;
 use App\Models\Brand;
-use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
+use Faker\Factory as Faker;
 
 class BookSeeder extends Seeder
 {
     public function run(): void
     {
-        // Đảm bảo có dữ liệu cần thiết trước khi tạo sách
-        $categories = Category::all();
+        $faker = Faker::create('vi_VN');
         $authors = Author::all();
         $brands = Brand::all();
-
+        $categories = Category::all();
         if ($categories->isEmpty() || $authors->isEmpty() || $brands->isEmpty()) {
-            throw new \Exception('Cần chạy CategorySeeder, AuthorSeeder và BrandSeeder trước.');
+            $this->command->error('Vui lòng chạy CategorySeeder, AuthorSeeder và BrandSeeder trước!');
+            return;
         }
 
         // Tạo sách cho mỗi danh mục
         foreach ($categories as $category) {
             // Tạo 5 sách cho mỗi danh mục
             for ($i = 0; $i < 5; $i++) {
-                $book = Book::factory()->create();
+                $book = Book::create([
+                    'id' => (string) Str::uuid(),
+                    'title' => 'Sách ' . ($i + 1),
+                    'slug' => 'sach-' . ($i + 1) . '-' . Str::random(4),
+                    'description' => 'Mô tả sách ' . ($i + 1),
+                    'category_id' => $category->id,
+                    'brand_id' => $brands->random()->id,
+                    'status' => 'available',
+                    'cover_image' => 'https://picsum.photos/200/300',
+                    'isbn' => 'ISBN' . rand(100000, 999999),
+                    'publication_date' => now(),
+                    'page_count' => rand(100, 500),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
 
                 // 70% sách có bản bìa cứng
-                if (fake()->boolean(70)) {
+                if (fake()->boolean(30)) {
                     BookFormat::factory()->create([
                         'book_id' => $book->id,
                         'format_name' => 'Sách Vật Lý',
@@ -40,7 +56,7 @@ class BookSeeder extends Seeder
                 }
 
                 // 50% sách có bản ebook
-                if (fake()->boolean(50)) {
+                if (fake()->boolean(10)) {
                     BookFormat::factory()->create([
                         'book_id' => $book->id,
                         'format_name' => 'Ebook'

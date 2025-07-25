@@ -25,12 +25,17 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="d-flex align-items-center">
-                            <h5 class="card-title flex-grow-1 mb-0">Mã đơn hàng: #{{ substr($order->id, 0, 8) }}</h5>
+                            <h5 class="card-title flex-grow-1 mb-0">Mã đơn hàng: #{{ $order->order_code }}</h5>
                             <div class="flex-shrink-0">
                                 <div class="d-flex gap-2">
                                     <a href="{{ route('admin.orders.edit', $order->id) }}" class="btn btn-success btn-sm">
                                         <i class="ri-pencil-fill align-middle me-1"></i> Cập nhật trạng thái
                                     </a>
+                                    @if($order->orderStatus->name === 'Thành công' && $order->paymentStatus->name === 'Đã Thanh Toán' && !in_array($order->paymentStatus->name, ['Đang Hoàn Tiền', 'Đã Hoàn Tiền']))
+                                        <a href="{{ route('admin.refunds.show', $order->id) }}" class="btn btn-warning btn-sm">
+                                            <i class="ri-refund-2-line align-middle me-1"></i> Hoàn tiền
+                                        </a>
+                                    @endif
                                     <button type="button" class="btn btn-primary btn-sm">
                                         <i class="ri-printer-fill align-middle me-1"></i> In hóa đơn
                                     </button>
@@ -45,37 +50,46 @@
                                     <h5 class="text-muted mb-3">Thông tin khách hàng</h5>
                                     <div class="card border shadow-none mb-2">
                                         <div class="card-body">
-                                            <div class="d-flex mb-3">
-                                                <div class="flex-shrink-0">
-                                                    <img src="{{ asset('assets/images/users/avatar-1.jpg') }}" alt="" class="avatar-sm rounded">
-                                                </div>
-                                                <div class="flex-grow-1 ms-3">
-                                                    <h6 class="fs-15 mb-1">{{ $order->user->name ?? 'N/A' }}</h6>
-                                                    <p class="text-muted mb-0">Khách hàng</p>
+                                           <a href="{{route('admin.users.show' , $order->user_id)}}" style="text-decoration: none; color: #0a0c0d">
+                                               <div class="d-flex mb-3">
+                                                   <div class="flex-shrink-0">
+                                                       <img src="{{ asset('assets/images/users/avatar-1.jpg') }}" alt="" class="avatar-sm rounded">
+                                                   </div>
+                                                   <div class="flex-grow-1 ms-3">
+                                                       <h6 class="fs-15 mb-1">{{ $order->user->name ?? 'N/A' }}</h6>
+                                                       <p class="text-muted mb-0">Người Đặt</p>
+                                                   </div>
+                                               </div>
+                                               <ul class="list-unstyled mb-0 vstack gap-2">
+                                                   <li>
+                                                       <div class="d-flex">
+                                                           <div class="flex-shrink-0 text-muted">
+                                                               <i class="ri-mail-line me-1 fs-16 align-middle"></i>
+                                                           </div>
+                                                           <div class="flex-grow-1">
+                                                               <span>{{ $order->user->email ?? 'N/A' }}</span>
+                                                           </div>
+                                                       </div>
+                                                   </li>
+                                               </ul>
+                                           </a>
+                                        </div>
+                                    </div>
+                                    <div class="card border shadow-none mb-3">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between ">
+                                                <div>
+                                                    <p class="text-muted mb-2">Người nhận</p>
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fa-solid fa-signature"></i>
+                                                        <h6 class="fs-15 mb-0 ms-2">{{ $order->recipient_name ?? 'N/A' }}</h6>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <ul class="list-unstyled mb-0 vstack gap-2">
-                                                <li>
-                                                    <div class="d-flex">
-                                                        <div class="flex-shrink-0 text-muted">
-                                                            <i class="ri-mail-line me-1 fs-16 align-middle"></i>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <span>{{ $order->user->email ?? 'N/A' }}</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div class="d-flex">
-                                                        <div class="flex-shrink-0 text-muted">
-                                                            <i class="ri-phone-line me-1 fs-16 align-middle"></i>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <span>{{ $order->user->phone ?? 'N/A' }}</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            </ul>
+                                            <div class="d-flex align-items-center">
+                                                <i class="ri-phone-line me-2 fs-16 text-muted"></i>
+                                                <span>{{ $order->recipient_phone ?? 'N/A' }}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -100,6 +114,17 @@
                                                 <li>
                                                     <div class="d-flex">
                                                         <div class="flex-shrink-0 text-muted">
+                                                            <i class="ri-mail-send-line me-1 fs-16 align-middle"></i>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-1 fs-14">Huyện:</h6>
+                                                            <p class="text-muted mb-0">{{ $order->address->district . ', ' .  $order->address->ward }}</p>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                                <li>
+                                                    <div class="d-flex">
+                                                        <div class="flex-shrink-0 text-muted">
                                                             <i class="ri-building-line me-1 fs-16 align-middle"></i>
                                                         </div>
                                                         <div class="flex-grow-1">
@@ -111,11 +136,17 @@
                                                 <li>
                                                     <div class="d-flex">
                                                         <div class="flex-shrink-0 text-muted">
-                                                            <i class="ri-mail-send-line me-1 fs-16 align-middle"></i>
+                                                            <i class="ri-truck-line me-1 fs-16 align-middle"></i>
                                                         </div>
                                                         <div class="flex-grow-1">
-                                                            <h6 class="mb-1 fs-14">Huyện:</h6>
-                                                            <p class="text-muted mb-0">{{ $order->address->district . ', ' .  $order->address->ward }}</p>
+                                                            <h6 class="mb-1 fs-14">Phương thức nhận hàng:</h6>
+                                                            <p class="text-muted mb-0">
+                                                                @if($order->delivery_method === 'pickup')
+                                                                    <span class="badge bg-info">Nhận tại cửa hàng</span>
+                                                                @else
+                                                                    <span class="badge bg-primary">Giao hàng tận nơi</span>
+                                                                @endif
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </li>
@@ -130,7 +161,7 @@
                                     <div class="card border shadow-none mb-2">
                                         <div class="card-body text-center">
                                             @if($order->qr_code)
-                                                <img src="{{ asset('storage/' . $order->qr_code) }}" alt="QR Code" class="img-fluid rounded" style="max-width: 180px">
+                                                <img src="{{ url('storage/private/' . $order->qr_code) }}" alt="QR Code" class="img-fluid rounded" style="max-width: 150px">
                                                 <p class="text-muted mt-3 mb-0">Quét mã QR để xem thông tin đơn hàng</p>
                                             @else
                                                 <div class="avatar-lg mx-auto">
@@ -164,12 +195,12 @@
                                             <div class="flex-grow-1 ms-3">
                                                 <h6 class="mb-1">Trạng thái đơn hàng</h6>
                                                 <p class="text-muted mb-0">
-                                                <span class="badge rounded-pill 
-                                                    @if($order->orderStatus->name == 'Đã giao thành công') bg-success 
+                                                <span class="badge rounded-pill
+                                                    @if($order->orderStatus->name == 'Đã giao thành công') bg-success
                                                     @elseif($order->orderStatus->name == 'Đang xử lý') bg-warning text-dark
-                                                    @elseif($order->orderStatus->name == 'Đang giao hàng') bg-info 
-                                                    @elseif($order->orderStatus->name == 'Giao thất bại') bg-danger 
-                                                    @elseif($order->orderStatus->name == 'Chờ xác nhận') bg-secondary 
+                                                    @elseif($order->orderStatus->name == 'Đang giao hàng') bg-info
+                                                    @elseif($order->orderStatus->name == 'Giao thất bại') bg-danger
+                                                    @elseif($order->orderStatus->name == 'Chờ xác nhận') bg-secondary
                                                     @else bg-dark  @endif">
                                                     {{ $order->orderStatus->name ?? 'N/A' }}
                                                 </span>
@@ -191,10 +222,10 @@
                                             <div class="flex-grow-1 ms-3">
                                                 <h6 class="mb-1">Trạng thái thanh toán</h6>
                                                 <p class="text-muted mb-0">
-                                                <span class="badge rounded-pill 
-                                                    @if($order->paymentStatus->name == 'Đã Thanh Toán') bg-success 
+                                                <span class="badge rounded-pill
+                                                    @if($order->paymentStatus->name == 'Đã Thanh Toán') bg-success
                                                     @elseif($order->paymentStatus->name == 'Chưa Thanh Toán') bg-warning text-dark
-                                                    @elseif($order->paymentStatus->name == 'Thất Bại') bg-danger 
+                                                    @elseif($order->paymentStatus->name == 'Thất Bại') bg-danger
                                                     @else bg-secondary  @endif">
                                                     {{ $order->paymentStatus->name ?? 'N/A' }}
                                                 </span>
@@ -225,39 +256,42 @@
                                         @php $total = 0; @endphp
                                         @if(isset($orderItems) && $orderItems->count() > 0)
                                             @foreach($orderItems as $index => $item)
-                                                @php 
+                                                @php
                                                     $subtotal = $item->price * $item->quantity;
                                                     $total += $subtotal;
                                                     $book = $item->book;
-                                                    $format = $book ? $book->formats->first() : null;
+                                                    $format = $bookFormat;
                                                 @endphp
                                                 <tr>
                                                     <td>{{ $index + 1 }}</td>
                                                     <td>
-                                                        @if($book)
-                                                            <div class="d-flex align-items-center">
-                                                                @if($book->cover_image)
-                                                                    <img src="{{ asset('storage/' . $book->cover_image) }}" 
-                                                                        alt="{{ $book->title }}" class="me-2" 
-                                                                        style="width: 40px; height: 50px; object-fit: cover;">
-                                                                @endif
-                                                                <div>
-                                                                    <h6 class="mb-0">{{ $book->title }}</h6>
-                                                                    <small class="text-muted">ISBN: {{ $book->isbn ?? 'N/A' }}</small>
-                                                                </div>
-                                                            </div>
-                                                        @else
-                                                            {{ $item->book_id ?? 'Sản phẩm không tồn tại' }}
-                                                        @endif
+                                                       <a href="{{route('admin.books.show', [$book->id, $book->slug])}}" style="text-decoration: none; color: #0a0c0d">
+{{--                                                            Hiển thị thông tin sách--}}
+                                                           @if($book)
+                                                               <div class="d-flex align-items-center">
+                                                                   @if($book->cover_image)
+                                                                       <img src="{{ asset('storage/' . $book->cover_image) }}"
+                                                                            alt="{{ $book->title }}" class="me-2"
+                                                                            style="width: 40px; height: 50px; object-fit: cover;">
+                                                                   @endif
+                                                                   <div>
+                                                                       <h6 class="mb-0">{{ $book->title }}</h6>
+                                                                       <small class="text-muted">ISBN: {{ $book->isbn ?? 'N/A' }}</small>
+                                                                   </div>
+                                                               </div>
+                                                           @else
+                                                               {{ $item->book_id ?? 'Sản phẩm không tồn tại' }}
+                                                           @endif
+                                                       </a>
                                                     </td>
                                                     <td>
-                                                        @if($format)
-                                                            <span class="badge bg-info">{{ $format->format_name }}</span>
+                                                        @if($bookFormat)
+                                                            <span class="badge bg-info">{{ $bookFormat }}</span>
                                                         @else
                                                             <span class="text-muted">N/A</span>
                                                         @endif
                                                     </td>
-                                                    <td>    
+                                                    <td>
                                                         @if($item->attributeValues && $item->attributeValues->count() > 0)
                                                             @foreach($item->attributeValues as $attrValue)
                                                                 <span class="badge bg-light text-dark">{{ $attrValue->attribute->name }}: {{ $attrValue->value }}</span>
@@ -273,7 +307,7 @@
                                             @endforeach
                                         @elseif(isset($order->invoice) && $order->invoice->items->count() > 0)
                                             @foreach($order->invoice->items as $index => $item)
-                                                @php 
+                                                @php
                                                     $subtotal = $item->price * $item->quantity;
                                                     $total += $subtotal;
                                                     $book = $item->book;
@@ -285,8 +319,8 @@
                                                         @if($book)
                                                             <div class="d-flex align-items-center">
                                                                 @if($book->cover_image)
-                                                                    <img src="{{ asset('storage/' . $book->cover_image) }}" 
-                                                                        alt="{{ $book->title }}" class="me-2" 
+                                                                    <img src="{{ asset('storage/' . $book->cover_image) }}"
+                                                                        alt="{{ $book->title }}" class="me-2"
                                                                         style="width: 40px; height: 50px; object-fit: cover;">
                                                                 @endif
                                                                 <div>
@@ -325,11 +359,15 @@
                                             <td>{{ number_format($total ?? $order->total_amount, 0, ',', '.') }}đ</td>
                                         </tr>
                                         @if($order->voucher)
-                                        <tr>
-                                            <th colspan="6" class="text-end">Giảm giá ({{ $order->voucher->code }}):</th>
-                                            <td>- {{ number_format($order->voucher->discount_amount, 0, ',', '.') }}đ</td>
-                                        </tr>
+                                            <tr>
+                                                <th colspan="6" class="text-end">Giảm giá ({{ $order->voucher->code }}):</th>
+                                                <td> {{ number_format($order->discount_amount, 0, ',', '.') }}đ</td>
+                                            </tr>
                                         @endif
+                                        <tr>
+                                            <th colspan="6" class="text-end">Vận Chuyển ({{ $order->shipping_fee == 20000 ? 'Giao Hàng Tiết Kiệm' : 'Giao Hàng Nhanh' }}):</th>
+                                            <td> {{ number_format($order->shipping_fee, 0, ',', '.') }}đ</td>
+                                        </tr>
                                         <tr class="fw-bold">
                                             <th colspan="6" class="text-end">Tổng thanh toán:</th>
                                             <td>{{ number_format($order->total_amount, 0, ',', '.') }}đ</td>
@@ -344,7 +382,7 @@
             <div class="col-xl-3">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Thông tin thanh toán</h5>
+                        <h5 class="card-title mb-0">Thông tin đơn hàng</h5>
                     </div>
                     <div class="card-body">
                         <div class="mb-4">
@@ -379,7 +417,7 @@
                                 </div>
                             </div>
                         </div>
-                        @if(isset($order->payments) && count($order->payments) > 0 && $order->paymentStatus->name == 'Đã thanh toán')
+                        @if(isset($order->payments) && count($order->payments) > 0 && $order->paymentStatus->name == 'Đã Thanh Toán')
                         <div class="mb-4">
                             <h6 class="mb-2">Lịch sử thanh toán</h6>
                             <div class="border rounded p-3">
@@ -393,7 +431,7 @@
                                         @endif
                                     </div>
                                     <div class="flex-shrink-0">
-                                        <span class="badge 
+                                        <span class="badge
                                             @if($payment->status == 'Thành công') bg-success
                                             @elseif($payment->status == 'Đang xử lý') bg-warning
                                             @elseif($payment->status == 'Thất bại') bg-danger
@@ -406,7 +444,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         @if($order->invoice)
                         <div class="mb-4">
                             <div class="d-flex mb-2">
@@ -424,7 +462,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         <div class="mb-4">
                             <div class="d-flex mb-2">
                                 <div class="flex-shrink-0">
@@ -440,8 +478,55 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Thông tin hủy hàng --}}
+                        @if($order->cancelled_at && in_array($order->orderStatus->name, ['Đã hủy', 'Đã Hủy']))
+                        <div class="mb-4">
+                            <div class="d-flex mb-2">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar-sm">
+                                        <div class="avatar-title bg-light text-danger rounded-circle shadow fs-3">
+                                            <i class="ri-close-circle-line"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">Ngày hủy hàng</h6>
+                                    <p class="text-muted mb-0">{{ $order->cancelled_at->format('d/m/Y H:i') }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex mb-2">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar-sm">
+                                        <div class="avatar-title bg-light text-warning rounded-circle shadow fs-3">
+                                            <i class="ri-information-line"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">Lý do hủy hàng</h6>
+                                    <p class="text-muted mb-0">{{ $order->cancellation_reason ?? 'Không có lý do cụ thể' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
+
+                {{-- QR Code Display --}}
+                @if ($order->qr_code_path)
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Mã QR Đơn Hàng</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <img src="{{ asset('storage/' . $order->qr_code_path) }}" alt="Order QR Code" class="img-fluid" style="max-width: 200px; border: 1px solid #ddd; padding: 5px;">
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
 @endsection

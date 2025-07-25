@@ -19,11 +19,14 @@ class CategorySeeder extends Seeder
             'Sách Giáo Khoa'
         ];
 
-        foreach ($categories as $category) {
+        foreach ($categories as $index => $category) {
             Category::create([
+                'id' => (string) Str::uuid(),
                 'name' => $category,
-                'slug' => Str::slug($category),
-                'image' => null
+                'slug' => Str::slug($category) . '-' . Str::random(4),
+                'image' => 'categories/category-' . ($index + 1) . '.jpg',
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
     }

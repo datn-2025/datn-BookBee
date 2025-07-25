@@ -16,11 +16,11 @@ class BookFormatFactory extends Factory
             'Ebook' => [30000, 80000],       // Giá ebook thường thấp hơn
             'Sách Vật Lý' => [50000, 150000],  // Giá cao nhất
         ];
-        
+
         $format = $this->faker->randomElement(array_keys($prices));
         $priceRange = $prices[$format];
         $isPhysical = in_array($format, ['Sách Vật Lý']);
-        
+
         return [
             'book_id' => Book::factory(),
             'format_name' => $format,

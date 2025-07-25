@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('order_item_attribute_values', function (Blueprint $table) {
-            $table->char('id', 36)->primary();
+            // $table->char('id', 36)->primary();
             $table->char('order_item_id', 36);
             $table->char('attribute_value_id', 36);
             $table->timestamps();

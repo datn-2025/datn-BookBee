@@ -7,13 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+
 class Category extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'slug', 'image'];
+    protected $fillable = ['name', 'slug', 'description', 'image', 'status'];
 
-    public $incrementing = false; 
+    public $incrementing = false;
     protected $keyType = 'string';
 
     public function books(): HasMany
@@ -50,7 +51,6 @@ class Category extends Model
     // Sản phẩm thuộc danh mục
     public function products()
     {
-        return $this->hasMany(Product::class,'category_id');
+        return $this->hasMany(Book::class, 'category_id');
     }
-
 }

@@ -43,8 +43,8 @@
                             <a href="{{ route('admin.categories.authors.create') }}" class="btn btn-success btn-sm">
                                 <i class="ri-add-line me-1"></i> Thêm tác giả
                             </a>
-                            <a href="{{ route('admin.categories.authors.trash') }}" class="btn btn-danger btn-sm">
-                                <i class="ri-delete-bin-line me-1"></i> Thùng rác
+                            <a href="{{ route('admin.categories.authors.trash') }}" class="btn btn-outline-danger">
+                               <i class="ri-delete-bin-2-line align-bottom me-1"></i> Thùng rác
                                 @if($trashCount > 0)
                                     <span class="badge bg-light text-danger ms-1">{{ $trashCount }}</span>
                                 @endif

@@ -14,7 +14,7 @@ class VoucherFactory extends Factory
     {
         $startDate = $this->faker->dateTimeBetween('now', '+1 month');
         $endDate = $this->faker->dateTimeBetween($startDate, '+6 months');
-        
+
         return [
             'code' => strtoupper(Str::random(8)),
             'description' => $this->faker->sentence,
@@ -24,7 +24,7 @@ class VoucherFactory extends Factory
             'valid_from' => $startDate,
             'valid_to' => $endDate,
             'quantity' => $this->faker->numberBetween(50, 1000),
-            'status' => $this->faker->randomElement(['active', 'expired', 'disabled'])
+            'status' => $this->faker->randomElement(['active', 'inactive'])
         ];
     }
 
@@ -43,7 +43,7 @@ class VoucherFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'status' => 'expired',
+                'status' => 'inactive',
                 'valid_from' => now()->subMonths(2),
                 'valid_to' => now()->subDays(1)
             ];

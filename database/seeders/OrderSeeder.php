@@ -16,11 +16,20 @@ class OrderSeeder extends Seeder
         })->get();
 
         foreach ($users as $user) {
-            // Mỗi user có 1-3 đơn hàng
+            $address = $user->addresses()->inRandomOrder()->first();
+
+            // Nếu user chưa có địa chỉ, bạn có thể tạo địa chỉ mới hoặc bỏ qua user này
+            if (!$address) {
+                // Tạo địa chỉ mới cho user (nếu bạn có AddressFactory)
+                $address = \App\Models\Address::factory()->create([
+                    'user_id' => $user->id,
+                ]);
+            }
+
             Order::factory(rand(1, 3))->create([
                 'user_id' => $user->id,
-                'address_id' => $user->addresses()->inRandomOrder()->first()->id,
-                'order_status_id' => OrderStatus::inRandomOrder()->first()->id
+                'address_id' => $address->id,
+                'order_status_id' => OrderStatus::inRandomOrder()->first()->id,
             ]);
         }
     }

@@ -21,70 +21,66 @@
                         <div class="col-md-6">
                             <table class="table table-bordered">
                                 <tr>
-                                    <th style="width: 200px;">Mã Voucher</th>
-                                    <td>{{ $voucher->code }}</td>
+                                    <th style="width: 200px; color: #000;">Mã Voucher</th>
+                                    <td style="color: #000;">{{ $voucher->code }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Mô tả</th>
-                                    <td>{{ $voucher->description }}</td>
+                                    <th style="color: #000;">Mô tả</th>
+                                    <td style="color: #000;">{{ $voucher->description }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Phần trăm giảm</th>
-                                    <td>{{ $voucher->discount_percent }}%</td>
+                                    <th style="color: #000;">Phần trăm giảm</th>
+                                    <td style="color: #000;">{{ $voucher->discount_percent }}%</td>
                                 </tr>
                                 <tr>
-                                    <th>Giảm tối đa</th>
-                                    <td>{{ number_format($voucher->max_discount) }} VNĐ</td>
+                                    <th style="color: #000;">Giảm tối đa</th>
+                                    <td style="color: #000;">{{ number_format($voucher->max_discount) }} VNĐ</td>
                                 </tr>
                                 <tr>
-                                    <th>Đơn tối thiểu</th>
-                                    <td>{{ number_format($voucher->min_order_value) }} VNĐ</td>
+                                    <th style="color: #000;">Đơn tối thiểu</th>
+                                    <td style="color: #000;">{{ number_format($voucher->min_order_value) }} VNĐ</td>
                                 </tr>
                                 <tr>
-                                    <th>Số lượng phát hành</th>
-                                    <td>{{ $voucher->quantity }}</td>
+                                    <th style="color: #000;">Số lượng phát hành</th>
+                                    <td style="color: #000;">{{ $voucher->quantity }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Đã sử dụng</th>
-                                    <td>{{ $voucher->used_count ?? 0 }} lần</td>
+                                    <th style="color: #000;">Đã sử dụng</th>
+                                    <td style="color: #000;">{{ $voucher->used_count ?? 0 }} lần</td>
                                 </tr>
                                 <tr>
-                                    <th>Còn lại</th>
-                                    <td>{{ $voucher->remaining_quantity }}</td>
+                                    <th style="color: #000;">Còn lại</th>
+                                    <td style="color: #000;">{{ $voucher->remaining_quantity }}</td>
                                 </tr>
                             </table>
                         </div>
                         <div class="col-md-6">
                             <table class="table table-bordered">
                                 <tr>
-                                    <th>Ngày bắt đầu</th>
-                                    <td>{{ $voucher->valid_from->format('d/m/Y') }}</td>
+                                    <th style="color: #000;">Ngày bắt đầu</th>
+                                    <td style="color: #000;">{{ $voucher->valid_from->format('d/m/Y') }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Ngày kết thúc</th>
-                                    <td>{{ $voucher->valid_to->format('d/m/Y') }}</td>
+                                    <th style="color: #000;">Ngày kết thúc</th>
+                                    <td style="color: #000;">{{ $voucher->valid_to->format('d/m/Y') }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Trạng thái</th>
-                                    <td>
-                                        @if($voucher->isValid())
-                                            <span class="badge badge-success">Hoạt động</span>
-                                        @elseif($voucher->valid_to < now())
-                                            <span class="badge badge-danger">Hết hạn</span>
-                                        @elseif($voucher->valid_from > now())
-                                            <span class="badge badge-info">Sắp diễn ra</span>
+                                    <th style="color: #000;">Trạng thái</th>
+                                    <td style="color: #000;">
+                                        @if($voucher->status === 'active')
+                                            <span class="badge badge-success" style="color: #000 !important;">Hoạt động</span>
                                         @else
-                                            <span class="badge badge-warning">Không hoạt động</span>
+                                            <span class="badge badge-warning" style="color: #000 !important;">Không hoạt động</span>
                                         @endif
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th>Ngày tạo</th>
-                                    <td>{{ $voucher->created_at->format('d/m/Y H:i') }}</td>
+                                    <th style="color: #000;">Ngày tạo</th>
+                                    <td style="color: #000;">{{ $voucher->created_at->format('d/m/Y H:i') }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Cập nhật lần cuối</th>
-                                    <td>{{ $voucher->updated_at->format('d/m/Y H:i') }}</td>
+                                    <th style="color: #000;">Cập nhật lần cuối</th>
+                                    <td style="color: #000;">{{ $voucher->updated_at->format('d/m/Y H:i') }}</td>
                                 </tr>
                             </table>
                         </div>

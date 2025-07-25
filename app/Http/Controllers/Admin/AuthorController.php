@@ -15,6 +15,9 @@ class AuthorController extends Controller
         try {
             $query = Author::query();
 
+            // Sắp xếp theo mới nhất đến cũ nhất
+            $query->orderBy('created_at', 'desc');
+
             if (!empty($request['search_name'])) {
                 $query->where('name', 'like', '%' . $request['search_name'] . '%');
             }

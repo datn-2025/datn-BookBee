@@ -94,22 +94,18 @@
                                             <td>{{ $author->deleted_at->format('d/m/Y H:i') }}</td>
                                             <td>
                                                 <div class="btn-group">
-                                                    <form action="{{ route('admin.categories.authors.restore', $author->id) }}"
-                                                        method="POST" class="d-inline">
+                                                    <form action="{{ route('admin.categories.authors.restore', $author->id) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         @method('PUT')
-                                                        <button type="submit" class="btn btn-sm btn-success" title="Khôi phục">
-                                                            <i class="las la-undo"></i>
+                                                        <button type="submit" class="btn btn-sm btn-success" title="Khôi phục" onclick="return confirm('Khôi phục tác giả này?')">
+                                                            <i class="ri-reply-line align-bottom me-1"></i> 
                                                         </button>
                                                     </form>
-                                                    <form action="{{ route('admin.categories.authors.force-delete', $author->id) }}"
-                                                        method="POST" class="d-inline">
+                                                    <form action="{{ route('admin.categories.authors.force-delete', $author->id) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger"
-                                                            onclick="return confirm('Bạn có chắc muốn xóa vĩnh viễn tác giả này? Hành động này không thể hoàn tác.')"
-                                                            title="Xóa vĩnh viễn">
-                                                            <i class="las la-times"></i>
+                                                        <button type="submit" class="btn btn-sm btn-danger" title="Xóa vĩnh viễn" onclick="return confirm('Bạn có chắc muốn xóa vĩnh viễn tác giả này? Hành động này không thể hoàn tác.')">
+                                                            <i class="ri-delete-bin-2-line align-bottom me-1"></i> 
                                                         </button>
                                                     </form>
                                                 </div>

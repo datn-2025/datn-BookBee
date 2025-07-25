@@ -49,45 +49,35 @@ class VoucherController extends Controller
         }
 
         // Filter by status
-        if ($request->has('status')) {
-            $now = now()->toDateString();
-            switch ($request->status) {
-                case 'active':
-                    $query->where('status', 'active')
-                          ->where('valid_from', '<=', $now)
-                          ->where('valid_to', '>=', $now);
-                    break;
-                case 'expired':
-                    $query->where(function($q) use ($now) {
-                        $q->where('valid_to', '<', $now)
-                          ->orWhere('status', 'inactive');
-                    });
-                    break;
-                case 'upcoming':
-                    $query->where('valid_from', '>', $now);
-                    break;
-            }
+        if ($request->has('status') && in_array($request->status, ['active', 'inactive'])) {
+            $query->where('status', $request->status);
         }
 
         $vouchers = $query->latest()->paginate(10);
+
+        // Thống kê số lượng voucher theo trạng thái đơn giản (chỉ active/inactive)
         $totalVouchers = Voucher::count();
-        $activeVouchers = Voucher::where('status', 'active')
-            ->where('valid_from', '<=', now())
-            ->where('valid_to', '>=', now())
-            ->count();
-        $expiredVouchers = Voucher::where('valid_to', '<', now())->count();
-        $usedVouchers = Voucher::whereHas('appliedVouchers')->count();
-        return view('admin.vouchers.index', compact('vouchers', 'totalVouchers', 'activeVouchers', 'expiredVouchers', 'usedVouchers'));
+        $activeVouchers = Voucher::where('status', 'active')->count();
+        $inactiveVouchers = Voucher::where('status', 'inactive')->count();
+        $usedVouchersCount = \App\Models\AppliedVoucher::count();
+
+        return view('admin.vouchers.index', compact(
+            'vouchers',
+            'totalVouchers',
+            'activeVouchers',
+            'inactiveVouchers',
+            'usedVouchersCount'
+        ));
     }
 
     public function create()
     {
-        $books = Book::select('id', 'title')->get();
-        $authors = Author::select('id', 'name')->get();
-        $brands = Brand::select('id', 'name')->get();
-        $categories = Category::select('id', 'name')->get();
+        $categories = Category::all();
+        $authors = Author::all();
+        $brands = Brand::all();
+        $books = Book::all();
 
-        return view('admin.vouchers.create', compact('books', 'authors', 'brands', 'categories'));
+        return view('admin.vouchers.create', compact('categories', 'authors', 'brands', 'books'));
     }
 
     public function store(VoucherRequest $request)
@@ -117,12 +107,12 @@ class VoucherController extends Controller
             if ($validated['condition_type'] === 'all') {
                 $voucher->conditions()->create(['type' => 'all']);
             } else {
-                $conditionIds = $request->input('condition_ids', []);
-                if (!empty($conditionIds)) {
-                    foreach ($conditionIds as $conditionId) {
+                $conditionObjects = $request->input('condition_objects', []);
+                if (!empty($conditionObjects)) {
+                    foreach ($conditionObjects as $conditionObjectId) {
                         $voucher->conditions()->create([
                             'type' => $validated['condition_type'],
-                            'condition_id' => $conditionId
+                            'condition_id' => $conditionObjectId
                         ]);
                     }
                 }
@@ -167,10 +157,52 @@ class VoucherController extends Controller
             'conditions.bookCondition'
         ]);
 
-        $categories = Category::select('id', 'name')->get();
-        $authors = Author::select('id', 'name')->get();
-        $brands = Brand::select('id', 'name')->get();
-        $books = Book::select('id', 'title')->get();
+        $categories = Category::select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'status' => 'active'
+                ];
+            });
+
+        $authors = Author::select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'status' => 'active'
+                ];
+            });
+
+        $brands = Brand::select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'status' => 'active'
+                ];
+            });
+
+        $books = Book::select('id', 'title')
+            ->orderBy('title', 'asc')
+            ->with(['authors:id,name', 'brand:id,name'])
+            ->get()
+            ->map(function($book) {
+                $authorInfo = $book->authors->isNotEmpty() ? ' - ' . $book->authors->first()->name : '';
+                $brandInfo = $book->brand ? ' (' . $book->brand->name . ')' : '';
+                return [
+                    'id' => $book->id,
+                    'name' => $book->title . $authorInfo . $brandInfo,
+                    'status' => 'active'
+                ];
+            });
 
         return view('admin.vouchers.edit', compact('voucher', 'categories', 'authors', 'brands', 'books'));
     }
@@ -185,7 +217,7 @@ class VoucherController extends Controller
             $validated['max_discount'] = (float) str_replace(',', '', $validated['max_discount']);
             $validated['min_order_value'] = (float) str_replace(',', '', $validated['min_order_value']);
 
-            // Update voucher
+            // Update voucher (bỏ qua trường code)
             $voucher->update([
                 'description' => $validated['description'] ?? null,
                 'discount_percent' => $validated['discount_percent'],
@@ -204,12 +236,12 @@ class VoucherController extends Controller
             if ($validated['condition_type'] === 'all') {
                 $voucher->conditions()->create(['type' => 'all']);
             } else {
-                $conditionIds = $request->input('condition_ids', []);
-                if (!empty($conditionIds)) {
-                    foreach ($conditionIds as $conditionId) {
+                $conditionObjects = $request->input('condition_objects', []);
+                if (!empty($conditionObjects)) {
+                    foreach ($conditionObjects as $conditionObjectId) {
                         $voucher->conditions()->create([
                             'type' => $validated['condition_type'],
-                            'condition_id' => $conditionId
+                            'condition_id' => $conditionObjectId
                         ]);
                     }
                 }
@@ -286,25 +318,107 @@ class VoucherController extends Controller
 
     public function getConditionOptions(Request $request)
     {
-        $conditionType = $request->input('condition_type');
-        $options = [];
+        try {
+            $type = $request->input('condition_type');
+            $voucherId = $request->input('voucher_id');
 
-        switch ($conditionType) {
-            case 'book':
-                $options = Book::select('id', 'title as name')->get();
-                break;
-            case 'category':
-                $options = Category::select('id', 'name')->get();
-                break;
-            case 'author':
-                $options = Author::select('id', 'name')->get();
-                break;
-            case 'brand':
-                $options = Brand::select('id', 'name')->get();
-                break;
+            if (!$type) {
+                return response()->json(['error' => 'Loại điều kiện không được để trống'], 400);
+            }
+
+            $options = collect();
+            $selectedIds = [];
+
+            // Lấy danh sách đã chọn nếu đang edit voucher
+            if ($voucherId) {
+                try {
+                    $voucher = Voucher::findOrFail($voucherId);
+                    $selectedIds = $voucher->conditions()
+                        ->where('type', $type)
+                        ->pluck('condition_id')
+                        ->toArray();
+                } catch (\Exception $e) {
+                    // Nếu không tìm thấy voucher, coi như đang tạo mới
+                    $selectedIds = [];
+                }
+            }
+
+            switch ($type) {
+                case 'category':
+                    $options = Category::select('id', 'name')
+                        ->orderBy('name')
+                        ->get()
+                        ->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'name' => $item->name,
+                                'status' => 'active'
+                            ];
+                        });
+                    break;
+
+                case 'author':
+                    $options = Author::select('id', 'name')
+                        ->orderBy('name')
+                        ->get()
+                        ->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'name' => $item->name,
+                                'status' => 'active'
+                            ];
+                        });
+                    break;
+
+                case 'brand':
+                    $options = Brand::select('id', 'name')
+                        ->orderBy('name')
+                        ->get()
+                        ->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'name' => $item->name,
+                                'status' => 'active'
+                            ];
+                        });
+                    break;
+
+                case 'book':
+                    try {
+                        $options = Book::select('id', 'title')
+                            ->with(['authors', 'brand'])
+                            ->orderBy('title')
+                            ->get()
+                            ->map(function ($item) {
+                                $authorInfo = $item->authors->first() ? " - " . $item->authors->first()->name : "";
+                                $brandInfo = $item->brand ? " (" . $item->brand->name . ")" : "";
+                                return [
+                                    'id' => $item->id,
+                                    'name' => $item->title . $authorInfo . $brandInfo,
+                                    'status' => 'active'
+                                ];
+                            });
+                    } catch (\Exception $e) {
+                        return response()->json(['error' => 'Lỗi khi lấy danh sách sách: ' . $e->getMessage()], 500);
+                    }
+                    break;
+
+                default:
+                    return response()->json(['error' => 'Loại điều kiện không hợp lệ'], 400);
+            }
+
+            if ($options->isEmpty()) {
+                return response()->json(['error' => 'Không tìm thấy đối tượng nào'], 404);
+            }
+
+            return response()->json([
+                'options' => $options,
+                'selected_ids' => $selectedIds
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Lỗi: ' . $e->getMessage()], 500);
         }
-
-        return response()->json(['options' => $options]);
     }
 
     public function search(Request $request)

@@ -1,0 +1,162 @@
+/* Typography enhancements */
+h2 {
+    font-family: 'Arial Black', 'Helvetica Neue', sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.02em;
+}
+
+/* Button hover effects */
+.group:hover .group-hover\:w-8 {
+    width: 2rem;
+}
+
+/* Clean animations */
+.group:hover .group-hover\:scale-105 {
+    transform: scale(1.05);
+}
+
+.group:hover .group-hover\:translate-x-1 {
+    transform: translateX(0.25rem);
+}
+
+.group:hover .group-hover\:-translate-y-1 {
+    transform: translateY(-0.25rem);
+}
+
+.group:hover .group-hover\:translate-y-1 {
+    transform: translateY(0.25rem);
+}
+
+/* Background elements */
+.opacity-3 {
+    opacity: 0.03;
+}
+
+/* Smooth transitions */
+* {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.swiper-pagination-bullet-custom {
+    opacity: 1;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.swiper-pagination-bullet-active-custom {
+    background: white !important;
+    transform: scale(1.2);
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@keyframes slideIn {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+@keyframes slideInRight {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceSlowly {
+    0%, 100% { transform: rotate(45deg) translateY(0); }
+    50% { transform: rotate(45deg) translateY(-10px); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+
+@keyframes floatDelayed {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+}
+
+.animate-slide-in {
+    animation: slideIn 0.8s ease-out forwards;
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.8s ease-out forwards;
+    animation-delay: 0.6s;
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-bounce-slow {
+    animation: bounceSlowly 3s ease-in-out infinite;
+}
+
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+    animation: floatDelayed 8s ease-in-out infinite;
+    animation-delay: 2s;
+}
+
+/* Parallax scroll effect */
+[data-scroll-speed] {
+    transition: transform 0.1s ease-out;
+}
+
+/* Counter animation */
+.counter-animate {
+    transition: all 0.3s ease;
+}
+
+/* Card hover effects enhancement */
+.group:hover .fas {
+    animation: pulse 0.6s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Ripple animation */
+@keyframes ripple {
+    to {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* Smooth transitions for all elements */
+* {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Progressive enhancement for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

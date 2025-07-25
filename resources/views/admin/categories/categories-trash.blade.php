@@ -1,138 +1,137 @@
 @extends('layouts.backend')
 
-@section('title', 'Thùng Rác - Danh mục')
+@section('title', 'Thùng Rác - Danh mục loại sách')
 
 @section('content')
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
     <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="page-title-box d-sm-flex align-items-center justify-content-between bg-galaxy-transparent">
-                    <h4 class="mb-sm-0">Thùng Rác - Danh mục</h4>
-                    <div class="page-title-right">
-                        <ol class="breadcrumb m-0">
-                            <li class="breadcrumb-item"><a href="{{ route('admin.categories.index') }}">Quản lý tác giả</a>
-                            </li>
-                            <li class="breadcrumb-item active">Thùng rác</li>
-                        </ol>
-                    </div>
-                </div>
+        <!-- Tiêu đề -->
+        <div class="row mb-3">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Thùng rác - Danh mục loại sách</h4>
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="{{ route('admin.categories.index') }}">Danh mục</a></li>
+                    <li class="breadcrumb-item active">Thùng rác</li>
+                </ol>
             </div>
         </div>
 
-        <div class="row">
-            <div class="col">
-                <div class="card">
-                    <div class="card-header align-items-center d-flex justify-content-between">
-                        <h4 class="card-title mb-0">Danh Sách Danh mục Đã Xóa</h4>
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('admin.categories.index') }}" class="btn btn-primary btn-sm">
-                                <i class="las la-arrow-left"></i> Quay lại
-                            </a>
-                        </div>
-                    </div>
+        <div class="card">
+            <!-- Header -->
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Danh sách danh mục đã xoá</h5>
+                <a href="{{ route('admin.categories.index') }}" class="btn btn-primary btn-sm">
+                    <i class="ri-arrow-go-back-line me-1"></i> Quay lại
+                </a>
+            </div>
 
-                    <!-- Thanh tìm kiếm tác giả đã xóa -->
-                    <div class="row mb-4 mt-2">
-                        <div class="d-flex justify-content-sm-end">
-                            <form action="{{ route('admin.categories.trash') }}" method="GET" class="d-flex gap-2">
-                                <div class="col-auto">
-                                    <input type="text" name="search_name" class="form-control"
-                                        placeholder="Tìm kiếm theo tên danh mục đã xóa" value="{{ $searchName }}">
-                                </div>
-                                <div class="col-auto">
-                                    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
-                                    <a href="{{ route('admin.categories.trash') }}" class="btn btn-secondary">Đặt lại
-                                    </a>
-                                </div>
-                            </form>
+            <div class="card-body">
+                <!-- Thông báo -->
+                @foreach (['success' => 'success', 'error' => 'danger'] as $key => $type)
+                    @if (session($key))
+                        <div class="alert alert-{{ $type }} alert-dismissible fade show" role="alert">
+                            {{ session($key) }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
-                    </div>
+                    @endif
+                @endforeach
 
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-nowrap align-middle mb-0">
-                                <thead>
+                <!-- Tìm kiếm -->
+                <form method="GET" action="{{ route('admin.categories.trash') }}"
+                    class="d-flex justify-content-end gap-2 mb-3">
+                    <input type="text" name="search_name_category" class="form-control"
+                        placeholder="Tìm theo tên danh mục" value="{{ request('search_name_category') }}"
+                        style="width: 220px;">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="ri-search-2-line"></i> Tìm kiếm
+                    </button>
+                    <a href="{{ route('admin.categories.trash') }}" class="btn btn-outline-secondary px-4">
+                        <i class="ri-refresh-line"></i> Làm mới
+                    </a>
+                </form>
+
+                <!-- Danh sách -->
+                @if ($deletedCategories->isEmpty())
+                    <div class="text-center py-5">
+                        @if (request()->filled('search_name_category'))
+                            <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop"
+                                style="width:75px;height:75px"></lord-icon>
+                            <h5 class="mt-3 text-danger">Không tìm thấy danh mục</h5>
+                            <p class="text-muted">Không có danh mục nào khớp với
+                                <strong>"{{ request('search_name_category') }}"</strong>.
+                            </p>
+                        @else
+                            <lord-icon src="https://cdn.lordicon.com/jmkrnisz.json" trigger="loop"
+                                style="width:90px;height:90px"></lord-icon>
+                            <h5 class="mt-3 text-muted">Thùng rác trống</h5>
+                            <p class="text-muted">Không có danh mục nào bị xoá.</p>
+                        @endif
+                    </div>
+                @else
+                    <div class="table-responsive">
+                        <table class="table align-middle table-nowrap">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Tên</th>
+                                    <th>Ảnh</th>
+                                    <th class="text-center">Số lượng sách</th>
+                                    <th>Ngày xoá</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($deletedCategories as $key => $category)
                                     <tr>
-                                        <th scope="col">STT</th>
-                                        <th scope="col">Tên Danh Muc</th>
-                                        <th scope="col">Ảnh</th>
-                                        <th scope="col">Số Lượng Sách</th>
-                                        <th scope="col">Ngày Tạo</th>
-                                        <th scope="col">Ngày Xóa</th>
-                                        <th scope="col">Thao Tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($deletedCategories as $key => $category)
-                                        <tr>
-                                            <td>{{ $deletedCategories->firstItem() + $key }}</td>
-                                            <td>{{ $category->name }}</td>
-                                            <td>
-                                                <img src="{{ $category->image }}" alt="{{ $category->name }}" class="rounded"
-                                                    style="width: 50px; height: 50px; object-fit: cover;">
-                                            </td>
-                                            <td>{{ $category->books_count }} cuốn</td>
-                                            <td>{{ $category->created_at->format('d/m/Y H:i') }}</td>
-                                            <td>{{ $category->deleted_at->format('d/m/Y H:i') }}</td>
-                                            <td>
-                                                <div class="btn-group">
-                                                    <form action="{{ route('admin.categories.restore', $category->id) }}"
-                                                        method="POST" class="d-inline">
-                                                        @csrf
-                                                        @method('PUT')
-                                                        <button type="submit" class="btn btn-sm btn-success" title="Khôi phục">
-                                                            <!-- <i class="las la-undo"></i> -->
-                                                            <i class="fas fa-undo"></i>
-                                                        </button>
-                                                    </form>
-                                                    <form action="{{ route('admin.categories.force-delete', $category->id) }}"
-                                                        method="POST" class="d-inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger"
-                                                            onclick="<?php
-                                                                if ($category->books_count > 0) {
-                                                                    echo "alert('Danh mục này có sách, bạn không thể xóa vĩnh viễn.'); return false;";
-                                                                } else {
-                                                                    echo "return confirm('Bạn có chắc muốn xóa vĩnh viễn danh mục này? Hành động này không thể hoàn tác.');";
-                                                                }
-                                                            ?>"
-                                                            title="Xóa vĩnh viễn">
-                                                            <!-- <i class="las la-times"></i> -->
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="7" class="text-center">Không có danh mục nào trong thùng rác</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
+                                        <td>{{ $deletedCategories->firstItem() + $key }}</td>
+                                        <td>{{ $category->name }}</td>
+                                        <td>
+                                            @if ($category->image)
+                                                <img src="{{ asset('storage/' . $category->image) }}"
+                                                    alt="{{ $category->name }}" width="50" height="50"
+                                                    class="rounded object-fit-cover">
+                                            @else
+                                                <span class="text-muted">Không có ảnh</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">{{ $category->books_count }}</td>
+                                        <td>{{ $category->deleted_at->format('d/m/Y H:i') }}</td>
+                                        <td>
+                                            <!-- Khôi phục -->
+                                            <form action="{{ route('admin.categories.restore', $category->slug) }}"
+                                                method="POST" class="d-inline">
+                                                @csrf @method('PUT')
+                                                <button class="btn btn-sm btn-success" title="Khôi phục">
+                                                    <i class="ri-reply-line"></i>
+                                                </button>
+                                            </form>
 
-                        <div class="d-flex justify-content-center mt-4">
-                            {{ $deletedCategories->links('pagination::bootstrap-5') }}
-                        </div>
+                                            <!-- Xoá vĩnh viễn -->
+                                            <form action="{{ route('admin.categories.force-delete', $category->slug) }}"
+                                                method="POST" class="d-inline">
+                                                @csrf @method('DELETE')
+                                                <button class="btn btn-sm btn-danger" title="Xoá vĩnh viễn"
+                                                    onclick="return confirm('Xoá vĩnh viễn danh mục này?')"
+                                                    {{ $category->books_count > 0 ? 'disabled' : '' }}>
+                                                    <i class="ri-delete-bin-fill"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
-                </div>
+
+                    <!-- Phân trang -->
+                    <div class="d-flex justify-content-between align-items-center mt-3 px-3">
+                        <small class="text-muted">
+                            Hiển thị <strong>{{ $deletedCategories->firstItem() }}</strong> đến
+                            <strong>{{ $deletedCategories->lastItem() }}</strong> trong tổng số
+                            <strong>{{ $deletedCategories->total() }}</strong> danh mục
+                        </small>
+                        {{ $deletedCategories->links('pagination::bootstrap-4') }}
+                    </div>
+                @endif
             </div>
         </div>
     </div>

@@ -25,12 +25,13 @@ class Voucher extends Model
     ];
 
     protected $casts = [
-        'valid_from' => 'datetime',
-        'valid_to' => 'datetime',
-        'discount_percent' => 'float',
+        'valid_from' => 'date',
+        'valid_to' => 'date',
+        'discount_percent' => 'decimal:2',
         'max_discount' => 'decimal:2',
         'min_order_value' => 'decimal:2',
-        'quantity' => 'integer'
+        'quantity' => 'integer',
+        'status' => 'string'
     ];
 
     public $incrementing = false;
@@ -41,7 +42,7 @@ class Voucher extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            if (empty($model->id)) {
+            if (!$model->id) {
                 $model->id = (string) Str::uuid();
             }
         });
@@ -86,12 +87,13 @@ class Voucher extends Model
                     ->where('type', 'book');
     }
 
+
     public function isValid()
     {
         $now = now()->startOfDay();
         return $this->status === 'active'
             && $now->between($this->valid_from, $this->valid_to)
-            && ($this->quantity > $this->appliedVouchers()->count());
+            && $this->quantity > 0;
     }
 
     public function getUsedCountAttribute()

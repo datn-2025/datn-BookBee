@@ -15,7 +15,6 @@ class VoucherRequest extends FormRequest
     public function rules()
     {
         $rules = [
-            'code' => ['required', 'string', 'max:50', 'unique:vouchers,code,' . $this->voucher?->id],
             'description' => ['nullable', 'string', 'max:255'],
             'discount_percent' => ['required', 'numeric', 'min:0', 'max:100'],
             'max_discount' => ['required', 'numeric', 'min:0'],
@@ -23,13 +22,18 @@ class VoucherRequest extends FormRequest
             'quantity' => ['required', 'integer', 'min:1'],
             'valid_from' => ['required', 'date'],
             'valid_to' => ['required', 'date', 'after:valid_from'],
-            'status' => ['required', Rule::in(['active', 'inactive'])],
+            'status' => ['required', 'string', Rule::in(['active', 'inactive'])],
             'condition_type' => ['required', Rule::in(['all', 'book', 'author', 'brand', 'category'])],
         ];
 
+        // Chỉ validate code khi tạo mới
+        if (!$this->voucher) {
+            $rules['code'] = ['required', 'string', 'max:50', 'unique:vouchers,code'];
+        }
+
         if ($this->input('condition_type') !== 'all') {
-            $rules['condition_ids'] = ['required', 'array', 'min:1'];
-            $rules['condition_ids.*'] = ['required', 'exists:' . $this->getTableForType() . ',id'];
+            $rules['condition_objects'] = ['required', 'array', 'min:1'];
+            $rules['condition_objects.*'] = ['required', 'exists:' . $this->getTableForType() . ',id'];
         }
 
         return $rules;
@@ -65,8 +69,8 @@ class VoucherRequest extends FormRequest
             'valid_to.after' => 'Ngày kết thúc phải sau ngày bắt đầu',
             'status.required' => 'Vui lòng chọn trạng thái',
             'condition_type.required' => 'Vui lòng chọn loại điều kiện',
-            'condition_ids.required' => 'Vui lòng chọn ít nhất một điều kiện',
-            'condition_ids.*.exists' => 'Điều kiện không tồn tại'
+            'condition_objects.required' => 'Vui lòng chọn ít nhất một đối tượng',
+            'condition_objects.*.exists' => 'Đối tượng không tồn tại'
         ];
     }
 

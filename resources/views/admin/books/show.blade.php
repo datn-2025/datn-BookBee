@@ -55,7 +55,9 @@
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <p class="text-muted mb-1">Tác giả:</p>
-                                        <h6>{{ $book->author->name }}</h6>
+                                        <h6>
+                                            {{ $book->author ? $book->author->pluck('name')->join(', ') : '' }}
+                                        </h6>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <p class="text-muted mb-1">Thương hiệu:</p>
@@ -68,7 +70,7 @@
                                     <div class="col-md-6 mb-3">
                                         <p class="text-muted mb-1">Trạng thái:</p>
                                         <h6>
-                                            <span class="badge 
+                                            <span class="badge
                                              @switch($book->status)
                                                 @case('Còn Hàng')
                                                     bg-success
@@ -125,7 +127,7 @@
                             </div>
                             <div class="card-body text-center">
                                 @if($book->cover_image)
-                                    <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" 
+                                    <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}"
                                         class="img-fluid rounded shadow-sm" style="max-height: 300px;">
                                 @else
                                     <div class="border rounded p-3 bg-light text-center">
@@ -149,7 +151,7 @@
                                 @foreach($book->images as $image)
                                     <div class="col-md-2 col-sm-4 col-6 mb-3">
                                         <a href="{{ asset('storage/' . $image->image_url) }}" target="_blank">
-                                            <img src="{{ asset('storage/' . $image->image_url) }}" alt="Hình ảnh sách" 
+                                            <img src="{{ asset('storage/' . $image->image_url) }}" alt="Hình ảnh sách"
                                                 class="img-fluid rounded shadow-sm" style="height: 150px; object-fit: cover; width: 100%;">
                                         </a>
                                     </div>
@@ -379,9 +381,53 @@
                         @endif
                     </div>
                 </div>
+
+                <!-- Quà tặng kèm sách -->
+                <div class="card border shadow-none mb-4">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Quà tặng kèm sách</h5>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="toggle-gift-list" {{ count($book->gifts) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="toggle-gift-list">Hiển thị quà tặng</label>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3" id="gift-list-section" style="display:{{ count($book->gifts) ? '' : 'none' }};">
+                            <label class="form-label">Quà tặng kèm sách</label>
+                            <ul>
+                                @foreach($book->gifts as $gift)
+                                    <li>
+                                        <strong>{{ $gift->gift_name }}</strong>
+                                        @if($gift->gift_description)
+                                            - {{ $gift->gift_description }}
+                                        @endif
+                                        @if($gift->gift_image)
+                                            <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="gift" width="32">
+                                        @endif
+                                        <span class="badge bg-info ms-2">Số lượng: {{ $gift->quantity }}</span>
+                                        @if($gift->start_date || $gift->end_date)
+                                            <span class="badge bg-secondary ms-2">
+                                                @if($gift->start_date) Bắt đầu: {{ date('d/m/Y', strtotime($gift->start_date)) }} @endif
+                                                @if($gift->end_date) - Kết thúc: {{ date('d/m/Y', strtotime($gift->end_date)) }} @endif
+                                            </span>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    document.getElementById('toggle-gift-list').addEventListener('change', function() {
+        document.getElementById('gift-list-section').style.display = this.checked ? '' : 'none';
+    });
+</script>
+@endpush

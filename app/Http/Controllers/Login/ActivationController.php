@@ -15,28 +15,28 @@ class ActivationController extends Controller
         
         if (!$user) {
             Toastr::error('Không tìm thấy tài khoản.', 'Lỗi');
-            return redirect()->route('account.login');
+            return redirect()->route('login');
         }        // Kiểm tra token và thời gian hết hạn
         $token = $request->query('token');
         $expires = $request->query('expires');
         
         if (!$token || !$expires || $expires < now()->timestamp) {
             Toastr::error('Liên kết kích hoạt không hợp lệ hoặc đã hết hạn.', 'Lỗi');
-            return redirect()->route('account.login');
+            return redirect()->route('login');
         }
 
         // Chỉ kiểm tra token khớp với email
         if ($token !== sha1($user->email)) {
             Toastr::error('Liên kết kích hoạt không hợp lệ.', 'Lỗi');
-            return redirect()->route('account.login');
+            return redirect()->route('login');
         }        if ($user->status === 'Hoạt Động') {
             Toastr::info('Tài khoản đã được kích hoạt trước đó.', 'Thông báo');
-            return redirect()->route('account.login');
+            return redirect()->route('login');
         }        $user->status = 'Hoạt Động';
         $user->remember_token = sha1(time() . $user->email);
         $success = $user->save();
 
         Toastr::success('Kích hoạt tài khoản thành công!', 'Thành công');
-        return redirect()->route('account.login');
+        return redirect()->route('login');
     }
 }

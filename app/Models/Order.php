@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
+
 class Order extends Model
 {
     use HasFactory;
@@ -17,16 +18,28 @@ class Order extends Model
         'address_id',
         'voucher_id',
         'total_amount',
+        'order_code',
         'order_status_id',
+        'payment_method_id',
         'payment_status_id',
-        'qr_code'
+        'qr_code',
+        'shipping_fee',
+        'note',
+        'discount_amount',
+        'recipient_name',
+        'recipient_phone',
+        'recipient_email',
+        'cancelled_at',
+        'cancellation_reason',
+        'delivery_method',
     ];
 
     protected $casts = [
-        'total_amount' => 'decimal:2'
+        'total_amount' => 'decimal:2',
+        'cancelled_at' => 'datetime',
     ];
 
-    public $incrementing = false; 
+    public $incrementing = false;
     protected $keyType = 'string';
 
     public function user(): BelongsTo
@@ -54,6 +67,11 @@ class Order extends Model
         return $this->belongsTo(PaymentStatus::class);
     }
 
+    public function paymentMethod(): BelongsTo
+    {
+        return $this->belongsTo(PaymentMethod::class);
+    }
+
     public function invoice(): HasOne
     {
         return $this->hasOne(Invoice::class);
@@ -64,15 +82,25 @@ class Order extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function refundRequests(): HasMany
+    {
+        return $this->hasMany(RefundRequest::class);
+    }
+
     public function appliedVoucher(): HasOne
     {
         return $this->hasOne(AppliedVoucher::class);
     }
-    
+
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    //  public function shipping()
+    // {
+    //     return $this->hasOne(shipping::class);
+    // }
 
     protected static function boot()
     {
@@ -83,5 +111,22 @@ class Order extends Model
                 $model->id = (string) Str::uuid();
             }
         });
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function shippingAddress()
+    {
+        // Giả sử bạn có trường shipping_address_id trong bảng orders
+        return $this->belongsTo(Address::class, 'shipping_address_id');
+    }
+
+    public function billingAddress()
+    {
+        // Giả sử bạn có trường billing_address_id trong bảng orders
+        return $this->belongsTo(Address::class, 'billing_address_id');
     }
 }

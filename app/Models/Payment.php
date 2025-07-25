@@ -15,7 +15,8 @@ class Payment extends Model
         'payment_method_id',
         'transaction_id',
         'amount',
-        'paid_at'
+        'paid_at',
+        'payment_status_id'
     ];
 
     protected $casts = [
@@ -23,7 +24,7 @@ class Payment extends Model
         'paid_at' => 'datetime'
     ];
 
-    public $incrementing = false; 
+    public $incrementing = false;
     protected $keyType = 'string';
 
     public function order(): BelongsTo
@@ -34,6 +35,10 @@ class Payment extends Model
     public function paymentMethod(): BelongsTo
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+    public function paymentStatus(): BelongsTo
+    {
+        return $this->belongsTo(PaymentStatus::class, 'payment_status_id');
     }
 
     protected static function boot()

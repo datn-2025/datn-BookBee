@@ -11,9 +11,9 @@ use Illuminate\Support\Str;
 class Brand extends Model
 {
     use HasFactory, SoftDeletes;
-    
 
-    protected $fillable = ['name', 'description', 'image'];
+
+    protected $fillable = ['name', 'description', 'image', 'status'];
 
     public $incrementing = false;
     protected $keyType = 'string';

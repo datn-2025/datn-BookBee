@@ -98,8 +98,8 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <h6>ID:</h6>
-                            <p class="text-muted">{{ $contact->id }}</p>
+                            <h6>Địa chỉ:</h6>
+                            <p class="text-muted">{{ $contact->address }}</p>
                         </div>
                         <div class="mb-3">
                             <h6>Ngày tạo:</h6>

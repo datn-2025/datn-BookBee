@@ -16230,7 +16230,7 @@ span.flatpickr-weekday {
   position: absolute;
   bottom: -18px;
   right: -35px;
-}rder-radius: 0.25rem;
+  border-radius: 0.25rem;
 }
 @media (max-width: 576.98px) {
   .about-img-section::before {

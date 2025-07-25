@@ -15,7 +15,8 @@ class PaymentMethodFactory extends Factory
             'name' => $this->faker->unique()->randomElement([
                 'COD (thanh toán khi nhận hàng)',
                 'Chuyển khoản ngân hàng',
-                'VNPAY'
+                'VNPAY',
+                'Thanh toán vnpay'
             ])
         ];
     }

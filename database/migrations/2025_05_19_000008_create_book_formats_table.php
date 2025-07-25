@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('book_formats', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('book_id');
-            $table->string('format_name', 50);
+            $table->string('format_name');
             $table->decimal('price', 12, 2);
             $table->decimal('discount', 12, 2)->nullable();
             $table->integer('stock')->nullable();
@@ -29,9 +29,7 @@ return new class extends Migration
 
             // Add indexes for frequently accessed columns
             $table->index('book_id');
-            $table->index('format_name');
             $table->index('price');
-            $table->index(['book_id', 'format_name']); // Composite index for searching specific formats of a book
         });
     }
 

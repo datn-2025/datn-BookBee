@@ -170,9 +170,10 @@
                                         <th scope="col">QR Code</th>
                                         <th scope="col">Khách hàng</th>
                                         <th scope="col">Địa chỉ</th>
+                                        <th scope="col">Phương thức nhận hàng</th>
                                         <th scope="col">Tổng tiền</th>
                                         <th scope="col">Trạng thái đơn hàng</th>
-                                        <th scope="col">Ngày đặt</th>
+                                        <th scope="col">Ngày Tạo</th>
                                         <th scope="col">Thao tác</th>
                                     </tr>
                                 </thead>
@@ -182,7 +183,7 @@
                                         <td>{{$order->order_code }}</td>
                                         <td class="text-center">
                                             @if($order->qr_code)
-                                            <img src="{{ asset('storage/' . $order->qr_code) }}" alt="QR Code"
+                                            <img src="{{ url('storage/private/' . $order->qr_code) }}" alt="QR Code"
                                                 class="avatar-sm rounded">
                                             @else
                                             <span class="badge bg-light text-muted">Không có</span>
@@ -211,6 +212,13 @@
                                                 {{ $order->address->district ?? 'N/A' }},
                                                 {{ $order->address->city ?? '' }}
                                             </span>
+                                        </td>
+                                        <td class="text-center">
+                                            @if($order->delivery_method === 'pickup')
+                                                <span class="badge bg-info">Nhận tại cửa hàng</span>
+                                            @else
+                                                <span class="badge bg-primary">Giao hàng tận nơi</span>
+                                            @endif
                                         </td>
                                         <td class="fw-medium">{{ number_format($order->total_amount, 0, ',', '.') }}đ
                                         </td>
@@ -255,20 +263,20 @@
                                                             Cập nhật
                                                         </a>
                                                     </li>
-                                                    <li class="dropdown-divider"></li>
+                                                    <!-- <li class="dropdown-divider"></li>
                                                     <li>
-                                                        <a href="#" class="dropdown-item">
+                                                        <a href="{{ route('admin.invoices.show', $order->id) }}" class="dropdown-item">
                                                             <i class="ri-printer-fill align-bottom me-2 text-muted"></i>
                                                             In hóa đơn
                                                         </a>
-                                                    </li>
+                                                    </li> -->
                                                 </ul>
                                             </div>
                                         </td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="9" class="text-center">
+                                        <td colspan="10" class="text-center">
                                             <div class="py-4">
                                                 <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop"
                                                     colors="primary:#405189,secondary:#0ab39c"

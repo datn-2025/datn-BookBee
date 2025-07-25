@@ -5,23 +5,242 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@yield('title', 'Trang tài khoản')</title>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>{{ get_setting() ? get_setting()->name_website : 'BookBee' }} - @yield('title')</title>
+    <link rel="shortcut icon" href="{{ asset('storage/' . (get_setting() ? get_setting()->favicon : 'default_favicon.ico')) }}" />
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
     <!-- Bootstrap CSS -->
-    {{-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" /> --}}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
     <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
-    @vite(['resources/js/app.js' , 'resources/css/app.css'])
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+
+    <!-- Toastr CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+
     @stack('styles')
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- Toastr JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <!-- Cart Count Manager -->
+    <script src="{{ asset('js/cart-count-manager.js') }}"></script>
+
+    <!-- Prevent FOUC Script -->
+    <script>
+        // Ensure page loads smoothly without flash
+        document.documentElement.style.visibility = 'visible';
+        document.documentElement.style.opacity = '1';
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js" async></script>
+
+    <!-- IntersectionObserver polyfill -->
+    <script>
+        if (!('IntersectionObserver' in window)) {
+            document.write('<script src="https://polyfill.io/v3/polyfill.min.js?features=IntersectionObserver"><\/script>');
+        }
+    </script>
+
+    <!-- Google Fonts Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Critical CSS để prevent FOUC -->
+    <style>
+      /* Critical CSS - Load ngay để tránh navbar nháy */
+      nav {
+        background-color: white;
+        border-bottom: 1px solid #f3f4f6;
+        position: relative;
+        z-index: 50;
+      }
+      
+      .nav-container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
+      
+      .nav-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 4rem;
+      }
+      
+      .nav-logo h2 {
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: black;
+        text-transform: uppercase;
+        letter-spacing: -0.025em;
+        margin: 0;
+      }
+      
+      .nav-desktop {
+        display: none;
+      }
+      
+      @media (min-width: 768px) {
+        .nav-desktop {
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+        }
+        
+        .nav-menu {
+          display: flex;
+          gap: 2rem;
+        }
+        
+        .nav-link {
+          color: #374151;
+          font-weight: 500;
+          font-size: 0.875rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          text-decoration: none;
+          transition: color 0.2s ease;
+        }
+        
+        .nav-link:hover {
+          color: black;
+        }
+        
+        .nav-icons {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+      }
+      
+      .mobile-menu-btn {
+        display: block;
+        padding: 0.5rem;
+        color: #6b7280;
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+      
+      @media (min-width: 768px) {
+        .mobile-menu-btn {
+          display: none;
+        }
+      }
+      
+      /* Prevent FOUC và ensure smooth loading */
+      html {
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+      
+      body {
+        margin: 0;
+        min-height: 100vh;
+        visibility: visible !important;
+        opacity: 1 !important;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      
+      /* Ensure all elements load without flash */
+      * {
+        box-sizing: border-box;
+      }
+      
+      .adidas-nav {
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      .adidas-btn {
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .adidas-btn:hover {
+        transform: scale(1.05);
+      }
+      .adidas-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+      }
+      .adidas-btn:hover::before {
+        left: 100%;
+      }
+      .adidas-gradient-text {
+        background: linear-gradient(45deg, #000000, #767677, #000000);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+    </style>
 </head>
 
 <body style="margin:0; min-height:100vh;">
     @include('layouts.partials.navbar')
     @yield('content')
+
     {!! Toastr::message() !!}
+
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     @stack('scripts')
     @include('layouts.partials.footer')
+    <script>
+       $(document).ready(function() {
+    // Lấy tỉnh thành
+    $.getJSON('https://provinces.open-api.vn/api/p/', function(provinces) {
+        provinces.forEach(function(province) {
+            $("#tinh").append(`<option value="${province.code}">${province.name}</option>`);
+        });
+    });
+
+    // Xử lý khi chọn tỉnh
+    $("#tinh").change(function() {
+        const provinceCode = $(this).val();
+        $("#ten_tinh").val($(this).find("option:selected").text());
+        
+        // Lấy quận/huyện
+        $.getJSON(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`, function(provinceData) {
+            $("#quan").html('<option value="">Chọn Quận/Huyện</option>');
+            provinceData.districts.forEach(function(district) {
+                $("#quan").append(`<option value="${district.code}">${district.name}</option>`);
+            });
+        });
+    });
+
+    // Xử lý khi chọn quận
+    $("#quan").change(function() {
+        const districtCode = $(this).val();
+        $("#ten_quan").val($(this).find("option:selected").text());
+        
+        // Lấy phường/xã
+        $.getJSON(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`, function(districtData) {
+            $("#phuong").html('<option value="">Chọn Phường/Xã</option>');
+            districtData.wards.forEach(function(ward) {
+                $("#phuong").append(`<option value="${ward.code}">${ward.name}</option>`);
+            });
+        });
+    });
+
+    // Xử lý khi chọn phường
+    $("#phuong").change(function() {
+        $("#ten_phuong").val($(this).find("option:selected").text());
+    });
+});
+    </script>
 </body>
 
 </html>

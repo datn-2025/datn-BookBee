@@ -1,42 +1,45 @@
+
 <!DOCTYPE html>
-
 <html lang="vi">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@yield('title', 'Trang tài khoản')</title>
-    <!-- Bootstrap CSS -->
-    {{-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" /> --}}
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Toastr CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
+
+    <!-- Toastr JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
     @stack('styles')
     <style>
         body {
             margin: 0;
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Roboto', sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(to right, #2193b0, #6dd5ed);
+            background: #f8f5f0;
         }
 
         .auth-container {
             background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
             position: relative;
             overflow: hidden;
-            width: 768px;
+            width: 900px;
             max-width: 100%;
-            min-height: 480px;
+            min-height: 540px;
             display: flex;
         }
 
         .left-section {
-            background: linear-gradient(to right, #2193b0, #6dd5ed);
+            background: #2c3e50;
             color: #fff;
             width: 40%;
             display: flex;
@@ -44,21 +47,41 @@
             justify-content: center;
             text-align: center;
             padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-4.0.3') center/cover;
+            opacity: 0.2;
+            z-index: 0;
         }
 
         .content-wrapper {
             max-width: 300px;
+            position: relative;
+            z-index: 1;
         }
 
         .left-section h1 {
-            font-weight: bold;
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
             margin-bottom: 20px;
+            font-size: 2.5rem;
+            line-height: 1.2;
         }
 
         .left-section p {
-            font-size: 14px;
-            line-height: 1.6;
+            font-size: 15px;
+            line-height: 1.8;
             margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .right-section {
@@ -76,7 +99,10 @@
         .form-container h2 {
             text-align: center;
             margin-bottom: 30px;
-            font-weight: bold;
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 2rem;
+            color: #2c3e50;
         }
 
         .social-buttons {
@@ -87,36 +113,29 @@
         }
 
         .social-button {
-            border: 1px solid #ddd;
+            border: 2px solid #e0e0e0;
             border-radius: 50%;
             display: inline-flex;
             justify-content: center;
             align-items: center;
             margin: 0 5px;
-            height: 40px;
-            width: 40px;
-            color: #333;
+            height: 44px;
+            width: 44px;
+            color: #2c3e50;
             text-decoration: none;
             transition: all 0.3s ease;
+            font-size: 1.1rem;
         }
 
         .social-button:hover {
             color: #fff;
-        }
-
-        .social-button.facebook:hover {
-            background: #3b5998;
-            border-color: #3b5998;
+            transform: translateY(-2px);
         }
 
         .social-button.google:hover {
             background: #db4437;
             border-color: #db4437;
-        }
-
-        .social-button.linkedin:hover {
-            background: #0077b5;
-            border-color: #0077b5;
+            box-shadow: 0 4px 12px rgba(219, 68, 55, 0.2);
         }
 
         .divider {
@@ -150,67 +169,100 @@
         }
 
         .form-control {
-            background: #eee;
-            border: none;
-            padding: 12px 15px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 14px 16px;
             width: 100%;
             margin-bottom: 15px;
+            font-size: 15px;
+            transition: all 0.3s ease;
         }
 
         .form-control:focus {
             outline: none;
             background: #fff;
-            box-shadow: 0 0 5px rgba(255, 75, 43, 0.2);
+            border-color: #2c3e50;
+            box-shadow: 0 4px 12px rgba(44, 62, 80, 0.1);
         }
 
         .btn-outline {
+            border: 2px solid #fff;
             background: transparent;
-            border: 1px solid #fff;
             color: #fff;
-            padding: 12px 45px;
-            border-radius: 20px;
+            padding: 14px 48px;
+            border-radius: 30px;
             text-transform: uppercase;
-            font-weight: bold;
+            font-weight: 500;
             text-decoration: none;
             transition: all 0.3s ease;
+            letter-spacing: 1px;
+            font-size: 14px;
         }
 
         .btn-outline:hover {
             background: #fff;
-            color: #2193b0;
+            color: #2c3e50;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .btn-primary {
-            background: linear-gradient(to right, #2193b0, #6dd5ed);
+            background: #2c3e50;
             border: none;
             color: #fff;
-            padding: 12px 45px;
-            border-radius: 20px;
+            padding: 14px 48px;
+            border-radius: 30px;
             text-transform: uppercase;
-            font-weight: bold;
+            font-weight: 500;
             width: 100%;
-            margin-top: 10px;
+            margin-top: 20px;
             cursor: pointer;
             transition: all 0.3s ease;
+            letter-spacing: 1px;
+            font-size: 14px;
         }
 
         .btn-primary:hover {
-            background: linear-gradient(to right, #6dd5ed, #2193b0);
+            background: #34495e;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(44, 62, 80, 0.2);
         }
 
         .forgot-password {
             text-decoration: none;
-            color: #777;
+            color: #666;
             font-size: 14px;
             display: block;
             text-align: center;
-            margin: 15px 0;
-            transition: color 0.3s ease;
+            margin: 20px 0;
+            transition: all 0.3s ease;
         }
 
         .forgot-password:hover {
-            color: #2193b0;
+            color: #2c3e50;
+            text-decoration: underline;
+        }
+
+        .alert-danger {
+            background-color: #fff3f3;
+            border: 1px solid #ffcdd2;
+            color: #e53935;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .alert-danger ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .divider {
+            color: #666;
+            font-size: 13px;
+            letter-spacing: 0.5px;
         }
     </style>
 </head>
@@ -221,14 +273,14 @@
             <div class="content-wrapper">
                 <h1>Xin chào!</h1>
                 <p>Nhập thông tin của bạn và bắt đầu hành trình với chúng tôi</p>
-                <a href="{{ route('account.register') }}" class="btn btn-outline">ĐĂNG KÝ</a>
+                <a href="{{ route('register') }}" class="btn btn-outline">ĐĂNG KÝ</a>
             </div>
         </div>
         <div class="right-section">
             <div class="form-container">
                 <h2>Đăng nhập</h2>
                 <div class="social-buttons">
-                    <a href="#" class="social-button google">
+                    <a href="{{ route('auth.google') }}" class="social-button google">
                         <i class="fab fa-google"></i>
                     </a>
                 </div>
@@ -251,27 +303,29 @@
                     <div class="form-group">
                         <input type="password" name="password" class="form-control" placeholder="Mật khẩu" required />
                     </div>
-                    <a href="{{ route('account.password.request') }}" class="forgot-password">Quên mật khẩu?</a>
+                    <a href="{{ route('password.request') }}" class="forgot-password">Quên mật khẩu?</a>
                     <button type="submit" class="btn btn-primary">ĐĂNG NHẬP</button>
                 </form>
             </div>
         </div>
     </div>
-    {!! Toastr::message() !!}
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    @stack('scripts')
-    <!-- Bootstrap CSS & FontAwesome -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
-    <!-- Bootstrap CSS & FontAwesome -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
-
-    <!-- Toastr -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        // Toastr configuration
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "timeOut": "5000",
+        };
+    </script>
+    {!! Toastr::message() !!}
+    @stack('scripts')
 </body>
 
 </html>
