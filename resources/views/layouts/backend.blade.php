@@ -476,13 +476,6 @@
                             </div>
                         </li>
 
-                        <!-- Đặt trước -->
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="{{ route('admin.preorders.index') }}">
-                                <i class="ri-calendar-2-line"></i> <span data-key="t-preorders">Quản lý đặt trước</span>
-                            </a>
-                        </li>
-
                         <!-- Tin tức -->
                         <li class="nav-item">
                             <a class="nav-link menu-link" href="#sidebarNews" data-bs-toggle="collapse"

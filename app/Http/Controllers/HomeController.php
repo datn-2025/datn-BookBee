@@ -9,7 +9,6 @@ use App\Models\Review;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\PaymentMethod;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Jorenvh\Share\ShareFacade;
@@ -78,17 +77,10 @@ class HomeController extends Controller
             ->latest()
             ->get();
 
-        // Lấy sách sắp ra mắt (sách có trạng thái "Sắp Ra Mắt")
-        $upcomingBooks = Book::with(['authors', 'images', 'formats'])
-            ->where('status', 'Sắp Ra Mắt')
-            ->orderBy('publication_date', 'asc')
-            ->take(4)
-            ->get();
-
         // Lấy thống kê thực tế từ database
         $statistics = $this->getStatistics();
 
-        return view('clients.home', compact('books', 'categories', 'featuredBooks', 'latestBooks', 'bestReviewedBooks', 'saleBooks', 'reviews', 'articles', 'combos', 'upcomingBooks', 'statistics'));
+        return view('clients.home', compact('books', 'categories', 'featuredBooks', 'latestBooks', 'bestReviewedBooks', 'saleBooks', 'reviews', 'articles', 'combos', 'statistics'));
     }
 
     public function show($slug)
@@ -110,11 +102,6 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-        // Lấy payment methods (loại bỏ thanh toán khi nhận hàng cho preorder)
-        $paymentMethods = PaymentMethod::where('is_active', true)
-            ->whereNotIn('name', ['Thanh toán khi nhận hàng', 'COD', 'Trả tiền mặt khi nhận hàng'])
-            ->get();
-
         // Tạo các nút chia sẻ link sản phẩm
         $shareButtons = ShareFacade::page(
             route('books.show', $book->slug),
@@ -127,7 +114,7 @@ class HomeController extends Controller
             ->telegram();
 
         $bookGifts = $book->gifts()->get();
-        return view('clients.show', compact('book', 'relatedBooks', 'shareButtons', 'bookGifts', 'paymentMethods'));
+        return view('clients.show', compact('book', 'relatedBooks', 'shareButtons', 'bookGifts'));
     }
 
     /**
