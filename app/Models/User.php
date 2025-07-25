@@ -34,7 +34,8 @@ class User extends Authenticatable
         'avatar',
         'activation_token',
         'activation_expires',
-        'google_id'
+        'google_id',
+        'last_seen'
     ];
 
     /**
@@ -57,6 +58,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_seen' => 'datetime'
         ];
     }
 
@@ -68,6 +70,30 @@ class User extends Authenticatable
     public function isActive()
     {
         return $this->status === 'Hoạt Động';
+    }
+
+    /**
+     * Kiểm tra admin có đang online không (hoạt động trong 5 phút gần đây)
+     */
+    public function isOnline($minutesThreshold = 5)
+    {
+        if (!$this->last_seen) {
+            return false;
+        }
+        
+        return $this->last_seen->diffInMinutes(now()) <= $minutesThreshold;
+    }
+
+    /**
+     * Kiểm tra admin có đang hoạt động không (hoạt động trong X phút gần đây)
+     */
+    public function isActiveWithin($minutes = 15)
+    {
+        if (!$this->last_seen) {
+            return false;
+        }
+        
+        return $this->last_seen->diffInMinutes(now()) <= $minutes;
     }
 
     public function role()
