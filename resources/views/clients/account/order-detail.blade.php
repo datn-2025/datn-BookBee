@@ -41,20 +41,33 @@
                             <p><span class="font-medium">Ngày đặt:</span> {{ $order->created_at->format('d/m/Y H:i') }}</p>
                             <p><span class="font-medium">Phương thức thanh toán:</span> {{ $order->paymentMethod->name ?? 'Không xác định' }}</p>
                             <p><span class="font-medium">Trạng thái thanh toán:</span> {{ $order->paymentStatus->name ?? 'Chưa thanh toán' }}</p>
-                            <p><span class="font-medium">Tổng tiền:</span> {{ number_format($order->total) }} đ</p>
+                            <p><span class="font-medium">Tổng tiền:</span> {{ number_format($order->total_amount) }} đ</p>
                         </div>
                     </div>
                     
                     <div>
+                        @if($order->delivery_method === 'pickup')
+                        <h2 class="text-lg font-medium text-gray-900 mb-4">Thông tin nhận hàng</h2>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <p><span class="font-medium">Phương thức:</span> Nhận tại cửa hàng</p>
+                            <p><span class="font-medium">Người nhận:</span> {{ $order->recipient_name ?? $order->shippingAddress->full_name ?? 'Không có thông tin' }}</p>
+                            <p><span class="font-medium">Số điện thoại:</span> {{ $order->recipient_phone ?? $order->shippingAddress->phone ?? '' }}</p>
+                            <p><span class="font-medium">Địa chỉ cửa hàng:</span> 123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh</p>
+                            <p><span class="font-medium">Giờ mở cửa:</span> 8:00 - 22:00 (Thứ 2 - Chủ nhật)</p>
+                            <p class="text-blue-600 font-medium">Vui lòng mang theo mã đơn hàng {{ $order->order_code }} khi đến nhận sách.</p>
+                        </div>
+                        @else
                         <h2 class="text-lg font-medium text-gray-900 mb-4">Địa chỉ giao hàng</h2>
                         <div class="space-y-2 text-sm text-gray-600">
-                            <p class="font-medium">{{ $order->shippingAddress->full_name ?? 'Không có thông tin' }}</p>
-                            <p>{{ $order->shippingAddress->phone ?? '' }}</p>
+                            <p><span class="font-medium">Phương thức:</span> Giao hàng tận nơi</p>
+                            <p class="font-medium">{{ $order->recipient_name ?? $order->shippingAddress->full_name ?? 'Không có thông tin' }}</p>
+                            <p>{{ $order->recipient_phone ?? $order->shippingAddress->phone ?? '' }}</p>
                             <p>{{ $order->shippingAddress->address ?? '' }}</p>
                             <p>{{ $order->shippingAddress->ward ?? '' }}, 
                                {{ $order->shippingAddress->district ?? '' }}, 
                                {{ $order->shippingAddress->city ?? '' }}</p>
                         </div>
+                        @endif
                     </div>
                 </div>
 
@@ -130,10 +143,10 @@
                                     </span>
                                     <span class="text-red-600">-{{ number_format($discountAmount) }} đ</span>
                                 </div>
-                            @elseif($order->discount > 0)
+                            @elseif($order->discount_amount > 0)
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Giảm giá</span>
-                                    <span class="text-red-600">-{{ number_format($order->discount) }} đ</span>
+                                    <span class="text-red-600">-{{ number_format($order->discount_amount) }} đ</span>
                                 </div>
                             @endif
                             <div class="flex justify-between">
@@ -141,7 +154,8 @@
                                 <span class="text-gray-900">{{ number_format($order->shipping_fee) }} đ</span>
                             </div>
                             @php
-                                $total = $order->total_amount - (isset($discountAmount) ? $discountAmount : 0) + $order->shipping_fee;
+                                $discountTotal = isset($discountAmount) ? $discountAmount : $order->discount_amount;
+                                $total = $order->total_amount - $discountTotal + $order->shipping_fee;
                             @endphp
                             <div class="border-t border-gray-200 pt-4 flex justify-between">
                                 <span class="text-lg font-medium text-gray-900">Tổng cộng</span>

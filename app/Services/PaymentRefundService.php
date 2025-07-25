@@ -78,7 +78,7 @@ class PaymentRefundService
                     'description' => 'Hoàn tiền đơn hàng #' . $order->order_code . ' - Admin duyệt',
                     'related_order_id' => $order->id,
                     'status' => 'Thành Công',
-                    'payment_method' => 'wallet'
+                    'payment_method' => 'wallet' // Đã cập nhật enum để hỗ trợ 'wallet'
                 ]);
                 
                 Log::info('Wallet transaction created successfully', [

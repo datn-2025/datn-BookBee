@@ -15,14 +15,14 @@ use App\Models\Cart;
 class OrderService
 {
     protected $paymentRefundService;
-    protected $refundValidationService;
+    // protected $refundValidationService;
 
     public function __construct(
         PaymentRefundService $paymentRefundService,
-        RefundValidationService $refundValidationService
+        // RefundValidationService $refundValidationService
     ) {
         $this->paymentRefundService = $paymentRefundService;
-        $this->refundValidationService = $refundValidationService;
+        // $this->refundValidationService = $refundValidationService;
     }
 
     public function createOrder(array $data)
