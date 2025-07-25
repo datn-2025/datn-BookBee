@@ -121,6 +121,56 @@
                         <td><strong>{{ number_format($preorder->total_amount) }}₫</strong></td>
                     </tr>
                     <tr>
+                        <th>Thanh toán:</th>
+                        <td>
+                            @if($preorder->payment_status)
+                                @if($preorder->payment_status == 'Đã Thanh Toán')
+                                    <span class="badge bg-success-subtle text-success">
+                                        <i class="ri-check-line me-1"></i>Đã thanh toán
+                                    </span>
+                                @elseif($preorder->payment_status == 'Thất Bại')
+                                    <span class="badge bg-danger-subtle text-danger">
+                                        <i class="ri-close-line me-1"></i>Thất bại
+                                    </span>
+                                @else
+                                    <span class="badge bg-warning-subtle text-warning">
+                                        <i class="ri-time-line me-1"></i>{{ $preorder->payment_status }}
+                                    </span>
+                                @endif
+                            @else
+                                <span class="badge bg-secondary-subtle text-secondary">
+                                    <i class="ri-question-line me-1"></i>Chưa thanh toán
+                                </span>
+                            @endif
+                        </td>
+                    </tr>
+                    @if($preorder->preorder_code)
+                    <tr>
+                        <th>Mã đặt trước:</th>
+                        <td>
+                            <code>{{ $preorder->preorder_code }}</code>
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" 
+                                    onclick="copyToClipboard('{{ $preorder->preorder_code }}')"
+                                    title="Sao chép mã đặt trước">
+                                <i class="ri-file-copy-line"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    @endif
+                    @if($preorder->vnpay_transaction_id)
+                    <tr>
+                        <th>Mã GD VNPay:</th>
+                        <td>
+                            <code>{{ $preorder->vnpay_transaction_id }}</code>
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" 
+                                    onclick="copyToClipboard('{{ $preorder->vnpay_transaction_id }}')"
+                                    title="Sao chép mã giao dịch VNPay">
+                                <i class="ri-file-copy-line"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    @endif
+                    <tr>
                         <th>Ngày đặt:</th>
                         <td>{{ $preorder->created_at->format('d/m/Y H:i') }}</td>
                     </tr>
@@ -227,4 +277,33 @@
     font-size: 12px;
 }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            // Show success message
+            if (typeof toastr !== 'undefined') {
+                toastr.success('Đã sao chép: ' + text, 'Thành công!');
+            } else {
+                alert('Đã sao chép: ' + text);
+            }
+        }, function(err) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            if (typeof toastr !== 'undefined') {
+                toastr.success('Đã sao chép: ' + text, 'Thành công!');
+            } else {
+                alert('Đã sao chép: ' + text);
+            }
+        });
+    }
+</script>
 @endpush
