@@ -42,7 +42,7 @@ use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 
-//broadcsast route 
+//broadcast route 
 Broadcast::routes(); 
 // Route QR code
 Route::get('storage/private/{filename}', function ($filename) {
