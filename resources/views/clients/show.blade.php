@@ -2014,8 +2014,8 @@
                 <div class="space-y-6">
                     <!-- Book Image -->
                     <div class="text-center">
-                        <img id="preorderBookImage" src="" alt="Book Cover" 
-                             class="w-48 h-64 mx-auto object-cover border-2 border-black shadow-lg rounded-lg">
+                        <img id="preorderBookImage" src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_path) : asset('images/default-book.jpg') }}" alt="{{ $book->title }}" 
+                             class="w-48 h-64 mx-auto object-cover border-2 border-black shadow-lg rounded-lg" onerror="this.src='{{ asset('images/default-book.jpg') }}'">
                     </div>
                     
                     <!-- Book Details -->
