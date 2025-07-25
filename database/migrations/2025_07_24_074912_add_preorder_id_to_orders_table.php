@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->string('preorder_id')->nullable()->after('id');
-            $table->foreign('preorder_id')->references('id')->on('preorders')->onDelete('cascade');
+            //
         });
     }
 
@@ -23,8 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->dropForeign(['preorder_id']);
-            $table->dropColumn('preorder_id');
+            //
         });
     }
 };
