@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('preorders', function (Blueprint $table) {
             $table->uuid('id')->primary(); // Dùng UUID thay vì bigint
+
             $table->uuid('user_id');
             $table->uuid('book_id');
             $table->uuid('book_format_id')->nullable();
