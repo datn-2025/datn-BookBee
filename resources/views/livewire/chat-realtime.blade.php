@@ -926,15 +926,15 @@
         function testScroll() {
             const chatContainer = document.getElementById('chat-conversation');
             if (chatContainer) {
-                console.log('✅ Chat container found');
-                console.log('📏 ScrollHeight:', chatContainer.scrollHeight);
-                console.log('📏 ClientHeight:', chatContainer.clientHeight);
-                console.log('📍 ScrollTop:', chatContainer.scrollTop);
-                console.log('🔄 Can scroll:', chatContainer.scrollHeight > chatContainer.clientHeight);
+                // console.log('✅ Chat container found');
+                // console.log('📏 ScrollHeight:', chatContainer.scrollHeight);
+                // console.log('📏 ClientHeight:', chatContainer.clientHeight);
+                // console.log('📍 ScrollTop:', chatContainer.scrollTop);
+                // console.log('🔄 Can scroll:', chatContainer.scrollHeight > chatContainer.clientHeight);
                 
                 // Test scroll capability
                 const maxScroll = chatContainer.scrollHeight - chatContainer.clientHeight;
-                console.log('🎯 Max scroll position:', maxScroll);
+                // console.log('🎯 Max scroll position:', maxScroll);
             } else {
                 console.log('❌ Chat container not found');
             }
@@ -952,10 +952,10 @@
                 chatContainer.style.display = 'block';
                 chatContainer.style.position = 'relative';
                 
-                console.log('🔧 Force scroll applied');
-                console.log('📏 Final height:', chatContainer.offsetHeight);
-                console.log('📏 Scroll height:', chatContainer.scrollHeight);
-                console.log('💡 Should scroll:', chatContainer.scrollHeight > chatContainer.offsetHeight);
+                // console.log('🔧 Force scroll applied');
+                // console.log('📏 Final height:', chatContainer.offsetHeight);
+                // console.log('📏 Scroll height:', chatContainer.scrollHeight);
+                // console.log('💡 Should scroll:', chatContainer.scrollHeight > chatContainer.offsetHeight);
                 
                 return chatContainer.scrollHeight > chatContainer.offsetHeight;
             }
@@ -964,7 +964,7 @@
         
         // Auto scroll to bottom when new messages arrive
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Chat scroll setup initialized');
+            // console.log('🚀 Chat scroll setup initialized');
             
             // Initialize admin emoji picker
             initAdminEmojiPicker();
@@ -990,11 +990,11 @@
                 // Log scroll events for debugging
                 chatContainer.addEventListener('scroll', function() {
                     const scrollPercent = (this.scrollTop / (this.scrollHeight - this.clientHeight) * 100).toFixed(1);
-                    console.log(`📍 Scroll: ${scrollPercent}%`);
+                    // console.log(`📍 Scroll: ${scrollPercent}%`);
                 });
                 
                 // Ensure scrolling works
-                console.log('✅ Scroll events attached');
+                // console.log('✅ Scroll events attached');
             }
         });
         
