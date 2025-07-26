@@ -193,13 +193,9 @@
                             </div>
                         </div>
 
-                        @error('format')
-                            <div class="alert alert-danger mb-3">
-                                {{ $message }}
-                            </div>
-                        @enderror
-                        <div id="format_validation_message" class="alert alert-info mb-3" style="display: none;">
-                            Vui lòng kích hoạt ít nhất một định dạng sách.
+                        <div class="alert alert-info mb-3">
+                            <i class="ri-information-line me-2"></i>
+                            <strong>Lưu ý:</strong> Bạn có thể chọn một hoặc cả hai định dạng sách (Sách vật lý và/hoặc Ebook).
                         </div>
                         
                         {{-- Hiển thị thuộc tính sản phẩm đã chọn --}}
@@ -217,18 +213,25 @@
                                         <label class="form-label">{{ $attribute->name }}</label>
                                         <div class="attribute-group">
                                             <div class="input-group mb-2">
-                                                <select class="form-select attribute-select"
-                                                    data-attribute-name="{{ $attribute->name }}"
-                                                    data-attribute-id="{{ $attribute->id }}">
-                                                    <option value="">-- Chọn {{ strtolower($attribute->name) }} --</option>
-                                                    @foreach($attribute->values as $value)
-                                                        <option value="{{ $value->id }}">{{ $value->value }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <input type="number" class="form-control attribute-extra-price"
-                                                    placeholder="Giá thêm" min="0" value="0">
-                                                <button type="button" class="btn btn-primary add-attribute-value">Thêm</button>
-                                            </div>
+                                    <select class="form-select attribute-select"
+                                        data-attribute-name="{{ $attribute->name }}"
+                                        data-attribute-id="{{ $attribute->id }}">
+                                        <option value="">-- Chọn {{ strtolower($attribute->name) }} --</option>
+                                        @foreach($attribute->values as $value)
+                                            <option value="{{ $value->id }}">{{ $value->value }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="input-group-text bg-light border-0 px-2">
+                                        <i class="ri-money-dollar-circle-line text-success me-1"></i>
+                                        <small class="text-muted">Giá thêm (VNĐ)</small>
+                                    </div>
+                                    <input type="number" class="form-control attribute-extra-price"
+                                        placeholder="0" min="0" value="0" style="max-width: 120px;">
+                                    <button type="button" class="btn btn-primary add-attribute-value"><i class="ri-add-line me-1"></i>Thêm</button>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-info"><i class="ri-information-line me-1"></i>Nhập giá thêm cho thuộc tính này (ví dụ: màu đỏ +5000đ, size XL +10000đ)</small>
+                                </div>
                                             <div class="selected-values mt-2">
                                                 {{-- Ưu tiên render lại từ old input nếu có, nếu không thì lấy từ model --}}
                                                 @if($oldAttributeValues)
@@ -298,7 +301,7 @@
                                     </select>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="author_id" class="form-label">Tác giả <span class="text-danger">*</span></label>
+                                    <label for="author_id" class="form-label"><i class="ri-user-line me-1"></i>Tác giả <span class="text-danger">*</span></label>
                                     {{-- Hiển thị tác giả đã chọn --}}
                                     @php
                                         // Lấy danh sách tác giả đã chọn: ưu tiên old input, nếu không thì lấy từ model
@@ -307,12 +310,12 @@
                                             $selectedAuthors = ($book->author && $book->author->count()) ? $book->author->pluck('id')->toArray() : [];
                                         }
                                     @endphp
-                                    {{-- <pre>{{ var_export($selectedAuthors, true) }}</pre> <!-- Bỏ comment để kiểm tra giá trị khi cần --> --}}
-                                    <select name="author_ids[]" id="author_id" class="form-select selectpicker @error('author_ids') is-invalid @enderror" data-live-search="true" multiple title="Tìm tác giả...">
+                                    <select name="author_ids[]" id="author_id" class="form-select select2-authors @error('author_ids') is-invalid @enderror" multiple>
                                         @foreach($authors as $author)
                                             <option value="{{ $author->id }}" {{ in_array($author->id, $selectedAuthors) ? 'selected' : '' }}>{{ $author->name }}</option>
                                         @endforeach
                                     </select>
+                                    <small class="text-muted"><i class="ri-information-line me-1"></i>Có thể chọn một hoặc nhiều tác giả. Gõ để tìm kiếm nhanh.</small>
                                     @error('author_ids')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -415,28 +418,53 @@
                                 </div>
                             </div>
                             <div class="card-body" id="gift-section" style="display:{{ $book->gifts->count() ? '' : 'none' }};">
-                                <div class="mb-3 row">
-                                    @php $gift = $book->gifts->first(); @endphp
-                                    <div class="col-md-2">
-                                        <input type="text" name="gift_name" class="form-control" value="{{ $gift?->gift_name }}" placeholder="Tên quà tặng">
+                                @php $gift = $book->gifts->first(); @endphp
+                                <div class="alert alert-info mb-3">
+                                    <i class="ri-gift-line me-2"></i>
+                                    <strong>Thông tin quà tặng kèm theo sách</strong>
+                                    <p class="mb-0 mt-1">Thiết lập quà tặng đặc biệt cho khách hàng mua sách trong khoảng thời gian nhất định.</p>
+                                </div>
+                                
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label"><i class="ri-calendar-line me-1"></i>Thời gian áp dụng quà tặng</label>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <input type="date" name="start_date" class="form-control" value="{{ $gift?->start_date }}" placeholder="Ngày bắt đầu">
+                                                <small class="text-muted">Ngày bắt đầu tặng quà</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input type="date" name="end_date" class="form-control" value="{{ $gift?->end_date }}" placeholder="Ngày kết thúc">
+                                                <small class="text-muted">Ngày kết thúc tặng quà</small>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="col-md-2">
-                                        <input type="text" name="gift_description" class="form-control" value="{{ $gift?->gift_description }}" placeholder="Mô tả (tuỳ chọn)">
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="ri-gift-2-line me-1"></i>Tên quà tặng</label>
+                                        <input type="text" name="gift_name" class="form-control" value="{{ $gift?->gift_name }}" placeholder="Ví dụ: Bookmark đặc biệt, Túi canvas...">
                                     </div>
-                                    <div class="col-md-2">
-                                        <input type="file" name="gift_image" class="form-control">
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="ri-stack-line me-1"></i>Số lượng quà tặng</label>
+                                        <input type="number" name="quantity" class="form-control" value="{{ $gift?->quantity }}" placeholder="100" min="0">
+                                        <small class="text-muted">Số lượng quà tặng có sẵn</small>
+                                    </div>
+                                    
+                                    <div class="col-md-8">
+                                        <label class="form-label"><i class="ri-file-text-line me-1"></i>Mô tả quà tặng</label>
+                                        <textarea name="gift_description" class="form-control" rows="2" placeholder="Mô tả chi tiết về quà tặng (màu sắc, chất liệu, kích thước...)">{{ $gift?->gift_description }}</textarea>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <label class="form-label"><i class="ri-image-line me-1"></i>Hình ảnh quà tặng</label>
+                                        <input type="file" name="gift_image" class="form-control" accept="image/*">
                                         @if($gift && $gift->gift_image)
-                                            <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="gift" width="40" class="mt-1 rounded border">
+                                            <div class="mt-2">
+                                                <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="gift" class="img-thumbnail" style="max-height: 80px;">
+                                                <small class="text-muted d-block">Hình ảnh hiện tại</small>
+                                            </div>
                                         @endif
-                                    </div>
-                                    <div class="col-md-2">
-                                        <input type="number" name="quantity" class="form-control" value="{{ $gift?->quantity }}" placeholder="Số lượng" min="0">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <input type="text" name="start_date" class="form-control datepicker" value="{{ $gift?->start_date }}" placeholder="Ngày bắt đầu">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <input type="text" name="end_date" class="form-control datepicker" value="{{ $gift?->end_date }}" placeholder="Ngày kết thúc">
                                     </div>
                                 </div>
                             </div>
@@ -463,10 +491,14 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 @endpush
 
 @push('scripts')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     document.getElementById('toggle-gift-section').addEventListener('change', function() {
         document.getElementById('gift-section').style.display = this.checked ? '' : 'none';
@@ -476,24 +508,26 @@
     }
     initFlatpickr();
 
-    function checkFormatValidation() {
-        const hasPhysical = document.getElementById('has_physical').checked;
-        const hasEbook = document.getElementById('has_ebook').checked;
-        if (!hasPhysical && !hasEbook) {
-            document.getElementById('format_validation_message').style.display = '';
-            return false;
-        } else {
-            document.getElementById('format_validation_message').style.display = 'none';
-            return true;
-        }
-    }
-    document.querySelector('form').addEventListener('submit', function(e) {
-        if (!checkFormatValidation()) {
-            e.preventDefault();
-        }
+    // Khởi tạo Select2 cho chọn tác giả
+    $(document).ready(function() {
+        $('.select2-authors').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Tìm kiếm và chọn tác giả...',
+            allowClear: true,
+            width: '100%',
+            language: {
+                noResults: function() {
+                    return 'Không tìm thấy tác giả nào';
+                },
+                searching: function() {
+                    return 'Đang tìm kiếm...';
+                },
+                removeAllItems: function() {
+                    return 'Xóa tất cả';
+                }
+            }
+        });
     });
-    document.getElementById('has_physical').addEventListener('change', checkFormatValidation);
-    document.getElementById('has_ebook').addEventListener('change', checkFormatValidation);
 
     // 3. JS preview ảnh bìa/ảnh phụ, lưu base64 vào localStorage, tự động hiển thị lại sau validate lỗi
     function previewImage(input, previewContainer, storageKey) {

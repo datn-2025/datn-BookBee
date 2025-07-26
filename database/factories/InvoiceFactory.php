@@ -17,6 +17,7 @@ class InvoiceFactory extends Factory
 
         return [
             'order_id' => $order ? $order->id : Order::factory(),
+            'type' => 'sale', // Mặc định là hóa đơn bán hàng
             'invoice_date' => $this->faker->dateTimeBetween('-1 year', 'now'),
             'total_amount' => $order ? $order->total_amount : $this->faker->randomFloat(2, 100000, 10000000),
         ];

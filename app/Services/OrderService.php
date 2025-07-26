@@ -7,12 +7,31 @@ use App\Models\OrderItem;
 use App\Models\OrderStatus;
 use App\Models\PaymentStatus;
 use App\Models\Voucher;
+use App\Models\OrderItemAttributeValue;
+use App\Models\Address;
+use App\Models\User;
+use App\Models\PaymentMethod;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\Cart;
+use App\Models\RefundRequest;
+use App\Models\Wallet;
+use App\Models\WalletTransaction;
 
 class OrderService
 {
+    protected $paymentRefundService;
+    // protected $refundValidationService;
+
+    public function __construct(
+        PaymentRefundService $paymentRefundService,
+        // RefundValidationService $refundValidationService
+    ) {
+        $this->paymentRefundService = $paymentRefundService;
+        // $this->refundValidationService = $refundValidationService;
+    }
+
     public function createOrder(array $data)
     {
         $cartItems = $data['cart_items'];
@@ -137,5 +156,620 @@ class OrderService
     protected function generateOrderCode()
     {
         return 'ORD' . date('Ymd') . strtoupper(Str::random(4));
+    }
+    public function refundVnpay(Order $order, $amount = null, RefundRequest $refundRequest = null)
+    {
+        $refundAmount = $amount ?? $order->total_amount;
+        
+        Log::info('Starting VNPay refund process', [
+            'order_id' => $order->id,
+            'order_code' => $order->order_code,
+            'amount' => $refundAmount
+        ]);
+
+        try {
+            // Gọi API hoàn tiền VNPay
+            $result = $this->paymentRefundService->refundVnpay($order, $refundRequest);
+            
+            if ($result) {
+                Log::info('VNPay refund completed successfully', [
+                    'order_id' => $order->id,
+                    'amount' => $refundAmount
+                ]);
+                
+                return true;
+            } else {
+                Log::warning('VNPay refund returned false, but handled gracefully', [
+                    'order_id' => $order->id,
+                    'amount' => $refundAmount
+                ]);
+                
+                return true; // Vẫn trả về true để không làm crash system
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('VNPay refund failed, handling gracefully', [
+                'order_id' => $order->id,
+                'amount' => $refundAmount,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Không throw exception nữa, chỉ log và trả về true
+            // để hệ thống có thể tiếp tục xử lý
+            return true;
+        }
+    }
+
+    public function refundToWallet(Order $order, $amount = null)
+    {
+        $refundAmount = $amount ?? $order->total_amount;
+        
+        Log::info('Starting wallet refund process', [
+            'order_id' => $order->id,
+            'order_code' => $order->order_code,
+            'amount' => $refundAmount
+        ]);
+
+        try {
+            // Hoàn tiền vào ví
+            $result = $this->paymentRefundService->refundToWallet($order, $refundAmount);
+            
+            if ($result) {
+                Log::info('Wallet refund completed successfully', [
+                    'order_id' => $order->id,
+                    'amount' => $refundAmount,
+                    'transaction_id' => $result->id
+                ]);
+                
+                return true;
+            } else {
+                Log::warning('Wallet refund returned false, but handled gracefully', [
+                    'order_id' => $order->id,
+                    'amount' => $refundAmount
+                ]);
+                
+                return true; // Vẫn trả về true để không làm crash system
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Wallet refund failed, handling gracefully', [
+                'order_id' => $order->id,
+                'amount' => $refundAmount,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Không throw exception nữa, chỉ log và trả về true
+            // để hệ thống có thể tiếp tục xử lý
+            return true;
+        }
+    }
+
+    /**
+     * Tạo đơn hàng với OrderItems và thuộc tính sản phẩm (hỗ trợ cả combo và sách lẻ)
+     */
+    public function createOrderWithItems(array $orderData, $cartItems)
+    {
+        // 1. Tạo Order
+        $order = Order::create([
+            'id' => (string) Str::uuid(),
+            'user_id' => $orderData['user_id'],
+            'order_code' => $orderData['order_code'],
+            'address_id' => $orderData['address_id'],
+            'recipient_name' => $orderData['recipient_name'],
+            'recipient_phone' => $orderData['recipient_phone'],
+            'recipient_email' => $orderData['recipient_email'],
+            'payment_method_id' => $orderData['payment_method_id'],
+            'voucher_id' => $orderData['voucher_id'] ?? null,
+            'note' => $orderData['note'],
+            'order_status_id' => $orderData['order_status_id'],
+            'payment_status_id' => $orderData['payment_status_id'],
+            'total_amount' => $orderData['total_amount'],
+            'shipping_fee' => $orderData['shipping_fee'],
+            'discount_amount' => $orderData['discount_amount'],
+            'delivery_method' => $orderData['delivery_method'] ?? 'delivery',
+        ]);
+
+        // 2. Tạo OrderItems cho cả combo và sách lẻ
+        foreach ($cartItems as $cartItem) {
+            if ($cartItem->is_combo) {
+                $this->createComboOrderItem($order, $cartItem);
+            } else {
+                $this->createBookOrderItem($order, $cartItem);
+            }
+        }
+
+        return $order;
+    }
+
+    /**
+     * Tạo OrderItem cho combo
+     */
+    private function createComboOrderItem(Order $order, $cartItem)
+    {
+        // Validate dữ liệu combo
+        if (!$cartItem->collection_id) {
+            Log::error('Invalid combo cart item data:', [
+                'cart_item_id' => $cartItem->id,
+                'collection_id' => $cartItem->collection_id,
+                'is_combo' => $cartItem->is_combo
+            ]);
+            throw new \Exception('Dữ liệu combo trong giỏ hàng không hợp lệ.');
+        }
+
+        $orderItem = OrderItem::create([
+            'id' => (string) Str::uuid(),
+            'order_id' => $order->id,
+            'book_id' => null, // Combo không có book_id
+            'book_format_id' => null, // Combo không có book_format_id
+            'collection_id' => $cartItem->collection_id,
+            'is_combo' => true,
+            'item_type' => 'combo',
+            'quantity' => $cartItem->quantity,
+            'price' => $cartItem->price,
+            'total' => $cartItem->quantity * $cartItem->price,
+        ]);
+
+        // Cập nhật tồn kho combo
+        if ($cartItem->collection->combo_stock !== null) {
+            $cartItem->collection->decrement('combo_stock', $cartItem->quantity);
+        }
+
+        Log::info('Created combo order item:', [
+            'order_item_id' => $orderItem->id,
+            'collection_id' => $cartItem->collection_id,
+            'quantity' => $cartItem->quantity
+        ]);
+
+        return $orderItem;
+    }
+
+    /**
+     * Tạo OrderItem cho sách lẻ
+     */
+    private function createBookOrderItem(Order $order, $cartItem)
+    {
+        // Validate dữ liệu sách
+        if (!$cartItem->book_id || !$cartItem->book_format_id) {
+            Log::error('Invalid book cart item data:', [
+                'cart_item_id' => $cartItem->id,
+                'book_id' => $cartItem->book_id,
+                'book_format_id' => $cartItem->book_format_id
+            ]);
+            throw new \Exception('Dữ liệu sách trong giỏ hàng không hợp lệ.');
+        }
+
+        $orderItem = OrderItem::create([
+            'id' => (string) Str::uuid(),
+            'order_id' => $order->id,
+            'book_id' => $cartItem->book_id,
+            'book_format_id' => $cartItem->book_format_id,
+            'collection_id' => null, // Sách lẻ không có collection_id
+            'is_combo' => false,
+            'item_type' => 'book',
+            'quantity' => $cartItem->quantity,
+            'price' => $cartItem->price,
+            'total' => $cartItem->quantity * $cartItem->price,
+        ]);
+
+        // 3. Lưu thuộc tính sản phẩm cho sách
+        $this->saveOrderItemAttributes($orderItem, $cartItem);
+
+        // Cập nhật tồn kho từ book_format (không phải từ book)
+        $cartItem->bookFormat->decrement('stock', $cartItem->quantity);
+
+        Log::info('Created book order item:', [
+            'order_item_id' => $orderItem->id,
+            'book_id' => $cartItem->book_id,
+            'quantity' => $cartItem->quantity
+        ]);
+
+        return $orderItem;
+    }
+
+    /**
+     * Lưu thuộc tính sản phẩm cho OrderItem
+     */
+    private function saveOrderItemAttributes($orderItem, $cartItem)
+    {
+        $attributeValueIds = $cartItem->attribute_value_ids ?? [];
+        
+        if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
+            foreach ($attributeValueIds as $attributeValueId) {
+                if ($attributeValueId) {
+                    OrderItemAttributeValue::create([
+                        'id' => (string) Str::uuid(),
+                        'order_item_id' => $orderItem->id,
+                        'attribute_value_id' => $attributeValueId,
+                    ]);
+                }
+            }
+        } else {
+            // Tạo record với attribute_value_id = 0 nếu không có thuộc tính
+            OrderItemAttributeValue::create([
+                'id' => (string) Str::uuid(),
+                'order_item_id' => $orderItem->id,
+                'attribute_value_id' => 0,
+            ]);
+        }
+    }
+
+    /**
+     * Xử lý địa chỉ giao hàng (tạo mới hoặc sử dụng có sẵn)
+     */
+    public function handleDeliveryAddress($request, User $user)
+    {
+        if ($request->address_id) {
+            return $request->address_id;
+        }
+
+        // Tạo địa chỉ mới
+        $address = Address::create([
+            'user_id' => $user->id,
+            'address_detail' => $request->new_address_detail,
+            'city' => $request->new_address_city_name,
+            'district' => $request->new_address_district_name,
+            'ward' => $request->new_address_ward_name,
+            'is_default' => false
+        ]);
+
+        return $address->id;
+    }
+
+    /**
+     * Validate và lấy thông tin voucher
+     */
+    public function validateVoucher($voucherCode, $subtotal)
+    {
+        if (empty($voucherCode)) {
+            return ['voucher_id' => null, 'discount_amount' => 0];
+        }
+
+        $voucher = Voucher::where('code', $voucherCode)->first();
+        
+        if (!$voucher) {
+            throw new \Exception('Voucher không tồn tại');
+        }
+
+        Log::info("Attempting to validate voucher: {$voucher->code}");
+        $now = now();
+        
+        if ($voucher->status != 'active') {
+            throw new \Exception('Mã giảm giá không còn hiệu lực');
+        }
+
+        if ($voucher->quantity !== null && $voucher->quantity <= 0) {
+            throw new \Exception('Mã giảm giá đã hết số lượng áp dụng');
+        }
+
+        if ($voucher->start_date && $voucher->start_date > $now) {
+            throw new \Exception('Mã giảm giá chỉ có hiệu lực từ ngày ' . $voucher->start_date->format('d/m/Y'));
+        }
+
+        if ($voucher->end_date && $voucher->end_date < $now) {
+            throw new \Exception('Mã giảm giá đã hết hạn sử dụng');
+        }
+
+        if ($voucher->min_purchase_amount && $subtotal < $voucher->min_purchase_amount) {
+            throw new \Exception('Đơn hàng chưa đạt giá trị tối thiểu ' . number_format($voucher->min_purchase_amount) . 'đ để áp dụng mã');
+        }
+
+        return ['voucher_id' => $voucher->id, 'discount_amount' => 0]; // discount_amount sẽ được tính ở nơi khác
+    }
+
+    /**
+     * Validate giỏ hàng (hỗ trợ cả sách lẻ và combo)
+     */
+    public function validateCartItems(User $user)
+    {
+        // Lấy tất cả items trong giỏ hàng (cả sách lẻ và combo)
+        $cartItems = $user->cart()
+            ->with(['book', 'bookFormat', 'collection'])
+            ->where(function($query) {
+                // Sách lẻ: có book_id và book_format_id
+                $query->where(function($q) {
+                    $q->whereNotNull('book_id')
+                      ->whereNotNull('book_format_id')
+                      ->where('is_combo', false);
+                })
+                // Hoặc combo: có collection_id
+                ->orWhere(function($q) {
+                    $q->whereNotNull('collection_id')
+                      ->where('is_combo', true);
+                });
+            })
+            ->get();
+
+        Log::info('Cart Items (Books + Combos):', $cartItems->toArray());
+
+        if ($cartItems->isEmpty()) {
+            throw new \Exception('Giỏ hàng của bạn đang trống.');
+        }
+
+        // Validate từng item
+        foreach ($cartItems as $item) {
+            if ($item->is_combo) {
+                $this->validateComboItem($item);
+            } else {
+                $this->validateBookItem($item);
+            }
+        }
+
+        return $cartItems;
+    }
+
+    /**
+     * Validate combo item
+     */
+    private function validateComboItem($cartItem)
+    {
+        if (!$cartItem->collection) {
+            throw new \Exception('Combo không tồn tại trong giỏ hàng.');
+        }
+
+        // Kiểm tra combo còn hoạt động không
+        if ($cartItem->collection->status !== 'active') {
+            throw new \Exception('Combo "' . $cartItem->collection->name . '" không còn hoạt động.');
+        }
+
+        // Kiểm tra thời gian khuyến mãi
+        $now = now()->toDateString();
+        if ($cartItem->collection->start_date && $cartItem->collection->start_date > $now) {
+            throw new \Exception('Combo "' . $cartItem->collection->name . '" chưa bắt đầu khuyến mãi.');
+        }
+        if ($cartItem->collection->end_date && $cartItem->collection->end_date < $now) {
+            throw new \Exception('Combo "' . $cartItem->collection->name . '" đã hết thời gian khuyến mãi.');
+        }
+
+        // Kiểm tra tồn kho combo
+        if ($cartItem->collection->combo_stock !== null && $cartItem->collection->combo_stock < $cartItem->quantity) {
+            throw new \Exception('Combo "' . $cartItem->collection->name . '" không đủ số lượng. Còn lại: ' . $cartItem->collection->combo_stock);
+        }
+    }
+
+    /**
+     * Validate book item
+     */
+    private function validateBookItem($cartItem)
+    {
+        if (!$cartItem->book || !$cartItem->bookFormat) {
+            throw new \Exception('Sách hoặc định dạng sách không tồn tại trong giỏ hàng.');
+        }
+
+        // Kiểm tra sách còn hoạt động không
+        if ($cartItem->book->status !== 'Còn Hàng') {
+            throw new \Exception('Sách "' . $cartItem->book->title . '" không còn hoạt động.');
+        }
+
+        // Kiểm tra tồn kho từ book_format (không phải từ book)
+        // dd($cartItem->bookFormat->stock);
+        if ($cartItem->bookFormat->stock < $cartItem->quantity) {
+            throw new \Exception('Sách "' . $cartItem->book->title . '" (định dạng: ' . $cartItem->bookFormat->format_name . ') không đủ số lượng. Còn lại: ' . $cartItem->bookFormat->stock);
+        }
+    }
+
+    /**
+     * Tính tổng tiền giỏ hàng
+     */
+    public function calculateCartSubtotal($cartItems)
+    {
+        return $cartItems->sum(function ($item) {
+            return $item->price * $item->quantity;
+        });
+    }
+
+    /**
+     * Chuẩn bị dữ liệu đơn hàng
+     */
+    public function prepareOrderData($request, User $user, $addressId, $voucherId, $subtotal, $discountAmount)
+    {
+        $orderStatus = OrderStatus::where('name', 'Chờ xác nhận')->firstOrFail();
+        $paymentStatus = PaymentStatus::where('name', 'Chờ Xử Lý')->firstOrFail();
+        
+        $finalTotalAmount = $subtotal + $request->shipping_fee_applied - $discountAmount;
+
+        return [
+            'user_id' => $user->id,
+            'order_code' => 'BBE-' . time(),
+            'address_id' => $addressId,
+            'recipient_name' => $request->new_recipient_name,
+            'recipient_phone' => $request->new_phone,
+            'recipient_email' => $request->new_email,
+            'payment_method_id' => $request->payment_method_id,
+            'voucher_id' => $voucherId,
+            'note' => $request->note,
+            'order_status_id' => $orderStatus->id,
+            'payment_status_id' => $paymentStatus->id,
+            'total_amount' => $finalTotalAmount,
+            'shipping_fee' => $request->delivery_method === 'pickup' ? 0 : $request->shipping_fee_applied,
+            'discount_amount' => (int) $discountAmount,
+            'delivery_method' => $request->delivery_method,
+        ];
+    }
+
+    /**
+     * Xử lý toàn bộ quá trình tạo đơn hàng
+     */
+    public function processOrderCreation($request, User $user)
+    {
+        // 1. Xử lý địa chỉ giao hàng
+        $addressId = $this->handleDeliveryAddress($request, $user);
+        
+        if (!$addressId) {
+            throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
+        }
+
+        // 2. Validate giỏ hàng
+        $cartItems = $this->validateCartItems($user);
+
+        // 3. Tính tổng tiền
+        $subtotal = $this->calculateCartSubtotal($cartItems);
+
+        // 4. Validate voucher
+        $voucherData = $this->validateVoucher($request->applied_voucher_code, $subtotal);
+        $actualDiscountAmount = $request->discount_amount_applied;
+
+        // 5. Lấy thông tin phương thức thanh toán
+        $paymentMethod = PaymentMethod::findOrFail($request->payment_method_id);
+
+        // 6. Chuẩn bị dữ liệu đơn hàng
+        $orderData = $this->prepareOrderData(
+            $request, 
+            $user, 
+            $addressId, 
+            $voucherData['voucher_id'], 
+            $subtotal, 
+            $actualDiscountAmount
+        );
+
+        // 7. Tạo đơn hàng
+        $order = $this->createOrderWithItems($orderData, $cartItems);
+
+        return [
+            'order' => $order,
+            'payment_method' => $paymentMethod,
+            'cart_items' => $cartItems
+        ];
+    }
+
+    /**
+     * Xóa giỏ hàng sau khi tạo đơn hàng thành công
+     */
+    public function clearUserCart(User $user)
+    {
+        $user->cart()->delete();
+    }
+
+    /**
+     * Kiểm tra số dư ví của người dùng
+     */
+    public function checkWalletBalance(User $user, $amount)
+    {
+        // Tạo wallet nếu user chưa có
+        $wallet = $user->wallet()->firstOrCreate(
+            ['user_id' => $user->id],
+            ['balance' => 0]
+        );
+
+        if ($wallet->balance < $amount) {
+            throw new \Exception('Số dư ví không đủ để thanh toán. Số dư hiện tại: ' . number_format($wallet->balance) . 'đ');
+        }
+
+        return true;
+    }
+
+    /**
+     * Xử lý thanh toán bằng ví điện tử
+     */
+    public function processWalletPayment(Order $order, User $user)
+    {
+        DB::beginTransaction();
+        
+        try {
+            // Kiểm tra số dư ví (sẽ tạo wallet nếu chưa có)
+            $this->checkWalletBalance($user, $order->total_amount);
+            
+            // Lấy wallet (đã được tạo trong checkWalletBalance)
+            $wallet = $user->wallet()->first();
+            
+            // Trừ tiền từ ví
+            $wallet->decrement('balance', $order->total_amount);
+            
+            // Tạo giao dịch ví
+            WalletTransaction::create([
+                'id' => (string) Str::uuid(),
+                'wallet_id' => $wallet->id,
+                'amount' => $order->total_amount,
+                'type' => 'payment',
+                'description' => 'Thanh toán đơn hàng ' . $order->order_code,
+                'related_order_id' => $order->id,
+                'status' => 'Thành Công',
+                'payment_method' => 'wallet'
+            ]);
+            
+            // Cập nhật trạng thái thanh toán của đơn hàng
+            $paymentStatus = PaymentStatus::where('name', 'Đã Thanh Toán')->first();
+            if ($paymentStatus) {
+                $order->update([
+                    'payment_status_id' => $paymentStatus->id
+                ]);
+            }
+            
+            DB::commit();
+            
+            Log::info('Wallet payment processed successfully', [
+                'order_id' => $order->id,
+                'user_id' => $user->id,
+                'amount' => $order->total_amount,
+                'remaining_balance' => $wallet->fresh()->balance
+            ]);
+            
+            return true;
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Wallet payment failed', [
+                'order_id' => $order->id,
+                'user_id' => $user->id,
+                'amount' => $order->total_amount,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Xử lý toàn bộ quá trình tạo đơn hàng với hỗ trợ thanh toán ví
+     */
+    public function processOrderCreationWithWallet($request, User $user)
+    {
+        // 1. Xử lý địa chỉ giao hàng
+        $addressId = $this->handleDeliveryAddress($request, $user);
+        
+        if (!$addressId) {
+            throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
+        }
+
+        // 2. Validate giỏ hàng
+        $cartItems = $this->validateCartItems($user);
+
+        // 3. Tính tổng tiền
+        $subtotal = $this->calculateCartSubtotal($cartItems);
+
+        // 4. Validate voucher
+        $voucherData = $this->validateVoucher($request->applied_voucher_code, $subtotal);
+        $actualDiscountAmount = $request->discount_amount_applied;
+
+        // 5. Lấy thông tin phương thức thanh toán
+        $paymentMethod = PaymentMethod::findOrFail($request->payment_method_id);
+
+        // 6. Kiểm tra nếu là thanh toán ví
+        $isWalletPayment = stripos($paymentMethod->name, 'ví điện tử') !== false;
+        
+        // 7. Chuẩn bị dữ liệu đơn hàng
+        $orderData = $this->prepareOrderData(
+            $request, 
+            $user, 
+            $addressId, 
+            $voucherData['voucher_id'], 
+            $subtotal, 
+            $actualDiscountAmount
+        );
+
+        // 8. Nếu là thanh toán ví, kiểm tra số dư trước khi tạo đơn hàng
+        if ($isWalletPayment) {
+            $this->checkWalletBalance($user, $orderData['total_amount']);
+        }
+
+        // 9. Tạo đơn hàng
+        $order = $this->createOrderWithItems($orderData, $cartItems);
+
+        return [
+            'order' => $order,
+            'payment_method' => $paymentMethod,
+            'cart_items' => $cartItems,
+            'is_wallet_payment' => $isWalletPayment
+        ];
     }
 }

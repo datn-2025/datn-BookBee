@@ -21,12 +21,14 @@ class Collection extends Model
         'start_date',
         'end_date',
         'combo_price',
+        'combo_stock', // Thêm trường này để fillable
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
         'combo_price' => 'decimal:2',
+        'combo_stock' => 'integer', // Thêm kiểu dữ liệu
     ];
 
     protected $dates = ['deleted_at'];
@@ -34,5 +36,20 @@ class Collection extends Model
     public function books()
     {
         return $this->belongsToMany(Book::class, 'book_collections');
+    }
+
+    public function summary()
+    {
+        return $this->hasOne(ComboSummary::class);
+    }
+
+    public function hasSummary()
+    {
+        return $this->summary()->exists();
+    }
+
+    public function getSummaryAttribute()
+    {
+        return $this->getRelationValue('summary');
     }
 }

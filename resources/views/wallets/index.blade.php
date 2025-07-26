@@ -122,20 +122,30 @@
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-800 text-white">
                                                 Rút tiền
                                             </span>
+                                        @elseif($transaction->type === 'HoanTien')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                Hoàn tiền
+                                            </span>
+                                            @elseif($transaction->type === 'payment')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                Thanh Toán
+                                            </span>
                                         @else
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                                 {{ ucfirst($transaction->type) }}
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ $transaction->type === 'Nap' ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $transaction->type === 'Nap' ? '+' : '-' }}₫{{ number_format($transaction->amount, 0, ',', '.') }}
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ in_array($transaction->type, ['Nap', 'HoanTien']) ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ in_array($transaction->type, ['Nap', 'HoanTien']) ? '+' : '-' }}₫{{ number_format($transaction->amount, 0, ',', '.') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">
                                         @if ($transaction->payment_method === 'bank_transfer')
                                             Chuyển khoản
-                                        @else
+                                        @elseif($transaction->payment_method === 'vnpay')
                                             VNPay
+                                        @else
+                                            Ví 
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">

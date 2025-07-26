@@ -56,17 +56,23 @@ const CartProducts = {
     // Remove individual item from cart
     removeItem(button) {
         const cartItem = button.closest('.cart-item');
+        const isCombo = button.dataset.isCombo === 'true';
         const bookId = button.dataset.bookId;
+        const collectionId = button.dataset.collectionId;
         
-        console.log('Remove item called:', { cartItem, bookId, button });
+        console.log('Remove item called:', { cartItem, bookId, collectionId, isCombo, button });
         
-        if (!cartItem || !bookId) {
-            console.error('Missing cart item or book ID');
+        if (!cartItem || (!bookId && !collectionId)) {
+            console.error('Missing cart item or identifier');
             return;
         }
 
-        // Show confirmation
-        if (!CartBase.utils.showConfirm('Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?')) {
+        // Show confirmation with appropriate message
+        const confirmMessage = isCombo 
+            ? 'Bạn có chắc muốn xóa combo này khỏi giỏ hàng?' 
+            : 'Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?';
+            
+        if (!CartBase.utils.showConfirm(confirmMessage)) {
             return;
         }
 
@@ -77,26 +83,36 @@ const CartProducts = {
         // Add loading state
         CartBase.dom.addClass(cartItem, 'loading');
 
-        // Get additional item data for precise removal
-        const bookFormatId = cartItem.dataset.bookFormatId || null;
-        const attributeValueIds = cartItem.dataset.attributeValueIds || null;
+        let requestData;
+        
+        if (isCombo) {
+            // Remove combo item
+            requestData = {
+                collection_id: collectionId,
+                is_combo: true,
+                _token: CartBase.utils.getCSRFToken()
+            };
+        } else {
+            // Remove individual book item
+            const bookFormatId = cartItem.dataset.bookFormatId || null;
+            const attributeValueIds = cartItem.dataset.attributeValueIds || null;
 
-        console.log('Remove item data:', {
-            bookId,
-            bookFormatId,
-            attributeValueIds
-        });
+            requestData = {
+                book_id: bookId,
+                book_format_id: bookFormatId,
+                attribute_value_ids: attributeValueIds,
+                is_combo: false,
+                _token: CartBase.utils.getCSRFToken()
+            };
+        }
+
+        console.log('Remove item data:', requestData);
 
         // Make AJAX request
         $.ajax({
             url: '/cart/remove',
             method: 'POST',
-            data: {
-                book_id: bookId,
-                book_format_id: bookFormatId,
-                attribute_value_ids: attributeValueIds,
-                _token: CartBase.utils.getCSRFToken()
-            },
+            data: requestData,
             success: (response) => {
                 console.log('Remove success:', response);
                 this.handleRemoveSuccess(response, cartItem);
@@ -112,6 +128,13 @@ const CartProducts = {
     handleRemoveSuccess(response, cartItem) {
         if (response.success) {
             CartBase.utils.showSuccess(response.success);
+            
+            // Dispatch cart update event with count
+            if (typeof response.cart_count !== 'undefined') {
+                document.dispatchEvent(new CustomEvent('cartUpdated', {
+                    detail: { count: response.cart_count }
+                }));
+            }
             
             // Always reload page after successful removal to update all cart data
             setTimeout(() => {
@@ -184,6 +207,14 @@ const CartProducts = {
     handleClearSuccess(response) {
         if (response.success) {
             CartBase.utils.showSuccess(response.success);
+            
+            // Dispatch cart clear event
+            if (typeof response.cart_count !== 'undefined') {
+                document.dispatchEvent(new CustomEvent('cartUpdated', {
+                    detail: { count: response.cart_count }
+                }));
+            }
+            
             setTimeout(() => {
                 window.location.reload();
             }, 1000);

@@ -1,4 +1,51 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // --- Kiểm tra tồn kho cho comboQuantity (combo) ---
+    const comboInput = document.getElementById('comboQuantity');
+    if (comboInput) {
+        // Nút + - cho combo
+        const incBtn = document.getElementById('comboIncrementBtn');
+        const decBtn = document.getElementById('comboDecrementBtn');
+        if (incBtn) {
+            incBtn.addEventListener('click', function() {
+                let val = parseInt(comboInput.value) || 1;
+                const max = parseInt(comboInput.getAttribute('max')) || 1;
+                if (val < max) {
+                    comboInput.value = val + 1;
+                    comboInput.dispatchEvent(new Event('input'));
+                }
+            });
+        }
+        if (decBtn) {
+            decBtn.addEventListener('click', function() {
+                let val = parseInt(comboInput.value) || 1;
+                if (val > 1) {
+                    comboInput.value = val - 1;
+                    comboInput.dispatchEvent(new Event('input'));
+                }
+            });
+        }
+        comboInput.addEventListener('input', function() {
+            const max = parseInt(comboInput.getAttribute('max')) || 1;
+            let val = parseInt(comboInput.value) || 1;
+            if (val < 1) val = 1;
+            if (val > max) val = max;
+            comboInput.value = val;
+            // Cập nhật trạng thái nút
+            const parent = comboInput.parentElement;
+            if (parent) {
+                const incBtn = parent.querySelector('button[onclick*="updateComboQty(1)"]');
+                if (incBtn) incBtn.disabled = (val >= max);
+                const decBtn = parent.querySelector('button[onclick*="updateComboQty(-1)"]');
+                if (decBtn) decBtn.disabled = (val <= 1);
+            }
+        });
+        comboInput.addEventListener('blur', function() {
+            if (!comboInput.value) comboInput.value = 1;
+            comboInput.dispatchEvent(new Event('input'));
+        });
+        // Khởi tạo trạng thái đúng khi load trang
+        comboInput.dispatchEvent(new Event('input'));
+    }
     const formatSelect = document.getElementById('bookFormatSelect');
     const priceDisplay = document.getElementById('bookPrice');
     const originalPriceElement = document.getElementById('originalPrice');
@@ -55,6 +102,54 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        // Badge logic giống combo
+        const stockBadge = document.getElementById('stockBadge');
+        const stockDot = document.getElementById('stockDot');
+        const stockText = document.getElementById('stockText');
+        const stockQuantityDisplay = document.getElementById('stockQuantityDisplay');
+        const productQuantity = document.getElementById('productQuantity');
+
+        // Reset badge class
+        stockBadge.className = 'inline-flex items-center px-3 py-1 text-sm font-semibold border adidas-font uppercase tracking-wider';
+        let badgeClass = '', dotClass = '', statusText = '';
+        if (isEbook) {
+            badgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+            dotClass = 'bg-blue-500';
+            statusText = 'EBOOK - CÓ SẴN';
+        } else if (stock > 0) {
+            badgeClass = 'bg-green-50 text-green-700 border-green-200';
+            dotClass = 'bg-green-500';
+            statusText = 'CÒN HÀNG';
+        } else if (stock === 0) {
+            badgeClass = 'bg-red-50 text-red-700 border-red-200';
+            dotClass = 'bg-red-500';
+            statusText = 'HẾT HÀNG';
+        } else if (stock === -1) {
+            badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+            dotClass = 'bg-yellow-500';
+            statusText = 'SẮP RA MẮT';
+        } else if (stock === -2) {
+            badgeClass = 'bg-gray-100 text-gray-700 border-gray-300';
+            dotClass = 'bg-gray-500';
+            statusText = 'NGƯNG KINH DOANH';
+        } else {
+            badgeClass = 'bg-red-50 text-red-700 border-red-200';
+            dotClass = 'bg-red-500';
+            statusText = 'HẾT HÀNG';
+        }
+        stockBadge.className += ' ' + badgeClass;
+        stockDot.className = 'w-2 h-2 rounded-full mr-2 inline-block ' + dotClass;
+        stockText.textContent = statusText;
+
+        // Số lượng còn lại
+        if ((stock > 0 || isEbook) && stock !== -1 && stock !== -2) {
+            stockQuantityDisplay.style.display = '';
+            if (productQuantity) productQuantity.textContent = stock;
+        } else {
+            stockQuantityDisplay.style.display = 'none';
+        }
+
+        // Ẩn input số lượng nếu là ebook
         if (isEbook) {
             if (quantityGroup) quantityGroup.style.display = 'none';
             quantityInput.value = 1;
@@ -78,8 +173,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (quantityGroup) quantityGroup.style.display = 'flex';
             quantityInput.disabled = false;
 
-            attributeGroups.forEach(select => {
-                select.closest('.col-span-1').style.display = 'block';
+            // Hiện lại tất cả thuộc tính
+            document.querySelectorAll('#bookAttributesGroup .space-y-2').forEach(group => {
+                group.style.display = '';
             });
 
             productQuantityDisplay.textContent = stock > 0 ? stock : 0;

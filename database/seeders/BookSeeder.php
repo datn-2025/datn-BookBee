@@ -46,8 +46,6 @@ class BookSeeder extends Seeder
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-                // Gán tác giả cho sách (many-to-many)
-                $book->authors()->sync($authors->random(rand(1,3))->pluck('id')->toArray());
 
                 // 70% sách có bản bìa cứng
                 if (fake()->boolean(30)) {

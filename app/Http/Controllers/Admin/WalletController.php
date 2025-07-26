@@ -69,10 +69,12 @@ class WalletController extends Controller
             
             // Số dư sau giao dịch: 
             // - Nếu là nạp tiền (Nap) và đã duyệt: cộng vào số dư
+            // - Nếu là hoàn tiền (HoanTien) và đã duyệt: cộng vào số dư  
             // - Nếu là rút tiền (Rut) và đã duyệt: không ảnh hưởng số dư (vì đã trừ khi tạo yêu cầu)
             // - Nếu là thanh toán (payment): trừ khỏi số dư
             if ($transaction->status === 'success') {
-                if ($transaction->type === 'Nap') {
+                if ($transaction->type === 'Nap' || $transaction->type === 'HOANTIEN') {
+                    // Nạp tiền và hoàn tiền: cộng vào số dư
                     $afterBalances[$transaction->id] = $sumBefore + $transaction->amount;
                 } elseif ($transaction->type === 'Rut') {
                     // Rút tiền: số dư không thay đổi vì đã trừ khi tạo yêu cầu

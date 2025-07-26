@@ -43,6 +43,14 @@
                                 @enderror
                             </div>
                             <div class="col-12">
+                                <label for="combo_stock" class="form-label">Số lượng combo</label>
+                                <input type="number" min="0" class="form-control @error('combo_stock') is-invalid @enderror" id="combo_stock" placeholder="Số lượng combo" name="combo_stock" value="{{ old('combo_stock') }}">
+                                @error('combo_stock')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted">Để trống nếu không giới hạn số lượng</small>
+                            </div>
+                            <div class="col-12">
                                 <label for="books" class="form-label">Chọn sách cho combo <span class="text-danger">*</span></label>
                                 <select class="form-select @error('books') is-invalid @enderror" id="books" name="books[]" multiple >
                                     @foreach($books as $book)

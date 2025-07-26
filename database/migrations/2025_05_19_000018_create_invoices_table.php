@@ -25,7 +25,7 @@ return new class extends Migration
             // Add indexes for frequently accessed columns
             $table->index('order_id');
             $table->index('invoice_date');
-            $table->unique('order_id'); // Each order can only have one invoice
+            // $table->unique('order_id'); // Each order can only have one invoice
         });
     }
 
