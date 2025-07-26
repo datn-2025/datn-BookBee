@@ -111,12 +111,29 @@ const CartBase = {
         getCartItemData(cartItem) {
             if (!cartItem) return null;
             
-            return {
-                bookId: cartItem.dataset.bookId,
-                price: parseFloat(cartItem.dataset.price) || 0,
-                stock: parseInt(cartItem.dataset.stock) || 0,
-                element: cartItem
-            };
+            // Check if this is a combo item
+            const isCombo = cartItem.dataset.isCombo === 'true' || cartItem.classList.contains('combo-item');
+            
+            if (isCombo) {
+                return {
+                    collectionId: cartItem.dataset.collectionId,
+                    isCombo: true,
+                    price: parseFloat(cartItem.dataset.price) || 0,
+                    stock: null, // Combo không có tồn kho
+                    element: cartItem
+                };
+            } else {
+                return {
+                    bookId: cartItem.dataset.bookId,
+                    bookFormatId: cartItem.dataset.bookFormatId,
+                    attributeValueIds: cartItem.dataset.attributeValueIds,
+                    formatName: cartItem.dataset.formatName,
+                    isCombo: false,
+                    price: parseFloat(cartItem.dataset.price) || 0,
+                    stock: parseInt(cartItem.dataset.stock) || 0,
+                    element: cartItem
+                };
+            }
         },
 
         // Show success message
@@ -137,6 +154,13 @@ const CartBase = {
         showWarning(message) {
             if (typeof toastr !== 'undefined') {
                 toastr.warning(message);
+            }
+        },
+
+        // Show info message
+        showInfo(message) {
+            if (typeof toastr !== 'undefined') {
+                toastr.info(message);
             }
         },
 
@@ -170,10 +194,18 @@ const CartBase = {
             }
         },
 
-        // Remove element safely
+        // Remove element safely with animation
         remove(element) {
             if (element && element.parentNode) {
-                element.parentNode.removeChild(element);
+                // Add fade out animation
+                element.style.transition = 'opacity 0.3s ease';
+                element.style.opacity = '0';
+                
+                setTimeout(() => {
+                    if (element.parentNode) {
+                        element.parentNode.removeChild(element);
+                    }
+                }, 300);
             }
         },
 

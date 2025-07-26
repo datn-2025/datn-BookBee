@@ -73,17 +73,30 @@
 
                     <!-- Các báo cáo bổ sung -->
                     <div class="row mt-4">
-
-                        <div class="col-xl-4 col-md-6">
+                        <div class="col-12 col-md-6 mb-4">
                             <livewire:top-selling-books-report />
                         </div>
-                        <div class="col-xl-4 col-md-6">
+                        <div class="col-12 col-md-6 mb-4">
                             <livewire:inventory-status-report />
                         </div>
-                        <div class="col-xl-4 col-md-6">
+                    </div>
+
+                    <div>
+                        <div class="col-12">
                             <livewire:revenue-by-author-publisher-report />
                         </div>
                     </div>
+
+                    <div>
+                        <div class="col-12">
+                            <livewire:total-books-sold-chart />
+                        </div>
+                    </div><br><br>
+                    <div>
+                        <div class="col-12">
+                            <livewire:book-type-line-chart />
+                        </div>
+                    </div><br><br>
 
                     <div class="row mt-4">
                         <div class="col-xl-4 col-md-6">
@@ -96,6 +109,10 @@
                             <livewire:book-brand-chart />
                         </div>
                     </div>
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <livewire:voucher-effectiveness-report />
+                        </div>
 
                 </div> <!-- end .h-100 -->
             </div>

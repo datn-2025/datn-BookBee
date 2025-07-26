@@ -12,11 +12,13 @@ class Author extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'slug', 'description', 'image', 'status'];
+    // protected $fillable = ['name', 'slug', 'description', 'image', 'status'];
+    protected $fillable = ['name', 'biography', 'image'];
 
-    public function books(): HasMany
+    public function books()
     {
-        return $this->hasMany(Book::class);
+        return $this->belongsToMany(Book::class, 'author_books')
+            ->using(AuthorBook::class);
     }
 
     protected static function boot()

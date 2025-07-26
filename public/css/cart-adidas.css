@@ -1,0 +1,716 @@
+/* Adidas-inspired luxury cart style - improved for more elegance and modern look */
+.adidas-cart-container {
+    background: #fff;
+    max-width: 1200px;
+    margin: 48px auto 48px auto;
+    border-radius: 0;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.16);
+    padding: 40px 32px 32px 32px;
+    font-family: 'AdihausDIN', 'TitilliumWeb', 'Montserrat', 'Arial Black', 'Arial', sans-serif;
+    border: 2.5px solid #111;
+}
+.adidas-cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 4px solid #111;
+    padding-bottom: 24px;
+    margin-bottom: 40px;
+    background: linear-gradient(90deg, #fff 60%, #f7f7f7 100%);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.adidas-cart-header-content {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+.adidas-cart-header-icon {
+    background: #111;
+    color: #fff;
+    border-radius: 0;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    border: 2.5px solid #111;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    transition: box-shadow 0.12s;
+}
+.adidas-cart-header-icon:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+}
+.adidas-cart-title {
+    font-size: 2.7rem;
+    font-weight: 900;
+    letter-spacing: 2.5px;
+    color: #111;
+    margin-bottom: 0;
+    text-transform: uppercase;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+.adidas-cart-desc {
+    color: #222;
+    font-size: 1.18rem;
+    margin-top: 6px;
+    font-weight: 600;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+    letter-spacing: 0.5px;
+}
+.adidas-cart-actions {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+}
+.adidas-btn {
+    border: 2.5px solid #111;
+    border-width: 2.5px;
+    border-radius: 6px;
+    padding: 14px 38px;
+    font-size: 1.12rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s, border 0.15s, transform 0.15s;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    background: #fff;
+    color: #111;
+    position: relative;
+    overflow: hidden;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+}
+.adidas-btn-primary {
+    background: linear-gradient(90deg, #111 80%, #222 100%);
+    color: #fff;
+    border: 2.5px solid #111;
+}
+.adidas-btn-primary:hover {
+    background: #fff;
+    color: #111;
+    border-color: #111;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.13);
+    transform: translateY(-2px) scale(1.01);
+}
+.adidas-btn-secondary {
+    background: linear-gradient(90deg, #fff 80%, #f7f7f7 100%);
+    color: #111;
+    border: 2.5px solid #111;
+}
+.adidas-btn-secondary:hover {
+    background: #111;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.13);
+    transform: translateY(-2px) scale(1.01);
+}
+.adidas-btn-danger {
+    background: linear-gradient(90deg, #fff 80%, #ffeaea 100%);
+    color: #e53935;
+    border: 2.5px solid #e53935;
+}
+.adidas-btn-danger:hover {
+    background: #e53935;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(229,57,53,0.13);
+    transform: translateY(-2px) scale(1.01);
+}
+.adidas-cart-main {
+    display: flex;
+    gap: 48px;
+    flex-wrap: wrap;
+}
+.adidas-cart-products {
+    flex: 2;
+    min-width: 360px;
+}
+.adidas-cart-products-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 1.35rem;
+    font-weight: 900;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    color: #111;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+    background: #f7f7f7;
+    border-radius: 6px;
+    padding: 12px 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.adidas-cart-products-list {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+.adidas-cart-product-card {
+    display: flex;
+    background: linear-gradient(90deg, #fff 80%, #f7f7f7 100%);
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.13);
+    padding: 24px 20px;
+    gap: 32px;
+    align-items: flex-start;
+    border: 2.5px solid #111;
+    transition: box-shadow 0.15s, border 0.12s, transform 0.12s;
+    position: relative;
+    overflow: hidden;
+}
+.adidas-cart-product-card:hover {
+    box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+    border: 2.5px solid #222;
+    transform: translateY(-2px) scale(1.01);
+}
+.adidas-cart-product-img-wrap {
+    width: 120px;
+    height: 160px;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2.5px solid #111;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+.adidas-cart-product-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 6px;
+}
+.adidas-cart-product-card:hover .adidas-cart-product-img {
+    transform: scale(1.03);
+}
+.adidas-cart-product-img-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #bbb;
+    font-size: 2.7rem;
+}
+.adidas-cart-product-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.adidas-cart-product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+.adidas-cart-product-title {
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: #111;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+.adidas-cart-product-remove {
+    background: none;
+    border: none;
+    color: #e53935;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 6px 14px;
+    border-radius: 6px;
+    transition: background 0.12s, color 0.12s, box-shadow 0.12s;
+    font-weight: 900;
+}
+.adidas-cart-product-remove:hover {
+    background: #e53935;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(229,57,53,0.10);
+}
+.adidas-cart-product-meta {
+    display: flex;
+    gap: 22px;
+    color: #222;
+    font-size: 1.08rem;
+    margin-bottom: 2px;
+    font-weight: 700;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+}
+.adidas-cart-product-attrs {
+    font-size: 1.01rem;
+    color: #111;
+    margin-bottom: 2px;
+    font-weight: 700;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+}
+.adidas-cart-product-attrs small {
+    color: #888;
+    margin-right: 8px;
+}
+.adidas-cart-product-attrs span {
+    background: #f7f7f7;
+    border: 2px solid #111;
+    border-radius: 6px;
+    padding: 3px 12px;
+    margin-right: 6px;
+    font-size: 1.01rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.adidas-cart-product-footer {
+    display: flex;
+    gap: 48px;
+    align-items: flex-end;
+    margin-top: 10px;
+}
+.adidas-cart-product-price,
+.adidas-cart-product-total {
+    min-width: 100px;
+    font-size: 1.13rem;
+    color: #111;
+    font-weight: 900;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+}
+.adidas-cart-product-total {
+    font-size: 1.22rem;
+    color: #111;
+}
+.adidas-cart-product-qty {
+    min-width: 130px;
+}
+.adidas-cart-qty-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 2px;
+}
+.adidas-cart-qty-control button {
+    background: #fff;
+    border: 2.5px solid #111;
+    border-radius: 0;
+    width: 36px;
+    height: 36px;
+    font-size: 1.18rem;
+    color: #111;
+    cursor: pointer;
+    font-weight: 900;
+    transition: all 0.22s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.adidas-cart-qty-control button:disabled {
+    color: #bbb;
+    background: #eee;
+    border: 2.5px solid #bbb;
+    cursor: not-allowed;
+}
+.adidas-cart-qty-control button:hover:not(:disabled) {
+    background: #111;
+    color: #fff;
+}
+.adidas-cart-qty-control input[type="number"] {
+    width: 54px;
+    text-align: center;
+    border: 2.5px solid #111;
+    border-radius: 0;
+    font-size: 1.13rem;
+    padding: 6px 0;
+    background: #fff;
+    color: #111;
+    font-weight: 900;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+}
+.adidas-cart-product-stock {
+    margin-top: 2px;
+    color: #888;
+    font-size: 1.01rem;
+    font-weight: 700;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+}
+.adidas-cart-product-max {
+    color: #e53935;
+    margin-left: 10px;
+    font-weight: 900;
+}
+.adidas-cart-summary {
+    flex: 1;
+    min-width: 340px;
+    background: linear-gradient(120deg, #111 80%, #222 100%);
+    color: #fff;
+    border-radius: 12px;
+    padding: 48px 32px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    align-self: flex-start;
+    border: 2.5px solid #111;
+    transition: box-shadow 0.12s;
+}
+.adidas-cart-summary-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 1.35rem;
+    font-weight: 900;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+}
+.adidas-cart-summary-details {
+    background: linear-gradient(90deg, #fff 80%, #f7f7f7 100%);
+    border-radius: 8px;
+    padding: 24px 18px;
+    margin-bottom: 14px;
+    color: #111;
+    border: 2.5px solid #111;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+}
+.adidas-cart-summary-details h6 {
+    font-size: 1.13rem;
+    font-weight: 900;
+    margin-bottom: 14px;
+    color: #111;
+    text-transform: uppercase;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+}
+.adidas-cart-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.18rem;
+    margin-bottom: 10px;
+    font-weight: 900;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+}
+.adidas-cart-summary-total {
+    font-size: 1.28rem;
+    font-weight: 900;
+    color: #ffe600;
+}
+.adidas-cart-summary-checkout {
+    margin-top: 24px;
+    text-align: center;
+}
+.adidas-cart-summary-checkout .adidas-btn {
+    width: 100%;
+    font-size: 1.25rem;
+    padding: 22px 0;
+    border-radius: 8px;
+    letter-spacing: 2.5px;
+    font-weight: 900;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s, border 0.15s, transform 0.15s;
+}
+.adidas-cart-summary-safe {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.08rem;
+    color: #ffe600;
+    margin-top: 14px;
+    justify-content: center;
+    font-weight: 900;
+}
+.adidas-cart-empty {
+    text-align: center;
+    padding: 80px 0 60px 0;
+    border: 2.5px solid #111;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #fff 80%, #f7f7f7 100%);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+}
+.adidas-cart-empty-icon {
+    font-size: 4rem;
+    color: #111;
+    margin-bottom: 24px;
+}
+.adidas-cart-empty-actions {
+    margin: 32px 0 24px 0;
+    display: flex;
+    gap: 22px;
+    justify-content: center;
+}
+.adidas-cart-empty-suggest {
+    margin-top: 24px;
+}
+.adidas-cart-empty-suggest-list {
+    display: flex;
+    gap: 22px;
+    justify-content: center;
+    margin-top: 12px;
+}
+.adidas-cart-empty-suggest-list div {
+    background: #f7f7f7;
+    border: 2.5px solid #111;
+    border-radius: 8px;
+    padding: 10px 28px;
+    color: #111;
+    font-weight: 900;
+    font-size: 1.13rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+    font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: box-shadow 0.12s, background 0.12s;
+}
+
+/* Combo Cart Styling */
+.combo-item {
+    border-left: 4px solid #ff6b35 !important;
+    background: linear-gradient(135deg, #fff5f3 0%, #ffffff 100%);
+}
+
+.combo-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #ff6b35, #ff8c42);
+    color: white;
+    border-radius: 20px;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+    border: 2px solid white;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.combo-badge i {
+    font-size: 8px;
+}
+
+.combo-placeholder {
+    background: linear-gradient(135deg, #ff6b35, #ff8c42);
+    color: white;
+}
+
+.combo-title {
+    color: #ff6b35 !important;
+    font-weight: 700;
+}
+
+.combo-books-preview {
+    margin-top: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #ff6b35;
+}
+
+.combo-books-label {
+    color: #666;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.combo-books-list {
+    color: #333;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.combo-book-item {
+    font-weight: 500;
+}
+
+.combo-note {
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: #e3f2fd;
+    border-radius: 4px;
+    border-left: 3px solid #2196f3;
+}
+
+.combo-note small {
+    color: #1976d2;
+    font-weight: 500;
+}
+
+/* Gifts styling for individual books */
+.adidas-cart-product-gifts {
+    margin-top: 12px;
+    padding: 8px;
+    background: linear-gradient(135deg, #fff3e0, #ffffff);
+    border-radius: 4px;
+    border-left: 3px solid #ffa726;
+}
+
+.gifts-label {
+    color: #f57c00;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.gifts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gift-item {
+    padding: 4px 6px;
+    background: rgba(255, 167, 38, 0.1);
+    border-radius: 3px;
+    border-left: 2px solid #ffa726;
+}
+
+.gift-name {
+    font-weight: 600;
+    color: #e65100;
+    font-size: 12px;
+}
+
+.gift-desc {
+    color: #f57c00;
+    font-size: 11px;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Enhanced cart item styling for differentiation */
+.cart-item[data-is-combo="true"] {
+    position: relative;
+}
+
+.cart-item[data-is-combo="false"] .adidas-cart-product-info {
+    padding-left: 12px;
+}
+
+/* Combo availability styles */
+.combo-availability-info {
+    margin-top: 8px;
+    color: #666;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.combo-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.combo-status.combo-active {
+    background: #e8f5e8;
+    color: #2e7d32;
+    border: 1px solid #4caf50;
+}
+
+.combo-status.combo-pending {
+    background: #fff3e0;
+    color: #f57c00;
+    border: 1px solid #ff9800;
+}
+
+.combo-status.combo-expired {
+    background: #ffebee;
+    color: #c62828;
+    border: 1px solid #f44336;
+}
+
+.combo-date-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
+.combo-date-info i {
+    color: #888;
+}
+
+/* Mobile responsive for combo info */
+@media (max-width: 768px) {
+    .combo-books-preview {
+        padding: 6px;
+    }
+    
+    .combo-books-list {
+        font-size: 11px;
+    }
+    
+    .adidas-cart-product-gifts {
+        padding: 6px;
+    }
+    
+    .gifts-label {
+        font-size: 11px;
+    }
+    
+    .gift-name {
+        font-size: 11px;
+    }
+    
+    .combo-availability-info {
+        font-size: 0.8rem;
+    }
+    
+    .combo-status {
+        font-size: 0.75rem;
+        padding: 3px 6px;
+    }
+    
+    .combo-date-info {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 1100px) {
+    .adidas-cart-container {
+        padding: 18px 4vw;
+    }
+    .adidas-cart-main {
+        flex-direction: column;
+        gap: 32px;
+    }
+    .adidas-cart-summary {
+        align-self: stretch;
+        min-width: unset;
+        padding: 24px 8px;
+    }
+}
+@media (max-width: 700px) {
+    .adidas-cart-header {
+        flex-direction: column;
+        gap: 18px;
+        padding-bottom: 14px;
+        margin-bottom: 24px;
+    }
+    .adidas-cart-title {
+        font-size: 1.5rem;
+    }
+    .adidas-cart-summary {
+        padding: 12px 4px;
+    }
+    .adidas-cart-product-card {
+        flex-direction: column;
+        gap: 18px;
+        padding: 10px 4px;
+    }
+    .adidas-cart-product-img-wrap {
+        width: 80px;
+        height: 100px;
+    }
+}

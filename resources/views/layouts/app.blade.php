@@ -6,7 +6,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>{{ get_setting()->name_website ?? 'BookBee' }} - @yield('title')</title>
+    <title>{{ get_setting() ? get_setting()->name_website : 'BookBee' }} - @yield('title')</title>
     <link rel="shortcut icon" href="{{ asset('storage/' . (get_setting() ? get_setting()->favicon : 'default_favicon.ico')) }}" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -14,23 +14,39 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
 
     <!-- Toastr CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
 
-    @vite(['resources/js/app.js', 'resources/css/app.css'])
     @stack('styles')
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     
-
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <!-- PDF.js for modern PDF viewing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configure PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+    
+    <!-- Cart Count Manager -->
+    <script src="{{ asset('js/cart-count-manager.js') }}"></script>
+
+    <!-- Prevent FOUC Script -->
+    <script>
+        // Ensure page loads smoothly without flash
+        document.documentElement.style.visibility = 'visible';
+        document.documentElement.style.opacity = '1';
+    </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js" async></script>
 
@@ -43,9 +59,110 @@
 
     <!-- Google Fonts Roboto -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    <!-- Tailwind CSS CDN (for nav effects) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Critical CSS để prevent FOUC -->
     <style>
+      /* Critical CSS - Load ngay để tránh navbar nháy */
+      nav {
+        background-color: white;
+        border-bottom: 1px solid #f3f4f6;
+        position: relative;
+        z-index: 50;
+      }
+      
+      .nav-container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
+      
+      .nav-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 4rem;
+      }
+      
+      .nav-logo h2 {
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: black;
+        text-transform: uppercase;
+        letter-spacing: -0.025em;
+        margin: 0;
+      }
+      
+      .nav-desktop {
+        display: none;
+      }
+      
+      @media (min-width: 768px) {
+        .nav-desktop {
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+        }
+        
+        .nav-menu {
+          display: flex;
+          gap: 2rem;
+        }
+        
+        .nav-link {
+          color: #374151;
+          font-weight: 500;
+          font-size: 0.875rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          text-decoration: none;
+          transition: color 0.2s ease;
+        }
+        
+        .nav-link:hover {
+          color: black;
+        }
+        
+        .nav-icons {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+      }
+      
+      .mobile-menu-btn {
+        display: block;
+        padding: 0.5rem;
+        color: #6b7280;
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+      
+      @media (min-width: 768px) {
+        .mobile-menu-btn {
+          display: none;
+        }
+      }
+      
+      /* Prevent FOUC và ensure smooth loading */
+      html {
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+      
+      body {
+        margin: 0;
+        min-height: 100vh;
+        visibility: visible !important;
+        opacity: 1 !important;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      
+      /* Ensure all elements load without flash */
+      * {
+        box-sizing: border-box;
+      }
+      
       .adidas-nav {
         font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
@@ -85,13 +202,8 @@
 
     {!! Toastr::message() !!}
 
-
-    <!-- jQuery (required for Toastr) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Toastr JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
     @stack('scripts')
     @include('layouts.partials.footer')

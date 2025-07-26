@@ -7,18 +7,28 @@ use App\Models\Book;
 
 class InventoryStatusReport extends Component
 {
-    public $books;
+    public $lowStockBooks;
+    public $outOfStockBooks;
 
     public function mount()
-{
-    // Lấy 5 sách có tổng tồn kho ít nhất từ các book formats
-    $this->books = Book::with('formats')
-        ->select('id', 'title', 'cover_image', 'status')
-        ->withSum('formats as total_stock', 'stock')
-        ->orderBy('total_stock') // Sắp xếp tăng dần
-        ->limit(6)
-        ->get();
-}
+    {
+        // Sách có tổng tồn kho từ 1-5
+        $this->lowStockBooks = Book::with('formats')
+            ->select('id', 'title', 'cover_image', 'status')
+            ->withSum('formats as total_stock', 'stock')
+            ->having('total_stock', '>=', 1)
+            ->having('total_stock', '<=', 5)
+            ->orderBy('total_stock')
+            ->get();
+
+        // Sách hết hàng (tồn kho = 0)
+        $this->outOfStockBooks = Book::with('formats')
+            ->select('id', 'title', 'cover_image', 'status')
+            ->withSum('formats as total_stock', 'stock')
+            ->having('total_stock', '=', 0)
+            ->orderBy('title')
+            ->get();
+    }
 
     public function render()
     {

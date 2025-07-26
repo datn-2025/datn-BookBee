@@ -84,6 +84,23 @@
                                 </div>
                             </div>
 
+                            {{-- Trường lý do hủy hàng --}}
+                            <div class="row mb-4" id="cancellation_reason_row" style="display: none;">
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label for="cancellation_reason" class="form-label">Lý do hủy hàng <span class="text-danger">*</span></label>
+                                        <textarea class="form-control @error('cancellation_reason') is-invalid @enderror"
+                                                  id="cancellation_reason" name="cancellation_reason" rows="3"
+                                                  placeholder="Vui lòng nhập lý do hủy hàng...">{{ old('cancellation_reason', $order->cancellation_reason) }}</textarea>
+                                        @error('cancellation_reason')
+                                        <div class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="row">
                                 <div class="col-12">
                                     <div class="alert alert-info" role="alert">
@@ -120,7 +137,7 @@
                                     <tbody>
                                         <tr>
                                             <th style="width: 200px;">Mã đơn hàng:</th>
-                                            <td>{{ substr($order->id, 0, 8) }}</td>
+                                            <td>{{ $order->order_code }}</td>
                                         </tr>
                                         <tr>
                                             <th>Khách hàng:</th>
@@ -144,11 +161,11 @@
                                             <th style="width: 200px;">Trạng thái hiện tại:</th>
                                             <td>
                                                 <span class="badge rounded-pill fs-12
-                                                   @if($order->orderStatus->name == 'Đã giao thành công') bg-success 
+                                                   @if($order->orderStatus->name == 'Đã giao thành công') bg-success
                                                     @elseif($order->orderStatus->name == 'Đang xử lý') bg-warning text-dark
-                                                    @elseif($order->orderStatus->name == 'Đang giao hàng') bg-info 
-                                                    @elseif($order->orderStatus->name == 'Giao thất bại') bg-danger 
-                                                    @elseif($order->orderStatus->name == 'Chờ xác nhận') bg-secondary 
+                                                    @elseif($order->orderStatus->name == 'Đang giao hàng') bg-info
+                                                    @elseif($order->orderStatus->name == 'Giao thất bại') bg-danger
+                                                    @elseif($order->orderStatus->name == 'Chờ xác nhận') bg-secondary
                                                     @else bg-dark  @endif">
                                                     {{ $order->orderStatus->name ?? 'N/A' }}
                                                 </span>
@@ -158,9 +175,9 @@
                                             <th>Trạng thái thanh toán:</th>
                                             <td>
                                                 <span class="badge rounded-pill fs-12
-                                                    @if($order->paymentStatus->name == 'Đã Thanh Toán') bg-success 
+                                                    @if($order->paymentStatus->name == 'Đã Thanh Toán') bg-success
                                                     @elseif($order->paymentStatus->name == 'Chưa Thanh Toán') bg-warning text-dark
-                                                    @elseif($order->paymentStatus->name == 'Thất Bại') bg-danger 
+                                                    @elseif($order->paymentStatus->name == 'Thất Bại') bg-danger
                                                     @else bg-secondary  @endif">
                                                     {{ $order->paymentStatus->name ?? 'N/A' }}
                                                 </span>
@@ -215,7 +232,7 @@
                                 <div class="flex-grow-1 ms-3">
                                     <h6 class="mb-1 fs-15">Trạng thái đơn hàng:</h6>
                                     <p class="text-muted mb-0">
-                                        <span class="badge 
+                                        <span class="badge
                                             @if($order->orderStatus->name == 'Đã giao hàng') bg-success
                                             @elseif($order->orderStatus->name == 'Đang xử lý') bg-warning
                                             @elseif($order->orderStatus->name == 'Đang giao hàng') bg-info
@@ -235,8 +252,8 @@
                                 <div class="flex-grow-1 ms-3">
                                     <h6 class="mb-1 fs-15">Trạng thái thanh toán:</h6>
                                     <p class="text-muted mb-0">
-                                        <span class="badge 
-                                            @if($order->paymentStatus->name == 'Đã thanh toán') bg-success
+                                        <span class="badge
+                                            @if($order->paymentStatus->name == 'Đã Thanh Toán') bg-success
                                             @elseif($order->paymentStatus->name == 'Chưa thanh toán') bg-warning
                                             @elseif($order->paymentStatus->name == 'Đã hủy') bg-danger
                                             @else bg-secondary @endif">
@@ -267,4 +284,34 @@
                 </div>
             </div>
         </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const orderStatusSelect = document.getElementById('order_status_id');
+    const cancellationReasonRow = document.getElementById('cancellation_reason_row');
+    const cancellationReasonInput = document.getElementById('cancellation_reason');
+
+    function toggleCancellationReason() {
+        const selectedOption = orderStatusSelect.options[orderStatusSelect.selectedIndex];
+        const selectedStatusName = selectedOption.text.trim();
+        
+        if (selectedStatusName === 'Đã hủy') {
+            cancellationReasonRow.style.display = 'block';
+            cancellationReasonInput.required = true;
+        } else {
+            cancellationReasonRow.style.display = 'none';
+            cancellationReasonInput.required = false;
+            cancellationReasonInput.value = '';
+        }
+    }
+
+    // Kiểm tra trạng thái ban đầu
+    toggleCancellationReason();
+
+    // Lắng nghe sự kiện thay đổi trạng thái
+    orderStatusSelect.addEventListener('change', toggleCancellationReason);
+});
+</script>
 @endsection

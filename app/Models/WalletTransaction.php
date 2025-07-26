@@ -12,7 +12,8 @@ class WalletTransaction extends Model
 
     public $incrementing = false;
     protected $keyType = 'string';
-    protected $fillable = ['id', 'wallet_id', 'amount', 'type', 'description', 'related_order_id'];
+    protected $table = 'wallet_transactions';
+    protected $fillable = ['id', 'wallet_id', 'amount', 'type', 'description', 'related_order_id', 'status', 'payment_method', 'bank_name', 'bank_number', 'customer_name'];
 
     protected static function booted()
     {

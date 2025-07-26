@@ -29,11 +29,14 @@ class Order extends Model
         'recipient_name',
         'recipient_phone',
         'recipient_email',
-
+        'cancelled_at',
+        'cancellation_reason',
+        'delivery_method',
     ];
 
     protected $casts = [
-        'total_amount' => 'decimal:2'
+        'total_amount' => 'decimal:2',
+        'cancelled_at' => 'datetime',
     ];
 
     public $incrementing = false;
@@ -79,6 +82,11 @@ class Order extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function refundRequests(): HasMany
+    {
+        return $this->hasMany(RefundRequest::class);
+    }
+
     public function appliedVoucher(): HasOne
     {
         return $this->hasOne(AppliedVoucher::class);
@@ -89,10 +97,10 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-     public function shipping()
-    {
-        return $this->hasOne(Shipping::class);
-    }
+    //  public function shipping()
+    // {
+    //     return $this->hasOne(shipping::class);
+    // }
 
     protected static function boot()
     {

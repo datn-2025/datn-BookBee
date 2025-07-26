@@ -19,7 +19,6 @@ class Book extends Model
         'title',
         'slug',
         'description',
-        'author_id',
         'brand_id',
         'category_id',
         'status',
@@ -45,13 +44,8 @@ class Book extends Model
         });
     }
 
-    public $incrementing = false;
     protected $keyType = 'string';
-
-    public function author(): BelongsTo
-    {
-        return $this->belongsTo(Author::class);
-    }
+    public $incrementing = false;
 
     public function brand(): BelongsTo
     {
@@ -62,6 +56,13 @@ class Book extends Model
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
+
+    public function authors(): BelongsToMany
+    {
+        return $this->belongsToMany(Author::class, 'author_books')
+            ->using(AuthorBook::class);
+    }
+
     public function formats(): HasMany
     {
         return $this->hasMany(BookFormat::class);
@@ -100,6 +101,20 @@ class Book extends Model
     public function getAverageRatingAttribute()
     {
         return $this->reviews()->avg('rating') ?? 0;
+    }
+    public function summary()
+    {
+        return $this->hasOne(BookSummary::class);
+    }
+
+    public function hasSummary()
+    {
+        return $this->summary()->exists();
+    }
+
+    public function gifts(): HasMany
+    {
+        return $this->hasMany(BookGift::class);
     }
     
 }

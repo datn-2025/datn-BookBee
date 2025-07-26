@@ -142,24 +142,42 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($books as $key => $book)                            @php
-                                // Get status badge class based on book status
-                                switch($book->status) {
-                                    case 'Còn Hàng':
-                                        $statusText = 'Còn Hàng';
-                                        $statusClass = 'badge bg-success';
-                                        break;
-                                    case 'Hết Hàng Tồn Kho':
-                                        $statusText = 'Hết Hàng Tồn Kho';
-                                        $statusClass = 'badge bg-dark';
-                                        break;
-                                    case 'Ngừng Kinh Doanh':
-                                        $statusText = 'Ngừng Kinh Doanh';
-                                        $statusClass = 'badge bg-warning';
-                                        break;
-                                    default:
-                                        $statusText = $book->status;
-                                        $statusClass = 'badge bg-danger';
+                            @foreach ($books as $key => $book)
+                            @php
+                                // Kiểm tra số lượng tồn kho của sách vật lý
+                                $physicalFormat = $book->formats->where('format_name', 'Sách Vật Lý')->first();
+                                $stock = $physicalFormat ? $physicalFormat->stock : null;
+                                
+                                // Xác định trạng thái dựa trên tồn kho và trạng thái gốc
+                                if ($stock !== null && $stock == 0) {
+                                    $statusText = 'Hết Hàng';
+                                    $statusClass = 'badge bg-danger';
+                                } elseif ($stock !== null && $stock > 0 && $stock < 10) {
+                                    $statusText = 'Sắp Hết Hàng';
+                                    $statusClass = 'badge bg-warning';
+                                } else {
+                                    // Giữ nguyên trạng thái gốc cho các trường hợp khác
+                                    switch($book->status) {
+                                        case 'Còn Hàng':
+                                            $statusText = 'Còn Hàng';
+                                            $statusClass = 'badge bg-success';
+                                            break;
+                                        case 'Hết Hàng Tồn Kho':
+                                            $statusText = 'Hết Hàng Tồn Kho';
+                                            $statusClass = 'badge bg-dark';
+                                            break;
+                                        case 'Ngừng Kinh Doanh':
+                                            $statusText = 'Ngừng Kinh Doanh';
+                                            $statusClass = 'badge bg-secondary';
+                                            break;
+                                        case 'Sắp Ra Mắt':
+                                            $statusText = 'Sắp Ra Mắt';
+                                            $statusClass = 'badge bg-info';
+                                            break;
+                                        default:
+                                            $statusText = $book->status;
+                                            $statusClass = 'badge bg-primary';
+                                    }
                                 }
                             @endphp
                             <tr>
@@ -169,7 +187,7 @@
                                     <div class="text-wrap" style="max-width: 270px;">
                                         <div class="fw-medium mb-1">{{ $book->title }}</div>
                                         <div class="text-muted small">
-                                            <div>Tác giả: {{ $book->author->name }}</div>
+                                           <div>Tác giả: {{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}</div>
                                             <div>NXB: {{ $book->brand->name }}</div>
                                         </div>
                                     </div>
@@ -184,7 +202,9 @@
                                     </div>
                                     @endif
                                 </td>
-                                <td class="text-center">{{ $book->category->name }}</td>
+                                <td class="text-center">
+                                    {{ $book->category ? $book->category->name : 'Không có danh mục' }}
+                                </td>
                                 <td>{{ number_format($book->page_count) }} trang</td>
                                 <td>
                                     @if($book->formats->isNotEmpty())
@@ -199,8 +219,11 @@
                                         @else
                                         {{ number_format($format->price) }}đ
                                         @endif
-                                        @if($format->stock !== null)
-                                        ({{ $format->stock }} cuốn)
+                                        
+                                        @if(stripos($format->format_name, 'ebook') !== false)
+                                            <span class="badge bg-info">Không giới hạn</span>
+                                        @elseif($format->stock !== null)
+                                            ({{ $format->stock }} cuốn)
                                         @endif
                                     </div>
                                     @endforeach

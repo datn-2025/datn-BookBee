@@ -3,11 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\EbookPurchaseConfirmation;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
+use App\Models\BookFormat;
+use App\Services\InvoiceService;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class AdminPaymentMethodController extends Controller
@@ -96,18 +102,60 @@ class AdminPaymentMethodController extends Controller
             return redirect()->back()->with('error', 'Trạng thái không hợp lệ');
         }
 
+        $paymentMethodName = strtolower($payment->paymentMethod->name);
+        $isCod = $paymentMethodName === 'thanh toán khi nhận hàng';
+
+        /**
+         * Trường hợp KH không phải COD mà admin cố tình để "Chờ Xử Lý" thì chặn lại
+         */
+        if (!$isCod && mb_strtolower($status->name, 'UTF-8') === 'chờ xử lý') {
+            Toastr::warning('Đơn thanh toán trước không thể về trạng thái Chờ Xử Lý!');
+            return redirect()->back();
+        }
+
+        // Ngược lại cho phép cập nhật
         $payment->payment_status_id = $status->id;
 
-        // ✅ Nếu trạng thái là "Đã Thanh Toán" thì cập nhật ngày thanh toán
         if (mb_strtolower($status->name, 'UTF-8') === 'đã thanh toán') {
             $payment->paid_at = now();
+
+            // Gửi mail nếu có Ebook
+            $order = $payment->order;
+            if ($order) {
+                $hasEbook = $order->orderItems()
+                    ->whereHas('book.formats', function ($query) {
+                        $query->where('format_name', 'Ebook');
+                    })
+                    ->exists();
+
+                if ($hasEbook) {
+                    Mail::to($order->user->email)->send(new EbookPurchaseConfirmation($order));
+                }
+                
+                // Tạo và gửi hóa đơn khi thanh toán thành công
+                try {
+                    app(\App\Services\InvoiceService::class)->processInvoiceForPaidOrder($order);
+                    Log::info('Invoice created and sent for admin-confirmed payment', ['order_id' => $order->id]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create invoice for admin-confirmed payment', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
         }
 
         $payment->save();
-        Toastr::success('Cập nhật trạng thái thanh toán thành công!');
 
-        return redirect()->back()->with('success', 'Cập nhật trạng thái thanh toán thành công');
+        if ($payment->order) {
+            $payment->order->payment_status_id = $payment->payment_status_id;
+            $payment->order->save();
+        }
+
+        Toastr::success('Cập nhật trạng thái thanh toán thành công!');
+        return redirect()->back();
     }
+
     public function destroy(PaymentMethod $paymentMethod)
     {
         if ($paymentMethod->payments()->exists()) {
@@ -182,13 +230,13 @@ class AdminPaymentMethodController extends Controller
                 $query->where('name', $request->payment_status);
             });
         }
-        // Ẩn các phương thức "Thanh toán khi nhận hàng"
-        $payments->whereHas('paymentMethod', function ($query) {
-            $query->where('name', '!=', 'Thanh toán khi nhận hàng');
-        });
+        // // Ẩn các phương thức "Thanh toán khi nhận hàng"
+        // $payments->whereHas('paymentMethod', function ($query) {
+        //     $query->where('name', '!=', 'Thanh toán khi nhận hàng');
+        // });
 
 
-        $payments = $payments->latest()->paginate(10);
+        $payments = $payments->latest()->paginate(10)->withQueryString();
 
         return view('admin.payment-methods.history', compact('payments'));
     }

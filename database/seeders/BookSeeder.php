@@ -37,7 +37,6 @@ class BookSeeder extends Seeder
                     'slug' => 'sach-' . ($i + 1) . '-' . Str::random(4),
                     'description' => 'Mô tả sách ' . ($i + 1),
                     'category_id' => $category->id,
-                    'author_id' => $authors->random()->id,
                     'brand_id' => $brands->random()->id,
                     'status' => 'available',
                     'cover_image' => 'https://picsum.photos/200/300',

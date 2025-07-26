@@ -108,11 +108,11 @@
                                             </div>
                                         </div>
 
-                                        <div class="form-check">
+                                        {{-- <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="remember"
                                                 id="remember" {{ old('remember') ? 'checked' : '' }}>
                                             <label class="form-check-label" for="remember">Nhớ tài khoản</label>
-                                        </div>
+                                        </div> --}}
 
                                         <div class="mt-4 mb-5">
                                             <button type="submit" class="btn btn-success w-100">

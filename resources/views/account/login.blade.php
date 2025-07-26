@@ -273,14 +273,14 @@
             <div class="content-wrapper">
                 <h1>Xin chào!</h1>
                 <p>Nhập thông tin của bạn và bắt đầu hành trình với chúng tôi</p>
-                <a href="{{ route('account.register') }}" class="btn btn-outline">ĐĂNG KÝ</a>
+                <a href="{{ route('register') }}" class="btn btn-outline">ĐĂNG KÝ</a>
             </div>
         </div>
         <div class="right-section">
             <div class="form-container">
                 <h2>Đăng nhập</h2>
                 <div class="social-buttons">
-                    <a href="#" class="social-button google">
+                    <a href="{{ route('auth.google') }}" class="social-button google">
                         <i class="fab fa-google"></i>
                     </a>
                 </div>
@@ -295,7 +295,7 @@
                     </div>
                 @endif
                 <form method="POST" action="{{ route('login.submit') }}">
-                    @csrf   
+                    @csrf
                     <div class="form-group">
                         <input type="email" name="email" class="form-control" placeholder="Email" required autofocus
                             value="{{ old('email') }}" />

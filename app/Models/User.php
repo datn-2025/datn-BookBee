@@ -30,8 +30,8 @@ class User extends Authenticatable
         'reset_token',
         'avatar',
         'activation_token',
-        'activation_expires'
-
+        'activation_expires',
+        'google_id'
     ];
 
     /**
@@ -129,5 +129,9 @@ class User extends Authenticatable
     public function hasAllPermissions(array $permissions): bool
     {
         return $this->role->permissions->whereIn('slug', $permissions)->count() === count($permissions);
+    }
+    public function wallet()
+    {
+        return $this->hasOne(\App\Models\Wallet::class);
     }
 }
