@@ -87,9 +87,9 @@ class ChatRealtime {
             console.log('💬 ChatRealtime: Pusher state:', pusher.connection.state);
             
             // Add connection event listeners for debugging
-            pusher.connection.bind('connected', () => {
-                console.log('💬 ChatRealtime: Pusher connected successfully');
-            });
+            // pusher.connection.bind('connected', () => {
+            //     console.log('💬 ChatRealtime: Pusher connected successfully');
+            // });
             
             pusher.connection.bind('disconnected', () => {
                 console.log('💬 ChatRealtime: Pusher disconnected');
@@ -167,16 +167,16 @@ class ChatRealtime {
                     const pusherChannel = pusher.subscribe(channelName);
                     
                     pusherChannel.bind('MessageSent', (data) => {
-                        console.log('💬 ChatRealtime: Received MessageSent via direct Pusher', {
-                            channel: channelName,
-                            data: data
-                        });
+                        // console.log('💬 ChatRealtime: Received MessageSent via direct Pusher', {
+                        //     channel: channelName,
+                        //     data: data
+                        // });
                         this.handleIncomingMessage(data);
                     });
 
-                    pusherChannel.bind('pusher:subscription_succeeded', () => {
-                        console.log(`💬 ChatRealtime: Direct Pusher subscription successful for ${channelName}`);
-                    });
+                    // pusherChannel.bind('pusher:subscription_succeeded', () => {
+                    //     console.log(`💬 ChatRealtime: Direct Pusher subscription successful for ${channelName}`);
+                    // });
                 }
 
                 this.echoChannels.set(channelName, channel);
@@ -293,7 +293,7 @@ class ChatRealtime {
             return;
         }
 
-        console.log('💬 ChatRealtime: Processing message for current conversation');
+        // console.log('💬 ChatRealtime: Processing message for current conversation');
 
         // Thông báo cho Livewire component để refresh (quan trọng!)
         if (window.Livewire) {
@@ -357,7 +357,7 @@ class ChatRealtime {
      * Xử lý thay đổi trạng thái user
      */
     handleUserStatusChange(data) {
-        console.log('💬 ChatRealtime: User status changed', data);
+        // console.log('💬 ChatRealtime: User status changed', data);
         
         // Show toast notification
         if (data.message && data.type) {
@@ -749,7 +749,7 @@ class ChatRealtime {
      * Handle message sent
      */
     handleMessageSent() {
-        console.log('💬 ChatRealtime: Message sent successfully');
+        // console.log('💬 ChatRealtime: Message sent successfully');
         
         // Force clear input multiple ways
         if (this.messageInput) {
@@ -882,7 +882,7 @@ class ChatRealtime {
             return;
         }
 
-        console.log('💬 ChatRealtime: Force re-setting up callbacks');
+        // console.log('💬 ChatRealtime: Force re-setting up callbacks');
         
         // Re-setup conversation channels
         this.setupConversationChannel(this.currentConversationId);
