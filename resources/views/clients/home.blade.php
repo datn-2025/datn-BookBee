@@ -1,5 +1,6 @@
 @extends('layouts.app')
-@section('title', 'BookBee')
+
+@section('title', 'Trang chủ')
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/home.css') }}">
@@ -402,7 +403,7 @@
                                 $format = $book->formats->first();
                                 $price = $format->price ?? 0;
                                 $discount = $format->discount ?? 0;
-                                $finalPrice = $discount > 0 ? $price - ($price * $discount) / 100 : $price;
+                                $finalPrice = $discount > 0 ? $price - $discount : $price;
                             @endphp
                             <div onclick="window.location='{{ route('books.show', ['slug' => $book->slug]) }}'"
                                  class="group bg-white border-2 border-gray-100 hover:border-black transition-all duration-300 cursor-pointer">
@@ -559,7 +560,7 @@
                                 $format = $book->formats->first();
                                 $oldPrice = $format->price ?? 0;
                                 $discount = $format->discount ?? 0;
-                                $newPrice = $oldPrice - ($oldPrice * $discount / 100);
+                                $newPrice = $oldPrice - $discount;
                             @endphp
                             <div onclick="window.location='{{ route('books.show', ['slug' => $book->slug]) }}'"
                                  class="flex gap-4 p-4 bg-white/10 hover:bg-white/20 cursor-pointer transition-colors">
@@ -573,7 +574,7 @@
                                         <span class="font-bold text-lg">{{ number_format($newPrice, 0, ',', '.') }}₫</span>
                                     </div>
                                     @if ($discount > 0)
-                                        <span class="inline-block bg-white text-red-600 text-xs px-2 py-1 mt-1 font-bold uppercase">-{{ $discount }}%</span>
+                                        <span class="inline-block bg-white text-red-600 text-xs px-2 py-1 mt-1 font-bold uppercase">-{{ number_format($discount, 0, ',', '.') }}₫</span>
                                     @endif
                                 </div>
                             </div>

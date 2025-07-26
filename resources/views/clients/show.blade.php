@@ -938,7 +938,7 @@
                                 $defaultPrice = $defaultFormat->price ?? $book->price;
                                 $defaultStock = $defaultFormat->stock ?? $book->stock;
                                 $discount = $defaultFormat->discount ?? 0;
-                                $finalPrice = $defaultPrice - ($defaultPrice * ($discount / 100));
+                                $finalPrice = $defaultPrice - $discount;
                             @endphp
                             <div class="price-section space-y-4">
                                 <div class="flex items-end space-x-4">
@@ -948,15 +948,14 @@
                                         <span id="originalPrice"
                                             class="text-xl text-gray-500 line-through adidas-font">{{ number_format($defaultPrice, 0, ',', '.') }}₫</span>
                                         <span id="discountText"
-                                            class="bg-red-600 text-white px-3 py-1 text-sm font-bold adidas-font uppercase tracking-wider">-<span
-                                                id="discountPercent">{{ $discount }}</span>%</span>
+                                            class="bg-red-600 text-white px-3 py-1 text-sm font-bold adidas-font uppercase tracking-wider">-{{ number_format($discount, 0, ',', '.') }}₫</span>
                                     @else
                                         <span id="originalPrice" class="text-xl text-gray-500 line-through adidas-font"
                                             style="display: none;"></span>
                                         <span id="discountText"
                                             class="bg-red-600 text-white px-3 py-1 text-sm font-bold adidas-font uppercase tracking-wider"
                                             style="display: none;">
-                                            -<span id="discountPercent">0</span>%
+                                            -<span id="discountAmount">0</span>₫
                                         </span>
                                     @endif
                                     <!-- Stock Status with Enhanced Design -->
@@ -1072,7 +1071,7 @@
                                                 <option value="{{ $ebookFormat->id }}" data-price="{{ $ebookFormat->price }}"
                                                     data-stock="{{ $ebookFormat->stock }}" data-discount="{{ $ebookFormat->discount }}"
                                                     data-format="{{ $ebookFormat->format_name }}"
-                                                    data-sample-url="{{ $ebookFormat->sample_file_url ? asset('storage/' . $ebookFormat->sample_file_url) : '' }}"
+                                                    data-sample-url="{{ $ebookFormat->sample_file_url ? route('ebook.sample.view', $ebookFormat->id) : '' }}"
                                                     data-allow-sample="{{ $ebookFormat->allow_sample_read ? '1' : '0' }}" selected>{{ $ebookFormat->format_name }}
                                                 </option>
                                             @endif
@@ -1080,7 +1079,7 @@
                                                 <option value="{{ $format->id }}" data-price="{{ $format->price }}"
                                                     data-stock="{{ $format->stock }}" data-discount="{{ $format->discount }}"
                                                     data-format="{{ $format->format_name }}"
-                                                    data-sample-url="{{ $format->sample_file_url ? asset('storage/' . $format->sample_file_url) : '' }}"
+                                                    data-sample-url="{{ $format->sample_file_url ? route('ebook.sample.view', $format->id) : '' }}"
                                                     data-allow-sample="{{ $format->allow_sample_read ? '1' : '0' }}">
                                                     {{ $format->format_name }}
                                                 </option>
@@ -1438,7 +1437,7 @@
                                     $discount = $related->discounts ? $related->discounts->where('is_active', true)->first() : null;
                                     $finalPrice = $price;
                                     if ($discount && $price > 0) {
-                                        $finalPrice = $price * (1 - ($discount->discount_percent ?? 0) / 100);
+                                        $finalPrice = $price - ($discount->discount_amount ?? 0);
                                     }
                                 @endphp
 
@@ -1501,7 +1500,7 @@
                                                         {{ number_format($price, 0, ',', '.') }}₫
                                                     </span>
                                                     <span class="bg-red-600 text-white text-xs font-bold px-1.5 py-0.5">
-                                                        -{{ $discount->discount_percent }}%
+                                                        -{{ number_format($discount->discount_amount ?? 0, 0, ',', '.') }}₫
                                                     </span>
                                                 @endif
                                             </div>
@@ -1762,8 +1761,7 @@
                     }
                 });
                 // Calculate final price with discount
-                const discountAmount = finalPrice * (discount / 100);
-                const priceAfterDiscount = finalPrice - discountAmount;
+                const priceAfterDiscount = finalPrice - discount;
                 // Update price display
                 bookPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(priceAfterDiscount) + '₫';
                 const originalPriceElement = document.getElementById('originalPrice');
@@ -1778,7 +1776,7 @@
                         discountTextElement.style.display = 'inline';
                     }
                     if (discountPercentElement) {
-                        discountPercentElement.textContent = discount;
+                        discountPercentElement.textContent = new Intl.NumberFormat('vi-VN').format(discount) + '₫';
                     }
                 } else {
                     if (originalPriceElement) {

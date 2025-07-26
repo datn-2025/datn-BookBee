@@ -84,7 +84,8 @@ class CartController extends Controller
                         'gifts' => collect(), // Combo không có quà tặng
                         'combo_books' => $comboBooks,
                         'start_date' => $combo->start_date,
-                        'end_date' => $combo->end_date
+                        'end_date' => $combo->end_date,
+                        'cover_image' => $combo->cover_image
                     ];
                     
                     $cart->push($item);
@@ -952,7 +953,7 @@ class CartController extends Controller
                 // Tính giá hiện tại (bao gồm combo nếu có)
                 $currentPrice = $bookInfo->price;
                 if (isset($bookInfo->discount) && $bookInfo->discount > 0) {
-                    $currentPrice = $bookInfo->price * (1 - $bookInfo->discount / 100);
+                    $currentPrice = $bookInfo->price - $bookInfo->discount;
                 }
                 
                 // Kiểm tra combo price

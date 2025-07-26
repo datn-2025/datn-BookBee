@@ -26,9 +26,12 @@ class EmailService
             'orderStatus',
             'paymentMethod'
         ]);
+        
+        // Lấy thông tin cài đặt cửa hàng
+        $storeSettings = \App\Models\Setting::first();
 
         Mail::to($order->user->email)
-            ->send(new OrderConfirmation($order));
+            ->send(new OrderConfirmation($order, $storeSettings));
     }
 
     public function sendOrderInvoice(Order $order)
@@ -44,9 +47,12 @@ class EmailService
             'orderStatus',
             'paymentMethod'
         ]);
+        
+        // Lấy thông tin cài đặt cửa hàng
+        $storeSettings = \App\Models\Setting::first();
 
         Mail::to($order->user->email)
-            ->send(new OrderInvoice($order));
+            ->send(new OrderInvoice($order, $storeSettings));
     }
 
     public function sendRefundInvoice(Invoice $invoice, RefundRequest $refundRequest)
@@ -69,21 +75,41 @@ class EmailService
         $order->load([
             'user', 
             'orderItems.book.authors', 
+            'orderItems.book.formats',
             'orderItems.bookFormat',
             'orderItems.collection'
         ]);
 
-        // Check if order contains any ebooks (chỉ áp dụng cho sách lẻ, không phải combo)
+        // Check if order contains any ebooks hoặc sách vật lý có ebook kèm theo
         $hasEbooks = $order->orderItems->some(function ($item) {
-            return !$item->is_combo && $item->bookFormat && $item->bookFormat->format_name === 'Ebook';
+            // Trường hợp 1: Mua trực tiếp ebook
+            if (!$item->is_combo && $item->bookFormat && $item->bookFormat->format_name === 'Ebook') {
+                return true;
+            }
+            
+            // Trường hợp 2: Mua sách vật lý nhưng sách đó có ebook kèm theo
+            if (!$item->is_combo && $item->book && $item->book->formats) {
+                return $item->book->formats->contains('format_name', 'Ebook');
+            }
+            
+            return false;
         });
         
         if (!$hasEbooks) {
+            Log::info('No ebooks found in order', ['order_id' => $order->id]);
             return;
         }
 
-        Mail::to($order->user->email)
-            ->send(new EbookPurchaseConfirmation($order));
+        try {
+            Mail::to($order->user->email)
+                ->send(new EbookPurchaseConfirmation($order));
+            Log::info('Ebook purchase confirmation email sent', ['order_id' => $order->id]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send ebook purchase confirmation email', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     /**

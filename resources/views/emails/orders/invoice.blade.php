@@ -120,7 +120,20 @@
             <p><strong>Phương thức:</strong> Nhận tại cửa hàng</p>
             <p><strong>Người nhận:</strong> {{ $order->recipient_name ?? $order->address->recipient_name }}</p>
             <p><strong>Số điện thoại:</strong> {{ $order->recipient_phone ?? $order->address->phone }}</p>
-            <p><strong>Địa chỉ cửa hàng:</strong> 123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh</p>
+            <p><strong>Địa chỉ cửa hàng:</strong> 
+                @if(isset($storeSettings) && $storeSettings->address)
+                    {{ $storeSettings->address }}
+                @else
+                    123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh
+                @endif
+            </p>
+            <p><strong>Điện thoại:</strong> 
+                @if(isset($storeSettings) && $storeSettings->phone)
+                    {{ $storeSettings->phone }}
+                @else
+                    1900 1234
+                @endif
+            </p>
             <p><strong>Giờ mở cửa:</strong> 8:00 - 22:00 (Thứ 2 - Chủ nhật)</p>
             <p><em>Vui lòng mang theo mã đơn hàng {{ $order->order_code }} khi đến nhận sách.</em></p>
             @else

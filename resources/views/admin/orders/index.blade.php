@@ -209,12 +209,20 @@
                                         </td>
                                         <td>
                                             <span class="text-muted">
-                                                {{ $order->address->district ?? 'N/A' }},
-                                                {{ $order->address->city ?? '' }}
+                                                @if($order->delivery_method === 'ebook')
+                                                    Ebook
+                                                @elseif($order->address)
+                                                    {{ $order->address->district ?? 'N/A' }},
+                                                    {{ $order->address->city ?? '' }}
+                                                @else
+                                                    N/A
+                                                @endif
                                             </span>
                                         </td>
                                         <td class="text-center">
-                                            @if($order->delivery_method === 'pickup')
+                                            @if($order->delivery_method === 'ebook')
+                                                <span class="badge bg-success">Ebook</span>
+                                            @elseif($order->delivery_method === 'pickup')
                                                 <span class="badge bg-info">Nhận tại cửa hàng</span>
                                             @else
                                                 <span class="badge bg-primary">Giao hàng tận nơi</span>

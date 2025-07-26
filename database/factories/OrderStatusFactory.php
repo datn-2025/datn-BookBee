@@ -22,6 +22,7 @@ class OrderStatusFactory extends Factory
                 'Thành công',
                 'Giao thất bại',
                 'Đã hủy',
+                'Đang hoàn tiền',
                 'Đã hoàn tiền',
             ])
         ];

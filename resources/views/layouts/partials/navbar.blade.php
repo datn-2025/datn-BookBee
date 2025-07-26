@@ -1,4 +1,4 @@
-<nav class="bg-white border-b border-gray-100" style="background-color: white; border-bottom: 1px solid #f3f4f6; position: relative; z-index: 50;">
+<nav style="background-color: white; border-bottom: 1px solid #f3f4f6; position: relative; z-index: 50;">
     <div class="nav-container" style="max-width: 1280px; margin: 0 auto; padding: 0 1rem;">
         <div class="nav-content" style="display: flex; justify-content: space-between; align-items: center; height: 4rem;">
             {{-- Logo --}}

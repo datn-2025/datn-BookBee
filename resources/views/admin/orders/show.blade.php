@@ -107,10 +107,19 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <h6 class="mb-1 fs-14">Địa chỉ giao hàng:</h6>
-                                                            <p class="text-muted mb-0">{{ $order->address->address_detail }}</p>
+                                                            <p class="text-muted mb-0">
+                                                                @if($order->delivery_method === 'ebook')
+                                                                    Ebook - Không cần địa chỉ giao hàng
+                                                                @elseif($order->address)
+                                                                    {{ $order->address->address_detail }}
+                                                                @else
+                                                                    Không có thông tin
+                                                                @endif
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </li>
+                                                @if($order->address && $order->delivery_method !== 'ebook')
                                                 <li>
                                                     <div class="d-flex">
                                                         <div class="flex-shrink-0 text-muted">
@@ -122,6 +131,7 @@
                                                         </div>
                                                     </div>
                                                 </li>
+                                                @endif
                                                 <li>
                                                     <div class="d-flex">
                                                         <div class="flex-shrink-0 text-muted">
@@ -129,7 +139,7 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <h6 class="mb-1 fs-14">Thành phố:</h6>
-                                                            <p class="text-muted mb-0">{{ $order->address->city }}</p>
+                                                            <p class="text-muted mb-0">{{ $order->address->city ?? 'không có địa chỉ' }}</p>
                                                         </div>
                                                     </div>
                                                 </li>

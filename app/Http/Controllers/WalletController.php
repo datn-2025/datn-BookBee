@@ -205,4 +205,50 @@ class WalletController extends Controller
             return back()->withInput();
         }
     }
+    
+    public function uploadBill(Request $request)
+    {
+        $request->validate([
+            'transaction_id' => 'required|exists:wallet_transactions,id',
+            'bill_image' => 'required|image|mimes:jpeg,jpg,png,gif|max:2048'
+        ]);
+        
+        $transaction = WalletTransaction::findOrFail($request->transaction_id);
+        
+        // Kiểm tra quyền sở hữu giao dịch
+        if ($transaction->wallet->user_id !== Auth::id()) {
+            abort(403, 'Bạn không có quyền thực hiện hành động này.');
+        }
+        
+        // Kiểm tra trạng thái giao dịch
+        if ($transaction->status !== 'pending') {
+            toastr()->error('Giao dịch này đã được xử lý hoặc không thể cập nhật!');
+            return redirect()->route('wallet.index');
+        }
+        
+        // Kiểm tra xem đã có bill chưa
+        if ($transaction->bill_image) {
+            toastr()->error('Giao dịch này đã có bill được upload!');
+            return redirect()->route('wallet.index');
+        }
+        
+        try {
+            // Upload bill image
+            $billImage = $request->file('bill_image');
+            $fileName = 'bill_' . time() . '_' . uniqid() . '.' . $billImage->getClientOriginalExtension();
+            $billPath = $billImage->storeAs('wallet_bills', $fileName, 'public');
+            
+            // Cập nhật giao dịch với bill image
+            $transaction->update([
+                'bill_image' => $billPath
+            ]);
+            
+            toastr()->success('Upload bill thành công! Giao dịch đang chờ admin duyệt.');
+            return redirect()->route('wallet.index');
+            
+        } catch (\Exception $e) {
+            toastr()->error('Có lỗi xảy ra khi upload bill. Vui lòng thử lại!');
+            return back();
+        }
+    }
 }

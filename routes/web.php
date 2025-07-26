@@ -154,9 +154,14 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::prefix('orders')->name('orders.')->group(function () {
-            Route::get('/', [OrderClientController::class, 'index'])->name('index');
+            // Redirect old index route to unified
+            Route::get('/', function() {
+                return redirect()->route('account.orders.unified');
+            })->name('index');
+            Route::get('/unified', [OrderClientController::class, 'unified'])->name('unified');
             Route::get('/{id}', [OrderClientController::class, 'show'])->name('show');
             Route::put('/{id}', [OrderClientController::class, 'update'])->name('update');
+            Route::put('/{id}/cancel', [OrderClientController::class, 'cancel'])->name('cancel');
             Route::delete('/{id}', [OrderClientController::class, 'destroy'])->name('destroy');
             
             // Refund routes
@@ -439,9 +444,23 @@ Route::middleware('auth')->prefix('wallet')->name('wallet.')->group(function () 
     Route::get('/', [App\Http\Controllers\WalletController::class, 'index'])->name('index');
     Route::get('/deposit', [App\Http\Controllers\WalletController::class, 'showDepositForm'])->name('deposit.form');
     Route::post('/deposit', [App\Http\Controllers\WalletController::class, 'deposit'])->name('deposit');
+    Route::post('/upload-bill', [App\Http\Controllers\WalletController::class, 'uploadBill'])->name('uploadBill');
     Route::get('/withdraw', [App\Http\Controllers\WalletController::class, 'showWithdrawForm'])->name('withdraw.form');
     Route::post('/withdraw', [App\Http\Controllers\WalletController::class, 'withdraw'])->name('withdraw');
     Route::get('/vnpay-return', [App\Http\Controllers\WalletController::class, 'vnpayReturn'])->name('vnpayReturn');
+});
+
+// Ebook Download routes - Secure download with authentication
+Route::prefix('ebook')->name('ebook.')->group(function() {
+    // Sample downloads (public access)
+    Route::get('/sample/download/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'downloadSample'])->name('sample.download');
+    Route::get('/sample/view/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'viewSample'])->name('sample.view');
+    
+    // Protected downloads (require authentication and purchase)
+    Route::middleware('auth')->group(function() {
+        Route::get('/download/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'download'])->name('download');
+        Route::get('/view/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'view'])->name('view');
+    });
 });
 
 // AI Summary routes

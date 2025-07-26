@@ -1,4 +1,5 @@
 @extends('layouts.account.layout')
+@section('title', 'Vĩ Của Tôi')
 
 @push('styles')
 <style>

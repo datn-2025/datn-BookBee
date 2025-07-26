@@ -1,5 +1,7 @@
 @extends('layouts.account.layout')
 
+@section('title', 'Rút Ví')
+
 @push('styles')
 <style>
     .withdraw-card {

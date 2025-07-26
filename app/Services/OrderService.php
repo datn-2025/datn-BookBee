@@ -400,6 +400,11 @@ class OrderService
      */
     public function handleDeliveryAddress($request, User $user)
     {
+        // Nếu là đơn hàng ebook, không cần địa chỉ giao hàng
+        if ($request->delivery_method === 'ebook') {
+            return null;
+        }
+        
         if ($request->address_id) {
             return $request->address_id;
         }
@@ -568,21 +573,24 @@ class OrderService
         $paymentStatus = PaymentStatus::where('name', 'Chờ Xử Lý')->firstOrFail();
         
         $finalTotalAmount = $subtotal + $request->shipping_fee_applied - $discountAmount;
+        
+        // Đối với đơn hàng ebook, sử dụng thông tin user nếu không có thông tin người nhận
+        $isEbookOrder = $request->delivery_method === 'ebook';
 
         return [
             'user_id' => $user->id,
             'order_code' => 'BBE-' . time(),
             'address_id' => $addressId,
-            'recipient_name' => $request->new_recipient_name,
-            'recipient_phone' => $request->new_phone,
-            'recipient_email' => $request->new_email,
+            'recipient_name' => $isEbookOrder ? ($request->new_recipient_name ?: $user->name) : $request->new_recipient_name,
+            'recipient_phone' => $isEbookOrder ? ($request->new_phone ?: $user->phone) : $request->new_phone,
+            'recipient_email' => $request->new_email ?: $user->email,
             'payment_method_id' => $request->payment_method_id,
             'voucher_id' => $voucherId,
             'note' => $request->note,
             'order_status_id' => $orderStatus->id,
             'payment_status_id' => $paymentStatus->id,
             'total_amount' => $finalTotalAmount,
-            'shipping_fee' => $request->delivery_method === 'pickup' ? 0 : $request->shipping_fee_applied,
+            'shipping_fee' => ($request->delivery_method === 'pickup' || $isEbookOrder) ? 0 : $request->shipping_fee_applied,
             'discount_amount' => (int) $discountAmount,
             'delivery_method' => $request->delivery_method,
         ];
@@ -596,7 +604,8 @@ class OrderService
         // 1. Xử lý địa chỉ giao hàng
         $addressId = $this->handleDeliveryAddress($request, $user);
         
-        if (!$addressId) {
+        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook
+        if (!$addressId && $request->delivery_method !== 'ebook') {
             throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
         }
 
@@ -727,7 +736,8 @@ class OrderService
         // 1. Xử lý địa chỉ giao hàng
         $addressId = $this->handleDeliveryAddress($request, $user);
         
-        if (!$addressId) {
+        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook
+        if (!$addressId && $request->delivery_method !== 'ebook') {
             throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
         }
 

@@ -37,10 +37,10 @@ class RefundController extends Controller
                 ->with('error', 'Đơn hàng này không đủ điều kiện để yêu cầu hoàn tiền.');
         }
 
-        // Check if there's already a pending refund request
-        if ($order->refundRequests()->whereIn('status', ['pending', 'processing'])->exists()) {
+        // Check if there's already any refund request (ngăn chặn tạo yêu cầu hoàn tiền thứ 2)
+        if ($order->refundRequests()->exists()) {
             return redirect()->route('account.orders.show', $order->id)
-                ->with('error', 'Đã tồn tại yêu cầu hoàn tiền cho đơn hàng này.');
+                ->with('error', 'Đơn hàng này đã có yêu cầu hoàn tiền. Không thể tạo yêu cầu hoàn tiền mới.');
         }
 
         return view('clients.account.refund-request', compact('order'));
@@ -56,8 +56,8 @@ class RefundController extends Controller
             return false;
         }
 
-        // Đơn hàng phải đã thanh toán
-        if ($order->paymentStatus->name !== 'Đã Thanh Toán') {
+        // Đơn hàng phải đã thanh toán và không được trong trạng thái hoàn tiền
+        if (!in_array($order->paymentStatus->name, ['Đã Thanh Toán'])) {
             return false;
         }
 
@@ -99,9 +99,9 @@ class RefundController extends Controller
             return redirect()->route('account.orders.show', $order->id);
         }
 
-        // Check if there's already a pending refund request
-        if ($order->refundRequests()->whereIn('status', ['pending', 'processing'])->exists()) {
-            toastr()->error('Đã tồn tại yêu cầu hoàn tiền cho đơn hàng này.');
+        // Check if there's already any refund request (ngăn chặn tạo yêu cầu hoàn tiền thứ 2)
+        if ($order->refundRequests()->exists()) {
+            toastr()->error('Đơn hàng này đã có yêu cầu hoàn tiền. Không thể tạo yêu cầu hoàn tiền mới.');
             return redirect()->route('account.orders.show', $order->id);
         }
 
@@ -125,6 +125,12 @@ class RefundController extends Controller
                 'status' => 'pending',
                 'refund_method' => $request->refund_method,
             ]);
+
+            // Cập nhật trạng thái thanh toán đơn hàng thành "Đang Hoàn Tiền"
+            $refundingStatus = \App\Models\PaymentStatus::where('name', 'Đang Hoàn Tiền')->first();
+            if ($refundingStatus) {
+                $order->update(['payment_status_id' => $refundingStatus->id]);
+            }
 
             DB::commit();
 

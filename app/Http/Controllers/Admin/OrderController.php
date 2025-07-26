@@ -11,6 +11,7 @@ use App\Models\PaymentStatus;
 use App\Models\User;
 use App\Models\Address;
 use App\Services\OrderService;
+use App\Services\PaymentRefundService;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,10 +25,12 @@ use App\Jobs\SendOrderStatusUpdatedMail;
 class OrderController extends Controller
 {
     protected $orderService;
+    protected $paymentRefundService;
 
-    public function __construct(OrderService $orderService)
+    public function __construct(OrderService $orderService, PaymentRefundService $paymentRefundService)
     {
         $this->orderService = $orderService;
+        $this->paymentRefundService = $paymentRefundService;
     }
 
     public function index(Request $request)
@@ -249,7 +252,6 @@ class OrderController extends Controller
      */
     public function processRefundRequest(Request $request, $id)
     {
-        dd($request->all());
         $request->validate([
             'status' => 'required|in:completed,rejected',
             'admin_note' => 'required|string|max:1000',
@@ -262,29 +264,24 @@ class OrderController extends Controller
             $order = $refund->order;
 
             if ($request->status === 'completed') {
-                // Cập nhật trạng thái payment của order thành "Đang Hoàn Tiền"
-                $refundingStatus = PaymentStatus::where('name', 'Đang Hoàn Tiền')->first();
-                if ($refundingStatus) {
-                    $order->update(['payment_status_id' => $refundingStatus->id]);
-                }
-
                 // Xử lý hoàn tiền theo phương thức được chọn
                 if ($refund->refund_method === 'vnpay') {
                     // Hoàn tiền qua VNPay
                     try {
-                        $this->orderService->refundVnpay($order, $refund->amount);
+                        $result = $this->paymentRefundService->refundVnpay($order, $refund);
                         Log::info('VNPay refund processed successfully via admin', [
                             'order_id' => $order->id,
                             'refund_id' => $refund->id,
-                            'amount' => $refund->amount
+                            'amount' => $refund->amount,
+                            'result' => $result
                         ]);
                     } catch (\Exception $vnpayError) {
-                        Log::warning('VNPay refund failed but continuing process', [
+                        Log::error('VNPay refund failed', [
                             'order_id' => $order->id,
                             'refund_id' => $refund->id,
                             'error' => $vnpayError->getMessage()
                         ]);
-                        // Không throw exception, chỉ log warning và tiếp tục
+                        throw $vnpayError;
                     }
                 } elseif ($refund->refund_method === 'wallet') {
                     // Hoàn tiền vào ví
@@ -296,7 +293,7 @@ class OrderController extends Controller
                     ]);
                     
                     try {
-                        $result = $this->orderService->refundToWallet($order, $refund->amount);
+                        $result = $this->paymentRefundService->refundToWallet($order, $refund->amount, $refund);
                         Log::info('Wallet refund processed successfully via admin', [
                             'order_id' => $order->id,
                             'refund_id' => $refund->id,
@@ -304,20 +301,14 @@ class OrderController extends Controller
                             'result' => $result
                         ]);
                     } catch (\Exception $walletError) {
-                        Log::warning('Wallet refund failed but continuing process', [
+                        Log::error('Wallet refund failed', [
                             'order_id' => $order->id,
                             'refund_id' => $refund->id,
                             'error' => $walletError->getMessage(),
                             'trace' => $walletError->getTraceAsString()
                         ]);
-                        // Không throw exception, chỉ log warning và tiếp tục
+                        throw $walletError;
                     }
-                }
-
-                // Cập nhật trạng thái payment của order thành "Đã Hoàn Tiền"
-                $refundedStatus = PaymentStatus::where('name', 'Đã Hoàn Tiền')->first();
-                if ($refundedStatus) {
-                    $order->update(['payment_status_id' => $refundedStatus->id]);
                 }
             }
 

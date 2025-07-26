@@ -23,7 +23,7 @@
                     TRẠNG THÁI<br>
                     <span class="text-gray-400">HOÀN TIỀN</span>
                 </h1>
-                <a href="{{ route('account.orders.show', $refundRequest->order_id) }}" 
+                <a href="{{ route('account.orders.show', $refund->order_id) }}" 
                    class="group bg-black text-white px-6 py-3 font-bold text-xs uppercase tracking-[0.1em] hover:bg-gray-800 transition-all duration-300 flex items-center gap-3">
                     <i class="fas fa-arrow-left"></i>
                     <span>QUAY LẠI</span>

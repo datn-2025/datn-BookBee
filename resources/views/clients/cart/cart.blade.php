@@ -145,9 +145,9 @@
                             <div class="flex flex-col md:flex-row gap-6">
                                 <!-- Product Image -->
                                 <div class="relative group">
-                                    @if($item->image)
+                                    @if($item->cover_image)
                                         <img class="w-32 h-40 object-cover" 
-                                             src="{{ asset('storage/' . $item->image) }}" 
+                                             src="{{ $item->cover_image ? (str_starts_with($item->cover_image, 'http') ? $item->cover_image : asset('storage/' . $item->cover_image)) : asset('images/default-book.svg') }}" 
                                              alt="{{ $item->title ?? 'Combo image' }}">
                                     @else
                                         <div class="w-32 h-40 bg-gray-100 flex items-center justify-center">
@@ -263,7 +263,7 @@
                                 <div class="relative group">
                                     @if($item->image)
                                         <img class="w-32 h-40 object-cover" 
-                                             src="{{ asset($item->image) }}" 
+                                             src="{{ $item->image ? (str_starts_with($item->image, 'http') ? $item->image : asset('storage/' . $item->image)) : asset('images/default-book.svg') }}" 
                                              alt="{{ $item->title ?? 'Book image' }}">
                                     @else
                                         <div class="w-32 h-40 bg-gray-100 flex items-center justify-center">

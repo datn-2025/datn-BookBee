@@ -1,71 +1,88 @@
-<footer class="bg-white border-t border-gray-100" style="background-color: white !important;">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+<footer style="background-color: white !important; border-top: 1px solid #f3f4f6;">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 4rem 1rem;">
+        <div class="footer-grid" style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+            <style>
+                @media (min-width: 768px) {
+                    .footer-grid {
+                        grid-template-columns: repeat(2, 1fr) !important;
+                    }
+                }
+                @media (min-width: 1024px) {
+                    .footer-grid {
+                        grid-template-columns: repeat(4, 1fr) !important;
+                    }
+                }
+                @media (min-width: 768px) {
+                    .footer-shipping-payment {
+                        flex-direction: row !important;
+                    }
+                }
+            </style>
             <!-- Cột 1: Logo + mô tả -->
-            <div class="space-y-4">
-                <div class="flex items-center">
-                    <h2 class="text-2xl font-black uppercase tracking-tight" style="color: #000000 !important;">BOOK<span style="color: #000000 !important;">BEE</span></h2>
+            <div style="margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                    <h2 style="font-size: 1.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: -0.025em; color: #000000 !important; margin: 0;">BOOK<span style="color: #000000 !important;">BEE</span></h2>
                 </div>
-                <p class="text-sm leading-relaxed" style="color: #6b7280 !important;">
+                <p style="font-size: 0.875rem; line-height: 1.625; color: #6b7280 !important; margin-bottom: 1rem;">
                     Mang đến trải nghiệm đọc sách hiện đại, tiện lợi và nhanh chóng cho mọi độc giả. IMPOSSIBLE IS NOTHING.
                 </p>
-                <div class="w-12 h-0.5" style="background-color: #000000 !important;"></div>
+                <div style="width: 3rem; height: 0.125rem; background-color: #000000 !important;"></div>
             </div>
 
             <!-- Cột 2: Quick Links -->
-            <div class="space-y-4">
-                <h4 class="text-sm font-bold uppercase tracking-wide" style="color: #000000 !important;">Liên kết nhanh</h4>
-                <ul class="space-y-2">
-                    <li><a href="{{ route('home') }}" class="text-sm font-medium transition-colors duration-200" style="color: #6b7280 !important;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Trang chủ</a></li>
-                    <li><a href="{{ route('about') }}" class="text-sm font-medium transition-colors duration-200" style="color: #6b7280 !important;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Giới thiệu</a></li>
-                    <li><a href="{{ route('books.index') }}" class="text-sm font-medium transition-colors duration-200" style="color: #6b7280 !important;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Cửa hàng</a></li>
-                    <li><a href="{{ route('news.index') }}" class="text-sm font-medium transition-colors duration-200" style="color: #6b7280 !important;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Tin tức</a></li>
-                    <li><a href="{{ route('contact.form') }}" class="text-sm font-medium transition-colors duration-200" style="color: #6b7280 !important;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Liên hệ</a></li>
+            <div style="margin-bottom: 2rem;">
+                <h4 style="font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #000000 !important; margin-bottom: 1rem;">Liên kết nhanh</h4>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    <li style="margin-bottom: 0.5rem;"><a href="{{ route('home') }}" style="font-size: 0.875rem; font-weight: 500; color: #6b7280 !important; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Trang chủ</a></li>
+                    <li style="margin-bottom: 0.5rem;"><a href="{{ route('about') }}" style="font-size: 0.875rem; font-weight: 500; color: #6b7280 !important; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Giới thiệu</a></li>
+                    <li style="margin-bottom: 0.5rem;"><a href="{{ route('books.index') }}" style="font-size: 0.875rem; font-weight: 500; color: #6b7280 !important; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Cửa hàng</a></li>
+                    <li style="margin-bottom: 0.5rem;"><a href="{{ route('news.index') }}" style="font-size: 0.875rem; font-weight: 500; color: #6b7280 !important; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Tin tức</a></li>
+                    <li style="margin-bottom: 0.5rem;"><a href="{{ route('contact.form') }}" style="font-size: 0.875rem; font-weight: 500; color: #6b7280 !important; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Liên hệ</a></li>
                 </ul>
             </div>
 
             <!-- Cột 3: Help & Info -->
-            <div class="space-y-4">
-                <h4 class="text-sm font-bold uppercase tracking-wide" style="color: #000000 !important;">Hỗ trợ khách hàng</h4>
-                <ul class="space-y-2">
-                    <li><a href="#" class="text-sm font-medium transition-colors duration-200" style="color: #6b7280 !important;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Theo dõi đơn hàng</a></li>
-                    <li><a href="#" class="text-sm font-medium transition-colors duration-200" style="color: #6b7280 !important;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Chính sách đổi trả</a></li>
-                    <li><a href="#" class="text-sm font-medium transition-colors duration-200" style="color: #6b7280 !important;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Giao hàng & thanh toán</a></li>
-                    <li><a href="#" class="text-sm font-medium transition-colors duration-200" style="color: #6b7280 !important;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Liên hệ với chúng tôi</a></li>
-                    <li><a href="#" class="text-sm font-medium transition-colors duration-200" style="color: #6b7280 !important;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Câu hỏi thường gặp</a></li>
+            <div style="margin-bottom: 2rem;">
+                <h4 style="font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #000000 !important; margin-bottom: 1rem;">Hỗ trợ khách hàng</h4>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    <li style="margin-bottom: 0.5rem;"><a href="#" style="font-size: 0.875rem; font-weight: 500; color: #6b7280 !important; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Theo dõi đơn hàng</a></li>
+                    <li style="margin-bottom: 0.5rem;"><a href="#" style="font-size: 0.875rem; font-weight: 500; color: #6b7280 !important; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Chính sách đổi trả</a></li>
+                    <li style="margin-bottom: 0.5rem;"><a href="#" style="font-size: 0.875rem; font-weight: 500; color: #6b7280 !important; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Giao hàng & thanh toán</a></li>
+                    <li style="margin-bottom: 0.5rem;"><a href="#" style="font-size: 0.875rem; font-weight: 500; color: #6b7280 !important; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Liên hệ với chúng tôi</a></li>
+                    <li style="margin-bottom: 0.5rem;"><a href="#" style="font-size: 0.875rem; font-weight: 500; color: #6b7280 !important; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#000000'" onmouseout="this.style.color='#6b7280'">Câu hỏi thường gặp</a></li>
                 </ul>
             </div>
 
             <!-- Cột 4: Contact -->
-            <div class="space-y-4">
-                <h4 class="text-sm font-bold uppercase tracking-wide" style="color: #000000 !important;">Liên hệ</h4>
-                <div class="p-4 border" style="background-color: #f9fafb !important; border-color: #f3f4f6 !important;">
-                    <p class="text-sm mb-3 font-medium" style="color: #6b7280 !important;">Bạn có thắc mắc hoặc góp ý gì không?</p>
-                    <a href="mailto:yourinfo@gmail.com" class="font-bold text-sm block mb-4 pb-2 border-b transition-colors duration-200" style="color: #000000 !important; border-color: #e5e7eb !important;" onmouseover="this.style.color='#374151'" onmouseout="this.style.color='#000000'">yourinfo@gmail.com</a>
-                    <p class="text-sm mb-3 font-medium" style="color: #6b7280 !important;">Nếu bạn cần hỗ trợ? Hãy gọi cho chúng tôi.</p>
-                    <a href="tel:123456789" class="font-bold text-sm transition-colors duration-200" style="color: #000000 !important;" onmouseover="this.style.color='#374151'" onmouseout="this.style.color='#000000'">123456789</a>
+            <div style="margin-bottom: 2rem;">
+                <h4 style="font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #000000 !important; margin-bottom: 1rem;">Liên hệ</h4>
+                <div style="padding: 1rem; border: 1px solid #f3f4f6; background-color: #f9fafb !important;">
+                    <p style="font-size: 0.875rem; margin-bottom: 0.75rem; font-weight: 500; color: #6b7280 !important;">Bạn có thắc mắc hoặc góp ý gì không?</p>
+                    <a href="mailto:yourinfo@gmail.com" style="font-weight: 700; font-size: 0.875rem; display: block; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; color: #000000 !important; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#374151'" onmouseout="this.style.color='#000000'">yourinfo@gmail.com</a>
+                    <p style="font-size: 0.875rem; margin-bottom: 0.75rem; font-weight: 500; color: #6b7280 !important;">Nếu bạn cần hỗ trợ? Hãy gọi cho chúng tôi.</p>
+                    <a href="tel:123456789" style="font-weight: 700; font-size: 0.875rem; color: #000000 !important; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='#374151'" onmouseout="this.style.color='#000000'">123456789</a>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Phần giữa: Đối tác vận chuyển + Hình thức thanh toán -->
-    <div class="border-t py-8" style="border-color: #f3f4f6 !important;">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
-                <div class="flex items-center gap-4 flex-wrap">
-                    <span class="font-bold text-sm uppercase tracking-wide" style="color: #000000 !important;">Đối tác vận chuyển:</span>
-                    <div class="flex gap-3 items-center">
-                        <img src="{{asset('images/dhl.png')}}" alt="DHL" class="h-8 rounded border p-1" style="border-color: #e5e7eb !important; background-color: white !important;">
-                        <img src="{{asset('images/shippingcard.png')}}" alt="Shipping" class="h-8 rounded border p-1" style="border-color: #e5e7eb !important; background-color: white !important;">
+    <div style="border-top: 1px solid #f3f4f6; padding: 2rem 0;">
+        <div style="max-width: 1280px; margin: 0 auto; padding: 0 1rem;">
+            <div class="footer-shipping-payment" style="display: flex; flex-direction: column; justify-content: space-between; align-items: center; gap: 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <span style="font-weight: 700; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: #000000 !important;">Đối tác vận chuyển:</span>
+                    <div style="display: flex; gap: 0.75rem; align-items: center;">
+                        <img src="{{asset('images/dhl.png')}}" alt="DHL" style="height: 2rem; border-radius: 0.25rem; border: 1px solid #e5e7eb; padding: 0.25rem; background-color: white;">
+                        <img src="{{asset('images/shippingcard.png')}}" alt="Shipping" style="height: 2rem; border-radius: 0.25rem; border: 1px solid #e5e7eb; padding: 0.25rem; background-color: white;">
                     </div>
                 </div>
-                <div class="flex items-center gap-4 flex-wrap">
-                    <span class="font-bold text-sm uppercase tracking-wide" style="color: #000000 !important;">Hình thức thanh toán:</span>
-                    <div class="flex gap-3 items-center">
-                        <img src="{{asset('images/visa.jpg')}}" alt="Visa" class="h-8 rounded border" style="border-color: #e5e7eb !important;">
-                        <img src="{{asset('images/mastercard.jpg')}}" alt="Mastercard" class="h-8 rounded border" style="border-color: #e5e7eb !important;">
-                        <img src="{{asset('images/paypal.jpg')}}" alt="PayPal" class="h-8 rounded border" style="border-color: #e5e7eb !important;">
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <span style="font-weight: 700; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: #000000 !important;">Hình thức thanh toán:</span>
+                    <div style="display: flex; gap: 0.75rem; align-items: center;">
+                        <img src="{{asset('images/visa.jpg')}}" alt="Visa" style="height: 2rem; border-radius: 0.25rem; border: 1px solid #e5e7eb;">
+                        <img src="{{asset('images/mastercard.jpg')}}" alt="Mastercard" style="height: 2rem; border-radius: 0.25rem; border: 1px solid #e5e7eb;">
+                        <img src="{{asset('images/paypal.jpg')}}" alt="PayPal" style="height: 2rem; border-radius: 0.25rem; border: 1px solid #e5e7eb;">
                     </div>
                 </div>
             </div>
@@ -73,17 +90,17 @@
     </div>
     
     <!-- Footer bottom -->
-    <div class="border-t py-6" style="background-color: #f9fafb !important; border-color: #f3f4f6 !important;">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div class="flex justify-center items-center gap-4 mb-4">
-                <div class="h-px w-12" style="background-color: #d1d5db !important;"></div>
-                <div class="text-center">
-                    <p class="font-medium text-sm" style="color: #6b7280 !important;">© 2025 Bản quyền thuộc về <span class="font-bold uppercase" style="color: #000000 !important;">BookBee</span></p>
-                    <p class="text-xs mt-1" style="color: #9ca3af !important;">Thiết kế bởi BookBee Team</p>
+    <div style="border-top: 1px solid #f3f4f6; padding: 1.5rem 0; background-color: #f9fafb !important;">
+        <div style="max-width: 1280px; margin: 0 auto; padding: 0 1rem; text-align: center;">
+            <div style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <div style="height: 1px; width: 3rem; background-color: #d1d5db;"></div>
+                <div style="text-align: center;">
+                    <p style="font-weight: 500; font-size: 0.875rem; color: #6b7280 !important; margin: 0;">© 2025 Bản quyền thuộc về <span style="font-weight: 700; text-transform: uppercase; color: #000000 !important;">BookBee</span></p>
+                    <p style="font-size: 0.75rem; margin-top: 0.25rem; color: #9ca3af !important;">Thiết kế bởi BookBee Team</p>
                 </div>
-                <div class="h-px w-12" style="background-color: #d1d5db !important;"></div>
+                <div style="height: 1px; width: 3rem; background-color: #d1d5db;"></div>
             </div>
-            <div class="h-px w-16 mx-auto" style="background-color: #000000 !important;"></div>
+            <div style="height: 1px; width: 4rem; margin: 0 auto; background-color: #000000;"></div>
         </div>
     </div>
 </footer>

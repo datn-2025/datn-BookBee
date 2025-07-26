@@ -1,5 +1,7 @@
 @extends('layouts.account.layout')
 
+@section('title', 'Tài Khoản Của Tôi')
+
 @push('scripts')
 <script>
     @if(Session::has('success'))
