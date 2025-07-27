@@ -74,6 +74,7 @@
                                 <th class="text-center">Ngày bắt đầu</th>
                                 <th class="text-center">Ngày kết thúc</th>
                                 <th class="text-center">Giá combo</th>
+                                <th class="text-center">Số lượng</th>
                                 <th class="text-center" style="width: 100px;">Tùy chọn</th>
                             </tr>
                         </thead>
@@ -103,6 +104,15 @@
                                 <td class="text-center">{{ $collection->start_date ? date('d/m/Y', strtotime($collection->start_date)) : '-' }}</td>
                                 <td class="text-center">{{ $collection->end_date ? date('d/m/Y', strtotime($collection->end_date)) : '-' }}</td>
                                 <td class="text-primary fw-bold text-center">{{ $collection->combo_price ? number_format($collection->combo_price, 0, ',', '.') . ' đ' : '-' }}</td>
+                                <td class="text-center">
+                                    @if($collection->combo_stock !== null)
+                                        <span class="badge {{ $collection->combo_stock > 10 ? 'bg-success' : ($collection->combo_stock > 0 ? 'bg-warning' : 'bg-danger') }}">
+                                            {{ $collection->combo_stock }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted">Không giới hạn</span>
+                                    @endif
+                                </td>
                                 <td class="text-center">
                                     <div class="dropdown d-inline-block">
                                         <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -139,7 +149,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted">Chưa có combo nào.</td>
+                                <td colspan="8" class="text-center text-muted">Chưa có combo nào.</td>
                             </tr>
                             @endforelse
                         </tbody>

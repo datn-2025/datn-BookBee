@@ -265,9 +265,9 @@
                                                 <tr>
                                                     <td>{{ $index + 1 }}</td>
                                                     <td>
-                                                       <a href="{{route('admin.books.show', [$book->id, $book->slug])}}" style="text-decoration: none; color: #0a0c0d">
+                                                       @if($book)
+                                                           <a href="{{route('admin.books.show', [$book->id, $book->slug])}}" style="text-decoration: none; color: #0a0c0d">
 {{--                                                            Hiển thị thông tin sách--}}
-                                                           @if($book)
                                                                <div class="d-flex align-items-center">
                                                                    @if($book->cover_image)
                                                                        <img src="{{ asset('storage/' . $book->cover_image) }}"
@@ -279,10 +279,27 @@
                                                                        <small class="text-muted">ISBN: {{ $book->isbn ?? 'N/A' }}</small>
                                                                    </div>
                                                                </div>
+                                                           </a>
+                                                       @elseif($item->collection_id)
+                                                           @php $collection = $item->collection; @endphp
+                                                           @if($collection)
+                                                               <div class="d-flex align-items-center">
+                                                                   @if($collection->image)
+                                                                       <img src="{{ asset('storage/' . $collection->image) }}"
+                                                                            alt="{{ $collection->name }}" class="me-2"
+                                                                            style="width: 40px; height: 50px; object-fit: cover;">
+                                                                   @endif
+                                                                   <div>
+                                                                       <h6 class="mb-0">{{ $collection->name }} (Combo)</h6>
+                                                                       <small class="text-muted">Mã: {{ $collection->id }}</small>
+                                                                   </div>
+                                                               </div>
                                                            @else
-                                                               {{ $item->book_id ?? 'Sản phẩm không tồn tại' }}
+                                                               <span class="text-muted">Combo không tồn tại (ID: {{ $item->collection_id }})</span>
                                                            @endif
-                                                       </a>
+                                                       @else
+                                                           <span class="text-muted">Sản phẩm không tồn tại (Book ID: {{ $item->book_id }})</span>
+                                                       @endif
                                                     </td>
                                                     <td>
                                                         @if($bookFormat)
@@ -328,8 +345,25 @@
                                                                     <small class="text-muted">ISBN: {{ $book->isbn ?? 'N/A' }}</small>
                                                                 </div>
                                                             </div>
+                                                        @elseif($item->collection_id)
+                                                            @php $collection = $item->collection; @endphp
+                                                            @if($collection)
+                                                                <div class="d-flex align-items-center">
+                                                                    @if($collection->image)
+                                                                        <img src="{{ asset('storage/' . $collection->image) }}"
+                                                                             alt="{{ $collection->name }}" class="me-2"
+                                                                             style="width: 40px; height: 50px; object-fit: cover;">
+                                                                    @endif
+                                                                    <div>
+                                                                        <h6 class="mb-0">{{ $collection->name }} (Combo)</h6>
+                                                                        <small class="text-muted">Mã: {{ $collection->id }}</small>
+                                                                    </div>
+                                                                </div>
+                                                            @else
+                                                                <span class="text-muted">Combo không tồn tại (ID: {{ $item->collection_id }})</span>
+                                                            @endif
                                                         @else
-                                                            {{ $item->book_id ?? 'Sản phẩm không tồn tại' }}
+                                                            <span class="text-muted">Sản phẩm không tồn tại (Book ID: {{ $item->book_id }})</span>
                                                         @endif
                                                     </td>
                                                     <td>

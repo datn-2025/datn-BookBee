@@ -356,7 +356,11 @@
                                                class="absolute right-4 top-4 h-5 w-5 accent-black" required>
                                         <div class="space-y-2">
                                             <div class="flex items-center gap-3">
-                                                @if(str_contains(strtolower($method->name), 'momo'))
+                                                @if(str_contains(strtolower($method->name), 'ví điện tử'))
+                                                    <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                                    </svg>
+                                                @elseif(str_contains(strtolower($method->name), 'momo'))
                                                     <svg class="w-8 h-8 text-pink-500" viewBox="0 0 24 24" fill="currentColor">
                                                         <path d="M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10z"/>
                                                     </svg>
@@ -372,6 +376,30 @@
                                                 @endif
                                                 <span class="font-bold text-lg">{{ $method->name }}</span>
                                             </div>
+                                            @if(str_contains(strtolower($method->name), 'ví điện tử'))
+                                                <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                                    <div class="flex items-center justify-between">
+                                                        <span class="text-sm font-medium text-green-700">Số dư ví:</span>
+                                                        <span class="text-sm font-bold text-green-800">
+                                                            @if($wallet)
+                                                                {{ number_format($wallet->balance) }}đ
+                                                            @else
+                                                                0đ
+                                                            @endif
+                                                        </span>
+                                                    </div>
+                                                    @php
+                                                        $walletBalance = Auth::user()->wallet ? Auth::user()->wallet->balance : 0;
+                                                        $totalAmount = $subtotal + 20000;
+                                                    @endphp
+                                                    {{-- @if($walletBalance < $totalAmount)
+                                                        <div class="mt-2 text-xs text-red-600 font-medium">
+                                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                                            Số dư không đủ để thanh toán
+                                                        </div>
+                                                    @endif --}}
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </label>
@@ -633,6 +661,59 @@ function updateTotal() {
         shipping: document.getElementById('form_hidden_shipping_fee').value,
         voucher_code: document.getElementById('form_hidden_applied_voucher_code').value
     });
+
+// Kiểm tra số dư ví khi chọn phương thức thanh toán
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentMethodInputs = document.querySelectorAll('input[name="payment_method_id"]');
+    const submitButton = document.querySelector('button[type="submit"]');
+    const userWalletBalance = {{ $wallet ? $wallet->balance : 0 }};
+    
+    function checkWalletBalance() {
+        const selectedPaymentMethod = document.querySelector('input[name="payment_method_id"]:checked');
+        if (!selectedPaymentMethod) return;
+        
+        const paymentMethodLabel = selectedPaymentMethod.closest('label');
+        const methodName = paymentMethodLabel.querySelector('span').textContent.toLowerCase();
+        
+        if (methodName.includes('ví điện tử')) {
+            const totalAmount = parseFloat(document.getElementById('total-amount').textContent.replace(/[^\d]/g, ''));
+            
+            if (userWalletBalance < totalAmount) {
+                submitButton.disabled = true;
+                submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+                submitButton.textContent = 'SỐ DƯ VÍ KHÔNG ĐỦ';
+                
+                // Hiển thị thông báo lỗi
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Số dư ví không đủ để thanh toán. Vui lòng nạp thêm tiền hoặc chọn phương thức thanh toán khác.');
+                }
+            } else {
+                submitButton.disabled = false;
+                submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                submitButton.textContent = 'ĐẶT HÀNG NGAY';
+            }
+        } else {
+            submitButton.disabled = false;
+            submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            submitButton.textContent = 'ĐẶT HÀNG NGAY';
+        }
+    }
+    
+    // Lắng nghe sự kiện thay đổi phương thức thanh toán
+    paymentMethodInputs.forEach(input => {
+        input.addEventListener('change', checkWalletBalance);
+    });
+    
+    // Kiểm tra ban đầu
+    checkWalletBalance();
+    
+    // Kiểm tra lại khi tổng tiền thay đổi (do voucher)
+    const observer = new MutationObserver(checkWalletBalance);
+    const totalAmountElement = document.getElementById('total-amount');
+    if (totalAmountElement) {
+        observer.observe(totalAmountElement, { childList: true, subtree: true });
+    }
+});
 }
 
 // Xử lý delivery method
