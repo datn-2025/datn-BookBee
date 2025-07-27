@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Mail\UserStatusUpdated;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with('role')->select('id', 'name', 'avatar', 'email', 'phone', 'role_id', 'status')
+        $query = User::with('roles')->select('id', 'name', 'avatar', 'email', 'phone', 'status')
             ->where('id', '!=', Auth::id()); // Loại bỏ tài khoản đang đăng nhập
 
         // Tìm kiếm theo text
@@ -40,7 +41,7 @@ class UserController extends Controller
 
     public function show($id)
     {
-        $user = User::with('role')->findOrFail($id);
+        $user = User::with('roles')->findOrFail($id);
         // Lấy lịch sử mua hàng của user, join với trạng thái đơn hàng và thông tin người dùng
         $listDonHang = $user->orders()
             ->with(['orderStatus', 'address', 'paymentStatus'])
@@ -62,7 +63,7 @@ class UserController extends Controller
 
     public function edit($id)
     {
-        $user = User::with('role')->findOrFail($id);
+        $user = User::with('roles')->findOrFail($id);
         $roles = Role::all();
         return view('admin.users.edit', compact('user', 'roles'));
     }
@@ -70,35 +71,37 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'role_id' => 'required|exists:roles,id',
+            'roles' => 'required|array',
+            'roles.*' => 'exists:roles,id',
             'status' => 'required|in:Hoạt Động,Bị Khóa,Chưa kích Hoạt',
         ], [
-            'role_id.required' => 'Vui lòng chọn vai trò',
-            'role_id.exists' => 'Vai trò không tồn tại',
+            'roles.required' => 'Vui lòng chọn vai trò',
+            'roles.*.exists' => 'Vai trò không tồn tại',
             'status.required' => 'Vui lòng chọn trạng thái',
             'status.in' => 'Trạng thái không hợp lệ',
         ]);
 
-        $user = User::with('role')->findOrFail($id);
+        $user = User::with('roles')->findOrFail($id);
 
         // Lưu thông tin cũ trước khi cập nhật
-        $oldRole = $user->role ? $user->role->name : 'Chưa phân quyền';
+        $oldRoles = $user->roles->pluck('name')->implode(', ');
         $oldStatus = $user->status;
 
         // Cập nhật thông tin
         $user->update([
-            'role_id' => $request->role_id,
             'status' => $request->status,
         ]);
+        $user->roles()->sync($request->roles);
 
         // Tải lại thông tin user sau khi cập nhật
-        $user->load('role');
+        $user->load('roles');
 
         // Kiểm tra nếu có sự thay đổi thì mới gửi email
-        if ($oldRole !== $user->role->name || $oldStatus !== $user->status) {
+        $newRoles = $user->roles->pluck('name')->implode(', ');
+        if ($oldRoles !== $newRoles || $oldStatus !== $user->status) {
             try {
                 Mail::to($user->email)
-                    ->queue(new UserStatusUpdated($user, $oldRole, $oldStatus));
+                    ->queue(new UserStatusUpdated($user, $oldRoles, $oldStatus));
 
                 // Log thành công vào queue
                 Log::info('Đã thêm email thông báo vào queue cho user: ' . $user->email);
@@ -110,5 +113,28 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index', $user->id)
             ->with('success', 'Cập nhật thành công');
+    }
+    public function editRolesPermissions($id)
+    {
+        $user = User::with(['roles', 'permissions'])->findOrFail($id);
+        $roles = Role::all();
+        $permissions = Permission::all();
+
+        return view('admin.users.roles-permissions', compact('user', 'roles', 'permissions'));
+    }
+
+    public function updateRolesPermissions(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        // Gán vai trò
+        $roles = $request->input('roles', []);
+        $user->roles()->sync($roles);
+
+        // Gán quyền trực tiếp
+        $permissions = $request->input('permissions', []);
+        $user->permissions()->sync($permissions);
+
+        return redirect()->route('admin.users.index')->with('success', 'Cập nhật vai trò & quyền thành công.');
     }
 }

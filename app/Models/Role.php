@@ -16,9 +16,9 @@ class Role extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    public function users(): HasMany
+    public function users(): BelongsToMany
     {
-        return $this->hasMany(User::class);
+        return $this->belongsToMany(User::class);
     }
 
     public function permissions(): BelongsToMany

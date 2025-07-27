@@ -17,7 +17,7 @@ class ActiveUserSeeder extends Seeder
 
         // Tạo tài khoản admin
         if (!User::where('email', 'admin@bookbee.com')->exists()) {
-            User::create([
+            $admin = User::create([
                 'id' => (string) Str::uuid(),
                 'name' => 'Admin BookBee',
                 'email' => 'admin@bookbee.com',
@@ -25,16 +25,16 @@ class ActiveUserSeeder extends Seeder
                 'password' => Hash::make('admin123456'),
                 'phone' => '0123456789',
                 'status' => 'Hoạt Động',
-                'role_id' => $adminRole->id,
                 'remember_token' => Str::random(10),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            $admin->roles()->attach($adminRole->id);
         }
 
         // Tạo tài khoản user
         if (!User::where('email', 'user@bookbee.com')->exists()) {
-            User::create([
+            $user = User::create([
                 'id' => (string) Str::uuid(),
                 'name' => 'User BookBee',
                 'email' => 'user@bookbee.com',
@@ -42,11 +42,11 @@ class ActiveUserSeeder extends Seeder
                 'password' => Hash::make('user123456'),
                 'phone' => '0987654321',
                 'status' => 'Hoạt Động',
-                'role_id' => $userRole->id,
                 'remember_token' => Str::random(10),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            $user->roles()->attach($userRole->id);
         }
     }
 }

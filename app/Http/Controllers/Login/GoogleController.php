@@ -37,14 +37,15 @@ class GoogleController extends Controller
                 return redirect()->intended('/');
 
             }else{
-                $role_id = Role::where('name', 'user')->first()->id;
+                $role = Role::where('name', 'user')->first();
                 $newUser = User::updateOrCreate(['email' => $user->email],[
                     'name' => $user->name,
                     'google_id'=> $user->id,
-                    'role_id' => $role_id,
                     'password' => encrypt('123456dummy')
                 ]);
-
+                if ($role) {
+                    $newUser->roles()->attach($role->getKey());
+                }
                 Auth::login($newUser);
                 \toastr()->success('Đăng nhập thành công!');
                 return redirect()->intended('/');

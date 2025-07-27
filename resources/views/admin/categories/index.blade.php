@@ -35,15 +35,19 @@
                         <!-- Thanh công cụ -->
                         <div class="row g-4 mb-3">
                             <div class="col-md-6 d-flex align-items-center gap-2">
+                                @permission('category.create')
                                 <a href="{{ route('admin.categories.create') }}" class="btn btn-success btn-sm">
                                     <i class="ri-add-line me-1"></i> Thêm danh mục
                                 </a>
+                                @endpermission
+                                @permission('category.trash')
                                 <a href="{{ route('admin.categories.trash') }}" class="btn btn-danger btn-sm px-4">
                                     <i class="ri-delete-bin-line me-1"></i> Thùng rác
                                     @if ($trashCount)
                                         <span class="badge bg-light text-danger ms-1">{{ $trashCount }}</span>
                                     @endif
                                 </a>
+                                @endpermission
                             </div>
 
                             <div class="col-md-6">
@@ -115,10 +119,13 @@
                                                 <td>{{ $category->created_at->format('d/m/Y') }}</td>
                                                 <td>
                                                     <div class="btn-group gap-2">
+                                                        @permission('category.edit')
                                                         <a href="{{ route('admin.categories.edit', $category->slug) }}"
                                                             class="btn btn-sm btn-warning" title="Chỉnh sửa">
                                                             <i class="ri-edit-2-line"></i>
                                                         </a>
+                                                        @endpermission
+                                                        @permission('category.delete')
                                                         <form
                                                             action="{{ route('admin.categories.destroy', $category->slug) }}"
                                                             method="POST" class="d-inline"
@@ -130,6 +137,7 @@
                                                                 <i class="ri-delete-bin-fill"></i>
                                                             </button>
                                                         </form>
+                                                        @endpermission
                                                     </div>
                                                 </td>
                                             </tr>

@@ -40,15 +40,19 @@
                     <div class="card-header align-items-center d-flex justify-content-between">
                         <h4 class="card-title mb-0">Danh Sách Phương Thức Thanh Toán</h4>
                         <div class="d-flex align-items-center gap-2">
+                            @permission('payment-method.create')
                             <a href="{{ route('admin.payment-methods.create') }}" class="btn btn-success btn-sm">
                                 <i class="ri-add-line me-1"></i> Thêm mới
                             </a>
+                            @endpermission
+                            @permission('payment-method.trash')
                             <a href="{{ route('admin.payment-methods.trash') }}" class="btn btn-danger btn-sm">
                                 <i class="ri-delete-bin-line me-1"></i> Thùng rác
                                 @if($trashCount > 0)
                                     <span class="badge bg-light text-danger ms-1">{{ $trashCount }}</span>
                                 @endif
                             </a>
+                            @endpermission
                         </div>
                     </div>
                     <!-- Form tìm kiếm -->
@@ -102,10 +106,13 @@
                                             </td>
                                             <td>
                                                 <div class="btn-group">
+                                                    @permission('payment-method.edit')
                                                     <a href="{{ route('admin.payment-methods.edit', $method) }}" 
                                                        class="btn btn-sm btn-light" title="Chỉnh sửa">
                                                         <i class="ri-pencil-fill align-bottom me-2 text-muted"></i>
                                                     </a>
+                                                    @endpermission
+                                                    @permission('payment-method.delete')
                                                     <form action="{{ route('admin.payment-methods.destroy', $method) }}" 
                                                           method="POST" class="d-inline">
                                                         @csrf
@@ -116,6 +123,7 @@
                                                             <i class="ri-delete-bin-fill align-bottom me-2"></i>
                                                         </button>
                                                     </form>
+                                                    @endpermission
                                                 </div>
                                             </td>
                                         </tr>

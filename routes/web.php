@@ -38,6 +38,8 @@ use App\Http\Controllers\Wishlists\WishlistController;
 use App\Livewire\BalanceChart;
 use App\Livewire\RevenueReport;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\RoleController;
 
 // Route QR code
 Route::get('storage/private/{filename}', function ($filename) {
@@ -158,7 +160,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}', [OrderClientController::class, 'show'])->name('show');
             Route::put('/{id}', [OrderClientController::class, 'update'])->name('update');
             Route::delete('/{id}', [OrderClientController::class, 'destroy'])->name('destroy');
-            
+
             // Refund routes
             Route::get('/{order}/refund', [RefundController::class, 'create'])->name('refund.create');
             Route::post('/{order}/refund', [RefundController::class, 'store'])->name('refund.request');
@@ -200,238 +202,227 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
     // Admin Profile Management
-    Route::prefix('profile')->name('profile.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\AdminProfileController::class, 'index'])->name('index');
-        Route::put('/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updateProfile'])->name('update');
-        Route::put('/password/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('password.update');
+    Route::prefix('profile')->name('profile.')->middleware('checkpermission:profile.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AdminProfileController::class, 'index'])->name('index')->middleware('checkpermission:profile.view');
+        Route::put('/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updateProfile'])->name('update')->middleware('checkpermission:profile.edit');
+        Route::put('/password/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('password.update')->middleware('checkpermission:profile.edit');
     });
 
-    Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard');
-    Route::get('/revenue-report', RevenueReport::class)->name('revenue-report');
-    Route::get('/balance-chart', BalanceChart::class)->name('balance-chart');
+    Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard')->middleware('checkpermission:dashboard.view');
+    Route::get('/revenue-report', RevenueReport::class)->name('revenue-report')->middleware('checkpermission:dashboard.revenue-report');
+    Route::get('/balance-chart', BalanceChart::class)->name('balance-chart')->middleware('checkpermission:dashboard.balance-chart');
 
-    // Route admin/contacts
-    Route::resource('contacts', \App\Http\Controllers\Admin\ContactController::class);
-    Route::post('contacts/{contact}/reply', [\App\Http\Controllers\Admin\ContactController::class, 'sendReply'])->name('contacts.reply');
-    Route::prefix('books')->name('books.')->group(function () {
-        Route::get('/', [AdminBookController::class, 'index'])->name('index');
-        Route::get('/create', [AdminBookController::class, 'create'])->name('create');
-        Route::post('/store', [AdminBookController::class, 'store'])->name('store');
-        Route::get('/show/{id}/{slug}', [AdminBookController::class, 'show'])->name('show');
-        Route::get('/edit/{id}/{slug}', [AdminBookController::class, 'edit'])->name('edit');
-        Route::put('/update/{id}/{slug}', [AdminBookController::class, 'update'])->name('update');
-        Route::delete('/delete/{id}', [AdminBookController::class, 'destroy'])->name('destroy');
-
-        // Trash routes
-        Route::get('/trash', [AdminBookController::class, 'trash'])->name('trash');
-        Route::post('/restore/{id}', [AdminBookController::class, 'restore'])->name('restore');
-        Route::delete('/force-delete/{id}', [AdminBookController::class, 'forceDelete'])->name('force-delete');
+    // Contacts
+    Route::prefix('contacts')->name('contacts.')->middleware('checkpermission:contact.view')->group(function () {
+        Route::get('/', [AdminContactController::class, 'index'])->name('index')->middleware('checkpermission:contact.view');
+        Route::get('/show/{id}', [AdminContactController::class, 'show'])->name('show')->middleware('checkpermission:contact.show');
+        Route::put('/update/{id}', [AdminContactController::class, 'update'])->name('update')->middleware('checkpermission:contact.edit');
+        Route::delete('/delete/{id}', [AdminContactController::class, 'destroy'])->name('destroy')->middleware('checkpermission:contact.delete');
+        Route::post('/reply/{contact}', [AdminContactController::class, 'sendReply'])->name('reply')->middleware('checkpermission:contact.reply');
     });
 
-    // Admin Payment Methods
-    Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
+    // Books
+    Route::prefix('books')->name('books.')->middleware('checkpermission:book.view')->group(function () {
+        Route::get('/', [AdminBookController::class, 'index'])->name('index')->middleware('checkpermission:book.view');
+        Route::get('/create', [AdminBookController::class, 'create'])->name('create')->middleware('checkpermission:book.create');
+        Route::post('/store', [AdminBookController::class, 'store'])->name('store')->middleware('checkpermission:book.create');
+        Route::get('/show/{id}/{slug}', [AdminBookController::class, 'show'])->name('show')->middleware('checkpermission:book.show');
+        Route::get('/edit/{id}/{slug}', [AdminBookController::class, 'edit'])->name('edit')->middleware('checkpermission:book.edit');
+        Route::put('/update/{id}/{slug}', [AdminBookController::class, 'update'])->name('update')->middleware('checkpermission:book.edit');
+        Route::delete('/delete/{id}', [AdminBookController::class, 'destroy'])->name('destroy')->middleware('checkpermission:book.delete');
+        Route::get('/trash', [AdminBookController::class, 'trash'])->name('trash')->middleware('checkpermission:book.trash');
+        Route::post('/restore/{id}', [AdminBookController::class, 'restore'])->name('restore')->middleware('checkpermission:book.restore');
+        Route::delete('/force-delete/{id}', [AdminBookController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:book.force-delete');
+    });
+
+    // Payment Methods
+    Route::prefix('payment-methods')->name('payment-methods.')->middleware('checkpermission:payment-method.view')->group(function () {
         Route::get('/', [AdminPaymentMethodController::class, 'index'])->name('index');
-        Route::get('/create', [AdminPaymentMethodController::class, 'create'])->name('create');
-        Route::post('/', [AdminPaymentMethodController::class, 'store'])->name('store');
-        Route::get('/{paymentMethod}/edit', [AdminPaymentMethodController::class, 'edit'])->name('edit');
-        Route::put('/{paymentMethod}', [AdminPaymentMethodController::class, 'update'])->name('update');
-        Route::delete('/{paymentMethod}', [AdminPaymentMethodController::class, 'destroy'])->name('destroy');
-        Route::get('/trash', [AdminPaymentMethodController::class, 'trash'])->name('trash');
-        Route::put('/{paymentMethod}/restore', [AdminPaymentMethodController::class, 'restore'])->name('restore');
-        Route::delete('/{paymentMethod}/force-delete', [AdminPaymentMethodController::class, 'forceDelete'])->name('force-delete');
-        Route::get('/history', [AdminPaymentMethodController::class, 'history'])->name('history');
-    });
-    
-    // Route hoàn tiền đơn hàng
-    // Route::prefix('orders')->name('orders.')->group(function () {
-    //     // Route::get('/{id}/refund', [OrderController::class, 'showRefund'])->name('refund.show');
-    //     // Route::post('/{id}/refund', [OrderController::class, 'processRefund'])->name('refund.process');
-    //     // Route::get('/{id}/refund/status', [OrderController::class, 'refundStatus'])->name('refund.status');
-    //     // Route::put('/{id}/status', [AdminPaymentMethodController::class, 'updateStatus'])->name('updateStatus');
-        
-    //     // Routes cho quản lý yêu cầu hoàn tiền
-    //     Route::get('/refunds', [RefundController::class, 'index'])->name('refunds.index');
-    //     Route::get('/refunds/{id}', [RefundController::class, 'show'])->name('refunds.show');
-    //     Route::post('/refunds/{id}/process', [RefundController::class, 'process'])->name('refunds.process');
-        
-    //     // Handle GET access to process route - redirect to show page
-    //     // Route::get('/refunds/{id}/process', function($id) {
-    //     //     return redirect()->route('admin.orders.refunds.show', $id);
-    //     // });
-    // });
-
-    // Admin Refund Management - Chuyên biệt cho RefundController
-    Route::prefix('refunds')->name('refunds.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\RefundController::class, 'index'])->name('index');
-        Route::get('/{refund}', [\App\Http\Controllers\Admin\RefundController::class, 'show'])->name('show');
-        Route::post('/{refund}/process', [\App\Http\Controllers\Admin\RefundController::class, 'process'])->name('process');
-        Route::get('/statistics', [\App\Http\Controllers\Admin\RefundController::class, 'statistics'])->name('statistics');
+        Route::get('/create', [AdminPaymentMethodController::class, 'create'])->name('create')->middleware('checkpermission:payment-method.create');
+        Route::post('/', [AdminPaymentMethodController::class, 'store'])->name('store')->middleware('checkpermission:payment-method.create');
+        Route::get('/{paymentMethod}/edit', [AdminPaymentMethodController::class, 'edit'])->name('edit')->middleware('checkpermission:payment-method.edit');
+        Route::put('/{paymentMethod}', [AdminPaymentMethodController::class, 'update'])->name('update')->middleware('checkpermission:payment-method.edit');
+        Route::delete('/{paymentMethod}', [AdminPaymentMethodController::class, 'destroy'])->name('destroy')->middleware('checkpermission:payment-method.delete');
+        Route::get('/trash', [AdminPaymentMethodController::class, 'trash'])->name('trash')->middleware('checkpermission:payment-method.trash');
+        Route::put('/{paymentMethod}/restore', [AdminPaymentMethodController::class, 'restore'])->name('restore')->middleware('checkpermission:payment-method.restore');
+        Route::delete('/{paymentMethod}/force-delete', [AdminPaymentMethodController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:payment-method.force-delete');
+        Route::get('/history', [AdminPaymentMethodController::class, 'history'])->name('history')->middleware('checkpermission:payment-method.history');
     });
 
-    Route::prefix('wallets')->name('wallets.')->group(function () {
-        Route::get('/', [WalletController::class, 'index'])->name('index');
-        Route::get('/deposit-history', [\App\Http\Controllers\Admin\WalletController::class, 'depositHistory'])->name('depositHistory');
-        Route::get('/withdraw-history', [\App\Http\Controllers\Admin\WalletController::class, 'withdrawHistory'])->name('withdrawHistory');
-        Route::post('/approve/{id}', [WalletController::class, 'approveTransaction'])->name('approveTransaction');
-        Route::post('/reject/{id}', [WalletController::class, 'rejectTransaction'])->name('rejectTransaction');
-        
-    //     // Debug page
-    //     Route::get('/debug', function() {
-    //         return view('admin.wallets.debug');
-    //     })->name('debug');
-        
-    //     // Debug routes for wallet refund
-    //     Route::get('/debug-refund/{orderId}', function($orderId) {
-    //         $result = \App\Services\WalletRefundDebugService::debugRefund($orderId);
-    //         return response()->json($result);
-    //     })->name('debug.refund');
-        
-    //     Route::post('/force-refund/{orderId}/{amount}', function($orderId, $amount) {
-    //         $result = \App\Services\WalletRefundDebugService::forceCreateRefundTransaction($orderId, $amount);
-    //         return response()->json(['success' => $result]);
-    //     })->name('force.refund');
+    // Refunds
+    Route::prefix('refunds')->name('refunds.')->middleware('checkpermission:refund.view')->group(function () {
+        Route::get('/', [AdminRefundController::class, 'index'])->name('index')->middleware('checkpermission:refund.view');
+        Route::get('/{refund}', [AdminRefundController::class, 'show'])->name('show')->middleware('checkpermission:refund.show');
+        Route::post('/{refund}/process', [AdminRefundController::class, 'process'])->name('process')->middleware('checkpermission:refund.process');
+        Route::get('/statistics', [AdminRefundController::class, 'statistics'])->name('statistics')->middleware('checkpermission:refund.statistics');
     });
 
-    // Route admin/categories
-    Route::prefix('categories')->name('categories.')->group(function () {
-        Route::get('/', [AdminCategoryController::class, 'index'])->name('index');
-        Route::get('/create', [AdminCategoryController::class, 'create'])->name('create');
-        Route::post('/store', [AdminCategoryController::class, 'store'])->name('store');
-        Route::get('/edit/{slug}', [AdminCategoryController::class, 'edit'])->name('edit');
-        Route::put('/update/{slug}', [AdminCategoryController::class, 'update'])->name('update');
-        Route::get('/trash', [AdminCategoryController::class, 'trash'])->name('trash');
-        Route::delete('/{slug}', [AdminCategoryController::class, 'destroy'])->name('destroy');
-        Route::put('/{slug}/restore', [AdminCategoryController::class, 'restore'])->name('restore');
-        Route::delete('/{slug}/force', [AdminCategoryController::class, 'forceDelete'])->name('force-delete');
+    // Wallets
+    Route::prefix('wallets')->name('wallets.')->middleware('checkpermission:wallet.view')->group(function () {
+        Route::get('/', [WalletController::class, 'index'])->name('index')->middleware('checkpermission:wallet.view');
+        Route::get('/deposit-history', [WalletController::class, 'depositHistory'])->name('depositHistory')->middleware('checkpermission:wallet.deposit-history');
+        Route::get('/withdraw-history', [WalletController::class, 'withdrawHistory'])->name('withdrawHistory')->middleware('checkpermission:wallet.withdraw-history');
+        Route::post('/approve/{id}', [WalletController::class, 'approveTransaction'])->name('approveTransaction')->middleware('checkpermission:wallet.approve');
+        Route::post('/reject/{id}', [WalletController::class, 'rejectTransaction'])->name('rejectTransaction')->middleware('checkpermission:wallet.reject');
+    });
 
-        // Route admin/brand
-        Route::prefix('brands')->name('brands.')->group(function () {
-            Route::get('/', [CategoryController::class, 'brand'])->name('brand');
-            Route::get('/create', [CategoryController::class, 'BrandCreate'])->name('create');
-            Route::post('/', [CategoryController::class, 'BrandStore'])->name('store');
-            Route::get('/trash', [CategoryController::class, 'BrandTrash'])->name('trash');
-            Route::delete('/{author}', [CategoryController::class, 'BrandDestroy'])->name('destroy');
-            Route::put('/{id}/restore', [CategoryController::class, 'BrandRestore'])->name('restore');
-            Route::delete('/{id}/force', [CategoryController::class, 'BrandForceDelete'])->name('force-delete');
-            Route::get('/{id}/edit', [CategoryController::class, 'BrandEdit'])->name('edit');
-            Route::put('/{id}', [CategoryController::class, 'BrandUpdate'])->name('update');
+    // Categories
+    Route::prefix('categories')->name('categories.')->middleware('checkpermission:category.view')->group(function () {
+        Route::get('/', [AdminCategoryController::class, 'index'])->name('index')->middleware('checkpermission:category.view');
+        Route::get('/create', [AdminCategoryController::class, 'create'])->name('create')->middleware('checkpermission:category.create');
+        Route::post('/store', [AdminCategoryController::class, 'store'])->name('store')->middleware('checkpermission:category.create');
+        Route::get('/edit/{slug}', [AdminCategoryController::class, 'edit'])->name('edit')->middleware('checkpermission:category.edit');
+        Route::put('/update/{slug}', [AdminCategoryController::class, 'update'])->name('update')->middleware('checkpermission:category.edit');
+        Route::get('/trash', [AdminCategoryController::class, 'trash'])->name('trash')->middleware('checkpermission:category.trash');
+        Route::delete('/{slug}', [AdminCategoryController::class, 'destroy'])->name('destroy')->middleware('checkpermission:category.delete');
+        Route::put('/{slug}/restore', [AdminCategoryController::class, 'restore'])->name('restore')->middleware('checkpermission:category.restore');
+        Route::delete('/{slug}/force', [AdminCategoryController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:category.force-delete');
+        // Brands
+        Route::prefix('brands')->name('brands.')->middleware('checkpermission:brand.view')->group(function () {
+            Route::get('/', [CategoryController::class, 'brand'])->name('brand')->middleware('checkpermission:brand.view');
+            Route::get('/create', [CategoryController::class, 'BrandCreate'])->name('create')->middleware('checkpermission:brand.create');
+            Route::post('/', [CategoryController::class, 'BrandStore'])->name('store')->middleware('checkpermission:brand.create');
+            Route::get('/trash', [CategoryController::class, 'BrandTrash'])->name('trash')->middleware('checkpermission:brand.trash');
+            Route::delete('/{author}', [CategoryController::class, 'BrandDestroy'])->name('destroy')->middleware('checkpermission:brand.delete');
+            Route::put('/{id}/restore', [CategoryController::class, 'BrandRestore'])->name('restore')->middleware('checkpermission:brand.restore');
+            Route::delete('/{id}/force', [CategoryController::class, 'BrandForceDelete'])->name('force-delete')->middleware('checkpermission:brand.force-delete');
+            Route::get('/{id}/edit', [CategoryController::class, 'BrandEdit'])->name('edit')->middleware('checkpermission:brand.edit');
+            Route::put('/{id}', [CategoryController::class, 'BrandUpdate'])->name('update')->middleware('checkpermission:brand.edit');
         });
-        // Route admin/authors
-        Route::prefix('authors')->name('authors.')->group(function () {
-            Route::get('/', [AuthorController::class, 'index'])->name('index');
-            Route::get('/create', [AuthorController::class, 'create'])->name('create');
-            Route::post('/', [AuthorController::class, 'store'])->name('store');
-            Route::get('/trash', [AuthorController::class, 'trash'])->name('trash');
-            Route::delete('/{author}', [AuthorController::class, 'destroy'])->name('destroy');
-            Route::put('/{id}/restore', [AuthorController::class, 'restore'])->name('restore');
-            Route::delete('/{id}/force', [AuthorController::class, 'forceDelete'])->name('force-delete');
-            Route::get('/{id}/edit', [AuthorController::class, 'edit'])->name('edit');
-            Route::put('/{id}', [AuthorController::class, 'update'])->name('update');
+        // Authors
+        Route::prefix('authors')->name('authors.')->middleware('checkpermission:author.view')->group(function () {
+            Route::get('/', [AuthorController::class, 'index'])->name('index')->middleware('checkpermission:author.view');
+            Route::get('/create', [AuthorController::class, 'create'])->name('create')->middleware('checkpermission:author.create');
+            Route::post('/', [AuthorController::class, 'store'])->name('store')->middleware('checkpermission:author.create');
+            Route::get('/trash', [AuthorController::class, 'trash'])->name('trash')->middleware('checkpermission:author.trash');
+            Route::delete('/{author}', [AuthorController::class, 'destroy'])->name('destroy')->middleware('checkpermission:author.delete');
+            Route::put('/{id}/restore', [AuthorController::class, 'restore'])->name('restore')->middleware('checkpermission:author.restore');
+            Route::delete('/{id}/force', [AuthorController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:author.force-delete');
+            Route::get('/{id}/edit', [AuthorController::class, 'edit'])->name('edit')->middleware('checkpermission:author.edit');
+            Route::put('/{id}', [AuthorController::class, 'update'])->name('update')->middleware('checkpermission:author.edit');
         });
     });
 
-    // routes admin/reviews
-    Route::prefix('reviews')->name('reviews.')->group(function () {
-        Route::get('/', [AdminReviewController::class, 'index'])->name('index'); // Hiển thị danh sách
-        Route::post('/{review}/response', [AdminReviewController::class, 'storeResponse'])->name('response.store'); // Lưu phản hồi
-        Route::patch('/{review}/update-status', [AdminReviewController::class, 'updateStatus'])->name('update-status'); // Cập nhật trạng thái hiển thị/ẩn
-        Route::get('/{review}/response', [AdminReviewController::class, 'showResponseForm'])->name('response'); // Hiển thị form phản hồi
+    // Reviews
+    Route::prefix('reviews')->name('reviews.')->middleware('checkpermission:review.view')->group(function () {
+        Route::get('/', [AdminReviewController::class, 'index'])->name('index')->middleware('checkpermission:review.view');
+        Route::post('/{review}/response', [AdminReviewController::class, 'storeResponse'])->name('response.store')->middleware('checkpermission:review.response');
+        Route::patch('/{review}/update-status', [AdminReviewController::class, 'updateStatus'])->name('update-status')->middleware('checkpermission:review.update-status');
+        Route::get('/{review}/response', [AdminReviewController::class, 'showResponseForm'])->name('response')->middleware('checkpermission:review.response');
     });
 
-    // Route admin/users
-    Route::prefix('users')->name('users.')->group(function () {
-        Route::get('/', [UserController::class, 'index'])->name('index');
-        Route::get('/{id}', [UserController::class, 'show'])->name('show');
-        Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [UserController::class, 'update'])->name('update');
+    // Users
+    Route::prefix('users')->name('users.')->middleware('checkpermission:user.view')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('index')->middleware('checkpermission:user.view');
+        Route::get('/{id}', [UserController::class, 'show'])->name('show')->middleware('checkpermission:user.show');
+        Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit')->middleware('checkpermission:user.edit');
+        Route::put('/{id}', [UserController::class, 'update'])->name('update')->middleware('checkpermission:user.edit');
+        Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy')->middleware('checkpermission:user.delete');
+        Route::get('/{id}/roles-permissions', [UserController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:user.manage-roles');
+        Route::put('/{id}/roles-permissions', [UserController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:user.manage-roles');
     });
 
-    // Voucher routes
-    Route::prefix('vouchers')->name('vouchers.')->group(function () {
-        // Route để lấy danh sách đối tượng theo điều kiện
-        Route::get('/get-condition-options', [VoucherController::class, 'getConditionOptions'])
-            ->name('getConditionOptions');
-        Route::get('/search', [VoucherController::class, 'search'])->name('search');
-
-        // Trash routes - Đặt trước các route khác
-        Route::get('/trash', [VoucherController::class, 'trash'])->name('trash');
-        Route::post('/restore/{id}', [VoucherController::class, 'restore'])->name('restore');
-        Route::delete('/force-delete/{id}', [VoucherController::class, 'forceDelete'])->name('force-delete');
-
-        // Các route CRUD thông thường
-        Route::get('/', [VoucherController::class, 'index'])->name('index');
-        Route::get('/create', [VoucherController::class, 'create'])->name('create');
-        Route::post('/', [VoucherController::class, 'store'])->name('store');
-        Route::get('/{voucher}', [VoucherController::class, 'show'])->name('show');
-        Route::get('/{voucher}/edit', [VoucherController::class, 'edit'])->name('edit');
-        Route::put('/{voucher}', [VoucherController::class, 'update'])->name('update');
-        Route::delete('/{voucher}', [VoucherController::class, 'destroy'])->name('destroy');
-
-        Route::get('/export', [VoucherController::class, 'export'])->name('export');
+    // Permissions
+    Route::prefix('permissions')->name('permissions.')->middleware('checkpermission:permission.view')->group(function () {
+        Route::get('/', [PermissionController::class, 'index'])->name('index')->middleware('checkpermission:permission.view');
+        Route::get('/create', [PermissionController::class, 'create'])->name('create')->middleware('checkpermission:permission.create');
+        Route::post('/', [PermissionController::class, 'store'])->name('store')->middleware('checkpermission:permission.create');
+        Route::get('/{permission}', [PermissionController::class, 'show'])->name('show')->middleware('checkpermission:permission.show');
+        Route::get('/{permission}/edit', [PermissionController::class, 'edit'])->name('edit')->middleware('checkpermission:permission.edit');
+        Route::put('/{permission}', [PermissionController::class, 'update'])->name('update')->middleware('checkpermission:permission.edit');
+        Route::delete('/{permission}', [PermissionController::class, 'destroy'])->name('destroy')->middleware('checkpermission:permission.delete');
+        Route::post('/restore/{id}', [PermissionController::class, 'restore'])->name('restore')->middleware('checkpermission:permission.restore');
+        Route::delete('/force-delete/{id}', [PermissionController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:permission.force-delete');
+        Route::get('/export', [PermissionController::class, 'export'])->name('export')->middleware('checkpermission:permission.export');
     });
-    // Route admin/vouchers
-    Route::resource('vouchers', VoucherController::class);
-
-    // Route admin/attributes
-    Route::prefix('attributes')->name('attributes.')->group(function () {
-        Route::get('/', [AttributeController::class, 'index'])->name('index');
-        Route::get('/create', [AttributeController::class, 'create'])->name('create');
-        Route::post('/store', [AttributeController::class, 'store'])->name('store');
-        Route::get('/show/{id}', [AttributeController::class, 'show'])->name('show');
-        Route::get('/edit/{id}', [AttributeController::class, 'edit'])->name('edit');
-        Route::put('/update/{id}', [AttributeController::class, 'update'])->name('update');
-        Route::delete('/delete/{id}', [AttributeController::class, 'destroy'])->name('destroy');
+    // Collections
+    Route::prefix('collections')->name('collections.')->middleware('checkpermission:collection.view')->group(function () {
+        Route::get('/', [CollectionController::class, 'index'])->name('index')->middleware('checkpermission:collection.view');
+        Route::get('/create', [CollectionController::class, 'create'])->name('create')->middleware('checkpermission:collection.create');
+        Route::post('/', [CollectionController::class, 'store'])->name('store')->middleware('checkpermission:collection.create');
+        Route::get('/{collection}', [CollectionController::class, 'show'])->name('show')->middleware('checkpermission:collection.show');
+        Route::get('/{collection}/edit', [CollectionController::class, 'edit'])->name('edit')->middleware('checkpermission:collection.edit');
+        Route::put('/{collection}', [CollectionController::class, 'update'])->name('update')->middleware('checkpermission:collection.edit');
+        Route::delete('/{collection}', [CollectionController::class, 'destroy'])->name('destroy')->middleware('checkpermission:collection.delete');
+        Route::post('/{collection}/restore', [CollectionController::class, 'restore'])->name('restore')->middleware('checkpermission:collection.restore');
+        Route::delete('/{collection}/force', [CollectionController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:collection.force-delete');
+        Route::post('/{collection}/attach-books', [CollectionController::class, 'attachBooks'])->name('attach-books')->middleware('checkpermission:collection.attach-books');
+        Route::get('/trash', [CollectionController::class, 'trash'])->name('trash')->middleware('checkpermission:collection.trash');
+        Route::get('/export', [CollectionController::class, 'export'])->name('export')->middleware('checkpermission:collection.export');
     });
-
-    // Route admin/contacts
-    Route::prefix('contacts')->name('contacts.')->group(function () {
-        Route::get('/', [AdminContactController::class, 'index'])->name('index');
-        Route::get('/show/{id}', [AdminContactController::class, 'show'])->name('show');
-        Route::put('/update/{id}', [AdminContactController::class, 'update'])->name('update'); // Cập nhật trạng thái
-        Route::delete('/delete/{id}', [AdminContactController::class, 'destroy'])->name('destroy'); // Xóa liên hệ
-        Route::post('/reply/{contact}', [AdminContactController::class, 'sendReply'])->name('reply'); // Gửi phản hồi
-    });
-
-    // Route admin/news
-    Route::prefix('news')->name('news.')->group(function () {
-        Route::get('/', [NewsArticleController::class, 'index'])->name('index');
-        Route::get('/create', [NewsArticleController::class, 'create'])->name('create');
-        Route::post('/store', [NewsArticleController::class, 'store'])->name('store');
-        Route::get('/show/{article}', [NewsArticleController::class, 'show'])->name('show');
-        Route::get('/edit/{article}', [NewsArticleController::class, 'edit'])->name('edit');
-        Route::put('/update/{article}', [NewsArticleController::class, 'update'])->name('update');
-        Route::delete('/delete/{article}', [NewsArticleController::class, 'destroy'])->name('destroy');
+    // Vouchers
+    Route::prefix('vouchers')->name('vouchers.')->middleware('checkpermission:voucher.view')->group(function () {
+        Route::get('/get-condition-options', [VoucherController::class, 'getConditionOptions'])->name('getConditionOptions')->middleware('checkpermission:voucher.get-condition-options');
+        Route::get('/search', [VoucherController::class, 'search'])->name('search')->middleware('checkpermission:voucher.search');
+        Route::get('/trash', [VoucherController::class, 'trash'])->name('trash')->middleware('checkpermission:voucher.trash');
+        Route::post('/restore/{id}', [VoucherController::class, 'restore'])->name('restore')->middleware('checkpermission:voucher.restore');
+        Route::delete('/force-delete/{id}', [VoucherController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:voucher.force-delete');
+        Route::get('/', [VoucherController::class, 'index'])->name('index')->middleware('checkpermission:voucher.view');
+        Route::get('/create', [VoucherController::class, 'create'])->name('create')->middleware('checkpermission:voucher.create');
+        Route::post('/', [VoucherController::class, 'store'])->name('store')->middleware('checkpermission:voucher.create');
+        Route::get('/{voucher}', [VoucherController::class, 'show'])->name('show')->middleware('checkpermission:voucher.show');
+        Route::get('/{voucher}/edit', [VoucherController::class, 'edit'])->name('edit')->middleware('checkpermission:voucher.edit');
+        Route::put('/{voucher}', [VoucherController::class, 'update'])->name('update')->middleware('checkpermission:voucher.edit');
+        Route::delete('/{voucher}', [VoucherController::class, 'destroy'])->name('destroy')->middleware('checkpermission:voucher.delete');
+        Route::get('/export', [VoucherController::class, 'export'])->name('export')->middleware('checkpermission:voucher.export');
     });
 
-    // Route admin/orders
-    Route::prefix('orders')->name('orders.')->group(function () {
-        Route::get('/', [OrderController::class, 'index'])->name('index');
-        Route::get('/show/{id}', [OrderController::class, 'show'])->name('show');
-        Route::get('/edit/{id}', [OrderController::class, 'edit'])->name('edit');
-        Route::put('/update/{id}', [OrderController::class, 'update'])->name('update');
+    // Attributes
+    Route::prefix('attributes')->name('attributes.')->middleware('checkpermission:attribute.view')->group(function () {
+        Route::get('/', [AttributeController::class, 'index'])->name('index')->middleware('checkpermission:attribute.view');
+        Route::get('/create', [AttributeController::class, 'create'])->name('create')->middleware('checkpermission:attribute.create');
+        Route::post('/store', [AttributeController::class, 'store'])->name('store')->middleware('checkpermission:attribute.create');
+        Route::get('/show/{id}', [AttributeController::class, 'show'])->name('show')->middleware('checkpermission:attribute.show');
+        Route::get('/edit/{id}', [AttributeController::class, 'edit'])->name('edit')->middleware('checkpermission:attribute.edit');
+        Route::put('/update/{id}', [AttributeController::class, 'update'])->name('update')->middleware('checkpermission:attribute.edit');
+        Route::delete('/delete/{id}', [AttributeController::class, 'destroy'])->name('destroy')->middleware('checkpermission:attribute.delete');
     });
 
-    // Route admin/settings
-    Route::prefix('settings')->name('settings.')->group(function () {
-        Route::get('/', [SettingController::class, 'index'])->name('index');
-        Route::post('/update', [SettingController::class, 'update'])->name('update');
+    // News
+    Route::prefix('news')->name('news.')->middleware('checkpermission:news.view')->group(function () {
+        Route::get('/', [NewsArticleController::class, 'index'])->name('index')->middleware('checkpermission:news.view');
+        Route::get('/create', [NewsArticleController::class, 'create'])->name('create')->middleware('checkpermission:news.create');
+        Route::post('/store', [NewsArticleController::class, 'store'])->name('store')->middleware('checkpermission:news.create');
+        Route::get('/show/{article}', [NewsArticleController::class, 'show'])->name('show')->middleware('checkpermission:news.show');
+        Route::get('/edit/{article}', [NewsArticleController::class, 'edit'])->name('edit')->middleware('checkpermission:news.edit');
+        Route::put('/update/{article}', [NewsArticleController::class, 'update'])->name('update')->middleware('checkpermission:news.edit');
+        Route::delete('/delete/{article}', [NewsArticleController::class, 'destroy'])->name('destroy')->middleware('checkpermission:news.delete');
     });
 
-    // PDF
-    Route::prefix('invoices')->name('invoices.')->group(function () {
-        Route::get('/', [AdminInvoiceController::class, 'index'])->name('index');
-        Route::get('/{id}', [AdminInvoiceController::class, 'show'])->name('show');
-        Route::get('/{id}/pdf', [AdminInvoiceController::class, 'generatePdf'])->name('generate-pdf');
+    // Orders
+    Route::prefix('orders')->name('orders.')->middleware('checkpermission:order.view')->group(function () {
+        Route::get('/', [OrderController::class, 'index'])->name('index')->middleware('checkpermission:order.view');
+        Route::get('/show/{id}', [OrderController::class, 'show'])->name('show')->middleware('checkpermission:order.show');
+        Route::get('/edit/{id}', [OrderController::class, 'edit'])->name('edit')->middleware('checkpermission:order.edit');
+        Route::put('/update/{id}', [OrderController::class, 'update'])->name('update')->middleware('checkpermission:order.edit');
     });
 
+    // Settings
+    Route::prefix('settings')->name('settings.')->middleware('checkpermission:setting.view')->group(function () {
+        Route::get('/', [SettingController::class, 'index'])->name('index')->middleware('checkpermission:setting.view');
+        Route::post('/update', [SettingController::class, 'update'])->name('update')->middleware('checkpermission:setting.edit');
+    });
 
+    // Invoices
+    Route::prefix('invoices')->name('invoices.')->middleware('checkpermission:invoice.view')->group(function () {
+        Route::get('/', [AdminInvoiceController::class, 'index'])->name('index')->middleware('checkpermission:invoice.view');
+        Route::get('/{id}', [AdminInvoiceController::class, 'show'])->name('show')->middleware('checkpermission:invoice.show');
+        Route::get('/{id}/pdf', [AdminInvoiceController::class, 'generatePdf'])->name('generate-pdf')->middleware('checkpermission:invoice.generate-pdf');
+    });
 
-    Route::resource('collections', CollectionController::class);
-    Route::post('collections/{collection}/attach-books', [CollectionController::class, 'attachBooks'])->name('collections.attachBooks');
-    Route::resource('collections', CollectionController::class);
-    Route::delete('collections/{id}/force', [CollectionController::class, 'forceDelete'])->name('collections.forceDelete');
-    Route::get('collections-trash', [CollectionController::class, 'trash'])->name('collections.trash');
-    Route::post('collections/{id}/restore', [CollectionController::class, 'restore'])->name('collections.restore');
+    // Roles
+    Route::prefix('roles')->name('roles.')->middleware('checkpermission:role.view')->group(function () {
+        Route::get('/', [RoleController::class, 'index'])->name('index')->middleware('checkpermission:role.view');
+        Route::get('/create', [RoleController::class, 'create'])->name('create')->middleware('checkpermission:role.create');
+        Route::post('/', [RoleController::class, 'store'])->name('store')->middleware('checkpermission:role.create');
+        Route::get('/{role}', [RoleController::class, 'show'])->name('show')->middleware('checkpermission:role.show');
+        Route::get('/{role}/edit', [RoleController::class, 'edit'])->name('edit')->middleware('checkpermission:role.edit');
+        Route::put('/{role}', [RoleController::class, 'update'])->name('update')->middleware('checkpermission:role.edit');
+        Route::delete('/{role}', [RoleController::class, 'destroy'])->name('destroy')->middleware('checkpermission:role.delete');
+        Route::post('/restore/{id}', [RoleController::class, 'restore'])->name('restore')->middleware('checkpermission:role.restore');
+        Route::delete('/force-delete/{id}', [RoleController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:role.force-delete');
+        Route::get('/export', [RoleController::class, 'export'])->name('export')->middleware('checkpermission:role.export');
+    });
 });
 
 // Wallet user routes
@@ -445,14 +436,14 @@ Route::middleware('auth')->prefix('wallet')->name('wallet.')->group(function () 
 });
 
 // AI Summary routes
-Route::prefix('ai-summary')->name('ai-summary.')->group(function() {
+Route::prefix('ai-summary')->name('ai-summary.')->group(function () {
     // Book AI Summary routes
     Route::post('/generate/{book}', [App\Http\Controllers\AISummaryController::class, 'generateSummary'])->name('generate');
     Route::get('/get/{book}', [App\Http\Controllers\AISummaryController::class, 'getSummary'])->name('get');
     Route::post('/regenerate/{book}', [App\Http\Controllers\AISummaryController::class, 'regenerateSummary'])->name('regenerate');
     Route::get('/status/{book}', [App\Http\Controllers\AISummaryController::class, 'checkStatus'])->name('status');
     Route::post('/chat/{book}', [App\Http\Controllers\AISummaryController::class, 'chatWithAI'])->name('chat');
-    
+
     // Combo AI Summary routes
     Route::post('/combo/generate/{combo}', [App\Http\Controllers\AISummaryController::class, 'generateComboSummary'])->name('combo.generate');
     Route::get('/combo/get/{combo}', [App\Http\Controllers\AISummaryController::class, 'getComboSummary'])->name('combo.get');

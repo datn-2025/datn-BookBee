@@ -24,6 +24,7 @@
                         <h5>Họ tên: <strong>{{ $user->name }}</strong> | Email: <strong>{{ $user->email }}</strong></h5>
                         <form action="{{ route('admin.users.roles-permissions.update', $user->id) }}" method="POST">
                             @csrf
+                            <input type="hidden" name="_method" value="PUT">
                             <div class="mb-4">
                                 <label class="form-label"><strong>Vai trò</strong></label>
                                 <div class="row">

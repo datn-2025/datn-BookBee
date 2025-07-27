@@ -250,18 +250,22 @@
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li>
+                                                        @permission('order.show')
                                                         <a href="{{ route('admin.orders.show', $order->id) }}"
                                                             class="dropdown-item">
                                                             <i class="ri-eye-fill align-bottom me-2 text-muted"></i> Chi
                                                             tiết
                                                         </a>
+                                                        @endpermission
                                                     </li>
                                                     <li>
+                                                        @permission('order.edit')
                                                         <a href="{{ route('admin.orders.edit', $order->id) }}"
                                                             class="dropdown-item">
                                                             <i class="ri-pencil-fill align-bottom me-2 text-muted"></i>
                                                             Cập nhật
                                                         </a>
+                                                        @endpermission
                                                     </li>
                                                     <!-- <li class="dropdown-divider"></li>
                                                     <li>
