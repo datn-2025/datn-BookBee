@@ -92,7 +92,10 @@ class CartController extends Controller
             } else {
                 // Xử lý sách đơn lẻ
                 $bookInfo = DB::table('books')
-                    ->leftJoin('book_formats', 'book_formats.id', '=', DB::raw("'{$cartItem->book_format_id}'"))
+                    ->leftJoin('book_formats', function($join) use ($cartItem) {
+                        $join->on('book_formats.book_id', '=', 'books.id')
+                             ->where('book_formats.id', '=', $cartItem->book_format_id);
+                    })
                     ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
                     ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
                     ->where('books.id', $cartItem->book_id)
@@ -943,6 +946,7 @@ class CartController extends Controller
 
                     $updateQuery->update([
                         'quantity' => 1,
+                        'price' => $currentPrice, // Cập nhật giá hiện tại
                         'updated_at' => now()
                     ]);
 
@@ -953,7 +957,7 @@ class CartController extends Controller
                         'success' => 'Sách điện tử luôn có số lượng cố định là 1',
                         'data' => [
                             'stock' => 999, // Ebook không giới hạn tồn kho
-                            'price' => $bookInfo->price,
+                            'price' => $currentPrice,
                             'quantity' => 1,
                             'is_ebook' => true
                         ],
