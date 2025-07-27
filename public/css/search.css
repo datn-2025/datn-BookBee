@@ -1,0 +1,99 @@
+/* Search Page - Adidas Style Enhancements */
+
+/* Font optimization */
+* {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Smooth transitions for all elements */
+* {
+    transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Book card hover enhancements */
+.adidas-book-card {
+    will-change: transform;
+}
+
+.adidas-book-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Filter sidebar enhancements */
+.adidas-filter-sidebar {
+    backdrop-filter: blur(10px);
+}
+
+/* Price input focus states */
+.adidas-price-input:focus {
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Button enhancements */
+.adidas-filter-btn:active {
+    transform: translateY(0px);
+}
+
+.adidas-apply-btn:active {
+    transform: translateY(0px);
+}
+
+/* Search tag animations */
+.search-tag {
+    animation: slideIn 0.3s ease;
+}
+
+/* Grid animations */
+.adidas-book-card:nth-child(1) { animation-delay: 0.1s; }
+.adidas-book-card:nth-child(2) { animation-delay: 0.15s; }
+.adidas-book-card:nth-child(3) { animation-delay: 0.2s; }
+.adidas-book-card:nth-child(4) { animation-delay: 0.25s; }
+.adidas-book-card:nth-child(5) { animation-delay: 0.3s; }
+.adidas-book-card:nth-child(6) { animation-delay: 0.35s; }
+.adidas-book-card:nth-child(7) { animation-delay: 0.4s; }
+.adidas-book-card:nth-child(8) { animation-delay: 0.45s; }
+
+/* Status badge animations */
+.status-badge {
+    animation: fadeIn 0.5s ease;
+}
+
+/* Discount badge animations */
+.discount-badge {
+    animation: slideIn 0.4s ease;
+}
+
+/* Responsive enhancements */
+@media (max-width: 768px) {
+    .adidas-book-card {
+        animation-delay: 0s !important;
+    }
+}
+
+/* Loading states */
+.adidas-filter-sidebar.loading {
+    pointer-events: none;
+}
+
+.adidas-filter-sidebar.loading .adidas-filter-content {
+    opacity: 0.7;
+}
+
+/* Focus visible for accessibility */
+.adidas-filter-option:focus-visible,
+.adidas-filter-btn:focus-visible,
+.adidas-apply-btn:focus-visible {
+    outline: 2px solid #000000;
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    .adidas-filter-sidebar,
+    .adidas-filter-overlay,
+    .adidas-filter-btn {
+        display: none !important;
+    }
+}
