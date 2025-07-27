@@ -1,73 +1,73 @@
 /**
- * Cart Products Module - Product management (add/remove items)
- * Handles individual product removal and bulk cart operations
+ * Module Quản Lý Sản Phẩm Giỏ Hàng - Xử lý thêm/xóa sản phẩm
+ * Quản lý việc xóa sản phẩm riêng lẻ và các thao tác hàng loạt trên giỏ hàng
  */
 
 const CartProducts = {
-    // Initialize product management
+    // Khởi tạo module quản lý sản phẩm
     init() {
-        console.log('CartProducts init called');
+        console.log('Khởi tạo CartProducts được gọi');
         this.bindRemoveButtons();
         this.bindBulkActions();
         this.initialized = true;
     },
 
-    // Bind individual product remove buttons using event delegation
+    // Gắn sự kiện cho các nút xóa sản phẩm riêng lẻ sử dụng event delegation
     bindRemoveButtons() {
-        console.log('Binding remove buttons with event delegation');
+        console.log('Đang gắn sự kiện cho nút xóa bằng event delegation');
         
-        // Use event delegation on document body
+        // Sử dụng event delegation trên body document
         document.body.addEventListener('click', (e) => {
-            if (e.target.closest('.adidas-cart-product-remove')) {
+            if (e.target.closest('.cart-product-remove')) {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                const button = e.target.closest('.adidas-cart-product-remove');
-                console.log('Remove button clicked via delegation:', button);
+                const button = e.target.closest('.cart-product-remove');
+                console.log('Nút xóa được click qua delegation:', button);
                 this.removeItem(button);
             }
         });
         
-        // Also bind directly for existing buttons
-        const removeButtons = document.querySelectorAll('.adidas-cart-product-remove');
-        console.log(`Found ${removeButtons.length} remove button(s) for direct binding`);
+        // Cũng gắn trực tiếp cho các nút đã có sẵn
+        const removeButtons = document.querySelectorAll('.cart-product-remove');
+        console.log(`Tìm thấy ${removeButtons.length} nút xóa để gắn trực tiếp`);
         
         removeButtons.forEach((button, index) => {
-            console.log(`Setting up remove button ${index}:`, button);
+            console.log(`Thiết lập nút xóa ${index}:`, button);
             this.setupRemoveButton(button);
         });
     },
 
-    // Setup individual remove button
+    // Thiết lập nút xóa riêng lẻ
     setupRemoveButton(button) {
         if (!button) return;
         
-        console.log('Setting up remove button:', button);
+        console.log('Đang thiết lập nút xóa:', button);
         
-        // Simple click handler
+        // Xử lý sự kiện click đơn giản
         button.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Button clicked directly:', button);
+            console.log('Nút được click trực tiếp:', button);
             this.removeItem(button);
         };
     },
 
-    // Remove individual item from cart
+    // Xóa sản phẩm riêng lẻ khỏi giỏ hàng
     removeItem(button) {
         const cartItem = button.closest('.cart-item');
         const isCombo = button.dataset.isCombo === 'true';
-        const bookId = button.dataset.bookId;
-        const collectionId = button.dataset.collectionId;
+        const bookId = button.dataset.bookId || button.getAttribute('data-book-id');
+        const collectionId = button.dataset.collectionId || button.getAttribute('data-collection-id');
         
-        console.log('Remove item called:', { cartItem, bookId, collectionId, isCombo, button });
+        console.log('Hàm xóa sản phẩm được gọi:', { cartItem, bookId, collectionId, isCombo, button });
         
         if (!cartItem || (!bookId && !collectionId)) {
-            console.error('Missing cart item or identifier');
+            console.error('Thiếu thông tin sản phẩm hoặc ID để xóa');
             return;
         }
 
-        // Show confirmation with appropriate message
+        // Hiển thị xác nhận với thông báo phù hợp
         const confirmMessage = isCombo 
             ? 'Bạn có chắc muốn xóa combo này khỏi giỏ hàng?' 
             : 'Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?';
@@ -76,26 +76,26 @@ const CartProducts = {
             return;
         }
 
-        // Disable item controls
+        // Vô hiệu hóa các điều khiển của sản phẩm
         const controls = cartItem.querySelectorAll('button, input');
         controls.forEach(el => el.disabled = true);
         
-        // Add loading state
+        // Thêm trạng thái đang tải
         CartBase.dom.addClass(cartItem, 'loading');
 
         let requestData;
         
         if (isCombo) {
-            // Remove combo item
+            // Xóa combo
             requestData = {
                 collection_id: collectionId,
                 is_combo: true,
                 _token: CartBase.utils.getCSRFToken()
             };
         } else {
-            // Remove individual book item
-            const bookFormatId = cartItem.dataset.bookFormatId || null;
-            const attributeValueIds = cartItem.dataset.attributeValueIds || null;
+            // Xóa sách riêng lẻ - lấy dữ liệu từ cart item hoặc button
+            const bookFormatId = cartItem.dataset.bookFormatId || cartItem.getAttribute('data-book-format-id') || null;
+            const attributeValueIds = cartItem.dataset.attributeValueIds || cartItem.getAttribute('data-attribute-value-ids') || null;
 
             requestData = {
                 book_id: bookId,
@@ -106,9 +106,9 @@ const CartProducts = {
             };
         }
 
-        console.log('Remove item data:', requestData);
+        console.log('Dữ liệu gửi để xóa sản phẩm:', requestData);
 
-        // Make AJAX request
+        // Gửi yêu cầu AJAX
         $.ajax({
             url: '/cart/remove',
             method: 'POST',
