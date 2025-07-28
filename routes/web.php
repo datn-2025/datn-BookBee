@@ -414,6 +414,11 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/show/{id}', [OrderController::class, 'show'])->name('show');
         Route::get('/edit/{id}', [OrderController::class, 'edit'])->name('edit');
         Route::put('/update/{id}', [OrderController::class, 'update'])->name('update');
+        
+        // GHN routes
+        Route::post('/{id}/ghn/create', [OrderController::class, 'createGhnOrder'])->name('orders.ghn.create');
+        Route::post('/{id}/ghn/update-tracking', [OrderController::class, 'updateGhnTracking'])->name('orders.ghn.update-tracking');
+        Route::post('/{id}/ghn/cancel', [OrderController::class, 'cancelGhnOrder'])->name('orders.ghn.cancel');
     });
 
     // Route admin/settings
@@ -478,4 +483,21 @@ Route::prefix('ai-summary')->name('ai-summary.')->group(function() {
     Route::post('/combo/regenerate/{combo}', [App\Http\Controllers\AISummaryController::class, 'regenerateComboSummary'])->name('combo.regenerate');
     Route::get('/combo/status/{combo}', [App\Http\Controllers\AISummaryController::class, 'checkComboStatus'])->name('combo.status');
     Route::post('/combo/chat/{combo}', [App\Http\Controllers\AISummaryController::class, 'chatWithComboAI'])->name('combo.chat');
+});
+
+// GHN API routes
+Route::prefix('api/ghn')->name('ghn.')->group(function() {
+    Route::get('/provinces', [App\Http\Controllers\GhnController::class, 'getProvinces'])->name('provinces');
+    Route::post('/districts', [App\Http\Controllers\GhnController::class, 'getDistricts'])->name('districts');
+    Route::post('/wards', [App\Http\Controllers\GhnController::class, 'getWards'])->name('wards');
+    Route::post('/shipping-fee', [App\Http\Controllers\GhnController::class, 'calculateShippingFee'])->name('shipping-fee');
+    Route::post('/lead-time', [App\Http\Controllers\GhnController::class, 'getLeadTime'])->name('lead-time');
+    Route::post('/services', [App\Http\Controllers\GhnController::class, 'getServices'])->name('services');
+    Route::post('/track-order', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('track-order');
+    Route::get('/tracking/{orderCode}', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('tracking');
+});
+
+// Test page for GHN API
+Route::get('/test-ghn', function() {
+    return view('test-ghn');
 });

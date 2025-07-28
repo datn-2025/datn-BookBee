@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Address;
 use App\Services\OrderService;
 use App\Services\PaymentRefundService;
+use App\Services\GhnService;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,11 +27,13 @@ class OrderController extends Controller
 {
     protected $orderService;
     protected $paymentRefundService;
+    protected $ghnService;
 
-    public function __construct(OrderService $orderService, PaymentRefundService $paymentRefundService)
+    public function __construct(OrderService $orderService, PaymentRefundService $paymentRefundService, GhnService $ghnService)
     {
         $this->orderService = $orderService;
         $this->paymentRefundService = $paymentRefundService;
+        $this->ghnService = $ghnService;
     }
 
     public function index(Request $request)
@@ -435,6 +438,112 @@ class OrderController extends Controller
         }
     }
 
+    /**
+     * Tạo đơn hàng GHN cho đơn hàng hiện có
+     */
+    public function createGhnOrder($id)
+    {
+        try {
+            $order = Order::with(['address', 'orderItems.book'])->findOrFail($id);
+            
+            // Kiểm tra điều kiện tạo đơn GHN
+            if ($order->delivery_method !== 'delivery') {
+                Toastr::error('Chỉ có thể tạo đơn GHN cho đơn hàng giao hàng tận nơi', 'Lỗi');
+                return back();
+            }
+            
+            if ($order->ghn_order_code) {
+                Toastr::error('Đơn hàng đã có mã vận đơn GHN', 'Lỗi');
+                return back();
+            }
+            
+            // Tạo đơn hàng GHN
+            $result = $this->orderService->createGhnOrder($order);
+            
+            if ($result && isset($result['order_code'])) {
+                Toastr::success('Tạo đơn hàng GHN thành công. Mã vận đơn: ' . $result['order_code'], 'Thành công');
+            } else {
+                Toastr::error('Không thể tạo đơn hàng GHN. Vui lòng kiểm tra thông tin địa chỉ và thử lại.', 'Lỗi');
+            }
+            
+            return back();
+        } catch (\Exception $e) {
+            Log::error('Error creating GHN order: ' . $e->getMessage());
+            Toastr::error('Có lỗi xảy ra khi tạo đơn hàng GHN', 'Lỗi');
+            return back();
+        }
+    }
+    
+    /**
+     * Cập nhật thông tin theo dõi GHN
+     */
+    public function updateGhnTracking($id)
+    {
+        try {
+            $order = Order::findOrFail($id);
+            
+            if (!$order->ghn_order_code) {
+                Toastr::error('Đơn hàng chưa có mã vận đơn GHN', 'Lỗi');
+                return back();
+            }
+            
+            // Lấy thông tin theo dõi từ GHN
+            $trackingData = $this->ghnService->getOrderDetail($order->ghn_order_code);
+            
+            if ($trackingData) {
+                // Cập nhật thông tin theo dõi
+                $order->update([
+                    'ghn_tracking_data' => $trackingData,
+                    'updated_at' => now()
+                ]);
+                
+                Toastr::success('Cập nhật thông tin theo dõi thành công', 'Thành công');
+            } else {
+                Toastr::error('Không thể lấy thông tin theo dõi từ GHN', 'Lỗi');
+            }
+            
+            return back();
+        } catch (\Exception $e) {
+            Log::error('Error updating GHN tracking: ' . $e->getMessage());
+            Toastr::error('Có lỗi xảy ra khi cập nhật thông tin theo dõi', 'Lỗi');
+            return back();
+        }
+    }
+    
+    /**
+     * Hủy đơn hàng GHN
+     */
+    public function cancelGhnOrder($id)
+    {
+        try {
+            $order = Order::findOrFail($id);
+            
+            if (!$order->ghn_order_code) {
+                Toastr::error('Đơn hàng chưa có mã vận đơn GHN', 'Lỗi');
+                return back();
+            }
+            
+            // Hủy đơn hàng GHN (nếu GHN API hỗ trợ)
+            // $result = $this->ghnService->cancelOrder($order->ghn_order_code);
+            
+            // Tạm thời chỉ xóa thông tin GHN khỏi đơn hàng
+            $order->update([
+                'ghn_order_code' => null,
+                'ghn_service_type_id' => null,
+                'expected_delivery_date' => null,
+                'ghn_tracking_data' => null
+            ]);
+            
+            Toastr::success('Đã hủy liên kết với đơn hàng GHN', 'Thành công');
+            return back();
+        } catch (\Exception $e) {
+            Log::error('Error canceling GHN order: ' . $e->getMessage());
+            Toastr::error('Có lỗi xảy ra khi hủy đơn hàng GHN', 'Lỗi');
+            return back();
+        }
+    }
+}
+
 
     //    tạo qr cho đơn hàng
     // private function generateQrCode(Order $order)
@@ -463,5 +572,3 @@ class OrderController extends Controller
     //         Log::error('Error generating QR code: ' . $e->getMessage());
     //     }
     // }
-    
-}

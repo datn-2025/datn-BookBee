@@ -18,17 +18,21 @@ use App\Models\Cart;
 use App\Models\RefundRequest;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Services\GhnService;
 
 class OrderService
 {
     protected $paymentRefundService;
+    protected $ghnService;
     // protected $refundValidationService;
 
     public function __construct(
         PaymentRefundService $paymentRefundService,
+        GhnService $ghnService
         // RefundValidationService $refundValidationService
     ) {
         $this->paymentRefundService = $paymentRefundService;
+        $this->ghnService = $ghnService;
         // $this->refundValidationService = $refundValidationService;
     }
 
@@ -151,6 +155,110 @@ class OrderService
     {
         // Tính phí vận chuyển dựa trên phương thức
         return $shippingMethod === 'standard' ? 20000 : 40000;
+    }
+
+    /**
+     * Tính phí vận chuyển từ GHN API
+     */
+    public function calculateGhnShippingFee($toDistrictId, $toWardCode, $weight = 500, $serviceTypeId = null)
+    {
+        try {
+            $response = $this->ghnService->calculateShippingFee(
+                $toDistrictId,
+                $toWardCode,
+                $weight,
+                $serviceTypeId
+            );
+
+            if ($response && isset($response['data']['total'])) {
+                return $response['data']['total'];
+            }
+
+            // Fallback về phí cố định nếu API thất bại
+            Log::warning('GHN shipping fee calculation failed, using fallback fee');
+            return 30000;
+        } catch (\Exception $e) {
+            Log::error('Error calculating GHN shipping fee: ' . $e->getMessage());
+            return 30000; // Phí fallback
+        }
+    }
+
+    /**
+     * Tạo đơn hàng GHN
+     */
+    public function createGhnOrder(Order $order)
+    {
+        try {
+            // Chỉ tạo đơn GHN cho đơn hàng giao hàng
+            if ($order->delivery_method !== 'delivery') {
+                return null;
+            }
+
+            $address = $order->address;
+            if (!$address || !$address->district_id || !$address->ward_code) {
+                Log::warning('Order address missing GHN fields, cannot create GHN order', [
+                    'order_id' => $order->id,
+                    'address_id' => $order->address_id
+                ]);
+                return null;
+            }
+
+            // Lấy order items với relationship để chuẩn bị dữ liệu GHN
+            $orderItems = $order->orderItems()->with(['book', 'collection'])->get();
+            $orderData = $this->ghnService->prepareOrderData($order, $orderItems);
+            $response = $this->ghnService->createOrder($orderData);
+
+            if ($response && isset($response['order_code'])) {
+                $orderCode = $response['order_code'];
+                
+                // Cập nhật thông tin GHN vào đơn hàng
+                $order->update([
+                    'ghn_order_code' => $orderCode,
+                    'ghn_service_type_id' => $orderData['service_type_id'] ?? null,
+                    'expected_delivery_date' => $response['expected_delivery_time'] ?? null,
+                    'ghn_tracking_data' => $response ?? null
+                ]);
+
+                // Lấy thông tin tracking chi tiết ngay sau khi tạo đơn
+                try {
+                    $trackingData = $this->ghnService->getOrderDetail($orderCode);
+                    if ($trackingData) {
+                        $order->update([
+                            'ghn_tracking_data' => $trackingData
+                        ]);
+                        Log::info('GHN tracking data updated immediately after order creation', [
+                            'order_id' => $order->id,
+                            'ghn_order_code' => $orderCode
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to get tracking data immediately after GHN order creation', [
+                        'order_id' => $order->id,
+                        'ghn_order_code' => $orderCode,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+
+                Log::info('GHN order created successfully', [
+                    'order_id' => $order->id,
+                    'ghn_order_code' => $orderCode
+                ]);
+
+                return $response;
+            }
+
+            Log::warning('GHN order creation failed', [
+                'order_id' => $order->id,
+                'response' => $response
+            ]);
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Error creating GHN order: ' . $e->getMessage(), [
+                'order_id' => $order->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
+        }
     }
 
     protected function generateOrderCode()
@@ -409,15 +517,28 @@ class OrderService
             return $request->address_id;
         }
 
-        // Tạo địa chỉ mới
-        $address = Address::create([
+        // Tạo địa chỉ mới với thông tin GHN
+        $addressData = [
             'user_id' => $user->id,
             'address_detail' => $request->new_address_detail,
             'city' => $request->new_address_city_name,
             'district' => $request->new_address_district_name,
             'ward' => $request->new_address_ward_name,
             'is_default' => false
-        ]);
+        ];
+
+        // Thêm thông tin GHN nếu có
+        if ($request->has('province_id')) {
+            $addressData['province_id'] = $request->province_id;
+        }
+        if ($request->has('district_id')) {
+            $addressData['district_id'] = $request->district_id;
+        }
+        if ($request->has('ward_code')) {
+            $addressData['ward_code'] = $request->ward_code;
+        }
+
+        $address = Address::create($addressData);
 
         return $address->id;
     }

@@ -275,20 +275,100 @@
 <script>
     let editId = null;
     
-    // Function để load provinces
-    function loadProvinces(callback = null) {
-        console.log('Loading provinces...');
-        $.getJSON('https://provinces.open-api.vn/api/p/', function(provinces) {
-            console.log('Provinces loaded:', provinces.length);
-            $('#city').html('<option value="">Chọn Tỉnh/Thành phố</option>');
-            provinces.forEach(function(province) {
-                $("#city").append(`<option value="${province.code}">${province.name}</option>`);
+    // Function để load provinces từ GHN API
+    async function loadProvinces(callback = null) {
+        console.log('Loading provinces from GHN API...');
+        try {
+            const response = await fetch('/api/ghn/provinces', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
             });
-            if (callback) callback(provinces);
-        }).fail(function(xhr, status, error) {
+            
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                console.log('Provinces loaded:', data.data.length);
+                $('#city').html('<option value="">Chọn Tỉnh/Thành phố</option>');
+                data.data.forEach(function(province) {
+                    $("#city").append(`<option value="${province.ProvinceID}" data-name="${province.ProvinceName}">${province.ProvinceName}</option>`);
+                });
+                if (callback) callback(data.data);
+            } else {
+                throw new Error('Failed to load provinces');
+            }
+        } catch (error) {
             console.error('Failed to load provinces:', error);
             toastr.error('Không thể tải dữ liệu tỉnh thành. Vui lòng thử lại!');
-        });
+        }
+    }
+    
+    // Function để load districts từ GHN API
+    async function loadDistricts(provinceId, callback = null) {
+        console.log('Loading districts from GHN API for province:', provinceId);
+        try {
+            const response = await fetch('/api/ghn/districts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    province_id: parseInt(provinceId)
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                console.log('Districts loaded:', data.data.length);
+                $('#district').html('<option value="">Chọn Quận/Huyện</option>');
+                data.data.forEach(function(district) {
+                    $("#district").append(`<option value="${district.DistrictID}" data-name="${district.DistrictName}">${district.DistrictName}</option>`);
+                });
+                if (callback) callback(data.data);
+            } else {
+                throw new Error('Failed to load districts');
+            }
+        } catch (error) {
+            console.error('Failed to load districts:', error);
+            toastr.error('Không thể tải dữ liệu quận/huyện. Vui lòng thử lại!');
+        }
+    }
+    
+    // Function để load wards từ GHN API
+    async function loadWards(districtId, callback = null) {
+        console.log('Loading wards from GHN API for district:', districtId);
+        try {
+            const response = await fetch('/api/ghn/wards', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    district_id: parseInt(districtId)
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                console.log('Wards loaded:', data.data.length);
+                $('#ward').html('<option value="">Chọn Phường/Xã</option>');
+                data.data.forEach(function(ward) {
+                    $("#ward").append(`<option value="${ward.WardCode}" data-name="${ward.WardName}">${ward.WardName}</option>`);
+                });
+                if (callback) callback(data.data);
+            } else {
+                throw new Error('Failed to load wards');
+            }
+        } catch (error) {
+            console.error('Failed to load wards:', error);
+            toastr.error('Không thể tải dữ liệu phường/xã. Vui lòng thử lại!');
+        }
     }
     
     function openAddressModal(isEdit = false, data = null) {
@@ -307,40 +387,36 @@
             
             // Load provinces và select current values
             loadProvinces(function(provinces) {
-                let selectedProvinceCode = null;
+                let selectedProvinceId = null;
                 
                 provinces.forEach(function(province) {
-                    if (province.name === data.city) {
-                        selectedProvinceCode = province.code;
-                        $("#city").val(province.code);
-                        console.log('Selected province:', province.name, province.code);
+                    if (province.ProvinceName === data.city) {
+                        selectedProvinceId = province.ProvinceID;
+                        $("#city").val(province.ProvinceID);
+                        console.log('Selected province:', province.ProvinceName, province.ProvinceID);
                     }
                 });
                 
-                if (selectedProvinceCode) {
-                    // Load districts
-                    $.getJSON(`https://provinces.open-api.vn/api/p/${selectedProvinceCode}?depth=2`, function(provinceData) {
-                        $("#district").html('<option value="">Chọn Quận/Huyện</option>');
-                        let selectedDistrictCode = null;
+                if (selectedProvinceId) {
+                    // Load districts từ GHN API
+                    loadDistricts(selectedProvinceId, function(districts) {
+                        let selectedDistrictId = null;
                         
-                        provinceData.districts.forEach(function(district) {
-                            $("#district").append(`<option value="${district.code}">${district.name}</option>`);
-                            if (district.name === data.district) {
-                                selectedDistrictCode = district.code;
-                                $("#district").val(district.code);
-                                console.log('Selected district:', district.name, district.code);
+                        districts.forEach(function(district) {
+                            if (district.DistrictName === data.district) {
+                                selectedDistrictId = district.DistrictID;
+                                $("#district").val(district.DistrictID);
+                                console.log('Selected district:', district.DistrictName, district.DistrictID);
                             }
                         });
                         
-                        if (selectedDistrictCode) {
-                            // Load wards
-                            $.getJSON(`https://provinces.open-api.vn/api/d/${selectedDistrictCode}?depth=2`, function(districtData) {
-                                $("#ward").html('<option value="">Chọn Phường/Xã</option>');
-                                districtData.wards.forEach(function(ward) {
-                                    $("#ward").append(`<option value="${ward.code}">${ward.name}</option>`);
-                                    if (ward.name === data.ward) {
-                                        $("#ward").val(ward.code);
-                                        console.log('Selected ward:', ward.name, ward.code);
+                        if (selectedDistrictId) {
+                            // Load wards từ GHN API
+                            loadWards(selectedDistrictId, function(wards) {
+                                wards.forEach(function(ward) {
+                                    if (ward.WardName === data.ward) {
+                                        $("#ward").val(ward.WardCode);
+                                        console.log('Selected ward:', ward.WardName, ward.WardCode);
                                     }
                                 });
                             });
@@ -385,52 +461,28 @@
         
         // Xử lý khi chọn tỉnh
         $("#city").change(function() {
-            const provinceCode = $(this).val();
-            console.log('Province selected:', provinceCode);
+            const provinceId = $(this).val();
+            console.log('Province selected:', provinceId);
             
             // Reset quận và phường
             $("#district").html('<option value="">Chọn Quận/Huyện</option>');
             $("#ward").html('<option value="">Chọn Phường/Xã</option>');
             
-            if (provinceCode) {
-                console.log('Loading districts for province:', provinceCode);
-                // Lấy quận/huyện
-                $.getJSON(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`, function(provinceData) {
-                    console.log('Districts loaded:', provinceData.districts?.length);
-                    if (provinceData.districts) {
-                        provinceData.districts.forEach(function(district) {
-                            $("#district").append(`<option value="${district.code}">${district.name}</option>`);
-                        });
-                    }
-                }).fail(function(xhr, status, error) {
-                    console.error('Failed to load districts:', error);
-                    toastr.error('Không thể tải dữ liệu quận/huyện');
-                });
+            if (provinceId) {
+                loadDistricts(provinceId);
             }
         });
 
         // Xử lý khi chọn quận
         $("#district").change(function() {
-            const districtCode = $(this).val();
-            console.log('District selected:', districtCode);
+            const districtId = $(this).val();
+            console.log('District selected:', districtId);
             
             // Reset phường
             $("#ward").html('<option value="">Chọn Phường/Xã</option>');
             
-            if (districtCode) {
-                console.log('Loading wards for district:', districtCode);
-                // Lấy phường/xã
-                $.getJSON(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`, function(districtData) {
-                    console.log('Wards loaded:', districtData.wards?.length);
-                    if (districtData.wards) {
-                        districtData.wards.forEach(function(ward) {
-                            $("#ward").append(`<option value="${ward.code}">${ward.name}</option>`);
-                        });
-                    }
-                }).fail(function(xhr, status, error) {
-                    console.error('Failed to load wards:', error);
-                    toastr.error('Không thể tải dữ liệu phường/xã');
-                });
+            if (districtId) {
+                loadWards(districtId);
             }
         });
     });
@@ -438,10 +490,10 @@
     $('#addressForm').submit(function(e) {
         e.preventDefault();
         
-        // Lấy tên thực tế của tỉnh/quận/phường thay vì code
-        const cityName = $('#city option:selected').text();
-        const districtName = $('#district option:selected').text();
-        const wardName = $('#ward option:selected').text();
+        // Lấy tên thực tế của tỉnh/quận/phường từ data-name attributes
+        const cityName = $('#city option:selected').attr('data-name') || $('#city option:selected').text();
+        const districtName = $('#district option:selected').attr('data-name') || $('#district option:selected').text();
+        const wardName = $('#ward option:selected').attr('data-name') || $('#ward option:selected').text();
         
         console.log('Form submit - City:', cityName, 'District:', districtName, 'Ward:', wardName);
         

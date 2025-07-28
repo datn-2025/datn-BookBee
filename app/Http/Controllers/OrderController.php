@@ -124,12 +124,12 @@ class OrderController extends Controller
         
         // Kiểm tra xem có phải đơn hàng ebook không
         $isEbookOrder = $request->delivery_method === 'ebook';
-        
+        // dd($request->delivery_method);
         $rules = [
             'voucher_code' => 'nullable|exists:vouchers,code',
             'payment_method_id' => 'required|exists:payment_methods,id',
             'delivery_method' => 'required|in:delivery,pickup,ebook',
-            'shipping_method' => 'required_if:delivery_method,delivery|in:standard,express',
+            'shipping_method' => 'required_if:delivery_method,delivery|in:standard,express,pickup,1,2,53320,53321',
             'shipping_fee_applied' => 'required|numeric',
             'note' => 'nullable|string|max:500',
         ];
@@ -220,16 +220,21 @@ class OrderController extends Controller
                 ]);
                 
                 // Xóa giỏ hàng sau khi thanh toán thành công
-                $this->orderService->clearUserCart($user);
-                
-                DB::commit();
-                
-                // Tạo mã QR và gửi email xác nhận
-                $this->qrCodeService->generateOrderQrCode($order);
-                $this->emailService->sendOrderConfirmation($order);
-                
-                // Gửi email ebook nếu đơn hàng có ebook
-                $this->emailService->sendEbookPurchaseConfirmation($order);
+            $this->orderService->clearUserCart($user);
+            
+            DB::commit();
+            
+            // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
+            if ($order->delivery_method === 'delivery') {
+                $this->orderService->createGhnOrder($order);
+            }
+            
+            // Tạo mã QR và gửi email xác nhận
+            $this->qrCodeService->generateOrderQrCode($order);
+            $this->emailService->sendOrderConfirmation($order);
+            
+            // Gửi email ebook nếu đơn hàng có ebook
+            $this->emailService->sendEbookPurchaseConfirmation($order);
                 
                 // Tạo và gửi hóa đơn ngay lập tức cho thanh toán ví
                 try {
@@ -286,6 +291,11 @@ class OrderController extends Controller
             $this->orderService->clearUserCart($user);
             
             DB::commit();
+            
+            // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
+            if ($order->delivery_method === 'delivery') {
+                $this->orderService->createGhnOrder($order);
+            }
             
             // Tạo mã QR và gửi email xác nhận
             $this->qrCodeService->generateOrderQrCode($order);
@@ -584,6 +594,11 @@ class OrderController extends Controller
 
                 // Xóa giỏ hàng sau khi thanh toán thành công
                 Auth::user()->cart()->delete();
+
+                // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
+                if ($order->delivery_method === 'delivery') {
+                    $this->orderService->createGhnOrder($order);
+                }
 
                 // Gửi email xác nhận
                 $this->emailService->sendOrderConfirmation($order);

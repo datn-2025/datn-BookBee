@@ -109,6 +109,18 @@
                                 <span class="text-gray-600 uppercase tracking-wide">Phí vận chuyển:</span>
                                 <span class="font-bold text-black">{{ number_format($order->shipping_fee ?? 0) }}đ</span>
                             </div>
+                            @if($order->ghn_order_code)
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 uppercase tracking-wide">Mã vận đơn GHN:</span>
+                                <span class="font-bold text-black">{{ $order->ghn_order_code }}</span>
+                            </div>
+                            @endif
+                            @if($order->expected_delivery_date)
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 uppercase tracking-wide">Ngày giao dự kiến:</span>
+                                <span class="font-bold text-black">{{ \Carbon\Carbon::parse($order->expected_delivery_date)->format('d/m/Y') }}</span>
+                            </div>
+                            @endif
                         </div>
                     </div>
 
@@ -150,6 +162,77 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- GHN Tracking Section -->
+                {{-- @if($order->delivery_method === 'delivery' && $order->ghn_order_code)
+                <div class="border-t-2 border-gray-200 pt-8 mb-8">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-1 h-5 bg-blue-600"></div>
+                        <h4 class="text-base font-bold uppercase tracking-wide text-black">THEO DÕI ĐƠN HÀNG GHN</h4>
+                    </div>
+                    
+                    <div class="bg-blue-50 border-2 border-blue-200 p-6 rounded-lg">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <h5 class="font-bold text-black mb-3">Thông tin vận chuyển</h5>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Mã vận đơn:</span>
+                                        <span class="font-bold text-black">{{ $order->ghn_order_code }}</span>
+                                    </div>
+                                    @if($order->expected_delivery_date)
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Ngày giao dự kiến:</span>
+                                        <span class="font-bold text-black">{{ \Carbon\Carbon::parse($order->expected_delivery_date)->format('d/m/Y') }}</span>
+                                    </div>
+                                    @endif
+                                    @if($order->ghn_service_type_id)
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Loại dịch vụ:</span>
+                                        <span class="font-bold text-black">{{ $order->ghn_service_type_id == 2 ? 'Giao hàng tiêu chuẩn' : 'Giao hàng nhanh' }}</span>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h5 class="font-bold text-black mb-3">Trạng thái hiện tại</h5>
+                                <div id="ghn-tracking-status" class="space-y-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 bg-blue-600 rounded-full"></div>
+                                        <span class="text-sm font-medium">Đang tải thông tin...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tracking Timeline -->
+                        <div id="ghn-tracking-timeline" class="hidden">
+                            <h5 class="font-bold text-black mb-4">Lịch sử vận chuyển</h5>
+                            <div class="space-y-3">
+                                <!-- Timeline items will be loaded here -->
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-3 mt-4">
+                            <button id="refresh-tracking-btn" 
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm uppercase tracking-wide transition-all duration-300">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                Cập nhật
+                            </button>
+                            <button id="toggle-timeline-btn" 
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-bold text-sm uppercase tracking-wide transition-all duration-300">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                                Xem chi tiết
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                @endif --}}
 
                 <!-- Order Items -->
                 <div class="border-t-2 border-gray-200 pt-8">
@@ -538,6 +621,153 @@ function toggleCancelForm() {
     const form = document.getElementById('cancelForm');
     form.classList.toggle('active');
 }
+
+// GHN Tracking functionality
+@if($order->delivery_method === 'delivery' && $order->ghn_order_code)
+document.addEventListener('DOMContentLoaded', function() {
+    const ghnOrderCode = '{{ $order->ghn_order_code }}';
+    const refreshBtn = document.getElementById('refresh-tracking-btn');
+    const toggleTimelineBtn = document.getElementById('toggle-timeline-btn');
+    const trackingStatus = document.getElementById('ghn-tracking-status');
+    const trackingTimeline = document.getElementById('ghn-tracking-timeline');
+    
+    // Load tracking info on page load
+    loadTrackingInfo();
+    
+    // Refresh button event
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            this.disabled = true;
+            this.innerHTML = `
+                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Đang cập nhật...
+            `;
+            
+            loadTrackingInfo().finally(() => {
+                this.disabled = false;
+                this.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Cập nhật
+                `;
+            });
+        });
+    }
+    
+    // Toggle timeline button event
+    if (toggleTimelineBtn) {
+        toggleTimelineBtn.addEventListener('click', function() {
+            const isHidden = trackingTimeline.classList.contains('hidden');
+            
+            if (isHidden) {
+                trackingTimeline.classList.remove('hidden');
+                this.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                    </svg>
+                    Ẩn chi tiết
+                `;
+            } else {
+                trackingTimeline.classList.add('hidden');
+                this.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                    Xem chi tiết
+                `;
+            }
+        });
+    }
+    
+    async function loadTrackingInfo() {
+        try {
+            const response = await fetch(`/api/ghn/tracking/${ghnOrderCode}`, {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                updateTrackingStatus(data.data);
+                updateTrackingTimeline(data.data.logs || []);
+            } else {
+                showTrackingError('Không thể tải thông tin theo dõi');
+            }
+        } catch (error) {
+            console.error('Error loading tracking info:', error);
+            showTrackingError('Lỗi khi tải thông tin theo dõi');
+        }
+    }
+    
+    function updateTrackingStatus(trackingData) {
+        const statusElement = trackingStatus;
+        const currentStatus = trackingData.status || 'Không xác định';
+        const statusColor = getStatusColor(currentStatus);
+        
+        statusElement.innerHTML = `
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 ${statusColor} rounded-full"></div>
+                <span class="text-sm font-medium">${currentStatus}</span>
+            </div>
+            ${trackingData.description ? `<p class="text-xs text-gray-600 mt-1">${trackingData.description}</p>` : ''}
+        `;
+    }
+    
+    function updateTrackingTimeline(logs) {
+        const timelineContainer = trackingTimeline.querySelector('.space-y-3');
+        
+        if (logs.length === 0) {
+            timelineContainer.innerHTML = '<p class="text-sm text-gray-600">Chưa có thông tin lịch sử vận chuyển</p>';
+            return;
+        }
+        
+        timelineContainer.innerHTML = logs.map((log, index) => {
+            const isLatest = index === 0;
+            return `
+                <div class="flex items-start gap-3 ${isLatest ? 'bg-blue-100 p-3 rounded' : ''}">
+                    <div class="flex-shrink-0 mt-1">
+                        <div class="w-3 h-3 ${isLatest ? 'bg-blue-600' : 'bg-gray-400'} rounded-full"></div>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-black">${log.status || 'Cập nhật trạng thái'}</p>
+                        <p class="text-xs text-gray-600">${log.updated_date || ''}</p>
+                        ${log.description ? `<p class="text-xs text-gray-700 mt-1">${log.description}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function showTrackingError(message) {
+        trackingStatus.innerHTML = `
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                <span class="text-sm font-medium text-red-600">${message}</span>
+            </div>
+        `;
+    }
+    
+    function getStatusColor(status) {
+        const statusLower = status.toLowerCase();
+        if (statusLower.includes('giao thành công') || statusLower.includes('delivered')) {
+            return 'bg-green-500';
+        } else if (statusLower.includes('đang giao') || statusLower.includes('shipping')) {
+            return 'bg-blue-500';
+        } else if (statusLower.includes('đã lấy') || statusLower.includes('picked')) {
+            return 'bg-yellow-500';
+        } else if (statusLower.includes('hủy') || statusLower.includes('cancel')) {
+            return 'bg-red-500';
+        } else {
+            return 'bg-gray-500';
+        }
+    }
+});
+@endif
 </script>
 @endpush
 @endsection
