@@ -86,7 +86,7 @@ class CartController extends Controller
                         'combo_books' => $comboBooks,
                         'start_date' => $combo->start_date,
                         'end_date' => $combo->end_date,
-                        'cover_image' => $combo->cover_image
+                        'cover_image' => $combo->cover_image,
                         'is_selected' => isset($cartItem->is_selected) ? $cartItem->is_selected : 1
                     ];
                     
