@@ -18,6 +18,7 @@ const CartProducts = {
         this.bindRemoveButtons();
         this.bindQuantityButtons();
         this.bindBulkActions();
+        this.bindSelectCheckboxes();
         this.initialized = true;
         console.log('CartProducts: Initialization complete');
     },
@@ -573,6 +574,41 @@ const CartProducts = {
     formatCurrency(amount) {
         const numAmount = parseFloat(amount) || 0;
         return new Intl.NumberFormat('vi-VN').format(numAmount) + 'đ';
+    },
+
+    // Gắn sự kiện cho checkbox chọn sản phẩm để mua
+    bindSelectCheckboxes() {
+        // Sử dụng event delegation để lắng nghe thay đổi trên tất cả checkbox
+        document.addEventListener('change', (e) => {
+            const checkbox = e.target.closest('.select-cart-item');
+            if (checkbox) {
+                const cartId = checkbox.dataset.cartId;
+                const isSelected = checkbox.checked ? 1 : 0;
+                $.ajax({
+                    url: '/cart/update-selected',
+                    method: 'POST',
+                    data: {
+                        cart_id: cartId,
+                        is_selected: isSelected,
+                        _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    success: (response) => {
+                        if (response.success && typeof toastr !== 'undefined') {
+                            toastr.success(response.success);
+                        }
+                        // Reload totals (optional: reload page or recalc via JS)
+                        setTimeout(() => { window.location.reload(); }, 500);
+                    },
+                    error: (xhr) => {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(xhr.responseJSON?.error || 'Có lỗi khi cập nhật lựa chọn');
+                        }
+                        // Revert checkbox state
+                        checkbox.checked = !checkbox.checked;
+                    }
+                });
+            }
+        });
     },
 };
 
