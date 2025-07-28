@@ -41,7 +41,8 @@ class CartController extends Controller
                 'carts.attribute_value_ids',
                 'carts.price',
                 'carts.created_at',
-                'carts.updated_at'
+                'carts.updated_at',
+                DB::raw('COALESCE(carts.is_selected, 1) as is_selected')
             );
 
         $cartItems = $cartQuery->get();
@@ -84,7 +85,8 @@ class CartController extends Controller
                         'gifts' => collect(), // Combo không có quà tặng
                         'combo_books' => $comboBooks,
                         'start_date' => $combo->start_date,
-                        'end_date' => $combo->end_date
+                        'end_date' => $combo->end_date,
+                        'is_selected' => isset($cartItem->is_selected) ? $cartItem->is_selected : 1
                     ];
                     
                     $cart->push($item);
@@ -150,7 +152,8 @@ class CartController extends Controller
                         'format_name' => $bookInfo->format_name,
                         'author_name' => $bookInfo->author_name,
                         'stock' => $bookInfo->stock,
-                        'gifts' => $gifts
+                        'gifts' => $gifts,
+                        'is_selected' => isset($cartItem->is_selected) ? $cartItem->is_selected : 1
                     ];
 
                     $cart->push($item);
@@ -161,7 +164,9 @@ class CartController extends Controller
         // Tính tổng giá trị giỏ hàng
         $total = 0;
         foreach ($cart as $item) {
-            $total += $item->price * $item->quantity;
+            if (isset($item->is_selected) && $item->is_selected) {
+                $total += $item->price * $item->quantity;
+            }
         }
         // dd($total);
 
@@ -1528,5 +1533,25 @@ class CartController extends Controller
             ->sum('quantity');
 
         return response()->json(['count' => (int) $totalCount]);
+    }
+
+    /**
+     * API cập nhật trạng thái chọn sản phẩm trong giỏ hàng
+     */
+    public function updateSelected(Request $request)
+    {
+        $request->validate([
+            'cart_id' => 'required|exists:carts,id',
+            'is_selected' => 'required|boolean',
+        ]);
+        $cartId = $request->input('cart_id');
+        $isSelected = $request->input('is_selected');
+        $userId = Auth::id();
+        $cart = DB::table('carts')->where('id', $cartId)->where('user_id', $userId)->first();
+        if (!$cart) {
+            return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
+        }
+        DB::table('carts')->where('id', $cartId)->update(['is_selected' => $isSelected]);
+        return response()->json(['success' => 'Cập nhật trạng thái chọn sản phẩm thành công']);
     }
 }
