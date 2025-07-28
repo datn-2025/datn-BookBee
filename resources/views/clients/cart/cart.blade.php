@@ -143,6 +143,14 @@
                              data-price="{{ $item->price ?? 0 }}"
                              data-is-combo="true">
                             
+                            <!-- Checkbox chọn sản phẩm để mua -->
+                            <div class="flex items-center mb-2">
+                                <input type="checkbox" class="select-cart-item mr-2" 
+                                    data-cart-id="{{ $item->id }}"
+                                    {{ $item->is_selected ? 'checked' : '' }}>
+                                <span class="text-xs text-gray-500">Chọn để mua</span>
+                            </div>
+
                             <div class="flex flex-col md:flex-row gap-6">
                                 <!-- Product Image -->
                                 <div class="relative group">
@@ -260,6 +268,14 @@
                              data-format-name="{{ $item->format_name ?? '' }}"
                              data-is-combo="false">
                             
+                            <!-- Checkbox chọn sản phẩm để mua -->
+                            <div class="flex items-center mb-2">
+                                <input type="checkbox" class="select-cart-item mr-2" 
+                                    data-cart-id="{{ $item->id }}"
+                                    {{ $item->is_selected ? 'checked' : '' }}>
+                                <span class="text-xs text-gray-500">Chọn để mua</span>
+                            </div>
+
                             <div class="flex flex-col md:flex-row gap-6">
                                 <!-- Product Image -->
                                 <div class="relative group">
