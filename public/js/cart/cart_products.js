@@ -10,17 +10,14 @@ const CartProducts = {
     init() {
         // Chỉ khởi tạo một lần
         if (this.initialized) {
-            console.log('CartProducts: Already initialized, skipping...');
             return;
         }
         
-        console.log('CartProducts: Starting initialization...');
         this.bindRemoveButtons();
         this.bindQuantityButtons();
         this.bindBulkActions();
         this.bindSelectCheckboxes();
         this.initialized = true;
-        console.log('CartProducts: Initialization complete');
     },
 
     // Gắn sự kiện cho các nút xóa sản phẩm riêng lẻ
@@ -320,27 +317,21 @@ const CartProducts = {
 
     // Tăng số lượng
     increaseQuantity(button) {
-        console.log('CartProducts: Increase quantity clicked', button);
         const cartItem = button.closest('.cart-item');
         const quantityInput = cartItem.querySelector('.quantity-input');
         
         if (!quantityInput) {
-            console.warn('CartProducts: No quantity input found');
             return;
         }
 
         const currentValue = parseInt(quantityInput.value) || 1;
         const maxValue = parseInt(quantityInput.max) || parseInt(cartItem.dataset.stock) || 999;
 
-        console.log('CartProducts: Current value:', currentValue, 'Max value:', maxValue);
-
         if (currentValue < maxValue) {
             const newValue = currentValue + 1;
             quantityInput.value = newValue;
-            console.log('CartProducts: Updating quantity to:', newValue);
             this.updateQuantity(quantityInput, newValue);
         } else {
-            console.log('CartProducts: Maximum quantity reached');
             if (typeof toastr !== 'undefined') {
                 toastr.warning(`Số lượng tối đa là ${maxValue}`);
             } else {
@@ -351,27 +342,21 @@ const CartProducts = {
 
     // Giảm số lượng
     decreaseQuantity(button) {
-        console.log('CartProducts: Decrease quantity clicked', button);
         const cartItem = button.closest('.cart-item');
         const quantityInput = cartItem.querySelector('.quantity-input');
         
         if (!quantityInput) {
-            console.warn('CartProducts: No quantity input found');
             return;
         }
 
         const currentValue = parseInt(quantityInput.value) || 1;
         const minValue = parseInt(quantityInput.min) || 1;
 
-        console.log('CartProducts: Current value:', currentValue, 'Min value:', minValue);
-
         if (currentValue > minValue) {
             const newValue = currentValue - 1;
             quantityInput.value = newValue;
-            console.log('CartProducts: Updating quantity to:', newValue);
             this.updateQuantity(quantityInput, newValue);
         } else {
-            console.log('CartProducts: Minimum quantity reached');
             if (typeof toastr !== 'undefined') {
                 toastr.warning(`Số lượng tối thiểu là ${minValue}`);
             } else {
@@ -454,8 +439,12 @@ const CartProducts = {
             // Update item total display
             this.updateItemTotal(cartItem, newQuantity);
 
-            // Update cart totals
-            this.updateCartTotals();
+            // Chỉ update tổng tiền nếu sản phẩm này đang được check
+            const checkbox = cartItem.querySelector('.select-cart-item');
+            if (checkbox && checkbox.checked) {
+                this.updateCartTotals();
+            }
+            // Nếu chưa check thì KHÔNG update tổng tiền
 
             // Show success message
             if (typeof toastr !== 'undefined') {
@@ -614,11 +603,9 @@ const CartProducts = {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('CartProducts: DOM ready, initializing...');
     // Đợi một chút để đảm bảo tất cả các thư viện đã load
     setTimeout(() => {
         CartProducts.init();
-        console.log('CartProducts: Initialized successfully');
     }, 100);
 });
 

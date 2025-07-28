@@ -80,8 +80,6 @@ window.CartCountManager = {
                 badge.style.display = 'none';
             }
         }
-        
-        console.log('Cart count updated to:', count);
     },
 
     // Refresh cart count from server
