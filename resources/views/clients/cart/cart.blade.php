@@ -35,6 +35,7 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/cart.css') }}">
     <style>
         @keyframes slideIn {
             from { transform: translateX(-20px); opacity: 0; }
@@ -142,6 +143,14 @@
                              data-price="{{ $item->price ?? 0 }}"
                              data-is-combo="true">
                             
+                            <!-- Checkbox chọn sản phẩm để mua -->
+                            <div class="flex items-center mb-2">
+                                <input type="checkbox" class="select-cart-item mr-2" 
+                                    data-cart-id="{{ $item->id }}"
+                                    {{ $item->is_selected ? 'checked' : '' }}>
+                                <span class="text-xs text-gray-500">Chọn để mua</span>
+                            </div>
+
                             <div class="flex flex-col md:flex-row gap-6">
                                 <!-- Product Image -->
                                 <div class="relative group">
@@ -166,7 +175,7 @@
                                         <h3 class="text-xl font-bold text-black uppercase tracking-wide">
                                             {{ $item->title ?? 'Combo sách' }}
                                         </h3>
-                                        <button class="text-red-600 hover:text-red-800 p-2 adidas-cart-product-remove" 
+                                        <button class="text-red-600 hover:text-red-800 p-2 cart-product-remove" 
                                                 data-collection-id="{{ $item->collection_id }}" 
                                                 data-is-combo="true" 
                                                 title="Xóa combo">
@@ -215,7 +224,7 @@
                                         <!-- Quantity -->
                                         <div>
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Số lượng</span>
-                                            <div class="flex items-center mt-1 adidas-cart-qty-control" data-collection-id="{{ $item->collection_id }}">
+                                            <div class="flex items-center mt-1 cart-qty-control" data-collection-id="{{ $item->collection_id }}">
                                                 <button type="button" 
                                                         class="w-10 h-10 bg-black text-white hover:bg-gray-800 transition-colors duration-200 decrease-quantity" 
                                                         data-action="decrease" 
@@ -227,7 +236,8 @@
                                                        value="{{ $item->quantity ?? 1 }}" 
                                                        min="1"
                                                        data-collection-id="{{ $item->collection_id }}"
-                                                       data-last-value="{{ $item->quantity ?? 1 }}">
+                                                       data-last-value="{{ $item->quantity ?? 1 }}"
+                                                       data-is-combo="true">
                                                 <button type="button" 
                                                         class="w-10 h-10 bg-black text-white hover:bg-gray-800 transition-colors duration-200 increase-quantity" 
                                                         data-action="increase">
@@ -258,6 +268,14 @@
                              data-format-name="{{ $item->format_name ?? '' }}"
                              data-is-combo="false">
                             
+                            <!-- Checkbox chọn sản phẩm để mua -->
+                            <div class="flex items-center mb-2">
+                                <input type="checkbox" class="select-cart-item mr-2" 
+                                    data-cart-id="{{ $item->id }}"
+                                    {{ $item->is_selected ? 'checked' : '' }}>
+                                <span class="text-xs text-gray-500">Chọn để mua</span>
+                            </div>
+
                             <div class="flex flex-col md:flex-row gap-6">
                                 <!-- Product Image -->
                                 <div class="relative group">
@@ -287,7 +305,7 @@
                                         <h3 class="text-xl font-bold text-black uppercase tracking-wide">
                                             {{ $item->title ?? 'Không có tiêu đề' }}
                                         </h3>
-                                        <button class="text-red-600 hover:text-red-800 p-2 adidas-cart-product-remove" 
+                                        <button class="text-red-600 hover:text-red-800 p-2 cart-product-remove" 
                                                 data-book-id="{{ $item->book_id }}" 
                                                 data-is-combo="false" 
                                                 title="Xóa sản phẩm">
@@ -370,17 +388,20 @@
                                             @if($isEbook)
                                                 <div class="mt-1">
                                                     <input type="number" 
-                                                           class="w-16 h-10 text-center border-2 border-gray-300 bg-gray-100 text-black font-bold" 
+                                                           class="w-16 h-10 text-center border-2 border-gray-300 bg-gray-100 text-black font-bold quantity-input" 
                                                            value="1" 
                                                            min="1" 
                                                            max="1" 
+                                                           data-book-id="{{ $item->book_id }}"
+                                                           data-last-value="1"
+                                                           data-is-ebook="true"
                                                            disabled>
-                                                    <div class="text-xs text-gray-500 mt-1">
-                                                        <i class="fas fa-info-circle"></i> Sách điện tử
+                                                    <div class="text-xs text-gray-500 mt-1 ebook-notice">
+                                                        <i class="fas fa-info-circle"></i> Sách điện tử (số lượng cố định)
                                                     </div>
                                                 </div>
                                             @else
-                                                <div class="flex items-center mt-1 adidas-cart-qty-control" data-book-id="{{ $item->book_id }}">
+                                                <div class="flex items-center mt-1 cart-qty-control" data-book-id="{{ $item->book_id }}">
                                                     <button type="button" 
                                                             class="w-10 h-10 bg-black text-white hover:bg-gray-800 transition-colors duration-200 decrease-quantity" 
                                                             data-action="decrease" 
@@ -393,7 +414,8 @@
                                                            min="1" 
                                                            max="{{ $item->stock ?? 1 }}" 
                                                            data-book-id="{{ $item->book_id }}" 
-                                                           data-original-value="{{ $item->quantity }}">
+                                                           data-last-value="{{ $item->quantity }}"
+                                                           data-is-combo="false">
                                                     <button type="button" 
                                                             class="w-10 h-10 bg-black text-white hover:bg-gray-800 transition-colors duration-200 increase-quantity" 
                                                             data-action="increase" 
@@ -402,10 +424,12 @@
                                                     </button>
                                                 </div>
                                                 <div class="text-xs text-gray-500 mt-1">
-                                                    @if($item->quantity >= ($item->stock ?? 1))
+                                                    @if($item->stock && $item->quantity >= $item->stock)
                                                         <span class="text-red-600"><i class="fas fa-exclamation-triangle"></i> Đã đạt tối đa</span>
+                                                    @elseif($item->stock)
+                                                        <span><i class="fas fa-boxes"></i> Còn {{ $item->stock }} sản phẩm</span>
                                                     @else
-                                                        <span><i class="fas fa-boxes"></i> Còn {{ $item->stock ?? 0 }} sản phẩm</span>
+                                                        <span class="text-orange-600"><i class="fas fa-question-circle"></i> Kiểm tra tồn kho</span>
                                                     @endif
                                                 </div>
                                             @endif
@@ -544,6 +568,9 @@
     <script src="{{ asset('js/cart/cart_voucher.js') }}"></script>
     <script src="{{ asset('js/cart/cart_enhanced_ux.js') }}"></script>
     <script src="{{ asset('js/cart/cart_smart_ux.js') }}"></script>
-    <!-- Debug script - remove in production -->
+    <!-- Debug scripts -->
     <script src="{{ asset('js/cart/debug_cart.js') }}"></script>
+    @if(config('app.debug'))
+        <script src="{{ asset('js/cart/cart_debug_test.js') }}"></script>
+    @endif
 @endpush

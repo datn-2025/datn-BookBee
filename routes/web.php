@@ -85,6 +85,7 @@ Route::prefix('cart')->group(function () {
     Route::post('/add-wishlist', [CartController::class, 'addAllWishlistToCart'])->name('cart.add-wishlist');
     // Route::post('/apply-voucher', [CartController::class, 'applyVoucher'])->name('cart.apply-voucher');
     Route::post('/remove-voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
+    Route::post('/update-selected', [CartController::class, 'updateSelected'])->name('cart.update-selected');
 });
 
 // danh sach yeu thich
