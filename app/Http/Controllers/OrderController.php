@@ -67,8 +67,16 @@ class OrderController extends Controller
         // Lấy thông tin cửa hàng từ settings
         $storeSettings = \App\Models\Setting::first();
 
-        // Lấy thông tin giỏ hàng
-        $cartItems = $user->cart()->with(['book.images', 'bookFormat', 'collection.books'])->get();
+        // Validate giỏ hàng (kiểm tra sản phẩm được chọn, số lượng tồn kho và trạng thái)
+        try {
+            $cartItems = $this->orderService->validateCartItems($user);
+        } catch (\Exception $e) {
+            Toastr::error($e->getMessage());
+            return redirect()->route('cart.index');
+        }
+
+        // Lấy thông tin chi tiết giỏ hàng với relationships
+        $cartItems = $user->cart()->with(['book.images', 'bookFormat', 'collection.books'])->where('is_selected', 1)->get();
 
         // Kiểm tra nếu giỏ hàng có cả sách vật lý và sách ebook
         $hasPhysicalBook = false;
@@ -121,6 +129,14 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
+        
+        // Validate giỏ hàng (kiểm tra sản phẩm được chọn, số lượng tồn kho và trạng thái)
+        try {
+            $selectedCartItems = $this->orderService->validateCartItems($user);
+        } catch (\Exception $e) {
+            Toastr::error($e->getMessage());
+            return redirect()->route('cart.index');
+        }
         
         // Kiểm tra xem có phải đơn hàng ebook không
         $isEbookOrder = $request->delivery_method === 'ebook';

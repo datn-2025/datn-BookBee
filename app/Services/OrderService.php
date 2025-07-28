@@ -589,9 +589,10 @@ class OrderService
      */
     public function validateCartItems(User $user)
     {
-        // Lấy tất cả items trong giỏ hàng (cả sách lẻ và combo)
+        // Lấy tất cả items trong giỏ hàng (cả sách lẻ và combo) chỉ những item được chọn
         $cartItems = $user->cart()
             ->with(['book', 'bookFormat', 'collection'])
+            ->where('is_selected', 1) // Chỉ lấy items được chọn
             ->where(function($query) {
                 // Sách lẻ: có book_id và book_format_id
                 $query->where(function($q) {
@@ -663,15 +664,27 @@ class OrderService
             throw new \Exception('Sách hoặc định dạng sách không tồn tại trong giỏ hàng.');
         }
 
-        // Kiểm tra sách còn hoạt động không
-        if ($cartItem->book->status !== 'Còn Hàng') {
-            throw new \Exception('Sách "' . $cartItem->book->title . '" không còn hoạt động.');
+        // Lấy thông tin sách mới nhất từ database để kiểm tra trạng thái và tồn kho
+        $freshBook = \App\Models\Book::find($cartItem->book_id);
+        $freshBookFormat = \App\Models\BookFormat::find($cartItem->book_format_id);
+        
+        if (!$freshBook || !$freshBookFormat) {
+            throw new \Exception('Sách hoặc định dạng sách không tồn tại.');
         }
 
-        // Kiểm tra tồn kho từ book_format (không phải từ book)
-        // dd($cartItem->bookFormat->stock);
-        if ($cartItem->bookFormat->stock < $cartItem->quantity) {
-            throw new \Exception('Sách "' . $cartItem->book->title . '" (định dạng: ' . $cartItem->bookFormat->format_name . ') không đủ số lượng. Còn lại: ' . $cartItem->bookFormat->stock);
+        // Kiểm tra sách có bị ngừng kinh doanh không
+        if ($freshBook->status === 'Ngừng Kinh Doanh') {
+            throw new \Exception('Sách "' . $freshBook->title . '" đã ngừng kinh doanh.');
+        }
+        
+        // Kiểm tra sách còn hoạt động không
+        if ($freshBook->status !== 'Còn Hàng') {
+            throw new \Exception('Sách "' . $freshBook->title . '" không còn hoạt động.');
+        }
+
+        // Kiểm tra tồn kho từ book_format mới nhất từ database
+        if ($freshBookFormat->stock < $cartItem->quantity) {
+            throw new \Exception('Sách "' . $freshBook->title . '" (định dạng: ' . $freshBookFormat->format_name . ') không đủ số lượng. Còn lại: ' . $freshBookFormat->stock);
         }
     }
 

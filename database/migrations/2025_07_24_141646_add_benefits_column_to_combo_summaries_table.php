@@ -12,9 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('combo_summaries', function (Blueprint $table) {
-            // Add the missing benefits column
-            $table->json('benefits')->nullable()->after('themes');
-            
+            // Add the missing benefits column            
             // Modify existing columns to be JSON type to match our model expectations
             $table->json('key_points')->nullable()->change();
             $table->json('themes')->nullable()->change();
@@ -27,9 +25,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('combo_summaries', function (Blueprint $table) {
-            // Remove the benefits column
-            $table->dropColumn('benefits');
-            
+            // Remove the benefits colum            
             // Revert column types back to longtext
             $table->longText('key_points')->nullable()->change();
             $table->longText('themes')->nullable()->change();
