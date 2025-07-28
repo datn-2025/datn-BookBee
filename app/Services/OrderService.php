@@ -18,17 +18,21 @@ use App\Models\Cart;
 use App\Models\RefundRequest;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Services\GhnService;
 
 class OrderService
 {
     protected $paymentRefundService;
+    protected $ghnService;
     // protected $refundValidationService;
 
     public function __construct(
         PaymentRefundService $paymentRefundService,
+        GhnService $ghnService
         // RefundValidationService $refundValidationService
     ) {
         $this->paymentRefundService = $paymentRefundService;
+        $this->ghnService = $ghnService;
         // $this->refundValidationService = $refundValidationService;
     }
 
@@ -151,6 +155,110 @@ class OrderService
     {
         // Tính phí vận chuyển dựa trên phương thức
         return $shippingMethod === 'standard' ? 20000 : 40000;
+    }
+
+    /**
+     * Tính phí vận chuyển từ GHN API
+     */
+    public function calculateGhnShippingFee($toDistrictId, $toWardCode, $weight = 500, $serviceTypeId = null)
+    {
+        try {
+            $response = $this->ghnService->calculateShippingFee(
+                $toDistrictId,
+                $toWardCode,
+                $weight,
+                $serviceTypeId
+            );
+
+            if ($response && isset($response['data']['total'])) {
+                return $response['data']['total'];
+            }
+
+            // Fallback về phí cố định nếu API thất bại
+            Log::warning('GHN shipping fee calculation failed, using fallback fee');
+            return 30000;
+        } catch (\Exception $e) {
+            Log::error('Error calculating GHN shipping fee: ' . $e->getMessage());
+            return 30000; // Phí fallback
+        }
+    }
+
+    /**
+     * Tạo đơn hàng GHN
+     */
+    public function createGhnOrder(Order $order)
+    {
+        try {
+            // Chỉ tạo đơn GHN cho đơn hàng giao hàng
+            if ($order->delivery_method !== 'delivery') {
+                return null;
+            }
+
+            $address = $order->address;
+            if (!$address || !$address->district_id || !$address->ward_code) {
+                Log::warning('Order address missing GHN fields, cannot create GHN order', [
+                    'order_id' => $order->id,
+                    'address_id' => $order->address_id
+                ]);
+                return null;
+            }
+
+            // Lấy order items với relationship để chuẩn bị dữ liệu GHN
+            $orderItems = $order->orderItems()->with(['book', 'collection'])->get();
+            $orderData = $this->ghnService->prepareOrderData($order, $orderItems);
+            $response = $this->ghnService->createOrder($orderData);
+
+            if ($response && isset($response['order_code'])) {
+                $orderCode = $response['order_code'];
+                
+                // Cập nhật thông tin GHN vào đơn hàng
+                $order->update([
+                    'ghn_order_code' => $orderCode,
+                    'ghn_service_type_id' => $orderData['service_type_id'] ?? null,
+                    'expected_delivery_date' => $response['expected_delivery_time'] ?? null,
+                    'ghn_tracking_data' => $response ?? null
+                ]);
+
+                // Lấy thông tin tracking chi tiết ngay sau khi tạo đơn
+                try {
+                    $trackingData = $this->ghnService->getOrderDetail($orderCode);
+                    if ($trackingData) {
+                        $order->update([
+                            'ghn_tracking_data' => $trackingData
+                        ]);
+                        Log::info('GHN tracking data updated immediately after order creation', [
+                            'order_id' => $order->id,
+                            'ghn_order_code' => $orderCode
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to get tracking data immediately after GHN order creation', [
+                        'order_id' => $order->id,
+                        'ghn_order_code' => $orderCode,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+
+                Log::info('GHN order created successfully', [
+                    'order_id' => $order->id,
+                    'ghn_order_code' => $orderCode
+                ]);
+
+                return $response;
+            }
+
+            Log::warning('GHN order creation failed', [
+                'order_id' => $order->id,
+                'response' => $response
+            ]);
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Error creating GHN order: ' . $e->getMessage(), [
+                'order_id' => $order->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
+        }
     }
 
     protected function generateOrderCode()
@@ -400,19 +508,37 @@ class OrderService
      */
     public function handleDeliveryAddress($request, User $user)
     {
+        // Nếu là đơn hàng ebook, không cần địa chỉ giao hàng
+        if ($request->delivery_method === 'ebook') {
+            return null;
+        }
+        
         if ($request->address_id) {
             return $request->address_id;
         }
 
-        // Tạo địa chỉ mới
-        $address = Address::create([
+        // Tạo địa chỉ mới với thông tin GHN
+        $addressData = [
             'user_id' => $user->id,
             'address_detail' => $request->new_address_detail,
             'city' => $request->new_address_city_name,
             'district' => $request->new_address_district_name,
             'ward' => $request->new_address_ward_name,
             'is_default' => false
-        ]);
+        ];
+
+        // Thêm thông tin GHN nếu có
+        if ($request->has('province_id')) {
+            $addressData['province_id'] = $request->province_id;
+        }
+        if ($request->has('district_id')) {
+            $addressData['district_id'] = $request->district_id;
+        }
+        if ($request->has('ward_code')) {
+            $addressData['ward_code'] = $request->ward_code;
+        }
+
+        $address = Address::create($addressData);
 
         return $address->id;
     }
@@ -568,21 +694,24 @@ class OrderService
         $paymentStatus = PaymentStatus::where('name', 'Chờ Xử Lý')->firstOrFail();
         
         $finalTotalAmount = $subtotal + $request->shipping_fee_applied - $discountAmount;
+        
+        // Đối với đơn hàng ebook, sử dụng thông tin user nếu không có thông tin người nhận
+        $isEbookOrder = $request->delivery_method === 'ebook';
 
         return [
             'user_id' => $user->id,
             'order_code' => 'BBE-' . time(),
             'address_id' => $addressId,
-            'recipient_name' => $request->new_recipient_name,
-            'recipient_phone' => $request->new_phone,
-            'recipient_email' => $request->new_email,
+            'recipient_name' => $isEbookOrder ? ($request->new_recipient_name ?: $user->name) : $request->new_recipient_name,
+            'recipient_phone' => $isEbookOrder ? ($request->new_phone ?: $user->phone) : $request->new_phone,
+            'recipient_email' => $request->new_email ?: $user->email,
             'payment_method_id' => $request->payment_method_id,
             'voucher_id' => $voucherId,
             'note' => $request->note,
             'order_status_id' => $orderStatus->id,
             'payment_status_id' => $paymentStatus->id,
             'total_amount' => $finalTotalAmount,
-            'shipping_fee' => $request->delivery_method === 'pickup' ? 0 : $request->shipping_fee_applied,
+            'shipping_fee' => ($request->delivery_method === 'pickup' || $isEbookOrder) ? 0 : $request->shipping_fee_applied,
             'discount_amount' => (int) $discountAmount,
             'delivery_method' => $request->delivery_method,
         ];
@@ -596,7 +725,8 @@ class OrderService
         // 1. Xử lý địa chỉ giao hàng
         $addressId = $this->handleDeliveryAddress($request, $user);
         
-        if (!$addressId) {
+        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook
+        if (!$addressId && $request->delivery_method !== 'ebook') {
             throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
         }
 
@@ -727,7 +857,8 @@ class OrderService
         // 1. Xử lý địa chỉ giao hàng
         $addressId = $this->handleDeliveryAddress($request, $user);
         
-        if (!$addressId) {
+        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook
+        if (!$addressId && $request->delivery_method !== 'ebook') {
             throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
         }
 

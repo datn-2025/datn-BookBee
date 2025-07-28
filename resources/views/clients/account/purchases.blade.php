@@ -1,5 +1,5 @@
 @extends('layouts.account.layout')
-
+@section('title', 'Đánh Giá Của Tôi')
 @section('account_content')
     <div class="bg-white border border-black shadow mb-8" style="border-radius:0;">
         <div class="px-8 py-6 border-b border-black bg-black">

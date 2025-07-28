@@ -18,7 +18,10 @@ class Address extends Model
         'city',
         'district',
         'ward',
-        'is_default'
+        'is_default',
+        'province_id',
+        'district_id',
+        'ward_code'
     ];
 
     protected $casts = [

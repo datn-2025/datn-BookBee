@@ -155,9 +155,14 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::prefix('orders')->name('orders.')->group(function () {
-            Route::get('/', [OrderClientController::class, 'index'])->name('index');
+            // Redirect old index route to unified
+            Route::get('/', function() {
+                return redirect()->route('account.orders.unified');
+            })->name('index');
+            Route::get('/unified', [OrderClientController::class, 'unified'])->name('unified');
             Route::get('/{id}', [OrderClientController::class, 'show'])->name('show');
             Route::put('/{id}', [OrderClientController::class, 'update'])->name('update');
+            Route::put('/{id}/cancel', [OrderClientController::class, 'cancel'])->name('cancel');
             Route::delete('/{id}', [OrderClientController::class, 'destroy'])->name('destroy');
             
             // Refund routes
@@ -410,6 +415,11 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/show/{id}', [OrderController::class, 'show'])->name('show');
         Route::get('/edit/{id}', [OrderController::class, 'edit'])->name('edit');
         Route::put('/update/{id}', [OrderController::class, 'update'])->name('update');
+        
+        // GHN routes
+        Route::post('/{id}/ghn/create', [OrderController::class, 'createGhnOrder'])->name('orders.ghn.create');
+        Route::post('/{id}/ghn/update-tracking', [OrderController::class, 'updateGhnTracking'])->name('orders.ghn.update-tracking');
+        Route::post('/{id}/ghn/cancel', [OrderController::class, 'cancelGhnOrder'])->name('orders.ghn.cancel');
     });
 
     // Route admin/settings
@@ -440,9 +450,23 @@ Route::middleware('auth')->prefix('wallet')->name('wallet.')->group(function () 
     Route::get('/', [App\Http\Controllers\WalletController::class, 'index'])->name('index');
     Route::get('/deposit', [App\Http\Controllers\WalletController::class, 'showDepositForm'])->name('deposit.form');
     Route::post('/deposit', [App\Http\Controllers\WalletController::class, 'deposit'])->name('deposit');
+    Route::post('/upload-bill', [App\Http\Controllers\WalletController::class, 'uploadBill'])->name('uploadBill');
     Route::get('/withdraw', [App\Http\Controllers\WalletController::class, 'showWithdrawForm'])->name('withdraw.form');
     Route::post('/withdraw', [App\Http\Controllers\WalletController::class, 'withdraw'])->name('withdraw');
     Route::get('/vnpay-return', [App\Http\Controllers\WalletController::class, 'vnpayReturn'])->name('vnpayReturn');
+});
+
+// Ebook Download routes - Secure download with authentication
+Route::prefix('ebook')->name('ebook.')->group(function() {
+    // Sample downloads (public access)
+    Route::get('/sample/download/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'downloadSample'])->name('sample.download');
+    Route::get('/sample/view/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'viewSample'])->name('sample.view');
+    
+    // Protected downloads (require authentication and purchase)
+    Route::middleware('auth')->group(function() {
+        Route::get('/download/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'download'])->name('download');
+        Route::get('/view/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'view'])->name('view');
+    });
 });
 
 // AI Summary routes
@@ -460,4 +484,21 @@ Route::prefix('ai-summary')->name('ai-summary.')->group(function() {
     Route::post('/combo/regenerate/{combo}', [App\Http\Controllers\AISummaryController::class, 'regenerateComboSummary'])->name('combo.regenerate');
     Route::get('/combo/status/{combo}', [App\Http\Controllers\AISummaryController::class, 'checkComboStatus'])->name('combo.status');
     Route::post('/combo/chat/{combo}', [App\Http\Controllers\AISummaryController::class, 'chatWithComboAI'])->name('combo.chat');
+});
+
+// GHN API routes
+Route::prefix('api/ghn')->name('ghn.')->group(function() {
+    Route::get('/provinces', [App\Http\Controllers\GhnController::class, 'getProvinces'])->name('provinces');
+    Route::post('/districts', [App\Http\Controllers\GhnController::class, 'getDistricts'])->name('districts');
+    Route::post('/wards', [App\Http\Controllers\GhnController::class, 'getWards'])->name('wards');
+    Route::post('/shipping-fee', [App\Http\Controllers\GhnController::class, 'calculateShippingFee'])->name('shipping-fee');
+    Route::post('/lead-time', [App\Http\Controllers\GhnController::class, 'getLeadTime'])->name('lead-time');
+    Route::post('/services', [App\Http\Controllers\GhnController::class, 'getServices'])->name('services');
+    Route::post('/track-order', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('track-order');
+    Route::get('/tracking/{orderCode}', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('tracking');
+});
+
+// Test page for GHN API
+Route::get('/test-ghn', function() {
+    return view('test-ghn');
 });

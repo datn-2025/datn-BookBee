@@ -193,17 +193,17 @@
                                                 <td>{{ $format->format_name }}</td>
                                                 <td>{{ number_format($format->price, 0, ',', '.') }} đ</td>
                                                 <td>
-                                                    @if($format->discount)
-                                                        {{ $format->discount }}%
+                                                    @if($format->discount && $format->discount > 0)
+                                                        {{ number_format($format->discount, 0, ',', '.') }}đ
                                                     @else
-                                                        0%
+                                                        0đ
                                                     @endif
                                                 </td>
                                                 <td>
                                                     @php
                                                         $discountedPrice = $format->price;
-                                                        if($format->discount) {
-                                                            $discountedPrice = $format->price - ($format->price * $format->discount / 100);
+                                                        if($format->discount && $format->discount > 0) {
+                                                            $discountedPrice = $format->price - $format->discount;
                                                         }
                                                     @endphp
                                                     {{ number_format($discountedPrice, 0, ',', '.') }} đ
@@ -216,23 +216,23 @@
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    @if($format->file_url)
-                                                        <a href="{{ asset('storage/' . $format->file_url) }}" target="_blank" class="btn btn-sm btn-info">
-                                                            <i class="ri-download-line"></i> Tải xuống
-                                                        </a>
-                                                    @else
-                                                        <span class="badge bg-secondary">Không có</span>
-                                                    @endif
-                                                </td>
+                                    @if($format->file_url)
+                                        <a href="{{ route('ebook.download', $format->id) }}" target="_blank" class="btn btn-sm btn-info">
+                                            <i class="ri-download-line"></i> Tải xuống
+                                        </a>
+                                    @else
+                                        <span class="badge bg-secondary">Không có</span>
+                                    @endif
+                                </td>
                                                 <td>
-                                                    @if($format->sample_file_url)
-                                                        <a href="{{ asset('storage/' . $format->sample_file_url) }}" target="_blank" class="btn btn-sm btn-outline-info">
-                                                            <i class="ri-eye-line"></i> Xem thử
-                                                        </a>
-                                                    @else
-                                                        <span class="badge bg-secondary">Không có</span>
-                                                    @endif
-                                                </td>
+                                    @if($format->sample_file_url)
+                                        <a href="{{ route('ebook.sample.view', $format->id) }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                            <i class="ri-eye-line"></i> Xem thử
+                                        </a>
+                                    @else
+                                        <span class="badge bg-secondary">Không có</span>
+                                    @endif
+                                </td>
                                             </tr>
                                         @endforeach
                                     @else

@@ -211,11 +211,12 @@
                                     @foreach($book->formats as $format)
                                     <div class="text">
                                         {{ $format->format_name }}:
-                                        @if($format->discount)
+                                        @if($format->discount && $format->discount > 0)
                                         <del>{{ number_format($format->price) }}đ</del>
                                         <span class="text-danger">
-                                            {{ number_format($format->price * (1 - $format->discount/100)) }}đ
+                                            {{ number_format($format->price - $format->discount) }}đ
                                         </span>
+                                        <small class="text-muted">(Giảm {{ number_format($format->discount) }}đ)</small>
                                         @else
                                         {{ number_format($format->price) }}đ
                                         @endif

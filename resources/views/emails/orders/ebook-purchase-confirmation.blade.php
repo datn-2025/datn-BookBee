@@ -66,23 +66,39 @@
             
             <p>Cảm ơn bạn đã mua ebook tại BookBee. Đơn hàng <strong>#{{ $order->order_code }}</strong> của bạn đã được xác nhận thanh toán thành công.</p>
 
-            <h3>Chi tiết đơn hàng:</h3>
+            <h3>Chi tiết ebook có thể tải:</h3>
             @foreach($order->orderItems as $item)
-                @if($item->bookFormat && $item->bookFormat->format_name === 'Ebook')
-                <div class="book-item">
-                    <h4>
-                                    @if($item->is_combo)
-                                        {{ $item->collection->name ?? 'Combo không xác định' }}
-                                    @else
-                                        {{ $item->book->title ?? 'Sách không xác định' }}
-                                    @endif
-                                </h4>
-                    <p>Định dạng: Ebook</p>
-                    <p>Tác giả: {{ $item->book->authors->first()->name }}</p>
-                    <a href="{{ asset('storage/' . $item->bookFormat->file_url) }}" class="button" target="_blank">
-                        Tải Ebook
-                    </a>
-                </div>
+                @if(!$item->is_combo && $item->book)
+                    {{-- Trường hợp 1: Mua trực tiếp ebook --}}
+                    @if($item->bookFormat && $item->bookFormat->format_name === 'Ebook')
+                    <div class="book-item">
+                        <h4>{{ $item->book->title ?? 'Sách không xác định' }}</h4>
+                        <p>Định dạng: Ebook (Mua trực tiếp)</p>
+                        @if($item->book->authors->isNotEmpty())
+                            <p>Tác giả: {{ $item->book->authors->first()->name }}</p>
+                        @endif
+                        <a href="{{ route('ebook.download', $item->bookFormat->id) }}" class="button" target="_blank">
+                            Tải Ebook
+                        </a>
+                    </div>
+                    {{-- Trường hợp 2: Mua sách vật lý nhưng có ebook kèm theo --}}
+                    @elseif($item->bookFormat && $item->bookFormat->format_name !== 'Ebook' && $item->book->formats->contains('format_name', 'Ebook'))
+                        @php
+                            $ebookFormat = $item->book->formats->where('format_name', 'Ebook')->first();
+                        @endphp
+                        @if($ebookFormat && $ebookFormat->file_url)
+                        <div class="book-item">
+                            <h4>{{ $item->book->title ?? 'Sách không xác định' }}</h4>
+                            <p>Định dạng: Ebook (Kèm theo sách vật lý)</p>
+                            @if($item->book->authors->isNotEmpty())
+                                <p>Tác giả: {{ $item->book->authors->first()->name }}</p>
+                            @endif
+                            <a href="{{ route('ebook.download', $ebookFormat->id) }}" class="button" target="_blank">
+                                Tải Ebook
+                            </a>
+                        </div>
+                        @endif
+                    @endif
                 @endif
             @endforeach
 

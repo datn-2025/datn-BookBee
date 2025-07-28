@@ -1,5 +1,5 @@
 @extends('layouts.account.layout')
-
+@section('title', 'Nạp Ví')
 @push('styles')
 <style>
     .deposit-card {
@@ -116,6 +116,8 @@
                     @enderror
                 </div>
 
+
+
                 <div class="space-y-4">
                     <button type="submit" class="submit-btn">
                         Tiến hành nạp tiền
@@ -140,3 +142,13 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const paymentMethodSelect = document.getElementById('payment_method');
+        
+
+    });
+</script>
+@endpush

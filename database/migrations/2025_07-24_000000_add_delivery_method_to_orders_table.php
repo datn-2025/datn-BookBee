@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->enum('delivery_method', ['delivery', 'pickup'])->default('delivery')->after('shipping_fee');
+            $table->enum('delivery_method', ['delivery', 'pickup', 'ebook'])->default('delivery')->after('shipping_fee');
         });
     }
 

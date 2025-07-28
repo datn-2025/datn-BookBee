@@ -54,6 +54,7 @@
                         <th>Thời gian</th>
                         <th class="text-center">Trạng thái</th>
                         <th>Phương thức</th>
+                        <th class="text-center">Bill</th>
                         <th class="text-center">Duyệt</th>
                     </tr>
                 </thead>
@@ -98,6 +99,20 @@
                             @endif
                         </td>
                         <td class="text-center">
+                            @if($transaction->bill_image)
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#billModal" 
+                                        data-bill-image="{{ asset('storage/' . $transaction->bill_image) }}"
+                                        data-transaction-id="{{ $transaction->id }}"
+                                        title="Xem bill">
+                                    <i class="ri-image-line"></i> Xem bill
+                                </button>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
                             @if($transaction->status == 'pending')
                                 <div class="d-flex gap-1 justify-content-center">
                                     <form action="{{ route('admin.wallets.approveTransaction', $transaction->id) }}" method="POST">
@@ -118,7 +133,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">Không có giao dịch nạp ví nào.</td>
+                        <td colspan="8" class="text-center text-muted py-4">Không có giao dịch nạp ví nào.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -129,6 +144,33 @@
         </div>
     </div>
 </div>
+
+{{-- Modal xem bill --}}
+<div class="modal fade" id="billModal" tabindex="-1" aria-labelledby="billModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="billModalLabel">
+                    <i class="ri-image-line me-2"></i>Bill chuyển khoản
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="billImage" src="" alt="Bill chuyển khoản" class="img-fluid rounded" style="max-height: 500px;">
+                <div class="mt-3">
+                    <small class="text-muted">Mã giao dịch: <span id="transactionId"></span></small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <a id="downloadBill" href="" download class="btn btn-primary">
+                    <i class="ri-download-line me-1"></i>Tải xuống
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
     if (typeof flatpickr !== 'undefined') {
@@ -138,6 +180,24 @@
             locale: { rangeSeparator: ' đến ' }
         });
     }
+    
+    // Xử lý modal xem bill
+    document.addEventListener('DOMContentLoaded', function() {
+        const billModal = document.getElementById('billModal');
+        const billImage = document.getElementById('billImage');
+        const transactionId = document.getElementById('transactionId');
+        const downloadBill = document.getElementById('downloadBill');
+        
+        billModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const billImageUrl = button.getAttribute('data-bill-image');
+            const transactionIdValue = button.getAttribute('data-transaction-id');
+            
+            billImage.src = billImageUrl;
+            transactionId.textContent = transactionIdValue;
+            downloadBill.href = billImageUrl;
+        });
+    });
 </script>
 @endpush
 @endsection

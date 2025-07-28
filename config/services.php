@@ -54,4 +54,12 @@ return [
         'api_key' => env('GEMINI_API_KEY'),
     ],
 
+    'ghn' => [
+        'api_url' => env('GHN_API_URL', 'https://dev-online-gateway.ghn.vn'),
+        'token' => env('GHN_API_KEY'),
+        'shop_id' => (int) env('GHN_SHOP_ID'),
+        'from_district_id' => (int) env('GHN_SHOP_DISTRICT_ID', 1454),
+        'from_ward_code' => env('GHN_SHOP_WARD_CODE', '21211'),
+    ],
+
 ];

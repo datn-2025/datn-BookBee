@@ -9,10 +9,15 @@
     <title>{{ get_setting() ? get_setting()->name_website : 'BookBee' }} - @yield('title')</title>
     <link rel="shortcut icon" href="{{ asset('storage/' . (get_setting() ? get_setting()->favicon : 'default_favicon.ico')) }}" />
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+   
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    
 
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
@@ -28,15 +33,6 @@
     
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    
-    <!-- PDF.js for modern PDF viewing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>
-        // Configure PDF.js worker
-        if (typeof pdfjsLib !== 'undefined') {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        }
-    </script>
     
     <!-- Cart Count Manager -->
     <script src="{{ asset('js/cart-count-manager.js') }}"></script>
@@ -193,11 +189,34 @@
         -webkit-text-fill-color: transparent;
         background-clip: text;
       }
+      /* Chat notification animation */
+      @keyframes bounce {
+        0%, 20%, 53%, 80%, 100% {
+          animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+          transform: translate3d(0,0,0);
+        }
+        40%, 43% {
+          animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+          transform: translate3d(0, -10px, 0);
+        }
+        70% {
+          animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+          transform: translate3d(0, -7px, 0);
+        }
+        90% {
+          transform: translate3d(0,-2px,0);
+        }
+      }
+      .animate-bounce {
+        animation: bounce 1s;
+      }
     </style>
 </head>
 
 <body style="margin:0; min-height:100vh;">
     @include('layouts.partials.navbar')
+    <div id="notification" class=" alert mx-3 invisible" >
+    </div>
     @yield('content')
 
     {!! Toastr::message() !!}
@@ -205,51 +224,17 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+    {{-- Chat Widget --}}
+    {{-- @include('components.chat-widget') --}}
+
     @stack('scripts')
     @include('layouts.partials.footer')
-    <script>
-       $(document).ready(function() {
-    // Lấy tỉnh thành
-    $.getJSON('https://provinces.open-api.vn/api/p/', function(provinces) {
-        provinces.forEach(function(province) {
-            $("#tinh").append(`<option value="${province.code}">${province.name}</option>`);
-        });
-    });
 
-    // Xử lý khi chọn tỉnh
-    $("#tinh").change(function() {
-        const provinceCode = $(this).val();
-        $("#ten_tinh").val($(this).find("option:selected").text());
-        
-        // Lấy quận/huyện
-        $.getJSON(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`, function(provinceData) {
-            $("#quan").html('<option value="">Chọn Quận/Huyện</option>');
-            provinceData.districts.forEach(function(district) {
-                $("#quan").append(`<option value="${district.code}">${district.name}</option>`);
-            });
-        });
-    });
+    <!-- Test broadcast script removed - file not found -->
 
-    // Xử lý khi chọn quận
-    $("#quan").change(function() {
-        const districtCode = $(this).val();
-        $("#ten_quan").val($(this).find("option:selected").text());
-        
-        // Lấy phường/xã
-        $.getJSON(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`, function(districtData) {
-            $("#phuong").html('<option value="">Chọn Phường/Xã</option>');
-            districtData.wards.forEach(function(ward) {
-                $("#phuong").append(`<option value="${ward.code}">${ward.name}</option>`);
-            });
-        });
-    });
-
-    // Xử lý khi chọn phường
-    $("#phuong").change(function() {
-        $("#ten_phuong").val($(this).find("option:selected").text());
-    });
-});
-    </script>
+    <!-- Chat script moved to app.js -->
+    
+    <!-- Address selection scripts are now handled by individual pages using GHN API -->
 </body>
 
 </html>

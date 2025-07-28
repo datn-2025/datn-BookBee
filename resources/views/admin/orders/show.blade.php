@@ -107,10 +107,19 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <h6 class="mb-1 fs-14">Địa chỉ giao hàng:</h6>
-                                                            <p class="text-muted mb-0">{{ $order->address->address_detail }}</p>
+                                                            <p class="text-muted mb-0">
+                                                                @if($order->delivery_method === 'ebook')
+                                                                    Ebook - Không cần địa chỉ giao hàng
+                                                                @elseif($order->address)
+                                                                    {{ $order->address->address_detail }}
+                                                                @else
+                                                                    Không có thông tin
+                                                                @endif
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </li>
+                                                @if($order->address && $order->delivery_method !== 'ebook')
                                                 <li>
                                                     <div class="d-flex">
                                                         <div class="flex-shrink-0 text-muted">
@@ -122,6 +131,7 @@
                                                         </div>
                                                     </div>
                                                 </li>
+                                                @endif
                                                 <li>
                                                     <div class="d-flex">
                                                         <div class="flex-shrink-0 text-muted">
@@ -129,7 +139,7 @@
                                                         </div>
                                                         <div class="flex-grow-1">
                                                             <h6 class="mb-1 fs-14">Thành phố:</h6>
-                                                            <p class="text-muted mb-0">{{ $order->address->city }}</p>
+                                                            <p class="text-muted mb-0">{{ $order->address->city ?? 'không có địa chỉ' }}</p>
                                                         </div>
                                                     </div>
                                                 </li>
@@ -550,6 +560,136 @@
                     </div>
                 </div>
 
+                {{-- GHN Shipping Information --}}
+                @if($order->delivery_method === 'delivery')
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <h5 class="card-title mb-0">Thông tin vận chuyển GHN</h5>
+                            @if($order->ghn_order_code)
+                                <span class="badge bg-success">Đã tạo vận đơn</span>
+                            @else
+                                <span class="badge bg-warning">Chưa tạo vận đơn</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @if($order->ghn_order_code)
+                            <div class="mb-3">
+                                <div class="d-flex mb-2">
+                                    <div class="flex-shrink-0">
+                                        <div class="avatar-sm">
+                                            <div class="avatar-title bg-light text-primary rounded-circle shadow fs-3">
+                                                <i class="ri-truck-line"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-1">Mã vận đơn GHN</h6>
+                                        <p class="text-muted mb-0">{{ $order->ghn_order_code }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            @if($order->ghn_service_type_id)
+                            <div class="mb-3">
+                                <div class="d-flex mb-2">
+                                    <div class="flex-shrink-0">
+                                        <div class="avatar-sm">
+                                            <div class="avatar-title bg-light text-info rounded-circle shadow fs-3">
+                                                <i class="ri-service-line"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-1">Loại dịch vụ</h6>
+                                        <p class="text-muted mb-0">ID: {{ $order->ghn_service_type_id }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+                            
+                            @if($order->expected_delivery_date)
+                            <div class="mb-3">
+                                <div class="d-flex mb-2">
+                                    <div class="flex-shrink-0">
+                                        <div class="avatar-sm">
+                                            <div class="avatar-title bg-light text-warning rounded-circle shadow fs-3">
+                                                <i class="ri-calendar-check-line"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-1">Ngày giao dự kiến</h6>
+                                        <p class="text-muted mb-0">{{ $order->expected_delivery_date->format('d/m/Y') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+                            
+                            @if($order->ghn_tracking_data)
+                            <div class="mb-3">
+                                <h6 class="mb-2">Trạng thái vận chuyển</h6>
+                                <div class="border rounded p-3">
+                                    @php
+                                        $trackingData = is_string($order->ghn_tracking_data) ? json_decode($order->ghn_tracking_data, true) : $order->ghn_tracking_data;
+                                    @endphp
+                                    @if($trackingData && isset($trackingData['status']))
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="w-3 h-3 bg-primary rounded-circle me-2"></div>
+                                            <span class="fw-medium">{{ $trackingData['status'] }}</span>
+                                        </div>
+                                        @if(isset($trackingData['description']))
+                                            <p class="text-muted mb-0 small">{{ $trackingData['description'] }}</p>
+                                        @endif
+                                    @else
+                                        <p class="text-muted mb-0">Chưa có thông tin theo dõi</p>
+                                    @endif
+                                </div>
+                            </div>
+                            @endif
+                            
+                            <div class="d-grid gap-2">
+                                <form action="{{ route('admin.orders.ghn.update-tracking', $order->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-info btn-sm w-100">
+                                        <i class="ri-refresh-line me-1"></i> Cập nhật theo dõi
+                                    </button>
+                                </form>
+                                
+                                <form action="{{ route('admin.orders.ghn.cancel', $order->id) }}" method="POST" class="d-inline" 
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn hủy liên kết với đơn hàng GHN?')">
+                                    @csrf
+                                    <button type="submit" class="btn btn-danger btn-sm w-100">
+                                        <i class="ri-close-line me-1"></i> Hủy liên kết GHN
+                                    </button>
+                                </form>
+                            </div>
+                        @else
+                            <div class="text-center">
+                                <div class="avatar-lg mx-auto mb-3">
+                                    <div class="avatar-title bg-light text-muted rounded-circle fs-1">
+                                        <i class="ri-truck-line"></i>
+                                    </div>
+                                </div>
+                                <p class="text-muted mb-3">Chưa tạo đơn hàng GHN cho đơn hàng này</p>
+                                
+                                @if(in_array($order->orderStatus->name, ['Chờ Xác Nhận', 'Đã Xác Nhận']))
+                                <form action="{{ route('admin.orders.ghn.create', $order->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="ri-add-line me-1"></i> Tạo đơn hàng GHN
+                                    </button>
+                                </form>
+                                @else
+                                <p class="text-muted small">Chỉ có thể tạo đơn GHN khi đơn hàng ở trạng thái "Chờ Xác Nhận" hoặc "Đã Xác Nhận"</p>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
+                
                 {{-- QR Code Display --}}
                 @if ($order->qr_code_path)
                 <div class="card">

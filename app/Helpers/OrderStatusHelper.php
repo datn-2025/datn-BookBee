@@ -22,4 +22,25 @@ class OrderStatusHelper
     {
         return self::validTransitions()[$current] ?? [];
     }
+
+    /**
+     * Kiểm tra xem đơn hàng có thể hủy hay không
+     * 
+     * @param string $orderStatus Trạng thái hiện tại của đơn hàng
+     * @return bool
+     */
+    public static function canBeCancelled(string $orderStatus): bool
+    {
+        return in_array($orderStatus, ['Chờ xác nhận', 'Đã xác nhận']);
+    }
+
+    /**
+     * Lấy danh sách trạng thái có thể hủy đơn hàng
+     * 
+     * @return array
+     */
+    public static function getCancellableStatuses(): array
+    {
+        return ['Chờ xác nhận', 'Đã xác nhận'];
+    }
 }

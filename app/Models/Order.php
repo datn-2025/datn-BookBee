@@ -32,11 +32,17 @@ class Order extends Model
         'cancelled_at',
         'cancellation_reason',
         'delivery_method',
+        'ghn_order_code',
+        'ghn_service_type_id',
+        'expected_delivery_date',
+        'ghn_tracking_data',
     ];
 
     protected $casts = [
         'total_amount' => 'decimal:2',
         'cancelled_at' => 'datetime',
+        'expected_delivery_date' => 'datetime',
+        'ghn_tracking_data' => 'array',
     ];
 
     public $incrementing = false;

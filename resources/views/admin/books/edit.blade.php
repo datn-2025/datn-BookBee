@@ -86,10 +86,11 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label class="form-label">Giảm giá (%)</label>
+                                            <label class="form-label">Giảm giá (VNĐ)</label>
                                             <input type="number" name="formats[physical][discount]"
-                                                class="form-control physical-field @error('formats.physical.discount') is-invalid @enderror" min="0" max="100"
+                                                class="form-control physical-field @error('formats.physical.discount') is-invalid @enderror" min="0" step="1000"
                                                 value="{{ old('formats.physical.discount', $physicalFormat ? $physicalFormat->discount : '') }}">
+                                            <small class="text-muted">Nhập số tiền giảm giá (VD: 10000 cho giảm 10.000đ)</small>
                                             @error('formats.physical.discount')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
@@ -135,10 +136,11 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Giảm giá (%)</label>
+                                            <label class="form-label">Giảm giá (VNĐ)</label>
                                             <input type="number" name="formats[ebook][discount]"
-                                                class="form-control ebook-field @error('formats.ebook.discount') is-invalid @enderror" min="0" max="100"
+                                                class="form-control ebook-field @error('formats.ebook.discount') is-invalid @enderror" min="0" step="1000"
                                                 value="{{ old('formats.ebook.discount', $ebookFormat ? $ebookFormat->discount : '') }}">
+                                            <small class="text-muted">Nhập số tiền giảm giá (VD: 5000 cho giảm 5.000đ)</small>
                                             @error('formats.ebook.discount')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror

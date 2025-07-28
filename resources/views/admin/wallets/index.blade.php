@@ -148,7 +148,7 @@
                                         <th scope="col">Người dùng</th>
                                         <th scope="col">Loại giao dịch</th>
                                         <th scope="col">Số tiền</th>
-                                        <th scope="col">Số dư sau giao dịch</th>
+                                        {{-- <th scope="col">Số dư sau giao dịch</th> --}}
                                         <th scope="col">Thời gian</th>
                                         <th scope="col">Phương thức</th>
                                         <th scope="col">In PDF</th>
@@ -191,11 +191,11 @@
                                                 <span class="text-danger">{{ number_format($transaction->amount, 0, ',', '.') }} đ</span>
                                             @endif
                                         </td>
-                                        <td>
+                                        {{-- <td>
                                             <span class="fw-medium">
                                                 {{ isset($afterBalances[$transaction->id]) ? number_format($afterBalances[$transaction->id], 0, ',', '.') . ' đ' : '-' }}
                                             </span>
-                                        </td>
+                                        </td> --}}
                                         <td>
                                             <div class="text-muted">
                                                 {{ $transaction->created_at->format('d/m/Y H:i') }}

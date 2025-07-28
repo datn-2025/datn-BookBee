@@ -63,9 +63,12 @@ class OrderController extends Controller
         $addresses = $user->addresses;
         $vouchers = $this->voucherService->getAvailableVouchers($user);
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
+        
+        // Lấy thông tin cửa hàng từ settings
+        $storeSettings = \App\Models\Setting::first();
 
         // Lấy thông tin giỏ hàng
-        $cartItems = $user->cart()->with(['book.images', 'bookFormat'])->get();
+        $cartItems = $user->cart()->with(['book.images', 'bookFormat', 'collection.books'])->get();
 
         // Kiểm tra nếu giỏ hàng có cả sách vật lý và sách ebook
         $hasPhysicalBook = false;
@@ -110,70 +113,82 @@ class OrderController extends Controller
             'paymentMethods',
             'cartItems',
             'subtotal',
-            'mixedFormatCart' // Truyền biến này để hiển thị thông báo trong view
+            'mixedFormatCart', // Truyền biến này để hiển thị thông báo trong view
+            'storeSettings' // Thông tin cửa hàng
         ));
     }
 
     public function store(Request $request)
     {
         $user = Auth::user();
+        
+        // Kiểm tra xem có phải đơn hàng ebook không
+        $isEbookOrder = $request->delivery_method === 'ebook';
+        // dd($request->delivery_method);
         $rules = [
             'voucher_code' => 'nullable|exists:vouchers,code',
             'payment_method_id' => 'required|exists:payment_methods,id',
-            'delivery_method' => 'required|in:delivery,pickup',
-            'shipping_method' => 'required_if:delivery_method,delivery|in:standard,express',
+            'delivery_method' => 'required|in:delivery,pickup,ebook',
+            'shipping_method' => 'required_if:delivery_method,delivery|in:standard,express,pickup,1,2,53320,53321',
             'shipping_fee_applied' => 'required|numeric',
             'note' => 'nullable|string|max:500',
+        ];
+        
+        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook
+        if (!$isEbookOrder) {
+            $rules = array_merge($rules, [
+                // Address rules
+                'address_id' => [
+                    'required_without:new_address_city_name',
+                    'nullable',
+                    'exists:addresses,id,user_id,' . ($user ? $user->id : 'NULL')
+                ],
 
-            // Address rules
-            'address_id' => [
-                'required_without:new_address_city_name',
-                'nullable',
-                'exists:addresses,id,user_id,' . ($user ? $user->id : 'NULL')
-            ],
-
-            // New address rules
-            'new_recipient_name' => [
-                'required_without:address_id',
-                'nullable',
-                'string',
-                'max:255'
-            ],
-            'new_phone' => [
-                'required_without:address_id',
-                'nullable',
-                'string',
-                'max:20'
-            ],
-            'new_email' => [
-                'required',
-                'string',
-                'max:50'
-            ],
-            'new_address_city_name' => [
-                'required_without:address_id',
-                'nullable',
-                'string',
-                'max:100'
-            ],
-            'new_address_district_name' => [
-                'required_without:address_id',
-                'nullable',
-                'string',
-                'max:100'
-            ],
-            'new_address_ward_name' => [
-                'required_without:address_id',
-                'nullable',
-                'string',
-                'max:100'
-            ],
-            'new_address_detail' => [
-                'required_without:address_id',
-                'nullable',
-                'string',
-                'max:255'
-            ],
+                // New address rules
+                'new_recipient_name' => [
+                    'required_without:address_id',
+                    'nullable',
+                    'string',
+                    'max:255'
+                ],
+                'new_phone' => [
+                    'required_without:address_id',
+                    'nullable',
+                    'string',
+                    'max:20'
+                ],
+                'new_address_city_name' => [
+                    'required_without:address_id',
+                    'nullable',
+                    'string',
+                    'max:100'
+                ],
+                'new_address_district_name' => [
+                    'required_without:address_id',
+                    'nullable',
+                    'string',
+                    'max:100'
+                ],
+                'new_address_ward_name' => [
+                    'required_without:address_id',
+                    'nullable',
+                    'string',
+                    'max:100'
+                ],
+                'new_address_detail' => [
+                    'required_without:address_id',
+                    'nullable',
+                    'string',
+                    'max:255'
+                ],
+            ]);
+        }
+        
+        // Email luôn bắt buộc
+        $rules['new_email'] = [
+            'required',
+            'string',
+            'max:50'
         ];
 
         $request->validate($rules);
@@ -205,16 +220,32 @@ class OrderController extends Controller
                 ]);
                 
                 // Xóa giỏ hàng sau khi thanh toán thành công
-                $this->orderService->clearUserCart($user);
+            $this->orderService->clearUserCart($user);
+            
+            DB::commit();
+            
+            // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
+            if ($order->delivery_method === 'delivery') {
+                $this->orderService->createGhnOrder($order);
+            }
+            
+            // Tạo mã QR và gửi email xác nhận
+            $this->qrCodeService->generateOrderQrCode($order);
+            $this->emailService->sendOrderConfirmation($order);
+            
+            // Gửi email ebook nếu đơn hàng có ebook
+            $this->emailService->sendEbookPurchaseConfirmation($order);
                 
-                DB::commit();
-                
-                // Tạo mã QR và gửi email xác nhận
-                $this->qrCodeService->generateOrderQrCode($order);
-                $this->emailService->sendOrderConfirmation($order);
-                
-                // Tạo hóa đơn ngay lập tức cho thanh toán ví
-                $this->invoiceService->createInvoiceForOrder($order);
+                // Tạo và gửi hóa đơn ngay lập tức cho thanh toán ví
+                try {
+                    $this->invoiceService->processInvoiceForPaidOrder($order);
+                    Log::info('Invoice created and sent for wallet payment', ['order_id' => $order->id]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create invoice for wallet payment', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
                 
                 $successMessage = 'Đặt hàng và thanh toán bằng ví thành công!';
                 if ($newAddressCreated) {
@@ -261,6 +292,11 @@ class OrderController extends Controller
             
             DB::commit();
             
+            // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
+            if ($order->delivery_method === 'delivery') {
+                $this->orderService->createGhnOrder($order);
+            }
+            
             // Tạo mã QR và gửi email xác nhận
             $this->qrCodeService->generateOrderQrCode($order);
             $this->emailService->sendOrderConfirmation($order);
@@ -306,8 +342,11 @@ class OrderController extends Controller
             'paymentMethod',
             'voucher'
         ]);
+        
+        // Lấy thông tin cài đặt cửa hàng
+        $storeSettings = \App\Models\Setting::first();
 
-        return view('orders.show', compact('order'));
+        return view('clients.account.order-details', compact('order', 'storeSettings'));
     }
 
     public function index()
@@ -317,7 +356,7 @@ class OrderController extends Controller
             ->with(['orderStatus', 'paymentStatus'])
             ->orderByDesc('created_at')
             ->paginate(7);
-        return view('orders.index', compact('orders'));
+        return view('clients.account.orders', compact('orders'));
     }
 
     public function applyVoucher(Request $request)
@@ -348,6 +387,7 @@ class OrderController extends Controller
         return response()->json([
             'success' => true,
             'voucher_code' => $request->voucher_code,
+            'voucher_description' => $voucher->description,
             'discount_amount' => $discountResult['discount']
         ]);
     }
@@ -370,8 +410,7 @@ class OrderController extends Controller
         }
 
         // Check if order status allows cancellation
-        $cancellableStatuses = ['Chờ xác nhận'];
-        if (!in_array($order->orderStatus->name, $cancellableStatuses)) {
+        if (!\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name)) {
             Toastr::error('Không thể hủy đơn hàng ở trạng thái hiện tại: ' . $order->orderStatus->name);
             return redirect()->back()->with('error', 'Không thể hủy đơn hàng ở trạng thái hiện tại: ' . $order->orderStatus->name);
         }
@@ -556,8 +595,16 @@ class OrderController extends Controller
                 // Xóa giỏ hàng sau khi thanh toán thành công
                 Auth::user()->cart()->delete();
 
+                // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
+                if ($order->delivery_method === 'delivery') {
+                    $this->orderService->createGhnOrder($order);
+                }
+
                 // Gửi email xác nhận
                 $this->emailService->sendOrderConfirmation($order);
+                
+                // Gửi email ebook nếu đơn hàng có ebook
+                $this->emailService->sendEbookPurchaseConfirmation($order);
                 
                 // Tạo và gửi hóa đơn cho thanh toán VNPay thành công
                 try {
