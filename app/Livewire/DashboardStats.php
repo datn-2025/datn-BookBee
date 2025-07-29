@@ -56,7 +56,7 @@ class DashboardStats extends Component
         $this->orderCount = $queryOrder->count();
 
         // Tổng khách hàng có role là 'user'
-        $this->customerCount = $queryUser->whereHas('role', function ($q) {
+        $this->customerCount = $queryUser->whereHas('roles', function ($q) {
             $q->where('name', 'user');
         })->count();
 
@@ -78,10 +78,10 @@ class DashboardStats extends Component
             ->whereNotNull('paid_at');
 
         if ($this->timePeriod) {
-            $balanceQuery ->whereBetween('created_at', [$start, $end]);
+            $balanceQuery->whereBetween('created_at', [$start, $end]);
         }
 
-        $this->balance = $balanceQuery ->sum('amount');
+        $this->balance = $balanceQuery->sum('amount');
     }
 
     public function render()

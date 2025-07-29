@@ -51,9 +51,11 @@
                                                 </div>
                                             </div>
                                             <div class="col-auto">
+                                                @permission('book.create')
                                                 <a href="{{ route('admin.books.create') }}" class="btn btn-success">
                                                     <i class="ri-add-circle-line align-middle me-1"></i> Thêm sách
                                                 </a>
+                                                @endpermission
                                             </div>
                                             <div class="col-auto">
                                                 <button type="button" class="btn btn-info btn-icon layout-rightside-btn">

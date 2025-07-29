@@ -51,15 +51,14 @@
                         <div class="row mb-3">
                             <label class="col-sm-2 col-form-label">Vai trò</label>
                             <div class="col-sm-10">
-                                <select name="role_id" class="form-select @error('role_id') is-invalid @enderror">
-                                    <option value="">Chọn vai trò</option>
+                                <select name="roles[]" class="form-select @error('roles') is-invalid @enderror" multiple>
                                     @foreach($roles as $role)
-                                        <option value="{{ $role->id }}" {{ $user->role_id == $role->id ? 'selected' : '' }}>
+                                        <option value="{{ $role->id }}" {{ $user->roles->contains($role->id) ? 'selected' : '' }}>
                                             {{ $role->name }}
                                         </option>
                                     @endforeach
                                 </select>
-                                @error('role_id')
+                                @error('roles')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>

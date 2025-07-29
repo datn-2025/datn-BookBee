@@ -110,15 +110,18 @@
                                             <td>{{ $contact->created_at->format('d/m/Y H:i') }}</td>
                                             <td>
                                                 <div class="d-flex gap-2">
+                                                    @permission('contact.show')
                                                     <a href="{{ route('admin.contacts.show', $contact->id) }}" class="btn btn-sm btn-info" title="Xem">
                                                         <i class="ri-eye-line"></i>
                                                     </a>
+                                                    @endpermission
                                                     <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editStatusModal{{ $contact->id }}" title="Sửa">
                                                         <i class="ri-pencil-line"></i>
                                                     </button>
                                                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#replyModal{{ $contact->id }}" title="Gửi phản hồi">
                                                         <i class="ri-mail-send-line"></i>
                                                     </button>
+                                                    @permission('contact.delete')
                                                     <form action="{{ route('admin.contacts.destroy', $contact->id) }}" method="POST" style="display:inline-block;">
                                                         @csrf
                                                         @method('DELETE')
@@ -126,11 +129,13 @@
                                                             <i class="ri-delete-bin-line"></i>
                                                         </button>
                                                     </form>
+                                                    @endpermission
                                                 </div>
                                             </td>
                                         </tr>
 
                                         <!-- Modal chỉnh sửa trạng thái -->
+                                        @permission('contact.edit')
                                         <div class="modal fade" id="editStatusModal{{ $contact->id }}" tabindex="-1" aria-labelledby="editStatusModalLabel" aria-hidden="true">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
@@ -164,8 +169,10 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        @endpermission
 
                                         <!-- Modal gửi email phản hồi -->
+                                        @permission('contact.reply')    
                                         <div class="modal fade" id="replyModal{{ $contact->id }}" tabindex="-1" aria-labelledby="replyModalLabel{{ $contact->id }}" aria-hidden="true">
                                             <div class="modal-dialog">
                                                 <form action="{{ route('admin.contacts.reply', $contact->id) }}" method="POST">
@@ -193,6 +200,7 @@
                                                 </form>
                                             </div>
                                         </div>
+                                        @endpermission
                                     @endforeach
                                 </tbody>
                             </table>

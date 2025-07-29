@@ -32,7 +32,7 @@ class AdminAuthController extends Controller
         ]);
 
         // Tìm user theo email
-        $user = User::where('email', $request->email)->with('role')->first();
+        $user = User::where('email', $request->email)->with('roles')->first();
 
         // Kiểm tra tồn tại user
         if (!$user) {

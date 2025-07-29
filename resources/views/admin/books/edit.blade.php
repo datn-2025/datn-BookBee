@@ -199,7 +199,7 @@
                             <i class="ri-information-line me-2"></i>
                             <strong>Lưu ý:</strong> Bạn có thể chọn một hoặc cả hai định dạng sách (Sách vật lý và/hoặc Ebook).
                         </div>
-                        
+
                         {{-- Hiển thị thuộc tính sản phẩm đã chọn --}}
                         <div class="card mb-3">
                             <div class="card-header">
@@ -357,7 +357,7 @@
                                         accept="image/*">
                                     @if($book->cover_image)
                                     <div class="mt-2">
-                                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" 
+                                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}"
                                             class="img-thumbnail" style="max-height: 200px;">
                                         <small class="text-muted d-block mt-1">Tải lên ảnh mới để thay thế ảnh hiện tại</small>
                                     </div>
@@ -392,7 +392,7 @@
                                         @foreach($book->images as $image)
                                         <div class="col-md-6 col-sm-6 col-6 mb-2">
                                             <div class="position-relative">
-                                                <img src="{{ asset('storage/' . $image->image_url) }}" alt="Ảnh sách" 
+                                                <img src="{{ asset('storage/' . $image->image_url) }}" alt="Ảnh sách"
                                                     class="img-thumbnail" style="height: 100px; object-fit: cover; width: 100%;">
                                                 <div class="form-check position-absolute" style="top: 5px; right: 5px;">
                                                     <input class="form-check-input" type="checkbox" name="delete_images[]" value="{{ $image->id }}" id="delete_image_{{ $image->id }}">
@@ -426,7 +426,7 @@
                                     <strong>Thông tin quà tặng kèm theo sách</strong>
                                     <p class="mb-0 mt-1">Thiết lập quà tặng đặc biệt cho khách hàng mua sách trong khoảng thời gian nhất định.</p>
                                 </div>
-                                
+
                                 <div class="row g-3">
                                     <div class="col-12">
                                         <label class="form-label"><i class="ri-calendar-line me-1"></i>Thời gian áp dụng quà tặng</label>
@@ -441,23 +441,23 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label class="form-label"><i class="ri-gift-2-line me-1"></i>Tên quà tặng</label>
                                         <input type="text" name="gift_name" class="form-control" value="{{ $gift?->gift_name }}" placeholder="Ví dụ: Bookmark đặc biệt, Túi canvas...">
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label class="form-label"><i class="ri-stack-line me-1"></i>Số lượng quà tặng</label>
                                         <input type="number" name="quantity" class="form-control" value="{{ $gift?->quantity }}" placeholder="100" min="0">
                                         <small class="text-muted">Số lượng quà tặng có sẵn</small>
                                     </div>
-                                    
+
                                     <div class="col-md-8">
                                         <label class="form-label"><i class="ri-file-text-line me-1"></i>Mô tả quà tặng</label>
                                         <textarea name="gift_description" class="form-control" rows="2" placeholder="Mô tả chi tiết về quà tặng (màu sắc, chất liệu, kích thước...)">{{ $gift?->gift_description }}</textarea>
                                     </div>
-                                    
+
                                     <div class="col-md-4">
                                         <label class="form-label"><i class="ri-image-line me-1"></i>Hình ảnh quà tặng</label>
                                         <input type="file" name="gift_image" class="form-control" accept="image/*">

@@ -134,10 +134,12 @@
                                                 <td>{{ $reviews->firstItem() + $index }}</td>
                                                 <td style="max-width: 200px; white-space: normal;">
                                                     @if ($review->book)
+                                                    @permission('review.show')
                                                         <a href="{{ route('admin.books.show', ['id' => $review->book->id, 'slug' => Str::slug($review->book->title)]) }}"
                                                             class="text-decoration-none fw-medium">
                                                             {{ $review->book->title }}
                                                         </a>
+                                                        @endpermission
                                                     @else
                                                         <span class="text-muted">Sản phẩm đã xóa</span>
                                                     @endif
@@ -167,10 +169,12 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-center">
+                                                    @permission('review.response')
                                                     <a href="{{ route('admin.reviews.response', $review) }}"
                                                         class="btn btn-sm btn-outline-primary" title="Xem & phản hồi">
                                                         <i class="ri-chat-3-fill"></i>
                                                     </a>
+                                                    @endpermission
                                                 </td>
                                             </tr>
                                         @endforeach

@@ -26,7 +26,6 @@ class User extends Authenticatable
         'password',
         'phone',
         'status',
-        'role_id',
         'reset_token',
         'avatar',
         'activation_token',
@@ -59,17 +58,23 @@ class User extends Authenticatable
 
     public function isAdmin()
     {
-        return isset($this->role) && strtolower($this->role->name) === 'admin';
+        return !$this->roles->contains(fn($role) => strtolower($role->name) === 'user');
     }
+
 
     public function isActive()
     {
         return $this->status === 'Hoạt Động';
     }
 
-    public function role()
+    public function roles()
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsToMany(Role::class);
+    }
+
+    public function permissions()
+    {
+        return $this->belongsToMany(Permission::class, 'user_permissions');
     }
 
     public $incrementing = false;
@@ -115,6 +120,34 @@ class User extends Authenticatable
     {
         return $this->hasMany(Cart::class);
     }
+
+    public function hasPermission(string $permission): bool
+    {
+        $rolePermissions = $this->roles->flatMap->permissions->pluck('slug');
+        $userPermissions = $this->permissions->pluck('slug');
+
+        return $rolePermissions->merge($userPermissions)->unique()->contains($permission);
+    }
+
+
+    public function hasAnyPermission(array $permissions): bool
+    {
+        $rolePermissions = $this->roles->flatMap->permissions->pluck('slug');
+        $userPermissions = $this->permissions->pluck('slug');
+
+        return $rolePermissions->merge($userPermissions)->intersect($permissions)->isNotEmpty();
+    }
+
+    public function hasAllPermissions(array $permissions): bool
+    {
+        $rolePermissions = $this->roles->flatMap->permissions->pluck('slug');
+        $userPermissions = $this->permissions->pluck('slug');
+
+        $allPermissions = $rolePermissions->merge($userPermissions)->unique();
+
+        return collect($permissions)->diff($allPermissions)->isEmpty();
+    }
+
 
     public function wallet()
     {

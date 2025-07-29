@@ -12,7 +12,7 @@ class RWishlistSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = User::whereHas('role', function($query) {
+        $users = User::whereHas('roles', function($query) {
             $query->where('name', 'User');
         })->get();
 
