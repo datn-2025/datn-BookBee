@@ -27,9 +27,11 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Danh sách tin tức</h5>
+                        @permission('news.create')
                         <a href="{{ route('admin.news.create') }}" class="btn btn-primary">
                             <i class="ri-add-line align-middle me-1"></i> Thêm tin tức
                         </a>
+                        @endpermission
                     </div>
 
                     <!-- Bộ lọc tin tức -->
@@ -124,14 +126,19 @@
                                             </td>
                                             <td>
                                                 <div class="d-flex gap-2">
+                                                    @permission('news.show')
                                                     <a href="{{ route('admin.news.show', $article->id) }}"
                                                         class="btn btn-sm btn-info" title="Xem">
                                                         <i class="ri-eye-line"></i>
                                                     </a>
+                                                    @endpermission
+                                                    @permission('news.edit')
                                                     <a href="{{ route('admin.news.edit', $article->id) }}"
                                                         class="btn btn-sm btn-warning" title="Sửa">
                                                         <i class="ri-pencil-line"></i>
                                                     </a>
+                                                    @endpermission
+                                                    @permission('news.delete')
                                                     <form action="{{ route('admin.news.destroy', $article->id) }}" method="POST"
                                                         class="d-inline-block">
                                                         @csrf
@@ -142,6 +149,7 @@
                                                             <i class="ri-delete-bin-line"></i>
                                                         </button>
                                                     </form>
+                                                    @endpermission
                                                 </div>
                                             </td>
                                         </tr>

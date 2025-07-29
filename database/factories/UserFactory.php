@@ -32,7 +32,7 @@ class UserFactory extends Factory
             'password' => bcrypt('password'), // hoặc dùng Hash::make nếu muốn bảo mật hơn
             'phone' => $this->faker->phoneNumber,
             'status' => $this->faker->randomElement(['Hoạt Động', 'Bị Khóa', 'Chưa kích Hoạt']),
-            'role_id' => Role::inRandomOrder()->value('id'),
+            // 'role_id' => Role::inRandomOrder()->value('id'), // Đã chuyển sang n-n, không dùng role_id nữa
             'remember_token' => Str::random(10),
             'created_at' => now(),
             'updated_at' => now(),

@@ -27,9 +27,11 @@ class UserStatusUpdated extends Mailable implements ShouldQueue
     }    public function build()
     {
         $subject = 'Thông báo thay đổi ';
-        if ($this->user->role->name !== $this->oldRole && $this->user->status !== $this->oldStatus) {
+        $firstRole = $this->user->roles->first();
+        $currentRole = $firstRole ? $firstRole->name : null;
+        if ($currentRole !== $this->oldRole && $this->user->status !== $this->oldStatus) {
             $subject .= 'vai trò và trạng thái tài khoản';
-        } elseif ($this->user->role->name !== $this->oldRole) {
+        } elseif ($currentRole !== $this->oldRole) {
             $subject .= 'vai trò tài khoản';
         } else {
             $subject .= 'trạng thái tài khoản';

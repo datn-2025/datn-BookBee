@@ -55,7 +55,7 @@ class LoginController extends Controller
         ]);
 
         // Kiểm tra trạng thái tài khoản trước khi đăng nhập
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->with('roles')->first();
 
         if ($user) {
             // Kiểm tra nếu tài khoản bị khóa
@@ -92,7 +92,9 @@ class LoginController extends Controller
             }
 
             // Kiểm tra quyền admin
-            if (Auth::user()->isAdmin()) {
+            $user = Auth::user();
+            $firstRole = $user->roles->first();
+            if ($user->isAdmin() || ($firstRole && strtolower($firstRole->name) === 'admin')) {
                 return redirect()->intended(route('admin.dashboard'));
             }
             Toastr::success('Đăng nhập thành công!', 'Thành công');
@@ -153,21 +155,26 @@ class LoginController extends Controller
 
         $userRole = Role::where('name', 'User')->first();
         if (!$userRole) {
-            Toastr::error('Không tìm thấy quyền User trong hệ thống!', 'Lỗi');
+            session()->flash('error', 'Không tìm thấy quyền User trong hệ thống!');
             return back()->withErrors(['role' => 'Không tìm thấy quyền User trong hệ thống!']);
         }
 
-        $token = sha1($request->email);
+        $email = $request->input('email');
+        $name = $request->input('name');
+        $password = $request->input('password');
+        $token = sha1($email);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role_id' => $userRole->id,
+            'name' => $name,
+            'email' => $email,
+            'password' => Hash::make($password),
             'status' => 'Chưa kích Hoạt',
             'activation_token' => $token,
             'activation_expires' => now()->addHours(24),
         ]);
+
+        // Gán role cho user (n-n)
+        $user->roles()->attach($userRole->getKey());
 
 
         $activationUrl = route('account.activate', [
@@ -179,10 +186,10 @@ class LoginController extends Controller
 
         try {
             Mail::to($user->email)->send(new ActivationMail($activationUrl, $user->name));
-            Toastr::success('Đăng ký tài khoản thành công! Vui lòng kiểm tra email để kích hoạt tài khoản.', 'Thành công');
+            session()->flash('success', 'Đăng ký tài khoản thành công! Vui lòng kiểm tra email để kích hoạt tài khoản.');
         } catch (\Exception $e) {
             $user->delete();
-            Toastr::error('Không thể gửi email kích hoạt. Vui lòng thử lại sau.', 'Lỗi');
+            session()->flash('error', 'Không thể gửi email kích hoạt. Vui lòng thử lại sau.');
             return back()->withInput();
         }
 
@@ -190,9 +197,11 @@ class LoginController extends Controller
     }
     public function activate(Request $request)
     {
-        $user = User::find($request->userId);
+        $userId = $request->input('userId');
+        $token = $request->input('token');
+        $user = User::find($userId);
 
-        if (!$user || $user->activation_token !== $request->token || now()->greaterThan($user->activation_expires)) {
+        if (!$user || !isset($user->activation_token) || $user->activation_token !== $token || !isset($user->activation_expires) || now()->greaterThan($user->activation_expires)) {
             return redirect()->route('login')->with('error', 'Liên kết không hợp lệ hoặc đã hết hạn.');
         }
 
@@ -233,10 +242,11 @@ class LoginController extends Controller
             'email.exists' => 'Email này không tồn tại trong hệ thống.'
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $email = $request->input('email');
+        $user = User::where('email', $email)->first();
 
-        if ($user->status === 'Bị Khóa') {
-            Toastr::error('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.', 'Lỗi');
+        if ($user && $user->status === 'Bị Khóa') {
+            session()->flash('error', 'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.');
             return back()->withInput();
         }
 
@@ -245,17 +255,17 @@ class LoginController extends Controller
         $user->save();
 
 
-        $resetLink = route('password.reset', ['token' => $resetToken, 'email' => $request->email]);
+        $resetLink = route('password.reset', ['token' => $resetToken, 'email' => $email]);
 
 
         try {
             Mail::to($user->email)->send(new ResetPasswordMail($resetLink));
-            Toastr::success('Chúng tôi đã gửi email chứa liên kết đặt lại mật khẩu của bạn!', 'Thành công');
+            session()->flash('success', 'Chúng tôi đã gửi email chứa liên kết đặt lại mật khẩu của bạn!');
             return back();
         } catch (\Exception $e) {
             $user->reset_token = null;
             $user->save();
-            Toastr::error('Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại sau.', 'Lỗi');
+            session()->flash('error', 'Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại sau.');
             return back()->withInput();
         }
     }
@@ -283,21 +293,24 @@ class LoginController extends Controller
             'password.confirmed' => 'Xác nhận mật khẩu không khớp.'
         ]);
 
-        $user = User::where('email', $request->email)
-            ->where('reset_token', $request->token)
+        $email = $request->input('email');
+        $token = $request->input('token');
+        $user = User::where('email', $email)
+            ->where('reset_token', $token)
             ->first();
         // dd($user);
 
+        $password = $request->input('password');
         if (!$user) {
-            Toastr::error('Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn!', 'Lỗi');
+            session()->flash('error', 'Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn!');
             return back()->withErrors(['email' => 'Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn!']);
         }
 
-        $user->password = Hash::make($request->password);
+        $user->password = Hash::make($password);
         $user->reset_token = null;
         $user->save();
 
-        Toastr::success('Mật khẩu đã được thay đổi thành công. Vui lòng đăng nhập lại.', 'Thành công');
+        session()->flash('success', 'Mật khẩu đã được thay đổi thành công. Vui lòng đăng nhập lại.');
         return redirect()->route('login');
     }
 
