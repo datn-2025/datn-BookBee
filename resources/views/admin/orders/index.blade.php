@@ -2,6 +2,10 @@
 
 @section('title', 'Quản lý đơn hàng')
 
+@section('styles')
+<link href="{{ asset('css/admin-orders.css') }}" rel="stylesheet">
+@endsection
+
 @section('content')
         <div class="row">
             <div class="col-12">
@@ -180,7 +184,35 @@
                                 <tbody>
                                     @forelse($orders as $order)
                                     <tr>
-                                        <td>{{$order->order_code }}</td>
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <span class="fw-medium">{{$order->order_code }}</span>
+                                                    @if($order->delivery_method === 'mixed')
+                                                        <span class="badge bg-warning text-dark ms-2">📦📱 HỖN HỢP</span>
+                                                    @endif
+                                                </div>
+                                                @if($order->parent_order_id)
+                                                    <div class="d-flex align-items-center">
+                                                        <small class="text-muted me-2">Thuộc đơn hàng:</small>
+                                                        <a href="{{ route('admin.orders.show', $order->parent_order_id) }}" 
+                                                           class="parent-order-link">
+                                                            <i class="ri-parent-line me-1"></i>{{ $order->parentOrder->order_code ?? 'N/A' }}
+                                                        </a>
+                                                    </div>
+                                                @elseif($order->childOrders && $order->childOrders->count() > 0)
+                                                    <div class="d-flex align-items-center">
+                                                        <small class="text-muted me-2">Có {{ $order->childOrders->count() }} đơn con:</small>
+                                                        @foreach($order->childOrders as $child)
+                                                            <a href="{{ route('admin.orders.show', $child->id) }}" 
+                                                               class="child-order-link">
+                                                                <i class="ri-git-branch-line me-1"></i>{{ $child->order_code }}
+                                                            </a>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </td>
                                         <td class="text-center">
                                             @if($order->qr_code)
                                             <img src="{{ url('storage/private/' . $order->qr_code) }}" alt="QR Code"
@@ -220,32 +252,76 @@
                                             </span>
                                         </td>
                                         <td class="text-center">
-                                            @if($order->delivery_method === 'ebook')
-                                                <span class="badge bg-success">Ebook</span>
-                                            @elseif($order->delivery_method === 'pickup')
-                                                <span class="badge bg-info">Nhận tại cửa hàng</span>
-                                            @else
-                                                <span class="badge bg-primary">Giao hàng tận nơi</span>
-                                            @endif
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                @if($order->delivery_method === 'ebook')
+                                                    <span class="order-type-icon order-type-ebook">
+                                                        <i class="ri-smartphone-line"></i>
+                                                    </span>
+                                                    <span>Ebook</span>
+                                                @elseif($order->delivery_method === 'pickup')
+                                                    <span class="order-type-icon order-type-pickup">
+                                                        <i class="ri-store-2-line"></i>
+                                                    </span>
+                                                    <span>Nhận tại cửa hàng</span>
+                                                @elseif($order->delivery_method === 'mixed')
+                                                    <span class="order-type-icon order-type-mixed">
+                                                        <i class="ri-shuffle-line"></i>
+                                                    </span>
+                                                    <span>Hỗn hợp</span>
+                                                @else
+                                                    <span class="order-type-icon order-type-physical">
+                                                        <i class="ri-truck-line"></i>
+                                                    </span>
+                                                    <span>Giao hàng tận nơi</span>
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="fw-medium">{{ number_format($order->total_amount, 0, ',', '.') }}đ
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge rounded-pill 
-                                                @if($order->paymentStatus->name == 'Đã Thanh Toán') bg-success 
-                                                @elseif($order->paymentStatus->name == 'Chưa Thanh Toán') bg-warning text-dark
-                                                @elseif($order->paymentStatus->name == 'Thất Bại') bg-danger 
-                                                @else bg-secondary  @endif">
+                                            @php
+                                                $paymentClass = match($order->paymentStatus->name) {
+                                                    'Đã Thanh Toán' => 'status-delivered',
+                                                    'Chưa Thanh Toán' => 'status-pending',
+                                                    'Đã Hoàn Tiền' => 'status-refunded',
+                                                    'Thất Bại' => 'status-cancelled',
+                                                    default => 'status-pending'
+                                                };
+                                                $paymentIcon = match($order->paymentStatus->name) {
+                                                    'Đã Thanh Toán' => 'ri-money-dollar-circle-line',
+                                                    'Chưa Thanh Toán' => 'ri-time-line',
+                                                    'Đã Hoàn Tiền' => 'ri-refund-2-line',
+                                                    'Thất Bại' => 'ri-close-circle-line',
+                                                    default => 'ri-question-line'
+                                                };
+                                                $statusClass = match($order->orderStatus->name) {
+                                                    'Chờ xác nhận' => 'status-pending',
+                                                    'Đã Xác Nhận' => 'status-confirmed',
+                                                    'Đang xử lý' => 'status-confirmed',
+                                                    'Đang giao hàng' => 'status-shipping',
+                                                    'Đã giao thành công' => 'status-delivered',
+                                                    'Đã Hủy' => 'status-cancelled',
+                                                    'Giao thất bại' => 'status-cancelled',
+                                                    default => 'status-pending'
+                                                };
+                                                $statusIcon = match($order->orderStatus->name) {
+                                                    'Chờ xác nhận' => 'ri-time-line',
+                                                    'Đã Xác Nhận' => 'ri-check-line',
+                                                    'Đang xử lý' => 'ri-settings-3-line',
+                                                    'Đang giao hàng' => 'ri-truck-line',
+                                                    'Đã giao thành công' => 'ri-check-double-line',
+                                                    'Đã Hủy' => 'ri-close-line',
+                                                    'Giao thất bại' => 'ri-error-warning-line',
+                                                    default => 'ri-question-line'
+                                                };
+                                            @endphp
+                                            <span class="order-status-badge {{ $paymentClass }}">
+                                                <i class="{{ $paymentIcon }} me-1"></i>
                                                 {{ $order->paymentStatus->name ?? 'N/A' }}
                                             </span>
                                             <br>
-                                            <span class="badge rounded-pill 
-                                                @if($order->orderStatus->name == 'Đã giao thành công') bg-success 
-                                                @elseif($order->orderStatus->name == 'Đang xử lý') bg-warning text-dark
-                                                @elseif($order->orderStatus->name == 'Đang giao hàng') bg-info 
-                                                @elseif($order->orderStatus->name == 'Giao thất bại') bg-danger 
-                                                @elseif($order->orderStatus->name == 'Chờ xác nhận') bg-secondary 
-                                                @else bg-dark  @endif">
+                                            <span class="order-status-badge {{ $statusClass }}">
+                                                <i class="{{ $statusIcon }} me-1"></i>
                                                 {{ $order->orderStatus->name ?? 'N/A' }}
                                             </span>
                                         </td>

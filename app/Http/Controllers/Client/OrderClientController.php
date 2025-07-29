@@ -19,11 +19,17 @@ class OrderClientController extends Controller
     {
         $order = Order::with([
             'orderItems.book.images',
+            'orderItems.collection',
+            'orderItems.bookFormat',
+            'orderItems.attributeValues',
             'orderStatus',
             'paymentStatus',
             'shippingAddress',
             'billingAddress',
-            'voucher'
+            'voucher',
+            'childOrders.orderItems.book.images',
+            'childOrders.orderItems.collection',
+            'childOrders.orderItems.bookFormat'
         ])->where('user_id', Auth::id())
           ->findOrFail($id);
 

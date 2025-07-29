@@ -103,8 +103,13 @@
                                     <div class="flex items-center gap-3 mb-2">
                                         <div class="w-1 h-6 bg-black"></div>
                                         <h3 class="text-xl font-black uppercase tracking-wide text-black">
-                                            ĐƠN HÀNG #{{ $order->order_code }}
-                                        </h3>
+                                        ĐƠN HÀNG #{{ $order->order_code }}
+                                        @if($order->delivery_method === 'mixed')
+                                        <span class="ml-2 px-2 py-1 bg-yellow-500 text-black text-xs font-bold uppercase tracking-wide rounded">
+                                            HỖN HỢP
+                                        </span>
+                                        @endif
+                                    </h3>
                                     </div>
                                     <p class="text-sm text-gray-600 uppercase tracking-wide">
                                         Ngày đặt: {{ $order->created_at->format('d/m/Y H:i') }}
@@ -136,6 +141,13 @@
                                     <div class="w-1 h-5 bg-black"></div>
                                     <h4 class="text-base font-bold uppercase tracking-wide text-black">THÔNG TIN ĐƠN HÀNG</h4>
                                 </div>
+                                
+                                @if($order->delivery_method === 'mixed')
+                                <div class="bg-blue-50 border-l-4 border-blue-500 p-3 mb-4">
+                                    <h5 class="font-bold text-blue-800 text-xs mb-1">📦 ĐƠN HÀNG ĐÃ ĐƯỢC CHIA THÀNH 2 PHẦN</h5>
+                                    <p class="text-xs text-blue-600">Sách vật lý sẽ được giao hàng, ebook sẽ được gửi qua email</p>
+                                </div>
+                                @endif
                                 <div class="space-y-3 text-sm">
                                     <div class="flex justify-between">
                                         <span class="text-gray-600 uppercase tracking-wide">Phương thức thanh toán:</span>
@@ -191,14 +203,15 @@
                         </div>
 
                         <!-- Order Items -->
+                        @if($order->orderItems->count() > 0)
                         <div class="border-t-2 border-gray-200 pt-8">
                             <div class="flex items-center gap-3 mb-6">
                                 <div class="w-1 h-5 bg-black"></div>
-                                <h4 class="text-base font-bold uppercase tracking-wide text-black">SẢN PHẨM ĐÃ ĐẶT</h4>
+                                <h4 class="text-base font-bold uppercase tracking-wide text-black">SẢN PHẨM ĐÃ ĐẶT ({{ $order->orderItems->sum('quantity') }} sản phẩm)</h4>
                             </div>
                             
-                            <div class="space-y-6">
-                                @foreach($order->orderItems as $item)
+                                <div class="space-y-6">
+                                    @foreach($order->orderItems as $item)
                                     <div class="flex flex-col lg:flex-row gap-6 p-6 border-2 border-gray-200 hover:border-black transition-all duration-300">
                                         <!-- Product Image -->
                                         <div class="flex-shrink-0">
@@ -318,9 +331,10 @@
                                             </div>
                                         @endif
                                     </div>
-                                @endforeach
-                            </div>
+                                    @endforeach
+                                </div>
                         </div>
+                        @endif
 
                         <!-- Order Actions -->
                         <div class="border-t-2 border-gray-200 pt-6 mt-8">

@@ -15,6 +15,7 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
+        'parent_order_id',
         'address_id',
         'voucher_id',
         'total_amount',
@@ -122,6 +123,38 @@ class Order extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Đơn hàng cha (parent order)
+     */
+    public function parentOrder(): BelongsTo
+    {
+        return $this->belongsTo(Order::class, 'parent_order_id');
+    }
+
+    /**
+     * Các đơn hàng con (child orders)
+     */
+    public function childOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'parent_order_id');
+    }
+
+    /**
+     * Kiểm tra xem đây có phải là đơn hàng cha không
+     */
+    public function isParentOrder(): bool
+    {
+        return $this->parent_order_id === null && $this->childOrders()->exists();
+    }
+
+    /**
+     * Kiểm tra xem đây có phải là đơn hàng con không
+     */
+    public function isChildOrder(): bool
+    {
+        return $this->parent_order_id !== null;
     }
 
     public function shippingAddress()

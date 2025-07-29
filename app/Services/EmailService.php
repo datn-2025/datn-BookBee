@@ -113,6 +113,46 @@ class EmailService
     }
 
     /**
+     * Send ebook download email for child ebook orders
+     */
+    public function sendEbookDownloadEmail(Order $order)
+    {
+        // Load relationships cho ebook order
+        $order->load([
+            'user', 
+            'orderItems.book.authors', 
+            'orderItems.book.formats',
+            'orderItems.bookFormat',
+            'orderItems.collection'
+        ]);
+
+        // Kiểm tra xem đơn hàng có chứa ebook không
+        $hasEbooks = $order->orderItems->some(function ($item) {
+            // Chỉ kiểm tra ebook trực tiếp
+            if (!$item->is_combo && $item->bookFormat && $item->bookFormat->format_name === 'Ebook') {
+                return true;
+            }
+            return false;
+        });
+        
+        if (!$hasEbooks) {
+            Log::info('No ebooks found in child order', ['order_id' => $order->id]);
+            return;
+        }
+
+        try {
+            Mail::to($order->user->email)
+                ->send(new EbookPurchaseConfirmation($order));
+            Log::info('Ebook download email sent for child order', ['order_id' => $order->id]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send ebook download email for child order', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Send preorder confirmation email
      */
     public function sendPreorderConfirmation($preorder)

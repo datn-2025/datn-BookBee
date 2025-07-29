@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class OrderItemAttributeValue extends Model
 {
@@ -13,6 +14,17 @@ class OrderItemAttributeValue extends Model
     protected $fillable = [
         'id', 'order_item_id', 'attribute_value_id',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid();
+            }
+        });
+    }
 
     public function orderItem()
     {

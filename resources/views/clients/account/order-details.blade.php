@@ -66,6 +66,11 @@
                                 <h1 class="text-3xl font-black uppercase tracking-wide">CHI TIẾT ĐƠN HÀNG</h1>
                             </div>
                             <p class="text-gray-300 text-sm uppercase tracking-wider">MÃ ĐƠN HÀNG: {{ $order->order_code }}</p>
+            @if($order->delivery_method === 'mixed')
+            <div class="mt-2 px-3 py-1 bg-yellow-500 text-black text-xs font-bold uppercase tracking-wide rounded">
+                ĐƠN HÀNG HỖN HỢP (SÁCH VẬT LÝ + EBOOK)
+            </div>
+            @endif
                         </div>
                         <div class="flex items-center gap-4">
                             <span class="status-badge bg-white text-black">
@@ -92,6 +97,102 @@
                             <div class="w-1 h-5 bg-black"></div>
                             <h4 class="text-base font-bold uppercase tracking-wide text-black">THÔNG TIN ĐƠN HÀNG</h4>
                         </div>
+                        
+                        @if($order->delivery_method === 'mixed')
+                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                            <h5 class="font-bold text-blue-800 text-sm mb-4">📦 ĐƠN HÀNG ĐÃ ĐƯỢC CHIA THÀNH 2 PHẦN:</h5>
+                            @if($order->childOrders->count() > 0)
+                                <div class="space-y-4">
+                                    @foreach($order->childOrders as $childOrder)
+                                        <div class="bg-white border-2 border-gray-200 rounded-lg p-4">
+                                            <!-- Child Order Header -->
+                                            <div class="flex justify-between items-center mb-3 pb-3 border-b border-gray-200">
+                                                <div>
+                                                    <h6 class="font-bold text-black text-sm uppercase tracking-wide">{{ $childOrder->order_code }}</h6>
+                                                    <span class="text-xs text-gray-600 uppercase tracking-wide">
+                                                        {{ $childOrder->delivery_method === 'delivery' ? '📚 Sách vật lý - Giao hàng' : '💻 Ebook - Gửi email' }}
+                                                    </span>
+                                                </div>
+                                                <span class="font-bold text-blue-600 text-lg">{{ number_format($childOrder->total_amount) }}đ</span>
+                                            </div>
+                                            
+                                            <!-- Child Order Items -->
+                                            @if($childOrder->orderItems->count() > 0)
+                                                <div class="space-y-2">
+                                                    @foreach($childOrder->orderItems as $item)
+                                                        <div class="flex items-center gap-3 p-2 bg-gray-50 rounded">
+                                                            <!-- Product Image -->
+                                                            <div class="flex-shrink-0">
+                                                                <div class="w-12 h-16 bg-gray-200 border border-gray-300 overflow-hidden rounded">
+                                                                    @if($item->isCombo())
+                                                                        @if($item->collection && $item->collection->cover_image)
+                                                                            <img src="{{ asset('storage/' . $item->collection->cover_image) }}" 
+                                                                                 alt="{{ $item->collection->name }}" 
+                                                                                 class="h-full w-full object-cover">
+                                                                        @else
+                                                                            <div class="h-full w-full bg-black flex items-center justify-center">
+                                                                                <span class="text-white text-xs font-bold">CB</span>
+                                                                            </div>
+                                                                        @endif
+                                                                    @else
+                                                                        @if($item->book && $item->book->images->isNotEmpty())
+                                                                            <img src="{{ asset('storage/' . $item->book->images->first()->path) }}" 
+                                                                                 alt="{{ $item->book->title }}" 
+                                                                                 class="h-full w-full object-cover">
+                                                                        @else
+                                                                            <div class="h-full w-full bg-gray-300 flex items-center justify-center">
+                                                                                <span class="text-gray-600 text-xs">IMG</span>
+                                                                            </div>
+                                                                        @endif
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Product Info -->
+                                                            <div class="flex-1">
+                                                                @if($item->isCombo())
+                                                                    <h6 class="font-bold text-black text-xs uppercase tracking-wide">
+                                                                        {{ $item->collection->name ?? 'Combo không xác định' }}
+                                                                    </h6>
+                                                                @else
+                                                                    <h6 class="font-bold text-black text-xs uppercase tracking-wide">
+                                                                        {{ $item->book->title ?? 'Sách không xác định' }}
+                                                                        @if($item->bookFormat)
+                                                                            <span class="text-gray-600">({{ $item->bookFormat->format_name }})</span>
+                                                                        @endif
+                                                                    </h6>
+                                                                @endif
+                                                                
+                                                                <div class="flex items-center gap-3 mt-1 text-xs text-gray-600">
+                                                                    <span>SL: {{ $item->quantity }}</span>
+                                                                    <span>{{ number_format($item->price) }}đ</span>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Item Total -->
+                                                            <div class="text-right">
+                                                                <p class="text-sm font-bold text-black">
+                                                                    {{ number_format($item->price * $item->quantity) }}đ
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <div class="text-center py-4">
+                                                    <p class="text-xs text-gray-500 uppercase tracking-wide">Không có sản phẩm</p>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center py-4">
+                                    <p class="text-sm text-gray-600">Không có đơn hàng con nào.</p>
+                                </div>
+                            @endif
+                        </div>
+                        @endif
                         <div class="space-y-3 text-sm">
                             <div class="flex justify-between">
                                 <span class="text-gray-600 uppercase tracking-wide">Ngày đặt:</span>
@@ -236,74 +337,88 @@
 
                 <!-- Order Items -->
                 <div class="border-t-2 border-gray-200 pt-8">
+                    @if(!$order->isParentOrder())
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-1 h-5 bg-black"></div>
-                        <h4 class="text-base font-bold uppercase tracking-wide text-black">SẢN PHẨM ĐÃ ĐẶT ({{ $order->orderItems->count() }} sản phẩm)</h4>
+                        <h4 class="text-base font-bold uppercase tracking-wide text-black">SẢN PHẨM ĐÃ ĐẶT ({{ $order->orderItems->sum('quantity') }} sản phẩm)</h4>
                     </div>
                     
-                    <div class="space-y-4">
-                        @foreach($order->orderItems as $item)
-                            <div class="flex items-center gap-4 p-4 border-2 border-gray-200 hover:border-black transition-all duration-300">
-                                <!-- Product Image -->
-                                <div class="flex-shrink-0">
-                                    <div class="w-16 h-20 bg-gray-200 border-2 border-gray-300 overflow-hidden">
-                                        @if($item->isCombo())
-                                            @if($item->collection && $item->collection->cover_image)
-                                                <img src="{{ asset('storage/' . $item->collection->cover_image) }}" 
-                                                     alt="{{ $item->collection->name }}" 
-                                                     class="h-full w-full object-cover">
+                    @if($order->orderItems->count() > 0)
+                        <div class="space-y-4">
+                            @foreach($order->orderItems as $item)
+                                <div class="flex items-center gap-4 p-4 border-2 border-gray-200 hover:border-black transition-all duration-300">
+                                    <!-- Product Image -->
+                                    <div class="flex-shrink-0">
+                                        <div class="w-16 h-20 bg-gray-200 border-2 border-gray-300 overflow-hidden">
+                                            @if($item->isCombo())
+                                                @if($item->collection && $item->collection->cover_image)
+                                                    <img src="{{ asset('storage/' . $item->collection->cover_image) }}" 
+                                                         alt="{{ $item->collection->name }}" 
+                                                         class="h-full w-full object-cover">
+                                                @else
+                                                    <div class="h-full w-full bg-black flex items-center justify-center">
+                                                        <span class="text-white text-xs font-bold">COMBO</span>
+                                                    </div>
+                                                @endif
                                             @else
-                                                <div class="h-full w-full bg-black flex items-center justify-center">
-                                                    <span class="text-white text-xs font-bold">COMBO</span>
-                                                </div>
+                                                @if($item->book && $item->book->images->isNotEmpty())
+                                                    <img src="{{ asset('storage/' . $item->book->images->first()->path) }}" 
+                                                         alt="{{ $item->book->title }}" 
+                                                         class="h-full w-full object-cover">
+                                                @else
+                                                    <div class="h-full w-full bg-gray-300 flex items-center justify-center">
+                                                        <span class="text-gray-600 text-xs">IMG</span>
+                                                    </div>
+                                                @endif
                                             @endif
-                                        @else
-                                            @if($item->book && $item->book->images->isNotEmpty())
-                                                <img src="{{ asset('storage/' . $item->book->images->first()->path) }}" 
-                                                     alt="{{ $item->book->title }}" 
-                                                     class="h-full w-full object-cover">
-                                            @else
-                                                <div class="h-full w-full bg-gray-300 flex items-center justify-center">
-                                                    <span class="text-gray-600 text-xs">IMG</span>
-                                                </div>
-                                            @endif
-                                        @endif
-                                    </div>
-                                </div>
-                                
-                                <!-- Product Info -->
-                                <div class="flex-1">
-                                    @if($item->isCombo())
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span class="px-2 py-1 bg-black text-white text-xs font-bold uppercase">COMBO</span>
                                         </div>
-                                        <h5 class="font-bold text-black text-sm uppercase tracking-wide">
-                                            {{ $item->collection->name ?? 'Combo không xác định' }}
-                                        </h5>
-                                    @else
-                                        <h5 class="font-bold text-black text-sm uppercase tracking-wide">
-                                            {{ $item->book->title ?? 'Sách không xác định' }}
-                                            @if($item->bookFormat)
-                                                <span class="text-gray-600">({{ $item->bookFormat->format_name }})</span>
-                                            @endif
-                                        </h5>
-                                    @endif
+                                    </div>
                                     
-                                    <div class="flex items-center gap-4 mt-2 text-xs text-gray-600 uppercase tracking-wide">
-                                        <span>SL: {{ $item->quantity }}</span>
-                                        <span>GIÁ: {{ number_format($item->price) }}đ</span>
+                                    <!-- Product Info -->
+                                    <div class="flex-1">
+                                        @if($item->isCombo())
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="px-2 py-1 bg-black text-white text-xs font-bold uppercase">COMBO</span>
+                                            </div>
+                                            <h5 class="font-bold text-black text-sm uppercase tracking-wide">
+                                                {{ $item->collection->name ?? 'Combo không xác định' }}
+                                            </h5>
+                                        @else
+                                            <h5 class="font-bold text-black text-sm uppercase tracking-wide">
+                                                {{ $item->book->title ?? 'Sách không xác định' }}
+                                                @if($item->bookFormat)
+                                                    <span class="text-gray-600">({{ $item->bookFormat->format_name }})</span>
+                                                @endif
+                                            </h5>
+                                        @endif
+                                        
+                                        <div class="flex items-center gap-4 mt-2 text-xs text-gray-600 uppercase tracking-wide">
+                                            <span>SL: {{ $item->quantity }}</span>
+                                            <span>GIÁ: {{ number_format($item->price) }}đ</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Price -->
+                                    <div class="text-right">
+                                        <p class="text-lg font-black text-black">
+                                            {{ number_format($item->price * $item->quantity) }}đ
+                                        </p>
                                     </div>
                                 </div>
-                                
-                                <!-- Price -->
-                                <div class="text-right">
-                                    <p class="text-lg font-black text-black">
-                                        {{ number_format($item->price * $item->quantity) }}đ
-                                    </p>
-                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-12">
+                            <div class="w-20 h-20 bg-gray-100 border-2 border-gray-300 flex items-center justify-center mx-auto mb-6">
+                                <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414a1 1 0 00-.707-.293H6" />
+                                </svg>
                             </div>
-                        @endforeach
-                    </div>
+                            <h5 class="text-xl font-bold text-black mb-3 uppercase tracking-wide">KHÔNG CÓ SẢN PHẨM</h5>
+                            <p class="text-gray-600 text-sm uppercase tracking-wide">Đơn hàng này chưa có sản phẩm nào được thêm vào.</p>
+                        </div>
+                    @endif
+                    @endif
                 </div>
 
                 <!-- Order Summary -->

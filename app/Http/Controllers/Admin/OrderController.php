@@ -38,8 +38,14 @@ class OrderController extends Controller
 
     public function index(Request $request)
     {
-        $query = Order::with(['user', 'address', 'orderStatus', 'paymentStatus'])
-            ->orderBy('created_at', 'desc');
+        $query = Order::with([
+            'user', 
+            'address', 
+            'orderStatus', 
+            'paymentStatus',
+            'parentOrder',
+            'childOrders'
+        ])->orderBy('created_at', 'desc');
         $orderStatuses = OrderStatus::query()->get();
         $paymentStatuses = PaymentStatus::query()->get();
         // tìm kiếm đơn hàng
@@ -94,24 +100,26 @@ class OrderController extends Controller
             'orderStatus',
             'paymentStatus',
             'voucher',
-            'payments',
-            'invoice',
+            'payments.paymentMethod',
+            'invoice.items.book',
+            'invoice.items.collection',
+            'orderItems.book.images',
+            'orderItems.bookFormat',
+            'orderItems.collection',
+            'orderItems.attributeValues.attribute',
+            'childOrders.orderStatus',
+            'childOrders.paymentStatus'
         ])->findOrFail($id);
 
         // Get order items with their attribute values
-        $orderItems = OrderItem::where('order_id', $id)
-            ->with(['book', 'attributeValues.attribute', 'bookFormat', 'collection'])
-            ->get();
-        foreach ($orderItems as $item) {
-            $bookFormat = optional($item->bookFormat)->format_name;  // Safely access 'name' of 'bookFormat'
-        }
-        // dd($bookFormat);
+        $orderItems = $order->orderItems;
+        
         // Generate QR code if not exists
         // if (!$order->qr_code) {
         //     $this->generateQrCode($order);
         // }
 
-        return view('admin.orders.show', compact('order', 'orderItems', 'bookFormat'));
+        return view('admin.orders.show', compact('order', 'orderItems'));
     }
 
     public function edit($id)

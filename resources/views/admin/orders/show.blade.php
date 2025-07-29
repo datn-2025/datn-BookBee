@@ -2,6 +2,10 @@
 
 @section('title', 'Chi tiết đơn hàng')
 
+@section('styles')
+<link href="{{ asset('css/admin-orders.css') }}" rel="stylesheet">
+@endsection
+
 @section('content')
         <div class="row">
             <div class="col-12">
@@ -12,7 +16,14 @@
                         <ol class="breadcrumb m-0">
                             <li class="breadcrumb-item"><a href="#">Trang chủ</a></li>
                             <li class="breadcrumb-item"><a href="{{ route('admin.orders.index') }}">Đơn hàng</a></li>
-                            <li class="breadcrumb-item active">Chi tiết</li>
+                            @if($order->parent_order_id)
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('admin.orders.show', $order->parent_order_id) }}">
+                                        <i class="ri-parent-line me-1"></i>{{ $order->parentOrder->order_code ?? 'Đơn cha' }}
+                                    </a>
+                                </li>
+                            @endif
+                            <li class="breadcrumb-item active">{{ $order->order_code }}</li>
                         </ol>
                     </div>
                 </div>
@@ -25,7 +36,19 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="d-flex align-items-center">
-                            <h5 class="card-title flex-grow-1 mb-0">Mã đơn hàng: #{{ $order->order_code }}</h5>
+                            <h5 class="card-title flex-grow-1 mb-0">
+                                 Mã đơn hàng: #{{ $order->order_code }}
+                                 @if($order->delivery_method === 'mixed')
+                                     <span class="badge bg-warning text-dark ms-2">📦📱 ĐƠN HÀNG HỖN HỢP</span>
+                                 @endif
+                                 @if($order->parent_order_id)
+                                     <br><small class="text-muted">Đơn hàng con thuộc: 
+                                         <a href="{{ route('admin.orders.show', $order->parent_order_id) }}" class="text-primary">
+                                             <i class="ri-parent-line"></i> {{ $order->parentOrder->order_code ?? 'N/A' }}
+                                         </a>
+                                     </small>
+                                 @endif
+                             </h5>
                             <div class="flex-shrink-0">
                                 <div class="d-flex gap-2">
                                     <a href="{{ route('admin.orders.edit', $order->id) }}" class="btn btn-success btn-sm">
@@ -247,10 +270,85 @@
                             </div>
                         </div>
 
+                        @if($order->delivery_method === 'mixed' && $order->isParentOrder())
+                        <div class="mt-4">
+                            <h5 class="text-muted mb-3">
+                                <i class="ri-git-branch-line me-2"></i>Thông tin đơn hàng con ({{ $order->childOrders->count() }})
+                            </h5>
+                            <div class="row">
+                                @foreach($order->childOrders as $childOrder)
+                                <div class="col-md-6 mb-3">
+                                     <div class="child-order-card">
+                                        <div class="child-order-header">
+                                            @if($childOrder->delivery_method === 'delivery')
+                                                <div class="child-order-icon order-type-physical">
+                                                    <i class="ri-truck-line"></i>
+                                                </div>
+                                            @else
+                                                <div class="child-order-icon order-type-ebook">
+                                                    <i class="ri-smartphone-line"></i>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <h6 class="mb-0">{{ $childOrder->order_code }}</h6>
+                                                <small class="text-muted">
+                                                    @if($childOrder->delivery_method === 'delivery')
+                                                        Đơn hàng sách vật lý
+                                                    @else
+                                                        Đơn hàng ebook
+                                                    @endif
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-6">
+                                                <small class="text-muted d-block">Tổng tiền:</small>
+                                                <span class="fw-bold text-primary">{{ number_format($childOrder->total_amount, 0, ',', '.') }}đ</span>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted d-block">Trạng thái:</small>
+                                                @php
+                                                    $statusClass = match($childOrder->orderStatus->name) {
+                                                        'Chờ Xác Nhận' => 'status-pending',
+                                                        'Đã Xác Nhận' => 'status-confirmed',
+                                                        'Đang Giao Hàng' => 'status-shipping',
+                                                        'Đã Giao Thành Công' => 'status-delivered',
+                                                        'Thành công' => 'status-delivered',
+                                                        'Đã Hủy' => 'status-cancelled',
+                                                        default => 'status-pending'
+                                                    };
+                                                    $statusIcon = match($childOrder->orderStatus->name) {
+                                                        'Chờ Xác Nhận' => 'ri-time-line',
+                                                        'Đã Xác Nhận' => 'ri-check-line',
+                                                        'Đang Giao Hàng' => 'ri-truck-line',
+                                                        'Đã Giao Thành Công' => 'ri-check-double-line',
+                                                        'Thành công' => 'ri-check-double-line',
+                                                        'Đã Hủy' => 'ri-close-line',
+                                                        default => 'ri-question-line'
+                                                    };
+                                                @endphp
+                                                <span class="order-status-badge {{ $statusClass }} small">
+                                                    <i class="{{ $statusIcon }} me-1"></i>
+                                                    {{ $childOrder->orderStatus->name }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <a href="{{ route('admin.orders.show', $childOrder->id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="ri-eye-line me-1"></i> Xem chi tiết
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                        @if($order->delivery_method !== 'mixed' && $order->isParentOrder())
                         <div class="mt-4">
                             <h5 class="text-muted mb-3">Chi tiết đơn hàng</h5>
                             <div class="table-responsive">
-                                <table class="table table-bordered align-middle mb-0">
+                                <table class="table table-bordered align-middle mb-0 order-items-table">
                                     <thead class="table-light">
                                         <tr>
                                             <th>STT</th>
@@ -270,14 +368,13 @@
                                                     $subtotal = $item->price * $item->quantity;
                                                     $total += $subtotal;
                                                     $book = $item->book;
-                                                    $format = $bookFormat;
+                                                    $format = $item->bookFormat;
                                                 @endphp
                                                 <tr>
                                                     <td>{{ $index + 1 }}</td>
                                                     <td>
                                                        @if($book)
                                                            <a href="{{route('admin.books.show', [$book->id, $book->slug])}}" style="text-decoration: none; color: #0a0c0d">
-{{--                                                            Hiển thị thông tin sách--}}
                                                                <div class="d-flex align-items-center">
                                                                    @if($book->cover_image)
                                                                        <img src="{{ asset('storage/' . $book->cover_image) }}"
@@ -312,16 +409,18 @@
                                                        @endif
                                                     </td>
                                                     <td>
-                                                        @if($bookFormat)
-                                                            <span class="badge bg-info">{{ $bookFormat }}</span>
-                                                        @else
-                                                            <span class="text-muted">N/A</span>
-                                                        @endif
+                                                        @if($item->bookFormat)
+                                                             <span class="badge format-badge">{{ $item->bookFormat->format_name }}</span>
+                                                         @elseif($item->collection_id)
+                                                             <span class="badge format-badge combo">Combo</span>
+                                                         @else
+                                                             <span class="text-muted">N/A</span>
+                                                         @endif
                                                     </td>
                                                     <td>
                                                         @if($item->attributeValues && $item->attributeValues->count() > 0)
                                                             @foreach($item->attributeValues as $attrValue)
-                                                                <span class="badge bg-light text-dark">{{ $attrValue->attribute->name }}: {{ $attrValue->value }}</span>
+                                                                <span class="attribute-badge">{{ $attrValue->attribute->name }}: {{ $attrValue->value }}</span>
                                                             @endforeach
                                                         @else
                                                             <span class="text-muted">Không có</span>
@@ -420,6 +519,7 @@
                                 </table>
                             </div>
                         </div>
+                        @endif
                     </div>
                 </div>
             </div>

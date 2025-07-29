@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
 use App\Services\InvoiceService;
+use App\Services\MixedOrderService;
 use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Services\QrCodeService;
@@ -33,6 +34,7 @@ use Illuminate\Support\Facades\Storage;
 class OrderController extends Controller
 {
     protected $orderService;
+    protected $mixedOrderService;
     protected $voucherService;
     protected $paymentService;
     protected $emailService;
@@ -41,6 +43,7 @@ class OrderController extends Controller
 
     public function __construct(
         OrderService $orderService,
+        MixedOrderService $mixedOrderService,
         VoucherService $voucherService,
         PaymentService $paymentService,
         EmailService $emailService,
@@ -48,6 +51,7 @@ class OrderController extends Controller
         InvoiceService $invoiceService
     ) {
         $this->orderService = $orderService;
+        $this->mixedOrderService = $mixedOrderService;
         $this->voucherService = $voucherService;
         $this->paymentService = $paymentService;
         $this->emailService = $emailService;
@@ -213,7 +217,103 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
             
-            // Sử dụng OrderService để xử lý toàn bộ quá trình tạo đơn hàng
+            // Kiểm tra xem có phải mixed format cart không
+            $cartItems = $this->orderService->validateCartItems($user);
+            $isMixedFormat = $this->mixedOrderService->hasMixedFormats($cartItems);
+            
+            if ($isMixedFormat) {
+                // Xử lý đơn hàng hỗn hợp (có cả ebook và sách vật lý)
+                $mixedOrderResult = $this->mixedOrderService->createMixedFormatOrders($request, $user);
+                $parentOrder = $mixedOrderResult['parent_order'];
+                $physicalOrder = $mixedOrderResult['physical_order'];
+                $ebookOrder = $mixedOrderResult['ebook_order'];
+                $cartItems = $mixedOrderResult['cart_items'];
+                
+                // Lấy thông tin payment method
+                $paymentMethod = PaymentMethod::findOrFail($request->payment_method_id);
+                
+                // Xử lý thanh toán cho đơn hàng hỗn hợp
+                $isWalletPayment = $this->mixedOrderService->processMixedOrderPayment(
+                    $parentOrder, $physicalOrder, $ebookOrder, $user, $paymentMethod
+                );
+                
+                if ($isWalletPayment) {
+                    // Tạo payment records cho các đơn hàng
+                    $this->paymentService->createPayment([
+                        'order_id' => $parentOrder->id,
+                        'transaction_id' => $parentOrder->order_code . '_WALLET',
+                        'payment_method_id' => $request->payment_method_id,
+                        'payment_status_id' => $parentOrder->payment_status_id,
+                        'amount' => $parentOrder->total_amount,
+                        'paid_at' => now()
+                    ]);
+                    
+                    DB::commit();
+                    
+                    // Xử lý sau khi tạo đơn hàng thành công
+                    $this->mixedOrderService->handlePostOrderCreation($parentOrder, $physicalOrder, $ebookOrder, $user);
+                    
+                    // Tạo và gửi hóa đơn
+                    try {
+                        $this->invoiceService->processInvoiceForPaidOrder($parentOrder);
+                        Log::info('Invoice created for mixed order', ['parent_order_id' => $parentOrder->id]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to create invoice for mixed order', [
+                            'parent_order_id' => $parentOrder->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                    
+                    $successMessage = 'Đặt hàng thành công! Đơn hàng của bạn đã được chia thành 2 phần: giao hàng sách in và nhận ebook qua email.';
+                    if ($newAddressCreated) {
+                        $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
+                    }
+                    
+                    Toastr::success($successMessage);
+                    return redirect()->route('orders.show', $parentOrder->id);
+                }
+                
+                // Xử lý VNPay cho mixed order (nếu cần)
+                if ($paymentMethod->name == 'Thanh toán vnpay') {
+                    DB::commit();
+                    
+                    $vnpayData = [
+                        'order_id' => $parentOrder->id,
+                        'payment_status_id' => $parentOrder->payment_status_id,
+                        'payment_method_id' => $parentOrder->payment_method_id,
+                        'order_code' => $parentOrder->order_code,
+                        'amount' => $parentOrder->total_amount,
+                        'order_info' => "Thanh toán đơn hàng hỗn hợp " . $parentOrder->order_code,
+                    ];
+                    
+                    return $this->vnpay_payment($vnpayData);
+                }
+                
+                // Xử lý COD cho mixed order
+                $this->paymentService->createPayment([
+                    'order_id' => $parentOrder->id,
+                    'transaction_id' => $parentOrder->order_code,
+                    'payment_method_id' => $request->payment_method_id,
+                    'payment_status_id' => $parentOrder->payment_status_id,
+                    'amount' => $parentOrder->total_amount,
+                    'paid_at' => now()
+                ]);
+                
+                DB::commit();
+                
+                // Xử lý sau khi tạo đơn hàng thành công
+                $this->mixedOrderService->handlePostOrderCreation($parentOrder, $physicalOrder, $ebookOrder, $user);
+                
+                $successMessage = 'Đặt hàng thành công! Đơn hàng của bạn đã được chia thành 2 phần: giao hàng sách in và nhận ebook qua email.';
+                if ($newAddressCreated) {
+                    $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
+                }
+                
+                Toastr::success($successMessage);
+                return redirect()->route('orders.show', $parentOrder->id);
+            }
+            
+            // Xử lý đơn hàng thông thường (chỉ có một loại sản phẩm)
             $orderResult = $this->orderService->processOrderCreationWithWallet($request, $user);
             $order = $orderResult['order'];
             $paymentMethod = $orderResult['payment_method'];
@@ -611,16 +711,34 @@ class OrderController extends Controller
                 // Xóa giỏ hàng sau khi thanh toán thành công
                 Auth::user()->cart()->delete();
 
-                // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
-                if ($order->delivery_method === 'delivery') {
-                    $this->orderService->createGhnOrder($order);
-                }
+                // Kiểm tra xem có phải mixed order không
+                if ($order->delivery_method === 'mixed' && $order->isParentOrder()) {
+                    // Xử lý mixed order - cập nhật trạng thái cho các đơn con
+                    $physicalOrder = $order->childOrders()->where('delivery_method', 'delivery')->first();
+                    $ebookOrder = $order->childOrders()->where('delivery_method', 'ebook')->first();
+                    
+                    if ($physicalOrder) {
+                        $physicalOrder->update(['payment_status_id' => $paymentStatus->id]);
+                    }
+                    if ($ebookOrder) {
+                        $ebookOrder->update(['payment_status_id' => $paymentStatus->id]);
+                    }
+                    
+                    // Xử lý sau thanh toán cho mixed order
+                    $this->mixedOrderService->handlePostOrderCreation($order, $physicalOrder, $ebookOrder, Auth::user());
+                } else {
+                    // Xử lý đơn hàng thông thường
+                    // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
+                    if ($order->delivery_method === 'delivery') {
+                        $this->orderService->createGhnOrder($order);
+                    }
 
-                // Gửi email xác nhận
-                $this->emailService->sendOrderConfirmation($order);
-                
-                // Gửi email ebook nếu đơn hàng có ebook
-                $this->emailService->sendEbookPurchaseConfirmation($order);
+                    // Gửi email xác nhận
+                    $this->emailService->sendOrderConfirmation($order);
+                    
+                    // Gửi email ebook nếu đơn hàng có ebook
+                    $this->emailService->sendEbookPurchaseConfirmation($order);
+                }
                 
                 // Tạo và gửi hóa đơn cho thanh toán VNPay thành công
                 try {
@@ -654,6 +772,29 @@ class OrderController extends Controller
                     ]);
                 }
 
+                // Kiểm tra xem có phải mixed order không
+                if ($order->delivery_method === 'mixed' && $order->isParentOrder()) {
+                    // Hủy đơn hàng cha và các đơn con
+                    $childOrders = $order->childOrders;
+                    
+                    foreach ($childOrders as $childOrder) {
+                        $childOrder->update([
+                            'order_status_id' => $cancelledStatus->id,
+                            'payment_status_id' => $failedPaymentStatus->id,
+                            'cancelled_at' => now(),
+                            'cancellation_reason' => 'Thanh toán VNPay thất bại - Mã lỗi: ' . $vnp_ResponseCode
+                        ]);
+                        
+                        // Tạo bản ghi hủy đơn hàng con
+                        OrderCancellation::create([
+                            'order_id' => $childOrder->id,
+                            'reason' => 'Thanh toán VNPay thất bại - Mã lỗi: ' . $vnp_ResponseCode,
+                            'cancelled_by' => $order->user_id,
+                            'cancelled_at' => now(),
+                        ]);
+                    }
+                }
+                
                 // Cập nhật trạng thái đơn hàng thành "Đã hủy"
                 $order->update([
                     'order_status_id' => $cancelledStatus->id,

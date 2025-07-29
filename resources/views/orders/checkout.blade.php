@@ -81,10 +81,17 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-bold uppercase tracking-wide mb-2">LƯU Ý QUAN TRỌNG</h3>
-                        <p class="text-sm leading-relaxed">
-                            Giỏ hàng của bạn có cả <span class="font-bold">sách vật lý</span> và <span class="font-bold">sách điện tử (ebook)</span>. 
-                            Phương thức thanh toán khi nhận hàng không khả dụng cho đơn hàng này.
+                        <p class="text-sm leading-relaxed mb-3">
+                            Giỏ hàng của bạn có cả <span class="font-bold">sách vật lý</span> và <span class="font-bold">sách điện tử (ebook)</span>.
                         </p>
+                        <div class="bg-white/10 p-4 rounded">
+                            <h4 class="font-bold text-sm mb-2">📦 ĐƠN HÀNG SẼ ĐƯỢC CHIA THÀNH 2 PHẦN:</h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• <span class="font-semibold">Đơn 1:</span> Chứa các sách vật lý → Giao hàng tận nơi, tính phí ship</li>
+                                <li>• <span class="font-semibold">Đơn 2:</span> Chứa các ebook → Gửi email link tải ngay sau khi thanh toán</li>
+                            </ul>
+                            <p class="text-xs mt-2 opacity-90">* Phương thức thanh toán khi nhận hàng không khả dụng cho đơn hàng này.</p>
+                        </div>
                     </div>
                 </div>
             </div>

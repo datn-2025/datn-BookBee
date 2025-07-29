@@ -683,9 +683,11 @@ class OrderService
         }
 
         // Kiểm tra tồn kho từ book_format mới nhất từ database
+        if ($freshBookFormat->type === 'Sách vật lý') {
         if ($freshBookFormat->stock < $cartItem->quantity) {
             throw new \Exception('Sách "' . $freshBook->title . '" (định dạng: ' . $freshBookFormat->format_name . ') không đủ số lượng. Còn lại: ' . $freshBookFormat->stock);
         }
+    }
     }
 
     /**
