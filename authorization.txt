@@ -1,0 +1,172 @@
+# Phân Tích & Đề Xuất Hệ Thống Phân Quyền - BookBee
+
+---
+
+## I. Phân Tích Hệ Thống Hiện Tại
+
+### 1. Cấu Trúc Phân Quyền Hiện Tại
+
+- **Vai trò (Role):**
+  - Admin: Quản trị viên hệ thống
+  - User: Người dùng thông thường
+  - Staff: Nhân viên (chưa triển khai đầy đủ)
+
+- **Kiểm tra quyền trong User model:**
+  ```php
+  public function isAdmin()
+  {
+      return $this->role && $this->role->name === 'Admin';
+  }
+  public function isActive()
+  {
+      return $this->status === 'Hoạt Động';
+  }
+  ```
+
+- **Middleware bảo vệ:**
+  - Chỉ kiểm tra đăng nhập và vai trò Admin cho các route quản trị.
+  - Chưa có kiểm tra chi tiết cho các chức năng nhỏ hơn.
+
+- **Quản lý vai trò:**
+  - Có thể thay đổi vai trò của user trong trang admin.
+  - Có gửi email khi thay đổi vai trò.
+
+### 2. Ưu điểm
+
+- Đã có cấu trúc phân quyền cơ bản.
+- Có middleware bảo vệ các route admin.
+- Có kiểm tra trạng thái tài khoản.
+
+### 3. Hạn chế
+
+- Phân quyền còn đơn giản, chỉ có Admin/User.
+- Chưa có quản lý quyền chi tiết (permission).
+- Chưa có giao diện quản lý quyền.
+- Chưa có log hoạt động người dùng.
+
+---
+
+## II. Đề Xuất Phát Triển Hệ Thống Phân Quyền Đầy Đủ
+
+### 1. Mô Hình Vai Trò & Quyền (RBAC + Permission)
+
+#### 1.1. Vai trò (Roles) đề xuất
+
+1. **Super Admin**: Toàn quyền hệ thống, phân quyền cho các vai trò khác.
+2. **Admin**: Quản lý website, không quản lý Super Admin.
+3. **Content Manager**: Quản lý nội dung (sách, danh mục, tác giả, bài viết).
+4. **Order Manager**: Quản lý đơn hàng, xử lý vận chuyển.
+5. **Customer Service**: Hỗ trợ khách hàng, xử lý khiếu nại.
+6. **Inventory Manager**: Quản lý kho sách, nhập/xuất kho.
+7. **Marketing Manager**: Quản lý khuyến mãi, voucher, chiến dịch marketing.
+8. **User**: Khách hàng, đặt hàng, đánh giá sản phẩm.
+
+#### 1.2. Quyền chi tiết (Permissions)
+
+- `user.view`, `user.create`, `user.edit`, `user.delete`, `user.role`
+- `book.view`, `book.create`, `book.edit`, `book.delete`, `book.import`, `book.export`
+- `order.view`, `order.create`, `order.edit`, `order.delete`, `order.process`, `order.cancel`
+- `inventory.view`, `inventory.update`, `inventory.import`, `inventory.export`, `inventory.report`
+- `marketing.view`, `marketing.create`, `marketing.edit`, `marketing.delete`, `voucher.manage`
+- `content.view`, `content.create`, `content.edit`, `content.delete`, `content.publish`
+
+### 2. Cấu trúc Database đề xuất
+
+- **roles**: Lưu vai trò
+- **permissions**: Lưu quyền chi tiết
+- **role_permissions**: Bảng trung gian role-permission
+- **user_roles**: Bảng trung gian user-role (hỗ trợ nhiều vai trò cho 1 user)
+
+### 3. Middleware & Trait
+
+- **Middleware kiểm tra role/permission**:
+  ```php
+  // CheckRole Middleware
+  class CheckRole
+  {
+      public function handle($request, Closure $next, $role)
+      {
+          if (!$request->user()->hasRole($role)) {
+              abort(403, 'Unauthorized action.');
+          }
+          return $next($request);
+      }
+  }
+  // CheckPermission Middleware
+  class CheckPermission
+  {
+      public function handle($request, Closure $next, $permission)
+      {
+          if (!$request->user()->hasPermission($permission)) {
+              abort(403, 'Unauthorized action.');
+          }
+          return $next($request);
+      }
+  }
+  ```
+- **Trait cho User model**:
+  ```php
+  trait HasRoles
+  {
+      public function roles()
+      {
+          return $this->belongsToMany(Role::class);
+      }
+      public function hasRole($role)
+      {
+          return $this->roles->contains('name', $role);
+      }
+      public function hasPermission($permission)
+      {
+          return $this->roles->flatMap->permissions->contains('name', $permission);
+      }
+  }
+  ```
+
+### 4. Gợi ý sử dụng
+
+- Trong route:
+  ```php
+  Route::middleware(['auth', 'role:admin'])->group(function () {
+      // Admin routes
+  });
+  Route::middleware(['auth', 'permission:book.manage'])->group(function () {
+      // Book management routes
+  });
+  ```
+- Trong blade:
+  ```php
+  @role('admin')
+      // Nội dung cho admin
+  @endrole
+  @permission('book.manage')
+      // Nội dung cho quản lý sách
+  @endpermission
+  ```
+
+---
+
+## III. Kế Hoạch Triển Khai
+
+1. Tạo các bảng mới và seed dữ liệu roles, permissions.
+2. Cập nhật User model với trait HasRoles.
+3. Tạo middleware kiểm tra role/permission.
+4. Cập nhật các controller, route sử dụng middleware mới.
+5. Xây dựng giao diện quản lý role/permission.
+6. Thêm log hoạt động và bảo mật.
+
+---
+
+## IV. Bảo Mật & Monitoring
+
+- Sử dụng CSRF token, mã hóa dữ liệu nhạy cảm, giới hạn đăng nhập sai, dùng HTTPS.
+- Log hoạt động người dùng, log thay đổi quyền, báo cáo định kỳ, cảnh báo bất thường.
+
+---
+
+## V. Tài Liệu Tham Khảo
+
+- Laravel Documentation
+- RBAC Best Practices
+- OWASP Security Guidelines
+- NIST Cybersecurity Framework

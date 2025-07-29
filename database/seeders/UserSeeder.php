@@ -15,13 +15,15 @@ class UserSeeder extends Seeder
         $userRole = Role::where('name', 'User')->first();
 
         // Tạo 2 admin users
-        User::factory(2)->create([
-            'role_id' => $adminRole->id
-        ]);
+        $admins = User::factory(2)->create();
+        foreach ($admins as $admin) {
+            $admin->roles()->attach($adminRole->id);
+        }
 
-        // Tạo 20 user thường
-        User::factory(10)->create([
-            'role_id' => $userRole->id
-        ]);
+        // Tạo 10 user thường
+        $users = User::factory(10)->create();
+        foreach ($users as $user) {
+            $user->roles()->attach($userRole->id);
+        }
     }
 }

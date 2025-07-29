@@ -180,15 +180,19 @@
                                                 <td>{{ $invoice->created_at->format('H:i:s d/m/Y') }}</td>
                                                 <td class="text-center">
                                                     <div class="btn-group">
+                                                        @permission('invoice.show')
                                                         <a href="{{ route('admin.invoices.show', $invoice->id) }}"
                                                             class="btn btn-sm btn-info" title="Xem chi tiết">
                                                             <i class="ri-eye-line"></i>
                                                         </a>
+                                                        @endpermission
+                                                        @permission('invoice.generate-pdf')
                                                         <a href="{{ route('admin.invoices.generate-pdf', $invoice->id) }}"
                                                             target="_blank" class="btn btn-sm btn-primary"
                                                             title="Tải PDF">
                                                             <i class="ri-file-pdf-line"></i>
                                                         </a>
+                                                        @endpermission
                                                     </div>
                                                 </td>
                                             </tr>

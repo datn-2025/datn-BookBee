@@ -23,6 +23,8 @@ class RAddressSeeder extends Seeder
             $addresses = [
                 [
                     'address_detail' => '123 Đường ABC, Phường XYZ',
+                    'recipient_name' => 'Nguyễn Văn A',
+                    'phone' => '0123456789',
                     'city' => 'Hồ Chí Minh',
                     'district' => 'Quận 1',
                     'ward' => 'Phường Bến Nghé',
@@ -30,6 +32,8 @@ class RAddressSeeder extends Seeder
                 ],
                 [
                     'address_detail' => '456 Đường DEF, Phường UVW',
+                    'recipient_name' => 'Trần Thị B',
+                    'phone' => '0123456789',
                     'city' => 'Hồ Chí Minh',
                     'district' => 'Quận 3',
                     'ward' => 'Phường Võ Thị Sáu',
@@ -42,9 +46,11 @@ class RAddressSeeder extends Seeder
                     'id' => (string) Str::uuid(),
                     'user_id' => $user->id,
                     'address_detail' => $address['address_detail'],
+                    'phone' => $address['phone'],
                     'city' => $address['city'],
                     'district' => $address['district'],
                     'ward' => $address['ward'],
+                    'recipient_name' => $address['recipient_name'],
                     'is_default' => $address['is_default'],
                 ]);
             }
