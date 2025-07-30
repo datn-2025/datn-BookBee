@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             PermissionSeeder::class,
-            RoleSeeder::class,
+            // RoleSeeder::class,
             SettingsSeeder::class,    
             // // Thêm Settings trước
             // RoleSeeder::class,
