@@ -2140,9 +2140,9 @@
                         .catch(error => {
                             console.error('Error:', error);
                             if (typeof toastr !== 'undefined') {
-                                toastr.error('Đã xảy ra lỗi khi thêm vào giỏ hàng!');
+                                toastr.error('giá tiền đang bị âm hoặc có lỗi xảy ra khi thêm vào giỏ hàng');
                             } else {
-                                alert('Đã xảy ra lỗi khi thêm vào giỏ hàng!');
+                                alert('giá tiền đang bị âm hoặc có lỗi xảy ra khi thêm vào giỏ hàng');
                             }
                         })
                         .finally(() => {

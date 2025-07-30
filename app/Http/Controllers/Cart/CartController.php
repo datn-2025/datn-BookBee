@@ -364,6 +364,13 @@ class CartController extends Controller
                 ]);
             }
 
+            // Check: Giá tiền không được âm hoặc bằng 0
+            if ($finalPrice <= 0) {
+                return response()->json([
+                    'error' => 'Giá sản phẩm không hợp lệ. Vui lòng liên hệ quản trị viên.'
+                ], 422, ['Content-Type' => 'application/json']);
+            }
+            
             // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa (bao gồm cả thuộc tính)
             $existingCart = DB::table('carts')
                 ->where('user_id', Auth::id())
@@ -562,6 +569,14 @@ class CartController extends Controller
                 ->first();
 
             Log::info('Combo found:', ['combo' => $combo]);
+
+            if ($combo && $combo->combo_price <= 0) {
+                $errorMsg = 'Giá combo không hợp lệ. Vui lòng liên hệ quản trị viên.';
+                if (request()->wantsJson()) {
+                    return response()->json(['error' => $errorMsg], 422);
+                }
+                return back()->with('error', $errorMsg);
+            }
 
             if (!$combo) {
                 // Kiểm tra xem combo có tồn tại nhưng không trong thời gian hiệu lực không
@@ -1096,98 +1111,80 @@ class CartController extends Controller
             if (!Auth::check()) {
                 return response()->json(['error' => 'Bạn cần đăng nhập để xóa sản phẩm khỏi giỏ hàng.'], 401);
             }
-
             $isCombo = $request->boolean('is_combo', false);
-            
+            $collectionId = $request->collection_id;
+
             if ($isCombo) {
-                // Xóa combo
-                $collectionId = $request->collection_id;
-                
                 if (!$collectionId) {
-                    return response()->json(['error' => 'Thiếu thông tin combo để xóa.'], 400);
-                }
-
-                Log::info('Removing combo from cart:', [
-                    'user_id' => Auth::id(),
-                    'collection_id' => $collectionId
-                ]);
-
-                $deletedCount = DB::table('carts')
-                    ->where('user_id', Auth::id())
-                    ->where('collection_id', $collectionId)
-                    ->where('is_combo', true)
-                    ->delete();
-
-                if ($deletedCount > 0) {
-                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
-                    
-                    Log::info('Combo removed successfully:', [
-                        'deleted_count' => $deletedCount,
-                        'remaining_cart_count' => $cartCount
-                    ]);
-                    
-                    return response()->json([
-                        'success' => 'Đã xóa combo khỏi giỏ hàng',
-                        'cart_count' => (int) $cartCount
-                    ]);
-                } else {
-                    Log::warning('Không tìm thấy combo để xóa');
-                    return response()->json(['error' => 'Không tìm thấy combo trong giỏ hàng'], 404);
-                }
-                
-            } else {
-                // Xóa sách đơn lẻ
-                $bookId = $request->book_id;
-                $bookFormatId = $request->book_format_id;
-                $attributeValueIds = $request->attribute_value_ids;
-
-                if (!$bookId) {
-                    return response()->json(['error' => 'Thiếu thông tin sách để xóa.'], 400);
-                }
-
-                Log::info('Xóa sách khỏi giỏ hàng:', [
-                    'user_id' => Auth::id(),
-                    'book_id' => $bookId,
-                    'book_format_id' => $bookFormatId,
-                    'attribute_value_ids' => $attributeValueIds
-                ]);
-
-                // Tìm cart item cụ thể để xóa
-                $query = DB::table('carts')
-                    ->where('user_id', Auth::id())
-                    ->where('book_id', $bookId)
-                    ->where('is_combo', false);
-
-                // Nếu có book_format_id, thêm vào điều kiện
-                if ($bookFormatId) {
-                    $query->where('book_format_id', $bookFormatId);
-                }
-
-                // Nếu có attribute_value_ids, thêm vào điều kiện
-                if ($attributeValueIds) {
-                    $query->where('attribute_value_ids', $attributeValueIds);
-                }
-
-                $deletedCount = $query->delete();
-
-                if ($deletedCount > 0) {
-                    // Lấy số lượng cart đã cập nhật
-                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
-                    
-                    Log::info('Xóa sách thành công:', [
-                        'deleted_count' => $deletedCount,
-                        'remaining_cart_count' => $cartCount
-                    ]);
-                    return response()->json([
-                        'success' => 'Đã xóa sản phẩm khỏi giỏ hàng',
-                        'cart_count' => (int) $cartCount
-                    ]);
-                } else {
-                    Log::warning('Không tìm thấy sách để xóa');
-                    return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
-                }
+                return response()->json(['error' => 'Thiếu thông tin combo để xóa.'], 400);
             }
 
+            Log::info('Removing combo from cart:', [
+                'user_id' => Auth::id(),
+                'collection_id' => $collectionId
+            ]);
+
+            $deletedCount = DB::table('carts')
+                ->where('user_id', Auth::id())
+                ->where('collection_id', $collectionId)
+                ->where('is_combo', true)
+                ->delete();
+
+            if ($deletedCount > 0) {
+                $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                Log::info('Combo removed successfully:', [
+                    'deleted_count' => $deletedCount,
+                    'remaining_cart_count' => $cartCount
+                ]);
+                return response()->json([
+                    'success' => 'Đã xóa combo khỏi giỏ hàng',
+                    'cart_count' => (int) $cartCount
+                ]);
+            } else {
+                Log::warning('Không tìm thấy combo để xóa');
+                return response()->json(['error' => 'Không tìm thấy combo trong giỏ hàng'], 404);
+            }
+        } else {
+            // Xóa sách đơn lẻ
+            $bookId = $request->book_id;
+            $bookFormatId = $request->book_format_id;
+            $attributeValueIds = $request->attribute_value_ids;
+
+            if (!$bookId) {
+                return response()->json(['error' => 'Thiếu thông tin sách để xóa.'], 400);
+            }
+
+            $query = DB::table('carts')
+                ->where('user_id', Auth::id())
+                ->where('book_id', $bookId)
+                ->where('is_combo', false);
+
+            if ($bookFormatId) {
+                $query->where('book_format_id', $bookFormatId);
+            }
+            // TẠM THỜI BỎ QUA attribute_value_ids để đảm bảo xóa được sản phẩm
+            // Nếu muốn kiểm tra sâu hơn, sẽ bổ sung logic so sánh sau
+            // if ($attributeValueIds) {
+            //     if (is_string($attributeValueIds)) {
+            //         $attributeValueIdsArray = json_decode($attributeValueIds, true);
+            //     } else {
+            //         $attributeValueIdsArray = $attributeValueIds;
+            //     }
+            //     $query->whereJsonContains('attribute_value_ids', $attributeValueIdsArray);
+            // }
+
+            $deletedCount = $query->delete();
+
+            if ($deletedCount > 0) {
+                $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                return response()->json([
+                    'success' => 'Đã xóa sản phẩm khỏi giỏ hàng',
+                    'cart_count' => (int) $cartCount
+                ]);
+            } else {
+                return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
+            }
+        }
         } catch (\Exception $e) {
             Log::error('Lỗi trong removeFromCart:', [
                 'error' => $e->getMessage(),
