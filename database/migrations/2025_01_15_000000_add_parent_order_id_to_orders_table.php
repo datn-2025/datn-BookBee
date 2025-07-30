@@ -12,7 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->enum('delivery_method', ['delivery', 'pickup', 'ebook', 'mixed'])->default('delivery')->after('shipping_fee');
+            $table->uuid('parent_order_id')->nullable()->after('id');
+            $table->foreign('parent_order_id')
+                  ->references('id')
+                  ->on('orders')
+                  ->onDelete('set null');
+            $table->index('parent_order_id');
         });
     }
 
@@ -22,7 +27,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->dropColumn('delivery_method');
+            $table->dropForeign(['parent_order_id']);
+            $table->dropIndex(['parent_order_id']);
+            $table->dropColumn('parent_order_id');
         });
     }
 };

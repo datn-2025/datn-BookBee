@@ -520,6 +520,8 @@ class OrderService
         // Tạo địa chỉ mới với thông tin GHN
         $addressData = [
             'user_id' => $user->id,
+            'recipient_name' => $request->new_recipient_name ?: $user->name,
+            'phone' => $request->new_phone ?: $user->phone,
             'address_detail' => $request->new_address_detail,
             'city' => $request->new_address_city_name,
             'district' => $request->new_address_district_name,

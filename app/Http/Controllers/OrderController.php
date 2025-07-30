@@ -148,7 +148,7 @@ class OrderController extends Controller
         $rules = [
             'voucher_code' => 'nullable|exists:vouchers,code',
             'payment_method_id' => 'required|exists:payment_methods,id',
-            'delivery_method' => 'required|in:delivery,pickup,ebook',
+            'delivery_method' => 'required|in:delivery,pickup,ebook,mixed',
             'shipping_method' => 'required_if:delivery_method,delivery|in:standard,express,pickup,1,2,53320,53321',
             'shipping_fee_applied' => 'required|numeric',
             'note' => 'nullable|string|max:500',
