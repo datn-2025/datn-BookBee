@@ -364,6 +364,13 @@ class CartController extends Controller
                 ]);
             }
 
+            // Check: Giá tiền không được âm hoặc bằng 0
+            if ($finalPrice <= 0) {
+                return response()->json([
+                    'error' => 'Giá sản phẩm không hợp lệ. Vui lòng liên hệ quản trị viên.'
+                ], 422, ['Content-Type' => 'application/json']);
+            }
+            
             // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa (bao gồm cả thuộc tính)
             $existingCart = DB::table('carts')
                 ->where('user_id', Auth::id())
@@ -562,6 +569,14 @@ class CartController extends Controller
                 ->first();
 
             Log::info('Combo found:', ['combo' => $combo]);
+
+            if ($combo && $combo->combo_price <= 0) {
+                $errorMsg = 'Giá combo không hợp lệ. Vui lòng liên hệ quản trị viên.';
+                if (request()->wantsJson()) {
+                    return response()->json(['error' => $errorMsg], 422);
+                }
+                return back()->with('error', $errorMsg);
+            }
 
             if (!$combo) {
                 // Kiểm tra xem combo có tồn tại nhưng không trong thời gian hiệu lực không
