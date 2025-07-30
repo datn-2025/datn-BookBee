@@ -335,7 +335,10 @@ class CartController extends Controller
             // Tính giá cuối cùng sau khi áp dụng discount (nếu có)
             $finalPrice = $bookInfo->price;
             if (isset($bookInfo->discount) && $bookInfo->discount > 0) {
-                $finalPrice = $bookInfo->price * (1 - $bookInfo->discount / 100);
+                // Discount giờ là số tiền VNĐ trực tiếp, không phải phần trăm
+                $finalPrice = $bookInfo->price - $bookInfo->discount;
+                // Đảm bảo giá không âm
+                $finalPrice = max(0, $finalPrice);
             }
             
             // Kiểm tra combo price (nếu sách thuộc combo đang hoạt động)
