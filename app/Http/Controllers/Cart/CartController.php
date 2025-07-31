@@ -228,16 +228,86 @@ class CartController extends Controller
             
             // Validation: Chỉ giữ lại những UUID hợp lệ và tồn tại trong database
             $validAttributeIds = [];
+            $formatInfo = null;
+            
+            // Lấy thông tin format trước để biết có phải ebook không
+            if ($bookFormatId) {
+                $formatInfo = DB::table('book_formats')
+                    ->where('id', $bookFormatId)
+                    ->first();
+            }
+            
+            $isEbook = $formatInfo && stripos($formatInfo->format_name, 'ebook') !== false;
+            
             if (!empty($attributeValueIds)) {
-                $validAttributeIds = DB::table('attribute_values')
-                    ->whereIn('id', $attributeValueIds)
-                    ->pluck('id')
-                    ->toArray();
+                if ($isEbook) {
+                    // Đối với ebook: chỉ lấy thuộc tính ngôn ngữ
+                    $validAttributeIds = DB::table('attribute_values')
+                        ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
+                        ->whereIn('attribute_values.id', $attributeValueIds)
+                        ->where(function($q) {
+                            $q->where('attributes.name', 'LIKE', '%Ngôn Ngữ%')
+                              ->orWhere('attributes.name', 'LIKE', '%language%')
+                              ->orWhere('attributes.name', 'LIKE', '%Language%');
+                        })
+                        ->pluck('attribute_values.id')
+                        ->toArray();
+                        
+                    // Kiểm tra xem có thuộc tính ngôn ngữ hợp lệ không
+                    if (empty($validAttributeIds)) {
+                        Log::warning('Ebook không có thuộc tính ngôn ngữ hợp lệ:', [
+                            'book_id' => $bookId,
+                            'requested_attributes' => $attributeValueIds,
+                            'format_id' => $bookFormatId
+                        ]);
+                        
+                        return response()->json([
+                            'error' => 'Vui lòng chọn ngôn ngữ cho sách điện tử'
+                        ], 422);
+                    }
+                } else {
+                    // Đối với sách vật lý: giữ lại tất cả thuộc tính hợp lệ
+                    $validAttributeIds = DB::table('attribute_values')
+                        ->whereIn('id', $attributeValueIds)
+                        ->pluck('id')
+                        ->toArray();
+                }
                 
-                // Log để debug
+                // Log để debug - Cải thiện
                 Log::info('Cart addToCart - Attribute validation:', [
                     'requested_ids' => $attributeValueIds,
-                    'valid_ids' => $validAttributeIds
+                    'valid_ids' => $validAttributeIds,
+                    'is_ebook' => $isEbook,
+                    'format_name' => $formatInfo ? $formatInfo->format_name : 'N/A',
+                    'filtered_count' => count($validAttributeIds),
+                    'original_count' => count($attributeValueIds)
+                ]);
+            } else {
+                // Nếu không có thuộc tính nào được gửi lên
+                if ($isEbook) {
+                    // Kiểm tra xem sách này có yêu cầu thuộc tính ngôn ngữ không
+                    $hasLanguageAttributes = DB::table('book_attribute_values')
+                        ->join('attribute_values', 'book_attribute_values.attribute_value_id', '=', 'attribute_values.id')
+                        ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
+                        ->where('book_attribute_values.book_id', $bookId)
+                        ->where(function($q) {
+                            $q->where('attributes.name', 'LIKE', '%Ngôn Ngữ%')
+                              ->orWhere('attributes.name', 'LIKE', '%language%')
+                              ->orWhere('attributes.name', 'LIKE', '%Language%');
+                        })
+                        ->exists();
+                        
+                    if ($hasLanguageAttributes) {
+                        return response()->json([
+                            'error' => 'Vui lòng chọn ngôn ngữ cho sách điện tử'
+                        ], 422);
+                    }
+                }
+                
+                Log::info('Cart addToCart - No attributes provided:', [
+                    'is_ebook' => $isEbook,
+                    'book_format_id' => $bookFormatId,
+                    'note' => $isEbook ? 'Ebook without language requirement' : 'Physical book without attributes'
                 ]);
             }
             

@@ -1139,10 +1139,16 @@
                                     <h3 class="text-sm font-bold text-black uppercase tracking-wider adidas-font">Tuỳ chọn sản phẩm</h3>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         @foreach($book->attributeValues->unique('attribute_id') as $attrVal)
-                                            <div class="space-y-2 col-span-1">
+                                            @php
+                                                $attributeName = $attrVal->attribute->name ?? '';
+                                                $isLanguageAttribute = stripos($attributeName, 'Ngôn Ngữ') !== false || stripos($attributeName, 'language') !== false;
+                                            @endphp
+                                            <div class="space-y-2 col-span-1 attribute-item" 
+                                                 data-attribute-name="{{ strtolower($attributeName) }}"
+                                                 data-is-language="{{ $isLanguageAttribute ? 'true' : 'false' }}">
                                                 <label for="attribute_{{ $attrVal->id }}"
                                                     class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">
-                                                    {{ $attrVal->attribute->name ?? 'Không rõ' }}
+                                                    {{ $attributeName ?: 'Không rõ' }}
                                                 </label>
                                                 @php
                                                     $filteredValues = \App\Models\BookAttributeValue::with('attributeValue')
@@ -1918,6 +1924,34 @@
                         }
                     }
                 }
+
+                // Show/hide attributes based on format type
+                const attributesGroup = document.getElementById('bookAttributesGroup');
+                if (attributesGroup) {
+                    const attributeItems = attributesGroup.querySelectorAll('.attribute-item');
+                    
+                    attributeItems.forEach(item => {
+                        const isLanguageAttr = item.dataset.isLanguage === 'true';
+                        
+                        if (isEbook) {
+                            // For ebooks, only show language attributes
+                            item.style.display = isLanguageAttr ? 'block' : 'none';
+                        } else {
+                            // For physical books, show all attributes
+                            item.style.display = 'block';
+                        }
+                    });
+
+                    // Update group title for ebooks
+                    const groupTitle = attributesGroup.querySelector('h3');
+                    if (groupTitle) {
+                        if (isEbook) {
+                            groupTitle.textContent = 'Chọn ngôn ngữ';
+                        } else {
+                            groupTitle.textContent = 'Tuỳ chọn sản phẩm';
+                        }
+                    }
+                }
             }
 
             // Event listeners
@@ -1978,6 +2012,11 @@
 
                 // Initialize price and stock on page load
                 updatePriceAndStock();
+                
+                // Initialize attribute visibility on page load
+                setTimeout(() => {
+                    updatePriceAndStock(); // Gọi lại để đảm bảo thuộc tính được ẩn/hiện đúng
+                }, 100);
             });
 
             // Add to cart function
@@ -2012,15 +2051,25 @@
                         isEbook = selectedText.includes('ebook');
                     }
 
-                    // Get selected attributes
+                    // Get selected attributes - chỉ lấy thuộc tính ngôn ngữ cho ebooks
                     const attributes = {};
                     const attributeValueIds = [];
                     const attributeSelects = document.querySelectorAll('[name^="attributes["]');
 
                     attributeSelects.forEach(select => {
                         if (select.value) {
-                            attributes[select.name] = select.value;
-                            attributeValueIds.push(select.value);
+                            // Nếu là ebook, chỉ lấy thuộc tính ngôn ngữ
+                            if (isEbook) {
+                                const attributeItem = select.closest('.attribute-item');
+                                if (attributeItem && attributeItem.dataset.isLanguage === 'true') {
+                                    attributes[select.name] = select.value;
+                                    attributeValueIds.push(select.value);
+                                }
+                            } else {
+                                // Nếu không phải ebook, lấy tất cả thuộc tính
+                                attributes[select.name] = select.value;
+                                attributeValueIds.push(select.value);
+                            }
                         }
                     });
 
@@ -2074,6 +2123,7 @@
                             book_id: bookId,
                             quantity: quantity,
                             book_format_id: bookFormatId,
+                            attribute_value_ids: JSON.stringify(attributeValueIds),
                             attributes: attributes
                         })
                     })
@@ -2140,9 +2190,9 @@
                         .catch(error => {
                             console.error('Error:', error);
                             if (typeof toastr !== 'undefined') {
-                                toastr.error('giá tiền đang bị âm hoặc có lỗi xảy ra khi thêm vào giỏ hàng');
+                                toastr.error(' có lỗi xảy ra khi thêm vào giỏ hàng');
                             } else {
-                                alert('giá tiền đang bị âm hoặc có lỗi xảy ra khi thêm vào giỏ hàng');
+                                alert('có lỗi xảy ra khi thêm vào giỏ hàng');
                             }
                         })
                         .finally(() => {

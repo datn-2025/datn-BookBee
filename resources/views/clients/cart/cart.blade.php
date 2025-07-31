@@ -324,28 +324,47 @@
                                         </div>
                                     </div>
 
-                                    {{-- Attributes --}}
+                                    {{-- Attributes - Chỉ hiển thị thuộc tính ngôn ngữ cho ebooks --}}
                                     @if($item->attribute_value_ids && $item->attribute_value_ids !== '[]')
                                         @php
                                             $attributeIds = json_decode($item->attribute_value_ids, true);
                                             $attributes = collect();
                                             if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
-                                                $attributes = DB::table('attribute_values')
+                                                $query = DB::table('attribute_values')
                                                     ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
-                                                    ->whereIn('attribute_values.id', $attributeIds)
-                                                    ->select('attributes.name as attr_name', 'attribute_values.value as attr_value')
+                                                    ->whereIn('attribute_values.id', $attributeIds);
+                                                
+                                                // Nếu là ebook, chỉ lấy thuộc tính ngôn ngữ
+                                                if ($isEbook) {
+                                                    $query->where(function($q) {
+                                                        $q->where('attributes.name', 'LIKE', '%Ngôn Ngữ%')
+                                                          ->orWhere('attributes.name', 'LIKE', '%language%')
+                                                          ->orWhere('attributes.name', 'LIKE', '%Language%');
+                                                    });
+                                                }
+                                                
+                                                $attributes = $query->select('attributes.name as attr_name', 'attribute_values.value as attr_value')
                                                     ->get();
                                             }
                                         @endphp
                                         @if($attributes->count() > 0)
                                             <div class="bg-gray-50 p-3 border-l-4 border-gray-400 mb-4">
                                                 <div class="text-xs text-gray-500 uppercase tracking-wide font-bold mb-2">
-                                                    <i class="fas fa-tags"></i> Thuộc tính:
+                                                    <i class="fas fa-tags"></i> 
+                                                    @if($isEbook)
+                                                        Ngôn ngữ:
+                                                    @else
+                                                        Thuộc tính:
+                                                    @endif
                                                 </div>
                                                 <div class="flex flex-wrap gap-2">
                                                     @foreach($attributes->unique(function($attr) { return $attr->attr_name . ':' . $attr->attr_value; }) as $attr)
                                                         <span class="bg-white px-2 py-1 text-xs border border-gray-200 font-medium">
-                                                            {{ $attr->attr_name }}: {{ $attr->attr_value }}
+                                                            @if($isEbook)
+                                                                {{ $attr->attr_value }}
+                                                            @else
+                                                                {{ $attr->attr_name }}: {{ $attr->attr_value }}
+                                                            @endif
                                                         </span>
                                                     @endforeach
                                                 </div>
