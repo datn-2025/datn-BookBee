@@ -45,7 +45,7 @@
                                 <label class="form-label"><strong>Quyền trực tiếp</strong></label>
                                 <input type="text" class="form-control mb-2" id="permission-search"
                                     placeholder="Tìm kiếm quyền...">
-                                @php $grouped = $permissions->groupBy('module'); @endphp
+                                @php $grouped = collect($permissions)->groupBy('module'); @endphp
                                 @php
                                     $allUserPermissionIds = $user->permissions
                                         ->pluck('id')

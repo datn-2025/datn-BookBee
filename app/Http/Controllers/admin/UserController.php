@@ -127,13 +127,22 @@ class UserController extends Controller
     $user = User::with(['roles.permissions', 'permissions'])->findOrFail($id);
     $roles = Role::all();
 
-    // Lấy ID các quyền từ role hiện có
-    $rolePermissions = $user->roles->flatMap(function ($role) {
-        return $role->permissions;
-    })->pluck('id')->unique();
+    // Kiểm tra xem có vai trò khác 'user' không
+    $hasAdminRole = $user->roles->contains(function ($role) {
+        return strtolower($role->name) !== 'user';
+    });
 
-    // Chỉ lấy các quyền mà roles chưa có
-    $permissions = Permission::whereNotIn('id', $rolePermissions)->get();
+    $permissions = [];
+
+    if ($hasAdminRole) {
+        // Lấy ID các quyền từ role hiện có
+        $rolePermissions = $user->roles->flatMap(function ($role) {
+            return $role->permissions;
+        })->pluck('id')->unique();
+
+        // Lấy quyền mà roles chưa có
+        $permissions = Permission::whereNotIn('id', $rolePermissions)->get();
+    }
 
     return view('admin.users.roles-permissions', compact('user', 'roles', 'permissions'));
 }
