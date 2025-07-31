@@ -114,27 +114,69 @@ class UserController extends Controller
         return redirect()->route('admin.users.index', $user->id)
             ->with('success', 'Cập nhật thành công');
     }
+    // public function editRolesPermissions($id)
+    // {
+    //     $user = User::with(['roles', 'permissions'])->findOrFail($id);
+    //     $roles = Role::all();
+    //     $permissions = Permission::all();
+
+    //     return view('admin.users.roles-permissions', compact('user', 'roles', 'permissions'));
+    // }
     public function editRolesPermissions($id)
-    {
-        $user = User::with(['roles', 'permissions'])->findOrFail($id);
-        $roles = Role::all();
-        $permissions = Permission::all();
+{
+    $user = User::with(['roles.permissions', 'permissions'])->findOrFail($id);
+    $roles = Role::all();
 
-        return view('admin.users.roles-permissions', compact('user', 'roles', 'permissions'));
-    }
+    // Lấy ID các quyền từ role hiện có
+    $rolePermissions = $user->roles->flatMap(function ($role) {
+        return $role->permissions;
+    })->pluck('id')->unique();
 
+    // Chỉ lấy các quyền mà roles chưa có
+    $permissions = Permission::whereNotIn('id', $rolePermissions)->get();
+
+    return view('admin.users.roles-permissions', compact('user', 'roles', 'permissions'));
+}
+    // public function updateRolesPermissions(Request $request, $id)
+    // {
+    //     $user = User::findOrFail($id);
+
+    //     // Gán vai trò
+    //     $roles = $request->input('roles', []);
+    //     $user->roles()->sync($roles);
+
+    //     // Gán quyền trực tiếp
+    //     $permissions = $request->input('permissions', []);
+    //     $user->permissions()->sync($permissions);
+
+    //     return redirect()->route('admin.users.index')->with('success', 'Cập nhật vai trò & quyền thành công.');
+    // }
     public function updateRolesPermissions(Request $request, $id)
-    {
-        $user = User::findOrFail($id);
+{
+    $user = User::with(['roles', 'permissions'])->findOrFail($id);
 
-        // Gán vai trò
-        $roles = $request->input('roles', []);
-        $user->roles()->sync($roles);
+    // Vai trò cũ trước khi cập nhật
+    $oldRoleIds = $user->roles->pluck('id')->toArray();
 
-        // Gán quyền trực tiếp
-        $permissions = $request->input('permissions', []);
-        $user->permissions()->sync($permissions);
+    // Vai trò mới từ form
+    $newRoleIds = $request->input('roles', []);
+    $user->roles()->sync($newRoleIds); // Cập nhật vai trò mới
 
-        return redirect()->route('admin.users.index')->with('success', 'Cập nhật vai trò & quyền thành công.');
-    }
+    // Lấy danh sách quyền thuộc các vai trò cũ
+    $oldRolePermissions = Role::whereIn('id', $oldRoleIds)
+        ->with('permissions')
+        ->get()
+        ->flatMap->permissions
+        ->pluck('id')
+        ->unique();
+
+    // Xoá các quyền thủ công trước đây nếu chúng thuộc các vai trò cũ
+    $user->permissions()->detach($oldRolePermissions);
+
+    // Gán quyền thủ công được chọn từ form
+    $directPermissions = $request->input('permissions', []);
+    $user->permissions()->syncWithoutDetaching($directPermissions);
+
+    return redirect()->route('admin.users.index')->with('success', 'Cập nhật vai trò & quyền thành công.');
+}
 }
