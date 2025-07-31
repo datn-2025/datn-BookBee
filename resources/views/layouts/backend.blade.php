@@ -388,11 +388,26 @@
                         <li class="menu-title"><span data-key="t-menu">Quản Lý Hệ Thống</span></li>
                         @permission('user.view')
                             <li class="nav-item">
-                                <a class="nav-link menu-link" href="{{ route('admin.users.index') }}">
+                                <a class="nav-link menu-link" href="#sidebarUsers" data-bs-toggle="collapse">
                                     <i class="ri-account-circle-line"></i> <span data-key="t-authentication">Quản lý người
                                         dùng</span>
                                 </a>
+                                <div class="collapse menu-dropdown" id="sidebarUsers">
+                                    <ul class="nav nav-sm flex-column">
+                                        @permission('user.view')
+                                        <li><a href="{{ route('admin.users.index') }}" class="nav-link">Danh sách người
+                                                dùng</a></li>
+                                        @endpermission
+                                        @permission('role.view')
+                                            <li><a href="{{ route('admin.roles.index') }}" class="nav-link">Danh sách vai trò</a></li>
+                                        @endpermission
+                                        @permission('permission.view')
+                                            <li><a href="{{ route('admin.permissions.index') }}" class="nav-link">Danh sách quyền</a></li>
+                                        @endpermission
+                                    </ul>
+                                </div>
                             </li>
+                            
                         @endpermission
                         <!-- Quản lý sản phẩm -->
                         @permission('book.view')

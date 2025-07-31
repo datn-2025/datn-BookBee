@@ -56,7 +56,7 @@ class DashboardStats extends Component
         $this->orderCount = $queryOrder->count();
 
         // Tổng khách hàng có role là 'user'
-        $this->customerCount = $queryUser->whereHas('roles', function ($q) {
+        $this->customerCount = $queryUser->whereHas('role', function ($q) {
             $q->where('name', 'user');
         })->count();
 

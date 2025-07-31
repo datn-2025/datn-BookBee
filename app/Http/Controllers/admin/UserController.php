@@ -14,9 +14,44 @@ use Illuminate\Support\Facades\Mail;
 
 class UserController extends Controller
 {
+    // Hiển thị form chỉnh sửa vai trò và quyền trực tiếp cho user (1-n role)
+    public function editRolesPermissions($id)
+    {
+        $user = User::with(['role', 'permissions'])->findOrFail($id);
+        $roles = \App\Models\Role::all();
+        // Lấy các permission mà role hiện tại chưa có
+        $rolePermissionIds = $user->role ? $user->role->permissions->pluck('id')->toArray() : [];
+        $permissions = \App\Models\Permission::when($rolePermissionIds, function($q) use ($rolePermissionIds) {
+            return $q->whereNotIn('id', $rolePermissionIds);
+        })->get();
+        return view('admin.users.roles-permissions', compact('user', 'roles', 'permissions'));
+    }
+
+    // Cập nhật vai trò (role_id) và quyền trực tiếp cho user
+    public function updateRolesPermissions(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $request->validate([
+            'role_id' => 'required|exists:roles,id',
+            'permissions' => 'array',
+            'permissions.*' => 'exists:permissions,id',
+        ], [
+            'role_id.required' => 'Vui lòng chọn vai trò',
+            'role_id.exists' => 'Vai trò không tồn tại',
+        ]);
+
+        $user->role_id = $request->role_id;
+        $user->save();
+
+        // Gán quyền trực tiếp
+        $user->permissions()->sync($request->input('permissions', []));
+
+        return redirect()->route('admin.users.index')->with('success', 'Cập nhật vai trò & quyền thành công.');
+    }
+
     public function index(Request $request)
     {
-        $query = User::with('roles')->select('id', 'name', 'avatar', 'email', 'phone', 'status')
+        $query = User::with('role')->select('id', 'name', 'avatar', 'email', 'phone', 'status', 'role_id')
             ->where('id', '!=', Auth::id()); // Loại bỏ tài khoản đang đăng nhập
 
         // Tìm kiếm theo text
@@ -41,7 +76,7 @@ class UserController extends Controller
 
     public function show($id)
     {
-        $user = User::with('roles')->findOrFail($id);
+    $user = User::with('role')->findOrFail($id);
         // Lấy lịch sử mua hàng của user, join với trạng thái đơn hàng và thông tin người dùng
         $listDonHang = $user->orders()
             ->with(['orderStatus', 'address', 'paymentStatus'])
@@ -63,45 +98,44 @@ class UserController extends Controller
 
     public function edit($id)
     {
-        $user = User::with('roles')->findOrFail($id);
-        $roles = Role::all();
-        return view('admin.users.edit', compact('user', 'roles'));
+    $user = User::with('role')->findOrFail($id);
+    $roles = Role::all();
+    return view('admin.users.edit', compact('user', 'roles'));
     }
 
     public function update(Request $request, $id)
     {
         $request->validate([
-            'roles' => 'required|array',
-            'roles.*' => 'exists:roles,id',
+            'role_id' => 'required|exists:roles,id',
             'status' => 'required|in:Hoạt Động,Bị Khóa,Chưa kích Hoạt',
         ], [
-            'roles.required' => 'Vui lòng chọn vai trò',
-            'roles.*.exists' => 'Vai trò không tồn tại',
+            'role_id.required' => 'Vui lòng chọn vai trò',
+            'role_id.exists' => 'Vai trò không tồn tại',
             'status.required' => 'Vui lòng chọn trạng thái',
             'status.in' => 'Trạng thái không hợp lệ',
         ]);
 
-        $user = User::with('roles')->findOrFail($id);
 
+        $user = User::findOrFail($id);
         // Lưu thông tin cũ trước khi cập nhật
-        $oldRoles = $user->roles->pluck('name')->implode(', ');
+        $oldRole = $user->role ? $user->role->name : '';
         $oldStatus = $user->status;
 
         // Cập nhật thông tin
         $user->update([
             'status' => $request->status,
+            'role_id' => $request->role_id,
         ]);
-        $user->roles()->sync($request->roles);
 
         // Tải lại thông tin user sau khi cập nhật
-        $user->load('roles');
+        $user->load('role');
 
         // Kiểm tra nếu có sự thay đổi thì mới gửi email
-        $newRoles = $user->roles->pluck('name')->implode(', ');
-        if ($oldRoles !== $newRoles || $oldStatus !== $user->status) {
+        $newRole = $user->role ? $user->role->name : '';
+        if ($oldRole !== $newRole || $oldStatus !== $user->status) {
             try {
                 Mail::to($user->email)
-                    ->queue(new UserStatusUpdated($user, $oldRoles, $oldStatus));
+                    ->queue(new UserStatusUpdated($user, $oldRole, $oldStatus));
 
                 // Log thành công vào queue
                 Log::info('Đã thêm email thông báo vào queue cho user: ' . $user->email);
@@ -114,78 +148,12 @@ class UserController extends Controller
         return redirect()->route('admin.users.index', $user->id)
             ->with('success', 'Cập nhật thành công');
     }
-    // public function editRolesPermissions($id)
-    // {
-    //     $user = User::with(['roles', 'permissions'])->findOrFail($id);
-    //     $roles = Role::all();
-    //     $permissions = Permission::all();
-
-    //     return view('admin.users.roles-permissions', compact('user', 'roles', 'permissions'));
-    // }
-    public function editRolesPermissions($id)
-{
-    $user = User::with(['roles.permissions', 'permissions'])->findOrFail($id);
-    $roles = Role::all();
-
-    // Kiểm tra xem có vai trò khác 'user' không
-    $hasAdminRole = $user->roles->contains(function ($role) {
-        return strtolower($role->name) !== 'user';
-    });
-
-    $permissions = [];
-
-    if ($hasAdminRole) {
-        // Lấy ID các quyền từ role hiện có
-        $rolePermissions = $user->roles->flatMap(function ($role) {
-            return $role->permissions;
-        })->pluck('id')->unique();
-
-        // Lấy quyền mà roles chưa có
-        $permissions = Permission::whereNotIn('id', $rolePermissions)->get();
-    }
-
-    return view('admin.users.roles-permissions', compact('user', 'roles', 'permissions'));
-}
-    // public function updateRolesPermissions(Request $request, $id)
-    // {
-    //     $user = User::findOrFail($id);
-
-    //     // Gán vai trò
-    //     $roles = $request->input('roles', []);
-    //     $user->roles()->sync($roles);
-
-    //     // Gán quyền trực tiếp
-    //     $permissions = $request->input('permissions', []);
-    //     $user->permissions()->sync($permissions);
-
-    //     return redirect()->route('admin.users.index')->with('success', 'Cập nhật vai trò & quyền thành công.');
-    // }
-    public function updateRolesPermissions(Request $request, $id)
-{
-    $user = User::with(['roles', 'permissions'])->findOrFail($id);
-
-    // Vai trò cũ trước khi cập nhật
-    $oldRoleIds = $user->roles->pluck('id')->toArray();
-
-    // Vai trò mới từ form
-    $newRoleIds = $request->input('roles', []);
-    $user->roles()->sync($newRoleIds); // Cập nhật vai trò mới
-
-    // Lấy danh sách quyền thuộc các vai trò cũ
-    $oldRolePermissions = Role::whereIn('id', $oldRoleIds)
-        ->with('permissions')
-        ->get()
-        ->flatMap->permissions
-        ->pluck('id')
-        ->unique();
-
-    // Xoá các quyền thủ công trước đây nếu chúng thuộc các vai trò cũ
-    $user->permissions()->detach($oldRolePermissions);
-
-    // Gán quyền thủ công được chọn từ form
-    $directPermissions = $request->input('permissions', []);
-    $user->permissions()->syncWithoutDetaching($directPermissions);
-
-    return redirect()->route('admin.users.index')->with('success', 'Cập nhật vai trò & quyền thành công.');
-}
+    // [DEPRECATED] Legacy n-n user-role logic removed. User now has a single role (1-n).
+    // public function editRolesPermissions($id) { /* ...removed... */ }
+    // [DEPRECATED] Legacy n-n user-role logic removed. User now has a single role (1-n).
+    // public function editRolesPermissions($id) { /* ...removed... */ }
+    // [DEPRECATED] Legacy n-n user-role logic removed. User now has a single role (1-n).
+    // public function updateRolesPermissions(Request $request, $id) { /* ...removed... */ }
+    // [DEPRECATED] Legacy n-n user-role logic removed. User now has a single role (1-n).
+    // public function updateRolesPermissions(Request $request, $id) { /* ...removed... */ }
 }

@@ -55,7 +55,8 @@ class RUserSeeder extends Seeder
             );
             $userModel = User::where('email', $admin['email'])->first();
             if ($userModel) {
-                $userModel->roles()->syncWithoutDetaching([$adminRole->id]);
+                $userModel->role_id = $adminRole->id;
+                $userModel->save();
             }
         }
 
@@ -79,6 +80,8 @@ class RUserSeeder extends Seeder
                 [
                     'id' => (string) Str::uuid(),
                     'name' => $user['name'],
+                    // Thêm role_id cho user thường
+                    'role_id' => $userRole->id,
                     'password' => Hash::make('password'),
                     'phone' => $user['phone'],
                     'status' => 'Hoạt Động',
@@ -88,7 +91,8 @@ class RUserSeeder extends Seeder
             );
             $userModel = User::where('email', $user['email'])->first();
             if ($userModel) {
-                $userModel->roles()->syncWithoutDetaching([$userRole->id]);
+                $userModel->role_id = $userRole->id;
+                $userModel->save();
             }
         }
 
@@ -114,7 +118,8 @@ class RUserSeeder extends Seeder
             );
             $staffModel = User::where('email', $staff['email'])->first();
             if ($staffModel) {
-                $staffModel->roles()->syncWithoutDetaching([$staffRole->id]);
+                $staffModel->role_id = $staffRole->id;
+                $staffModel->save();
             }
         }
     }

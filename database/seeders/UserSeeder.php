@@ -17,13 +17,15 @@ class UserSeeder extends Seeder
         // Tạo 2 admin users
         $admins = User::factory(2)->create();
         foreach ($admins as $admin) {
-            $admin->roles()->attach($adminRole->id);
+            $admin->role_id = $adminRole->id;
+            $admin->save();
         }
 
         // Tạo 10 user thường
         $users = User::factory(10)->create();
         foreach ($users as $user) {
-            $user->roles()->attach($userRole->id);
+            $user->role_id = $userRole->id;
+            $user->save();
         }
     }
 }

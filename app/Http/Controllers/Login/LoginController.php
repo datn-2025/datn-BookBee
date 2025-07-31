@@ -54,8 +54,8 @@ class LoginController extends Controller
             'password.min' => 'Mật khẩu tối thiểu 8 ký tự.',
         ]);
 
-        // Kiểm tra trạng thái tài khoản trước khi đăng nhập
-        $user = User::where('email', $request->email)->with('roles')->first();
+    // Kiểm tra trạng thái tài khoản trước khi đăng nhập
+    $user = User::where('email', $request->email)->with('role')->first();
 
         if ($user) {
             // Kiểm tra nếu tài khoản bị khóa
@@ -93,11 +93,10 @@ class LoginController extends Controller
 
             // Kiểm tra quyền admin
             $user = Auth::user();
-            $firstRole = $user->roles->first();
-            if ($user->isAdmin() || ($firstRole && strtolower($firstRole->name) === 'admin')) {
+            if ($user->isAdmin() || ($user->role && strtolower($user->role->name) === 'admin')) {
                 return redirect()->intended(route('admin.dashboard'));
             }
-            Toastr::success('Đăng nhập thành công!', 'Thành công');
+            	Toastr()->success('Đăng nhập thành công!');
             return redirect()->intended(route('home'));
         }
 
@@ -106,12 +105,12 @@ class LoginController extends Controller
             session(['login_attempts_' . $user->id => ($attempts ?? 0) + 1]);
             $remainingAttempts = 3 - (($attempts ?? 0) + 1);
             if ($remainingAttempts > 0) {
-                Toastr::error("Sai thông tin đăng nhập. Bạn còn $remainingAttempts lần thử.", 'Lỗi');
+                	Toastr()->error("Sai thông tin đăng nhập. Bạn còn $remainingAttempts lần thử.");
             } else {
-                Toastr::error('Tài khoản của bạn đã bị khóa do đăng nhập sai quá nhiều lần.', 'Lỗi');
+                Toastr()->error('Tài khoản của bạn đã bị khóa do đăng nhập sai quá nhiều lần.');
             }
         } else {
-            Toastr::error('Email hoặc mật khẩu không chính xác.', 'Lỗi');
+            Toastr()->error('Email hoặc mật khẩu không chính xác.');
         }
 
         return back()->withInput();
@@ -123,7 +122,7 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        Toastr::success('Bạn đã đăng xuất thành công!', 'Thành công');
+    	Toastr()->success('Bạn đã đăng xuất thành công!');
         return redirect()->route('home');
     }
 
@@ -171,10 +170,8 @@ class LoginController extends Controller
             'status' => 'Chưa kích Hoạt',
             'activation_token' => $token,
             'activation_expires' => now()->addHours(24),
+            'role_id' => $userRole->getKey(),
         ]);
-
-        // Gán role cho user (n-n)
-        $user->roles()->attach($userRole->getKey());
 
 
         $activationUrl = route('account.activate', [

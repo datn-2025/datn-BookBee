@@ -58,7 +58,7 @@
                                                 </tr>
                                                 <tr>
                                                     <th>Vai trò:</th>
-                                                    <td>{{ $user->roles->first() ? $user->roles->first()->name : 'Chưa phân quyền' }}
+                                                    <td>{{ $user->role ? $user->role->name : 'Chưa phân quyền' }}
                                                     </td>
                                                 </tr>
                                                 <tr>

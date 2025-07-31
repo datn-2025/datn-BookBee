@@ -27,19 +27,12 @@
                             <input type="hidden" name="_method" value="PUT">
                             <div class="mb-4">
                                 <label class="form-label"><strong>Vai trò</strong></label>
-                                <div class="row">
+                                <select name="role_id" class="form-select" required>
+                                    <option value="">-- Chọn vai trò --</option>
                                     @foreach ($roles as $role)
-                                        <div class="col-md-3">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="roles[]"
-                                                    value="{{ $role->id }}" id="role_{{ $role->id }}"
-                                                    {{ $user->roles->contains($role->id) ? 'checked' : '' }}>
-                                                <label class="form-check-label"
-                                                    for="role_{{ $role->id }}">{{ $role->name }}</label>
-                                            </div>
-                                        </div>
+                                        <option value="{{ $role->id }}" @if ($user->role && $user->role->id == $role->id) selected @endif>{{ $role->name }}</option>
                                     @endforeach
-                                </div>
+                                </select>
                             </div>
                             <div class="mb-4">
                                 <label class="form-label"><strong>Quyền trực tiếp</strong></label>
@@ -49,7 +42,7 @@
                                 @php
                                     $allUserPermissionIds = $user->permissions
                                         ->pluck('id')
-                                        ->merge($user->roles->flatMap->permissions->pluck('id'))
+                                        ->merge($user->role ? $user->role->permissions->pluck('id') : collect())
                                         ->unique();
                                 @endphp
                                 @foreach ($grouped as $module => $modulePermissions)
@@ -58,31 +51,22 @@
                                         @foreach ($modulePermissions as $permission)
                                             @php
                                                 $hasDirect = $user->permissions->contains($permission->id);
-                                                $hasViaRole = $user->roles->flatMap->permissions
-                                                    ->pluck('id')
-                                                    ->contains($permission->id);
                                             @endphp
                                             <div class="col-md-4 permission-item">
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" name="permissions[]"
                                                         value="{{ $permission->id }}" id="perm_{{ $permission->id }}"
-                                                        @if ($hasDirect || $hasViaRole) checked @endif
-                                                        @if (!$hasDirect && $hasViaRole) title="Quyền này được thừa hưởng từ vai trò. Nếu muốn gán trực tiếp, hãy tick lại." @endif>
+                                                        @if ($hasDirect) checked @endif>
                                                     <label class="form-check-label permission-label"
-                                                        for="perm_{{ $permission->id }}">{{ $permission->name }}
-                                                        @if (!$hasDirect && $hasViaRole)
-                                                            <span class="text-info"
-                                                                title="Quyền này được thừa hưởng từ vai trò. Nếu muốn gán trực tiếp, hãy tick lại.">(qua
-                                                                vai trò)</span>
-                                                        @endif
-                                                    </label>
+                                                        for="perm_{{ $permission->id }}">{{ $permission->name }}</label>
                                                 </div>
                                             </div>
                                         @endforeach
                                     </div>
                                 @endforeach
-                                <small class="text-muted">Các quyền này sẽ được gán trực tiếp cho tài khoản, không phụ thuộc
-                                    vai trò.</small>
+                                <small class="text-muted">Các quyền này sẽ được gán trực tiếp cho tài khoản, không phụ thuộc vai trò.<br>
+                                    <span class="text-info">Chỉ hiển thị các quyền chưa có qua vai trò hiện tại.</span>
+                                </small>
                             </div>
                             <div class="mb-3">
                                 <button type="submit" class="btn btn-primary">Cập nhật</button>

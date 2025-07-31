@@ -214,7 +214,7 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::put('/password/update', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('password.update')->middleware('checkpermission:profile.edit');
     });
 
-    Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard')->middleware('checkpermission:dashboard.view');
+    Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard');
     Route::get('/revenue-report', RevenueReport::class)->name('revenue-report')->middleware('checkpermission:dashboard.revenue-report');
     Route::get('/balance-chart', BalanceChart::class)->name('balance-chart')->middleware('checkpermission:dashboard.balance-chart');
 
@@ -324,8 +324,8 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit')->middleware('checkpermission:user.edit');
         Route::put('/{id}', [UserController::class, 'update'])->name('update')->middleware('checkpermission:user.edit');
         Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy')->middleware('checkpermission:user.delete');
-        Route::get('/{id}/roles-permissions', [UserController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:user.manage-roles');
-        Route::put('/{id}/roles-permissions', [UserController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:user.manage-roles');
+    Route::get('/{id}/roles-permissions', [UserController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:user.manage-roles');
+    Route::put('/{id}/roles-permissions', [UserController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:user.manage-roles');
     });
 
     // Permissions
