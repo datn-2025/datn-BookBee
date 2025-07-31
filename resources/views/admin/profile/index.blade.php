@@ -52,7 +52,7 @@
                                                  style="width: 150px; height: 150px; object-fit: cover;">
                                         </div>
                                         <h5 class="font-size-16 mb-1">{{ $admin->name }}</h5>
-                                        <p class="text-muted mb-2">{{ optional($admin->roles->first())->name ?? 'Admin' }}</p>
+                                        <p class="text-muted mb-2">{{ optional($admin->role)->name ?? 'Admin' }}</p>
                                         <div class="mt-3">
                                             <div class="text-muted small">
                                                 <i class="fas fa-envelope me-1"></i>{{ $admin->email }}

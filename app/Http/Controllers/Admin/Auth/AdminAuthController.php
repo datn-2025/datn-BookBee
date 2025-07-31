@@ -31,8 +31,8 @@ class AdminAuthController extends Controller
             'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
         ]);
 
-        // Tìm user theo email
-        $user = User::where('email', $request->email)->with('roles')->first();
+    // Tìm user theo email
+    $user = User::where('email', $request->email)->with('role')->first();
 
         // Kiểm tra tồn tại user
         if (!$user) {

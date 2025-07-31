@@ -10,6 +10,13 @@ use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
+    /**
+     * Get the role that owns the user.
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
@@ -58,7 +65,7 @@ class User extends Authenticatable
 
     public function isAdmin()
     {
-        return !$this->roles->contains(fn($role) => strtolower($role->name) === 'user');
+        return $this->role && strtolower($this->role->name) !== 'user';
     }
 
 
@@ -67,10 +74,7 @@ class User extends Authenticatable
         return $this->status === 'Hoạt Động';
     }
 
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class);
-    }
+
 
     public function permissions()
     {
@@ -123,28 +127,24 @@ class User extends Authenticatable
 
     public function hasPermission(string $permission): bool
     {
-        $rolePermissions = $this->roles->flatMap->permissions->pluck('slug');
+        $rolePermissions = $this->role ? $this->role->permissions->pluck('slug') : collect();
         $userPermissions = $this->permissions->pluck('slug');
-
         return $rolePermissions->merge($userPermissions)->unique()->contains($permission);
     }
 
 
     public function hasAnyPermission(array $permissions): bool
     {
-        $rolePermissions = $this->roles->flatMap->permissions->pluck('slug');
+        $rolePermissions = $this->role ? $this->role->permissions->pluck('slug') : collect();
         $userPermissions = $this->permissions->pluck('slug');
-
         return $rolePermissions->merge($userPermissions)->intersect($permissions)->isNotEmpty();
     }
 
     public function hasAllPermissions(array $permissions): bool
     {
-        $rolePermissions = $this->roles->flatMap->permissions->pluck('slug');
+        $rolePermissions = $this->role ? $this->role->permissions->pluck('slug') : collect();
         $userPermissions = $this->permissions->pluck('slug');
-
         $allPermissions = $rolePermissions->merge($userPermissions)->unique();
-
         return collect($permissions)->diff($allPermissions)->isEmpty();
     }
 

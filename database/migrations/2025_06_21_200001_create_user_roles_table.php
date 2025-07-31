@@ -8,18 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('role_user', function (Blueprint $table) {
-            $table->uuid('user_id');
-            $table->uuid('role_id');
-            $table->primary(['user_id', 'role_id']);
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
-            $table->timestamps();
-        });
+    // Đã chuyển sang 1-n, không còn bảng role_user
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('role_user');
+    // Đã chuyển sang 1-n, không còn bảng role_user
     }
 };

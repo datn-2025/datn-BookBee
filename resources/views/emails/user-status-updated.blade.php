@@ -37,10 +37,10 @@
         <div class="content">
             <p>Chúng tôi xin thông báo rằng thông tin tài khoản của bạn trong hệ thống đã được cập nhật thành công.</p>
 
-            @if(optional($user->roles->first())->name !== $oldRole)
+            @if(optional($user->role)->name !== $oldRole)
             <p><strong>Thông tin về vai trò:</strong></p>
             <p>Vai trò trước đây: {{ $oldRole }}</p>
-            <p>Vai trò hiện tại: {{ optional($user->roles->first())->name }}</p>
+            <p>Vai trò hiện tại: {{ optional($user->role)->name }}</p>
 
             <p>Việc thay đổi này nhằm đảm bảo quyền truy cập và chức năng phù hợp hơn với nhu cầu sử dụng và sự phân quyền trong hệ thống của chúng tôi.</p>
             @endif

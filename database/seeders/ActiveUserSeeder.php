@@ -29,7 +29,8 @@ class ActiveUserSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-            $admin->roles()->attach($adminRole->id);
+            $admin->role_id = $adminRole->id;
+            $admin->save();
         }
 
         // Tạo tài khoản user
@@ -46,7 +47,8 @@ class ActiveUserSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-            $user->roles()->attach($userRole->id);
+            $user->role_id = $userRole->id;
+            $user->save();
         }
     }
 }

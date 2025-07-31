@@ -96,7 +96,7 @@
                                                     </td>
                                                     <td>{{ $user->email }}</td>
                                                     <td>{{ $user->phone }}</td>
-                                                    <td>{{ $user->roles->count() ? $user->roles->pluck('name')->implode(', ') : 'Chưa phân quyền' }}
+                                                    <td>{{ $user->role ? $user->role->name : 'Chưa phân quyền' }}
                                                     </td>
                                                     <td>
                                                         @if ($user->status === 'Hoạt Động')

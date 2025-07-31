@@ -15,9 +15,8 @@ class ROrderSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = User::whereHas('roles', function ($query) {
-            $query->where('name', 'User');
-        })->get();
+    $userRole = \App\Models\Role::where('name', 'User')->first();
+    $users = $userRole ? User::where('role_id', $userRole->id)->get() : collect();
 
         $orderStatuses = OrderStatus::all();
         $paymentStatuses = PaymentStatus::all();
