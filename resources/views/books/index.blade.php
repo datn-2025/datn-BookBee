@@ -424,40 +424,58 @@
                       <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-1">
                           @php
-                            $physicalStock = $book->physical_stock ?? 0;
-                            $hasEbook = $book->has_ebook ?? 0;
+                            // Logic mới: ƯU TIÊN books.status trước, sau đó mới xét stock
+                            $physicalStock = (int) ($book->physical_stock ?? 0);
+                            $hasEbook = (bool) ($book->has_ebook ?? false);
                             $bookStatus = $book->status ?? 'Không rõ';
+                            
+                            // ƯU TIÊN 1: Kiểm tra trạng thái chính của sách (books.status)
+                            $statusText = $bookStatus;
+                            $statusClass = '';
+                            $dotColor = '';
+                            
+                            switch($bookStatus) {
+                                case 'Ngừng Kinh Doanh':
+                                    $statusText = 'Ngừng KD';
+                                    $dotColor = 'bg-gray-500';
+                                    $statusClass = 'text-gray-600';
+                                    break;
+                                case 'Sắp Ra Mắt':
+                                    $statusText = 'Sắp ra mắt';
+                                    $dotColor = 'bg-yellow-500';
+                                    $statusClass = 'text-yellow-600';
+                                    break;
+                                case 'Hết Hàng Tồn Kho':
+                                    $statusText = 'Hết hàng';
+                                    $dotColor = 'bg-red-500';
+                                    $statusClass = 'text-red-600';
+                                    break;
+                                case 'Còn Hàng':
+                                default:
+                                    // ƯU TIÊN 2: Chỉ khi status = 'Còn Hàng' thì mới check stock
+                                    if ($hasEbook) {
+                                        $statusText = 'Ebook có sẵn';
+                                        $dotColor = 'bg-blue-500';
+                                        $statusClass = 'text-blue-600';
+                                    } elseif ($physicalStock === 0) {
+                                        $statusText = 'Hết hàng';
+                                        $dotColor = 'bg-red-500';
+                                        $statusClass = 'text-red-600';
+                                    } elseif ($physicalStock > 0 && $physicalStock < 10) {
+                                        $statusText = 'Sắp hết (' . $physicalStock . ')';
+                                        $dotColor = 'bg-yellow-500';
+                                        $statusClass = 'text-yellow-600';
+                                    } else {
+                                        $statusText = 'Còn hàng (' . $physicalStock . ')';
+                                        $dotColor = 'bg-green-500';
+                                        $statusClass = 'text-green-600';
+                                    }
+                                    break;
+                            }
                           @endphp
                           
-                          @switch($bookStatus)
-                            @case('Còn Hàng')
-                              <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-                              <span class="text-xs text-green-600 font-medium">Còn hàng</span>
-                              @break
-                            @case('Hết Hàng Tồn Kho')
-                              <span class="w-2 h-2 bg-red-500 rounded-full"></span>
-                              <span class="text-xs text-red-600 font-medium">Hết hàng</span>
-                              @break
-                            @case('Sắp Ra Mắt')
-                              <span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                              <span class="text-xs text-yellow-600 font-medium">Sắp ra mắt</span>
-                              @break
-                            @case('Ngừng Kinh Doanh')
-                              <span class="w-2 h-2 bg-gray-500 rounded-full"></span>
-                              <span class="text-xs text-gray-600 font-medium">Ngừng KD</span>
-                              @break
-                            @default
-                              @if($physicalStock > 0)
-                                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-                                <span class="text-xs text-gray-600 font-medium">{{ $physicalStock }} cuốn</span>
-                              @elseif($hasEbook)
-                                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                <span class="text-xs text-blue-600 font-medium">Ebook</span>
-                              @else
-                                <span class="w-2 h-2 bg-red-500 rounded-full"></span>
-                                <span class="text-xs text-red-600 font-medium">Hết hàng</span>
-                              @endif
-                          @endswitch
+                          <span class="w-2 h-2 {{ $dotColor }} rounded-full"></span>
+                          <span class="text-xs {{ $statusClass }} font-medium">{{ $statusText }}</span>
                         </div>
                       </div>
 
@@ -588,35 +606,59 @@
                       <div class="flex items-center justify-between border-t border-gray-100 pt-4">
                         <!-- Status -->
                         <div class="flex items-center space-x-2">
-                          @switch($bookStatus)
-                            @case('Còn Hàng')
-                              <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-                              <span class="text-sm text-green-600 font-medium">Còn hàng</span>
-                              @break
-                            @case('Hết Hàng Tồn Kho')
-                              <span class="w-2 h-2 bg-red-500 rounded-full"></span>
-                              <span class="text-sm text-red-600 font-medium">Hết hàng</span>
-                              @break
-                            @case('Sắp Ra Mắt')
-                              <span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                              <span class="text-sm text-yellow-600 font-medium">Sắp ra mắt</span>
-                              @break
-                            @case('Ngừng Kinh Doanh')
-                              <span class="w-2 h-2 bg-gray-500 rounded-full"></span>
-                              <span class="text-sm text-gray-600 font-medium">Ngừng kinh doanh</span>
-                              @break
-                            @default
-                              @if($physicalStock > 0)
-                                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-                                <span class="text-sm text-gray-600 font-medium">Còn {{ $physicalStock }} cuốn</span>
-                              @elseif($hasEbook)
-                                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                <span class="text-sm text-blue-600 font-medium">Ebook có sẵn</span>
-                              @else
-                                <span class="w-2 h-2 bg-red-500 rounded-full"></span>
-                                <span class="text-sm text-red-600 font-medium">Hết hàng</span>
-                              @endif
-                          @endswitch
+                          @php
+                            // Logic mới: ƯU TIÊN books.status trước, sau đó mới xét stock
+                            $physicalStock = (int) ($book->physical_stock ?? 0);
+                            $hasEbook = (bool) ($book->has_ebook ?? false);
+                            $bookStatus = $book->status ?? 'Không rõ';
+                            
+                            // ƯU TIÊN 1: Kiểm tra trạng thái chính của sách (books.status)
+                            $statusText = $bookStatus;
+                            $statusClass = '';
+                            $dotColor = '';
+                            
+                            switch($bookStatus) {
+                                case 'Ngừng Kinh Doanh':
+                                    $statusText = 'Ngừng kinh doanh';
+                                    $dotColor = 'bg-gray-500';
+                                    $statusClass = 'text-gray-600';
+                                    break;
+                                case 'Sắp Ra Mắt':
+                                    $statusText = 'Sắp ra mắt';
+                                    $dotColor = 'bg-yellow-500';
+                                    $statusClass = 'text-yellow-600';
+                                    break;
+                                case 'Hết Hàng Tồn Kho':
+                                    $statusText = 'Hết hàng';
+                                    $dotColor = 'bg-red-500';
+                                    $statusClass = 'text-red-600';
+                                    break;
+                                case 'Còn Hàng':
+                                default:
+                                    // ƯU TIÊN 2: Chỉ khi status = 'Còn Hàng' thì mới check stock
+                                    if ($hasEbook) {
+                                        $statusText = 'Ebook có sẵn';
+                                        $dotColor = 'bg-blue-500';
+                                        $statusClass = 'text-blue-600';
+                                    } elseif ($physicalStock === 0) {
+                                        $statusText = 'Hết hàng';
+                                        $dotColor = 'bg-red-500';
+                                        $statusClass = 'text-red-600';
+                                    } elseif ($physicalStock > 0 && $physicalStock < 10) {
+                                        $statusText = 'Còn ' . $physicalStock . ' cuốn';
+                                        $dotColor = 'bg-yellow-500';
+                                        $statusClass = 'text-yellow-600';
+                                    } else {
+                                        $statusText = 'Còn ' . $physicalStock . ' cuốn';
+                                        $dotColor = 'bg-green-500';
+                                        $statusClass = 'text-green-600';
+                                    }
+                                    break;
+                            }
+                          @endphp
+                          
+                          <span class="w-2 h-2 {{ $dotColor }} rounded-full"></span>
+                          <span class="text-sm {{ $statusClass }} font-medium">{{ $statusText }}</span>
                         </div>
 
                         <!-- Price -->

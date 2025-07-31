@@ -967,7 +967,7 @@
                             @endphp
                             <div class="price-section space-y-4">
                                 <div class="flex items-end space-x-4">
-                                    <span id="bookPrice" data-base-price="{{ $defaultPrice }}"
+                                    <span id="bookPrice" data-base-price="{{ $defaultPrice }}" data-book-status="{{ $book->status }}"
                                         class="text-4xl font-bold text-black adidas-font">{{ number_format($finalPrice, 0, ',', '.') }}₫</span>
                                     @if ($discount > 0)
                                         <span id="originalPrice"
@@ -991,30 +991,48 @@
                                         }
                                         $defaultStock = (int) ($defaultFormat->stock ?? $book->stock ?? 0);
 
-                                        if ($isEbook) {
-                                            $statusText = 'EBOOK - CÓ SẴN';
-                                            $statusDot = 'bg-blue-500';
-                                            $badgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
-                                        } elseif ($defaultStock > 0) {
-                                            $statusText = 'CÒN HÀNG';
-                                            $statusDot = 'bg-green-500';
-                                            $badgeClass = 'bg-green-50 text-green-700 border-green-200';
-                                        } elseif ($defaultStock === 0) {
-                                            $statusText = 'HẾT HÀNG';
-                                            $statusDot = 'bg-red-500';
-                                            $badgeClass = 'bg-red-50 text-red-700 border-red-200';
-                                        } elseif ($defaultStock === -1) {
-                                            $statusText = 'SẮP RA MẮT';
-                                            $statusDot = 'bg-yellow-500';
-                                            $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
-                                        } elseif ($defaultStock === -2) {
-                                            $statusText = 'NGƯNG KINH DOANH';
-                                            $statusDot = 'bg-gray-500';
-                                            $badgeClass = 'bg-gray-100 text-gray-700 border-gray-300';
-                                        } else {
-                                            $statusText = 'HẾT HÀNG';
-                                            $statusDot = 'bg-red-500';
-                                            $badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                        // Priority 1: Check book.status first 
+                                        switch ($book->status) {
+                                            case 'Ngừng Kinh Doanh':
+                                                $statusText = 'NGƯNG KINH DOANH';
+                                                $statusDot = 'bg-gray-500';
+                                                $badgeClass = 'bg-gray-100 text-gray-700 border-gray-300';
+                                                break;
+                                            case 'Sắp Ra Mắt':
+                                                $statusText = 'SẮP RA MẮT';
+                                                $statusDot = 'bg-yellow-500';
+                                                $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                                                break;
+                                            case 'Hết Hàng Tồn Kho':
+                                                $statusText = 'HẾT HÀNG TỒN KHO';
+                                                $statusDot = 'bg-red-500';
+                                                $badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                                break;
+                                            case 'Còn Hàng':
+                                            default:
+                                                // Priority 2: Only when status = 'Còn Hàng', check if ebook or stock levels
+                                                if ($isEbook) {
+                                                    $statusText = 'EBOOK - CÓ SẴN';
+                                                    $statusDot = 'bg-blue-500';
+                                                    $badgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+                                                } elseif ($defaultStock == 0) {
+                                                    $statusText = 'HẾT HÀNG (Stock)';
+                                                    $statusDot = 'bg-red-500';
+                                                    $badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                                } elseif ($defaultStock >= 1 && $defaultStock <= 9) {
+                                                    $statusText = 'SẮP HẾT HÀNG';
+                                                    $statusDot = 'bg-yellow-500';
+                                                    $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                                                } elseif ($defaultStock >= 10) {
+                                                    $statusText = 'CÒN HÀNG';
+                                                    $statusDot = 'bg-green-500';
+                                                    $badgeClass = 'bg-green-50 text-green-700 border-green-200';
+                                                } else {
+                                                    $statusText = 'HẾT HÀNG';
+                                                    $statusDot = 'bg-red-500';
+                                                    $badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                                }
+                                                break;
                                         }
                                     @endphp
                                     <div class="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4 mt-2">
@@ -1024,7 +1042,10 @@
                                                 class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block flex-shrink-0"></span>
                                             <span id="stockText" class="truncate">{{ $statusText }}</span>
                                         </span>
-                                        @if(($defaultStock > 0 || $isEbook) && $defaultStock !== -1 && $defaultStock !== -2)
+                                        @if(
+                                            ($book->status === 'Còn Hàng' && $defaultStock > 0) || 
+                                            $isEbook
+                                        )
                                             <span id="stockQuantityDisplay"
                                                 class="text-xs sm:text-sm text-gray-600 adidas-font whitespace-nowrap">
                                                 (<span class="font-bold text-black" id="productQuantity">{{ $defaultStock }}</span> cuốn
@@ -1837,22 +1858,56 @@
                     }
                 }
                 // Update stock display
-                const bookStockElement = document.getElementById('bookStock');
+                const stockBadgeElement = document.getElementById('stockBadge');
+                const stockDotElement = document.getElementById('stockDot'); 
+                const stockTextElement = document.getElementById('stockText');
                 const stockQuantityDisplay = document.getElementById('stockQuantityDisplay');
 
                 if (isEbook) {
-                    // For eBooks - always available
-                    if (bookStockElement) {
-                        bookStockElement.innerHTML = 'EBOOK - CÓ SẴN';
-                        bookStockElement.className = 'status-in-stock font-semibold';
+                    // For eBooks - apply status priority logic too
+                    const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
+                    
+                    let stockText = '';
+                    let badgeClass = '';
+                    let dotClass = '';
+                    
+                    // Priority 1: Check books.status first (even for ebooks)
+                    switch (bookStatus) {
+                        case 'Ngừng Kinh Doanh':
+                            stockText = 'NGƯNG KINH DOANH';
+                            badgeClass = 'bg-gray-100 text-gray-700 border-gray-300';
+                            dotClass = 'bg-gray-500';
+                            break;
+                        case 'Sắp Ra Mắt':
+                            stockText = 'SẮP RA MẮT';
+                            badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                            dotClass = 'bg-yellow-500';
+                            break;
+                        case 'Hết Hàng Tồn Kho':
+                            stockText = 'HẾT HÀNG TỒN KHO';
+                            badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                            dotClass = 'bg-red-500';
+                            break;
+                        case 'Còn Hàng':
+                        default:
+                            // Only when status = 'Còn Hàng', show ebook available
+                            stockText = 'EBOOK - CÓ SẴN';
+                            badgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+                            dotClass = 'bg-blue-500';
+                            break;
+                    }
+                    
+                    if (stockTextElement) {
+                        stockTextElement.textContent = stockText;
+                    }
+                    if (stockBadgeElement) {
+                        stockBadgeElement.className = 'inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider ' + badgeClass + ' whitespace-nowrap w-fit';
+                    }
+                    if (stockDotElement) {
+                        stockDotElement.className = 'w-2 h-2 rounded-full mr-2 ' + dotClass + ' inline-block flex-shrink-0';
                     }
                     if (stockQuantityDisplay) {
                         stockQuantityDisplay.style.display = 'none';
-                    }
-                    // Update status indicator
-                    const statusIndicator = bookStockElement?.parentElement?.querySelector('.w-3.h-3.rounded-full');
-                    if (statusIndicator) {
-                        statusIndicator.className = 'w-3 h-3 rounded-full bg-blue-500';
                     }
                     // Hide quantity section for ebooks
                     const quantitySection = document.querySelector('.quantity-section');
@@ -1860,28 +1915,66 @@
                         quantitySection.style.display = 'none';
                     }
                 } else {
-                    // For physical books - check stock
-                    if (bookStockElement) {
-                        let stockText = '';
-                        let stockClass = '';
-                        if (stock === -1) {
-                            stockText = 'SẮP RA MẮT';
-                            stockClass = 'status-coming-soon font-semibold';
-                        } else if (stock === -2) {
+                    // For physical books - apply status priority logic
+                    const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
+                    
+                    let stockText = '';
+                    let badgeClass = '';
+                    let dotClass = '';
+                    
+                    // Priority 1: Check books.status first
+                    switch (bookStatus) {
+                        case 'Ngừng Kinh Doanh':
                             stockText = 'NGƯNG KINH DOANH';
-                            stockClass = 'status-discontinued font-semibold';
-                        } else if (stock === 0) {
-                            stockText = 'HẾT HÀNG';
-                            stockClass = 'status-out-of-stock font-semibold';
-                        } else {
-                            stockText = 'CÒN HÀNG';
-                            stockClass = 'status-in-stock font-semibold';
-                        }
-                        bookStockElement.textContent = stockText;
-                        bookStockElement.className = stockClass;
+                            badgeClass = 'bg-gray-100 text-gray-700 border-gray-300';
+                            dotClass = 'bg-gray-500';
+                            break;
+                        case 'Sắp Ra Mắt':
+                            stockText = 'SẮP RA MẮT';
+                            badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                            dotClass = 'bg-yellow-500';
+                            break;
+                        case 'Hết Hàng Tồn Kho':
+                            stockText = 'HẾT HÀNG TỒN KHO';
+                            badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                            dotClass = 'bg-red-500';
+                            break;
+                        case 'Còn Hàng':
+                        default:
+                            // Priority 2: Only when status = 'Còn Hàng', check stock levels
+                            if (stock == 0) {
+                                stockText = 'HẾT HÀNG (Stock)';
+                                badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                dotClass = 'bg-red-500';
+                            } else if (stock >= 1 && stock <= 9) {
+                                stockText = 'SẮP HẾT HÀNG';
+                                badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                                dotClass = 'bg-yellow-500';
+                            } else if (stock >= 10) {
+                                stockText = 'CÒN HÀNG';
+                                badgeClass = 'bg-green-50 text-green-700 border-green-200';
+                                dotClass = 'bg-green-500';
+                            } else {
+                                stockText = 'HẾT HÀNG';
+                                badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                dotClass = 'bg-red-500';
+                            }
+                            break;
                     }
+                    
+                    // Update elements
+                    if (stockTextElement) {
+                        stockTextElement.textContent = stockText;
+                    }
+                    if (stockBadgeElement) {
+                        stockBadgeElement.className = 'inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider ' + badgeClass + ' whitespace-nowrap w-fit';
+                    }
+                    if (stockDotElement) {
+                        stockDotElement.className = 'w-2 h-2 rounded-full mr-2 ' + dotClass + ' inline-block flex-shrink-0';
+                    }
+                    
                     if (stockQuantityDisplay) {
-                        if (stock > 0) {
+                        if (stock > 0 && bookStatus === 'Còn Hàng') {
                             // Ensure the productQuantity span exists and update it
                             let productQuantitySpan = document.getElementById('productQuantity');
                             if (!productQuantitySpan) {
@@ -1899,11 +1992,7 @@
                     if (refreshedProductQuantityElement) {
                         refreshedProductQuantityElement.textContent = stock > 0 ? stock : 0;
                     }
-                    // Update status indicator
-                    const statusIndicator = bookStockElement?.parentElement?.querySelector('.w-3.h-3.rounded-full');
-                    if (statusIndicator) {
-                        statusIndicator.className = `w-3 h-3 rounded-full ${stock > 0 ? 'bg-green-500' : 'bg-red-500'}`;
-                    }
+                    
                     // Show quantity section for physical books
                     const quantitySection = document.querySelector('.quantity-section');
                     if (quantitySection) {
@@ -2073,7 +2162,23 @@
                         }
                     });
 
-                    // Validate stock (only for physical books)
+                    // Validate based on book status (for both ebooks and physical books)
+                    const bookPriceElement = document.getElementById('bookPrice');
+                    const bookStatus = bookPriceElement?.dataset.bookStatus || 'Còn Hàng';
+                    
+                    // Priority 1: Check books.status first (applies to both ebooks and physical books)
+                    if (bookStatus === 'Ngừng Kinh Doanh' || bookStatus === 'Sắp Ra Mắt' || bookStatus === 'Hết Hàng Tồn Kho') {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Sản phẩm này hiện không có sẵn để đặt hàng!');
+                        } else {
+                            alert('Sản phẩm này hiện không có sẵn để đặt hàng!');
+                        }
+                        addToCartBtn.disabled = false;
+                        addToCartBtn.textContent = originalText;
+                        return;
+                    }
+
+                    // Additional stock validation for physical books only
                     if (!isEbook) {
                         // Get stock from format select instead of DOM element for reliability
                         const formatSelect = document.getElementById('bookFormatSelect');
@@ -2083,11 +2188,12 @@
                             stock = parseInt(formatSelect.selectedOptions[0].dataset.stock) || 0;
                         }
 
-                        if (stock <= 0 || stock === -1 || stock === -2) {
+                        // Priority 2: Only when status = 'Còn Hàng', check stock levels for physical books
+                        if (bookStatus === 'Còn Hàng' && stock <= 0) {
                             if (typeof toastr !== 'undefined') {
-                                toastr.error('Sản phẩm này hiện không có sẵn để đặt hàng!');
+                                toastr.error('Sản phẩm này hiện hết hàng!');
                             } else {
-                                alert('Sản phẩm này hiện không có sẵn để đặt hàng!');
+                                alert('Sản phẩm này hiện hết hàng!');
                             }
                             addToCartBtn.disabled = false;
                             addToCartBtn.textContent = originalText;
