@@ -182,6 +182,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/store', [\App\Http\Controllers\OrderController::class, 'store'])->name('store');
         Route::post('/apply-voucher', [\App\Http\Controllers\OrderController::class, 'applyVoucher'])->name('apply-voucher');
     });
+    
+    // Preorder routes
+    Route::post('/preorder', [\App\Http\Controllers\OrderController::class, 'storePreorder'])->name('preorder.store');
 });
 
 //------------------------------------------------------
