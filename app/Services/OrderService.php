@@ -920,4 +920,27 @@ class OrderService
             'is_wallet_payment' => $isWalletPayment
         ];
     }
+
+    /**
+     * Cập nhật trạng thái đơn hàng ebook thành 'Thành công' khi thanh toán thành công
+     */
+    public function updateEbookOrderStatusOnPaymentSuccess(Order $order)
+    {
+        // Kiểm tra nếu đơn hàng là ebook và đã thanh toán
+        if ($order->delivery_method === 'ebook') {
+            $paymentStatus = PaymentStatus::where('name', 'Đã Thanh Toán')->first();
+            $successStatus = OrderStatus::where('name', 'Thành công')->first();
+            
+            if ($paymentStatus && $successStatus && $order->payment_status_id == $paymentStatus->id) {
+                $order->update([
+                    'order_status_id' => $successStatus->id
+                ]);
+                
+                Log::info('Ebook order status updated to success', [
+                    'order_id' => $order->id,
+                    'order_code' => $order->order_code
+                ]);
+            }
+        }
+    }
 }

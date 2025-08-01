@@ -155,12 +155,64 @@
                                     </div>
                                     <div class="flex justify-between">
                                         <span class="text-gray-600 uppercase tracking-wide">Trạng thái thanh toán:</span>
-                                        <span class="font-bold text-black">{{ $order->paymentStatus->name ?? 'Chưa thanh toán' }}</span>
+                                        @if($order->refundRequests->isNotEmpty())
+                                            @php $latestRefund = $order->refundRequests->sortByDesc('created_at')->first(); @endphp
+                                            <span class="font-bold 
+                                                @if($latestRefund->status === 'pending') text-yellow-600
+                                                @elseif($latestRefund->status === 'processing') text-blue-600
+                                                @elseif($latestRefund->status === 'completed') text-green-600
+                                                @elseif($latestRefund->status === 'rejected') text-red-600
+                                                @else text-black
+                                                @endif">
+                                                @if($latestRefund->status === 'pending') ĐANG CHỜ HOÀN TIỀN
+                                                @elseif($latestRefund->status === 'processing') ĐANG XỬ LÝ HOÀN TIỀN
+                                                @elseif($latestRefund->status === 'completed') ĐÃ HOÀN TIỀN
+                                                @elseif($latestRefund->status === 'rejected') TỪ CHỐI HOÀN TIỀN
+                                                @endif
+                                            </span>
+                                        @else
+                                            <span class="font-bold text-black">{{ $order->paymentStatus->name ?? 'Chưa thanh toán' }}</span>
+                                        @endif
                                     </div>
                                     <div class="flex justify-between">
                                         <span class="text-gray-600 uppercase tracking-wide">Phí vận chuyển:</span>
                                         <span class="font-bold text-black">{{ number_format($order->shipping_fee ?? 0) }}đ</span>
                                     </div>
+                                    
+                                    @if($order->refundRequests->isNotEmpty())
+                                        @php $latestRefund = $order->refundRequests->sortByDesc('created_at')->first(); @endphp
+                                        <div class="mt-4 p-3 border-l-4 
+                                            @if($latestRefund->status === 'pending') border-yellow-500 bg-yellow-50
+                                            @elseif($latestRefund->status === 'processing') border-blue-500 bg-blue-50
+                                            @elseif($latestRefund->status === 'completed') border-green-500 bg-green-50
+                                            @elseif($latestRefund->status === 'rejected') border-red-500 bg-red-50
+                                            @endif">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <div class="w-1 h-4 
+                                                    @if($latestRefund->status === 'pending') bg-yellow-500
+                                                    @elseif($latestRefund->status === 'processing') bg-blue-500
+                                                    @elseif($latestRefund->status === 'completed') bg-green-500
+                                                    @elseif($latestRefund->status === 'rejected') bg-red-500
+                                                    @endif"></div>
+                                                <h5 class="font-bold text-xs uppercase tracking-wide 
+                                                    @if($latestRefund->status === 'pending') text-yellow-800
+                                                    @elseif($latestRefund->status === 'processing') text-blue-800
+                                                    @elseif($latestRefund->status === 'completed') text-green-800
+                                                    @elseif($latestRefund->status === 'rejected') text-red-800
+                                                    @endif">YÊU CẦU HOÀN TIỀN</h5>
+                                            </div>
+                                            <div class="space-y-1 text-xs">
+                                                <p><span class="font-bold">Số tiền:</span> {{ number_format($latestRefund->amount, 0, ',', '.') }}đ</p>
+                                                <p><span class="font-bold">Ngày yêu cầu:</span> {{ $latestRefund->created_at->format('d/m/Y H:i') }}</p>
+                                                @if($latestRefund->processed_at)
+                                                    <p><span class="font-bold">Ngày xử lý:</span> {{ $latestRefund->processed_at->format('d/m/Y H:i') }}</p>
+                                                @endif
+                                                @if($latestRefund->admin_note)
+                                                    <p><span class="font-bold">Ghi chú:</span> {{ $latestRefund->admin_note }}</p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
 

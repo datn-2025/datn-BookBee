@@ -77,7 +77,7 @@
                         @if($item->book->authors->isNotEmpty())
                             <p>Tác giả: {{ $item->book->authors->first()->name }}</p>
                         @endif
-                        <a href="{{ route('ebook.download', $item->bookFormat->id) }}" class="button" target="_blank">
+                        <a href="{{ route('ebook.download', $item->bookFormat->id) }}?order_id={{ $order->id }}" class="button" target="_blank">
                             Tải Ebook
                         </a>
                     </div>
@@ -93,7 +93,7 @@
                             @if($item->book->authors->isNotEmpty())
                                 <p>Tác giả: {{ $item->book->authors->first()->name }}</p>
                             @endif
-                            <a href="{{ route('ebook.download', $ebookFormat->id) }}" class="button" target="_blank">
+                            <a href="{{ route('ebook.download', $ebookFormat->id) }}?order_id={{ $order->id }}" class="button" target="_blank">
                                 Tải Ebook
                             </a>
                         </div>

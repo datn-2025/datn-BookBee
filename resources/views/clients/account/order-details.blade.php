@@ -431,7 +431,7 @@
                         <div class="space-y-4">
                             <div class="flex justify-between">
                                 <span class="text-gray-600 uppercase tracking-wide">Tạm tính</span>
-                                <span class="font-bold text-black">{{ number_format($order->total_amount) }}đ</span>
+                                <span class="font-bold text-black">{{ number_format($order->total_amount - $order->shipping_fee + $order->discount_amount) }}đ</span>
                             </div>
                             @if($order->voucher)
                                 @php
@@ -458,13 +458,9 @@
                                 <span class="text-gray-600 uppercase tracking-wide">Phí vận chuyển</span>
                                 <span class="font-bold text-black">{{ number_format($order->shipping_fee) }}đ</span>
                             </div>
-                            @php
-                                $discountTotal = isset($discountAmount) ? $discountAmount : $order->discount_amount;
-                                $total = $order->total_amount - $discountTotal + $order->shipping_fee;
-                            @endphp
                             <div class="border-t-2 border-black pt-4 flex justify-between">
                                 <span class="text-lg font-black text-black uppercase tracking-wide">Tổng cộng</span>
-                                <span class="text-2xl font-black text-black">{{ number_format($total) }}đ</span>
+                                <span class="text-2xl font-black text-black">{{ number_format($order->total_amount) }}đ</span>
                             </div>
                         </div>
                     </div>
@@ -473,6 +469,13 @@
                 <!-- Ebook Download Section -->
                 @if($order->paymentStatus->name === 'Đã Thanh Toán')
                     @php
+                        // Kiểm tra đơn có ít nhất một ebook không
+                        $hasEbook = $order->orderItems->contains(function ($item) {
+                            return !$item->is_combo &&
+                                $item->bookFormat &&
+                                $item->bookFormat->format_name === 'Ebook';
+                        });
+
                         $ebookItems = $order->orderItems->filter(function($item) {
                             // Trường hợp 1: Mua trực tiếp ebook
                             if (!$item->is_combo && $item->bookFormat && $item->bookFormat->format_name === 'Ebook') {
@@ -484,9 +487,10 @@
                             }
                             return false;
                         });
+                        // dd($ebookItems);    
                     @endphp
                     
-                    @if($ebookItems->isNotEmpty())
+                    @if($ebookItems->isNotEmpty() && $order->paymentStatus->name === 'Đã Thanh Toán' && $hasEbook)
                         <div class="mt-8 pt-8 border-t-2 border-gray-200">
                             <div class="flex items-center gap-3 mb-6">
                                 <div class="w-1 h-5 bg-green-600"></div>
@@ -507,28 +511,38 @@
                                                     @endif
                                                 </div>
                                                 <div class="flex gap-2">
-                                                    <a href="{{ route('ebook.view', $item->bookFormat->id) }}" 
-                                                       class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wide transition-all duration-300"
-                                                       target="_blank">
-                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                                        </svg>
-                                                        Đọc Online
-                                                    </a>
-                                                    <a href="{{ route('ebook.download', $item->bookFormat->id) }}" 
-                                                       class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                                        </svg>
-                                                        Tải Xuống
-                                                    </a>
+                                                    @if(in_array($order->paymentStatus->name, ['Đang Hoàn Tiền', 'Đã Hoàn Tiền']))
+                                                        <span class="inline-flex items-center gap-2 px-4 py-2 bg-gray-400 text-white font-bold uppercase tracking-wide cursor-not-allowed">
+                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
+                                                            </svg>
+                                                            Không khả dụng
+                                                        </span>
+                                                    @else
+                                                        <a href="{{ route('ebook.view', $item->bookFormat->id) }}" 
+                                                           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wide transition-all duration-300"
+                                                           target="_blank">
+                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                            </svg>
+                                                            Đọc Online
+                                                        </a>
+                                                        <a href="{{ route('ebook.download', $item->bookFormat->id) }}?order_id={{ $order->id }}" 
+                                                           class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wide transition-all duration-300">
+                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                            </svg>
+                                                            Tải Xuống
+                                                        </a>
+                                                    @endif
                                                 </div>
                                             </div>
                                         @elseif(!$item->is_combo && $item->book && $item->book->formats->contains('format_name', 'Ebook'))
                                             {{-- Trường hợp 2: Mua sách vật lý có ebook kèm theo --}}
                                             @php
                                                 $ebookFormat = $item->book->formats->where('format_name', 'Ebook')->first();
+                                                // dd($ebookFormat);
                                             @endphp
                                             @if($ebookFormat && $ebookFormat->file_url)
                                                 <div class="flex items-center justify-between p-4 bg-white border border-green-300 rounded">
@@ -540,22 +554,31 @@
                                                         @endif
                                                     </div>
                                                     <div class="flex gap-2">
-                                                        <a href="{{ route('ebook.view', $ebookFormat->id) }}" 
-                                                           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wide transition-all duration-300"
-                                                           target="_blank">
-                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                                            </svg>
-                                                            Đọc Online
-                                                        </a>
-                                                        <a href="{{ route('ebook.download', $ebookFormat->id) }}" 
-                                                           class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                                            </svg>
-                                                            Tải Xuống
-                                                        </a>
+                                                        @if(in_array($order->paymentStatus->name, ['Đang Hoàn Tiền', 'Đã Hoàn Tiền']))
+                                                            <span class="inline-flex items-center gap-2 px-4 py-2 bg-gray-400 text-white font-bold uppercase tracking-wide cursor-not-allowed">
+                                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
+                                                                </svg>
+                                                                Không khả dụng
+                                                            </span>
+                                                        @else
+                                                            <a href="{{ route('ebook.view', $ebookFormat->id) }}" 
+                                                               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wide transition-all duration-300"
+                                                               target="_blank">
+                                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                                </svg>
+                                                                Đọc Online
+                                                            </a>
+                                                            <a href="{{ route('ebook.download', $ebookFormat->id) }}?order_id={{ $order->id }}" 
+                                                               class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wide transition-all duration-300">
+                                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                                </svg>
+                                                                Tải Xuống
+                                                            </a>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             @endif
@@ -571,6 +594,75 @@
                                         <strong>Lưu ý:</strong> Bạn có thể đọc ebook online hoặc tải xuống để đọc offline. File tải xuống sẽ có định dạng PDF.
                                     </p>
                                 </div>
+
+                                {{-- Hiển thị thông báo trạng thái hoàn tiền cho ebook (dựa trên refund_request) --}}
+                                @if($latestRefundRequest && $ebookItems->isNotEmpty())
+                                    @if($latestRefundRequest->status === 'pending')
+                                        <div class="mt-4 p-4 bg-yellow-50 border-2 border-yellow-200 rounded">
+                                            <div class="flex items-center gap-3">
+                                                <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                                <div>
+                                                    <h3 class="text-base font-bold text-yellow-800 uppercase tracking-wide">
+                                                        YÊU CẦU HOÀN TIỀN EBOOK ĐANG CHỜ XỬ LÝ
+                                                    </h3>
+                                                    <p class="text-sm text-yellow-700 mt-1">
+                                                        Yêu cầu hoàn tiền ebook của bạn đã được gửi và đang chờ admin xử lý.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @elseif($latestRefundRequest->status === 'processing')
+                                        <div class="mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded">
+                                            <div class="flex items-center gap-3">
+                                                <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                                </svg>
+                                                <div>
+                                                    <h3 class="text-base font-bold text-blue-800 uppercase tracking-wide">
+                                                        EBOOK ĐANG ĐƯỢC HOÀN TIỀN
+                                                    </h3>
+                                                    <p class="text-sm text-blue-700 mt-1">
+                                                        Yêu cầu hoàn tiền ebook của bạn đang được admin xử lý. Trong thời gian này, bạn không thể tải xuống hoặc đọc ebook.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @elseif($latestRefundRequest->status === 'completed')
+                                        <div class="mt-4 p-4 bg-red-50 border-2 border-red-200 rounded">
+                                            <div class="flex items-center gap-3">
+                                                <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
+                                                </svg>
+                                                <div>
+                                                    <h3 class="text-base font-bold text-red-800 uppercase tracking-wide">
+                                                        EBOOK ĐÃ ĐƯỢC HOÀN TIỀN
+                                                    </h3>
+                                                    <p class="text-sm text-red-700 mt-1">
+                                                        Ebook đã được hoàn tiền thành công. Bạn không còn quyền truy cập vào nội dung này.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @elseif($latestRefundRequest->status === 'rejected')
+                                        <div class="mt-4 p-4 bg-gray-50 border-2 border-gray-200 rounded">
+                                            <div class="flex items-center gap-3">
+                                                <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                </svg>
+                                                <div>
+                                                    <h3 class="text-base font-bold text-gray-800 uppercase tracking-wide">
+                                                        YÊU CẦU HOÀN TIỀN EBOOK BỊ TỪ CHỐI
+                                                    </h3>
+                                                    <p class="text-sm text-gray-700 mt-1">
+                                                        Yêu cầu hoàn tiền ebook của bạn đã bị từ chối. Bạn vẫn có thể tiếp tục sử dụng ebook.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endif
                             </div>
                         </div>
                     @endif
@@ -578,22 +670,48 @@
 
                 <!-- Order Actions -->
                 <div class="mt-8 pt-8 border-t-2 border-gray-200">
-                    @if(\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name))
+                    @php
+                        $hasEbook = $order->orderItems()->whereHas('bookFormat', function($query) {
+                            $query->where('format_name', 'Ebook');
+                        })->exists();
+                        $canRefundEbook = false;
+                        if ($hasEbook) {
+                            $ebookRefundService = app(\App\Services\EbookRefundService::class);
+                            $canRefundResult = $ebookRefundService->canRefundEbook($order, auth()->user());
+                            $canRefundEbook = $canRefundResult['can_refund'];
+                        }
+                        // dd($hasEbook);
+                    @endphp
+                    
+                    @if(\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name) || $canRefundEbook)
                         <div class="flex items-center gap-3 mb-6">
                             <div class="w-1 h-5 bg-black"></div>
                             <h4 class="text-base font-bold uppercase tracking-wide text-black">THAO TÁC ĐƠN HÀNG</h4>
                         </div>
                         
                         <div class="space-y-4">
-                            <!-- Cancel Button -->
-                            <button type="button" 
-                                    onclick="toggleCancelForm()"
-                                    class="inline-flex items-center gap-3 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                HỦY ĐƠN HÀNG
-                            </button>
+                            @if($canRefundEbook)
+                                <!-- Ebook Refund Button -->
+                                <a href="{{ route('ebook-refund.show', $order->id) }}"
+                                   class="inline-flex items-center gap-3 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase tracking-wide transition-all duration-300">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                    </svg>
+                                    YÊU CẦU HOÀN TIỀN EBOOK
+                                </a>
+                            @endif
+                            
+                            @if(\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name))
+                                <!-- Cancel Button -->
+                                <button type="button" 
+                                        onclick="toggleCancelForm()"
+                                        class="inline-flex items-center gap-3 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-wide transition-all duration-300">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    HỦY ĐƠN HÀNG
+                                </button>
+                            @endif
                             
                             <!-- Cancel Form -->
                             <div id="cancelForm" class="cancel-form bg-red-50 border-2 border-red-200 p-6">
@@ -628,7 +746,8 @@
                         </div>
                     @endif
 
-                    @if($order->orderStatus->name === 'Thành công' && $order->paymentStatus->name === 'Đã Thanh Toán')
+                    {{-- Hiển thị phần yêu cầu hoàn tiền chỉ cho đơn hàng vật lý và hỗn hợp (không phải ebook thuần túy) --}}
+                    @if($order->orderStatus->name === 'Thành công' && $order->paymentStatus->name === 'Đã Thanh Toán' && in_array($order->delivery_method, ['delivery', 'pickup', 'mixed']))
                         @php
                             $hasRefundRequest = $order->refundRequests()->exists();
                         @endphp
@@ -659,70 +778,133 @@
                         </div>
                     @endif
 
-                    {{-- Hiển thị thông báo khi đơn hàng đang hoàn tiền hoặc đã hoàn tiền --}}
-                    @if($order->orderStatus->name === 'Thành công' && in_array($order->paymentStatus->name, ['Đang Hoàn Tiền']))
+                    {{-- Hiển thị thông báo khi có yêu cầu hoàn tiền (dựa trên trạng thái từ bảng refund_request) --}}
+                    @php
+                        $latestRefundRequest = $order->refundRequests->sortByDesc('created_at')->first();
+                    @endphp
+                    
+                    @if($latestRefundRequest && in_array($order->delivery_method, ['delivery', 'pickup', 'mixed']))
                         <div class="flex items-center gap-3 mb-6">
                             <div class="w-1 h-5 bg-black"></div>
                             <h4 class="text-base font-bold uppercase tracking-wide text-black">TRẠNG THÁI HOÀN TIỀN</h4>
                         </div>
                         
-                        <div class="bg-yellow-50 border-2 border-yellow-200 p-6">
-                            <div class="flex items-center gap-3">
-                                <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <div>
-                                    <h3 class="text-base font-bold text-yellow-800 uppercase tracking-wide">
-                                        ĐANG XỬ LÝ HOÀN TIỀN
-                                    </h3>
-                                    <p class="text-sm text-yellow-700 mt-1">
-                                        Yêu cầu hoàn tiền của bạn đang được xử lý. Chúng tôi sẽ thông báo khi có kết quả.
-                                    </p>
+                        @if($latestRefundRequest->status === 'pending')
+                            <div class="bg-yellow-50 border-2 border-yellow-200 p-6">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <div>
+                                        <h3 class="text-base font-bold text-yellow-800 uppercase tracking-wide">
+                                            ĐANG CHỜ XỬ LÝ HOÀN TIỀN
+                                        </h3>
+                                        <p class="text-sm text-yellow-700 mt-1">
+                                            Yêu cầu hoàn tiền của bạn đã được gửi và đang chờ admin xử lý.
+                                        </p>
+                                        <p class="text-xs text-yellow-600 mt-2">
+                                            <strong>Ngày gửi:</strong> {{ $latestRefundRequest->created_at->format('d/m/Y H:i') }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                       class="inline-flex items-center gap-3 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        XEM CHI TIẾT HOÀN TIỀN
+                                    </a>
                                 </div>
                             </div>
-                            <div class="mt-4">
-                                <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                   class="inline-flex items-center gap-3 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        @elseif($latestRefundRequest->status === 'processing')
+                            <div class="bg-blue-50 border-2 border-blue-200 p-6">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                                     </svg>
-                                    XEM CHI TIẾT HOÀN TIỀN
-                                </a>
-                            </div>
-                        </div>
-                    @endif
-
-                    {{-- Hiển thị thông báo khi đơn hàng đã hoàn tiền thành công --}}
-                    @if($order->orderStatus->name === 'Thành công' && $order->paymentStatus->name === 'Đã Hoàn Tiền')
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-1 h-5 bg-black"></div>
-                            <h4 class="text-base font-bold uppercase tracking-wide text-black">TRẠNG THÁI HOÀN TIỀN</h4>
-                        </div>
-                        
-                        <div class="bg-green-50 border-2 border-green-200 p-6">
-                            <div class="flex items-center gap-3">
-                                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <div>
-                                    <h3 class="text-base font-bold text-green-800 uppercase tracking-wide">
-                                        ĐÃ HOÀN TIỀN THÀNH CÔNG
-                                    </h3>
-                                    <p class="text-sm text-green-700 mt-1">
-                                        Tiền đã được hoàn về tài khoản của bạn thành công.
-                                    </p>
+                                    <div>
+                                        <h3 class="text-base font-bold text-blue-800 uppercase tracking-wide">
+                                            ĐANG XỬ LÝ HOÀN TIỀN
+                                        </h3>
+                                        <p class="text-sm text-blue-700 mt-1">
+                                            Yêu cầu hoàn tiền của bạn đang được admin xử lý. Vui lòng chờ thông báo kết quả.
+                                        </p>
+                                        <p class="text-xs text-blue-600 mt-2">
+                                            <strong>Số tiền hoàn:</strong> {{ number_format($latestRefundRequest->amount, 0, ',', '.') }}đ
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                       class="inline-flex items-center gap-3 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        XEM CHI TIẾT HOÀN TIỀN
+                                    </a>
                                 </div>
                             </div>
-                            <div class="mt-4">
-                                <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                   class="inline-flex items-center gap-3 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        @elseif($latestRefundRequest->status === 'completed')
+                            <div class="bg-green-50 border-2 border-green-200 p-6">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
-                                    XEM CHI TIẾT HOÀN TIỀN
-                                </a>
+                                    <div>
+                                        <h3 class="text-base font-bold text-green-800 uppercase tracking-wide">
+                                            ĐÃ HOÀN TIỀN THÀNH CÔNG
+                                        </h3>
+                                        <p class="text-sm text-green-700 mt-1">
+                                            Tiền đã được hoàn về tài khoản của bạn thành công.
+                                        </p>
+                                        <p class="text-xs text-green-600 mt-2">
+                                            <strong>Số tiền đã hoàn:</strong> {{ number_format($latestRefundRequest->amount, 0, ',', '.') }}đ<br>
+                                            <strong>Ngày hoàn tiền:</strong> {{ $latestRefundRequest->processed_at ? $latestRefundRequest->processed_at->format('d/m/Y H:i') : 'N/A' }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                       class="inline-flex items-center gap-3 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        XEM CHI TIẾT HOÀN TIỀN
+                                    </a>
+                                </div>
                             </div>
-                        </div>
+                        @elseif($latestRefundRequest->status === 'rejected')
+                            <div class="bg-red-50 border-2 border-red-200 p-6">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                    <div>
+                                        <h3 class="text-base font-bold text-red-800 uppercase tracking-wide">
+                                            YÊU CẦU HOÀN TIỀN BỊ TỪ CHỐI
+                                        </h3>
+                                        <p class="text-sm text-red-700 mt-1">
+                                            Yêu cầu hoàn tiền của bạn đã bị từ chối.
+                                        </p>
+                                        @if($latestRefundRequest->admin_note)
+                                            <p class="text-xs text-red-600 mt-2">
+                                                <strong>Lý do:</strong> {{ $latestRefundRequest->admin_note }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                       class="inline-flex items-center gap-3 px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        XEM CHI TIẾT
+                                    </a>
+                                </div>
+                            </div>
+                        @endif
                     @endif
                 </div>
             </div>
