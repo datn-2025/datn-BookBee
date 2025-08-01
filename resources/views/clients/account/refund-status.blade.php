@@ -62,7 +62,7 @@
                 <div class="grid grid-cols-2 gap-6">
                     <div class="space-y-1">
                         <p class="text-xs font-bold uppercase tracking-wider text-gray-600">MÃ ĐƠN HÀNG</p>
-                        <p class="text-sm font-medium text-black">{{ $refund->order->code }}</p>
+                        <p class="text-sm font-medium text-black">{{ $refund->order->order_code }}</p>
                     </div>
                     <div class="space-y-1">
                         <p class="text-xs font-bold uppercase tracking-wider text-gray-600">SỐ TIỀN HOÀN</p>
@@ -127,21 +127,6 @@
                     <p class="text-sm text-gray-600 mt-1">{{ $refund->admin_note }}</p>
                 </div>
                 @endif
-                
-                    @if($refund->reason)
-                    <div class="col-span-2 space-y-1">
-                        <p class="text-xs font-bold uppercase tracking-wider text-gray-600">LÝ DO</p>
-                        <p class="text-sm font-medium text-black">{{ $refund->reason }}</p>
-                    </div>
-                    @endif
-                    @if($refund->admin_note)
-                    <div class="col-span-2 space-y-1">
-                        <p class="text-xs font-bold uppercase tracking-wider text-gray-600">GHI CHÚ TỪ ADMIN</p>
-                        <div class="bg-blue-50 border-l-4 border-blue-600 p-3">
-                            <p class="text-sm font-medium text-blue-800">{{ $refund->admin_note }}</p>
-                        </div>
-                    </div>
-                    @endif
                     @if($refund->processed_at)
                     <div class="col-span-2 space-y-1">
                         <p class="text-xs font-bold uppercase tracking-wider text-gray-600">NGÀY XỬ LÝ</p>

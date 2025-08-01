@@ -365,11 +365,12 @@ class CartController extends Controller
             }
 
             // Check: Giá tiền không được âm hoặc bằng 0
-            if ($finalPrice <= 0) {
-                return response()->json([
-                    'error' => 'Giá sản phẩm không hợp lệ. Vui lòng liên hệ quản trị viên.'
-                ], 422, ['Content-Type' => 'application/json']);
-            }
+            // dd($finalPrice);
+            // if ($finalPrice <= 0) {
+            //     return response()->json([
+            //         'error' => 'Giá sản phẩm không hợp lệ. Vui lòng liên hệ quản trị viên.'
+            //     ], 422, ['Content-Type' => 'application/json']);
+            // }
             
             // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa (bao gồm cả thuộc tính)
             $existingCart = DB::table('carts')

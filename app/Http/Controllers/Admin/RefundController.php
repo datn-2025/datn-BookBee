@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\RefundRequest;
 use App\Models\Order;
+use App\Models\OrderStatus;
+use App\Models\PaymentStatus;
 use App\Models\User;
 use App\Services\PaymentRefundService;
 use Illuminate\Http\Request;
@@ -111,7 +113,7 @@ class RefundController extends Controller
     {
         // dd($refund->refund_method);
         $order = $refund->order;
-        
+        // dd($order);
         // Update refund request status
         $refund->update([
             'status' => 'processing',
@@ -125,9 +127,14 @@ class RefundController extends Controller
         } elseif ($refund->refund_method === 'vnpay') {
             $this->processVnpayRefund($order, $refund->amount, $refund);
         }
-
+        // dd(1);
         // Update refund status to completed
         $refund->update(['status' => 'completed']);
+        $refundPaymentStatus = PaymentStatus::where('name', 'Đã Hoàn Tiền')->first();
+        $refundOrderStatus = OrderStatus::where('name', 'Đã Hoàn Tiền')->first();
+        if ($refundPaymentStatus || $refundOrderStatus) {
+            $order->update(['payment_status_id' => $refundPaymentStatus->id, 'order_status_id' => $refundOrderStatus->id]);
+        }
 
         // Log the action
         Log::info('Refund approved and processed', [
