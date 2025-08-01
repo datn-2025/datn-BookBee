@@ -31,23 +31,22 @@ class GoogleController extends Controller
             $finduser = User::where('google_id', $user->id)->first();
 
             if($finduser){
-
                 Auth::login($finduser);
-                \toastr()->success('Đăng nhập thành công!');
+                	Toastr()->success('Đăng nhập thành công!');
                 return redirect()->intended('/');
-
             }else{
                 $role = Role::where('name', 'user')->first();
-                $newUser = User::updateOrCreate(['email' => $user->email],[
-                    'name' => $user->name,
-                    'google_id'=> $user->id,
-                    'password' => encrypt('123456dummy')
-                ]);
-                if ($role) {
-                    $newUser->roles()->attach($role->getKey());
-                }
+                $newUser = User::updateOrCreate(
+                    ['email' => $user->email],
+                    [
+                        'name' => $user->name,
+                        'google_id'=> $user->id,
+                        'password' => encrypt('123456dummy'),
+                        'role_id' => $role ? $role->getKey() : null,
+                    ]
+                );
                 Auth::login($newUser);
-                \toastr()->success('Đăng nhập thành công!');
+                	oastr()->success('Đăng nhập thành công!');
                 return redirect()->intended('/');
             }
 

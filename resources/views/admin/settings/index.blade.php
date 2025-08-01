@@ -32,7 +32,7 @@
                     </button>
                 </div>
             @endif
-            @permission('setting.update')
+            @permission('setting.edit')
             <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="row">

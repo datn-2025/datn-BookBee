@@ -78,7 +78,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         let finalPrice = totalBase;
         if (discount > 0) {
-            finalPrice = totalBase - (totalBase * (discount / 100));
+            // Discount giờ là số tiền VNĐ trực tiếp, không phải phần trăm
+            finalPrice = totalBase - discount;
+            // Đảm bảo giá không âm
+            finalPrice = Math.max(0, finalPrice);
         }
 
         priceDisplay.textContent = `${finalPrice.toLocaleString('vi-VN', { minimumFractionDigits: 0 })}₫`;
@@ -96,7 +99,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (discountText && discountPercent) {
             if (discount > 0) {
                 discountText.style.display = 'inline';
-                discountPercent.textContent = discount;
+                // Hiển thị discount như số tiền VNĐ với định dạng
+                discountPercent.textContent = discount.toLocaleString('vi-VN', { minimumFractionDigits: 0 }) + '₫';
             } else {
                 discountText.style.display = 'none';
             }

@@ -15,8 +15,8 @@ class RUserSeeder extends Seeder
     {
         $adminRole = Role::where('name', 'Admin')->first();
         $userRole = Role::where('name', 'User')->first();
-
-        if (!$adminRole || !$userRole) {
+        $staffRole = Role::where('name', 'Staff')->first();
+        if (!$adminRole || !$userRole || !$staffRole) {
             $this->command->error('Vui lòng seed bảng roles trước khi seed users!');
             return;
         }
@@ -55,7 +55,8 @@ class RUserSeeder extends Seeder
             );
             $userModel = User::where('email', $admin['email'])->first();
             if ($userModel) {
-                $userModel->roles()->syncWithoutDetaching([$adminRole->id]);
+                $userModel->role_id = $adminRole->id;
+                $userModel->save();
             }
         }
 
@@ -79,6 +80,8 @@ class RUserSeeder extends Seeder
                 [
                     'id' => (string) Str::uuid(),
                     'name' => $user['name'],
+                    // Thêm role_id cho user thường
+                    'role_id' => $userRole->id,
                     'password' => Hash::make('password'),
                     'phone' => $user['phone'],
                     'status' => 'Hoạt Động',
@@ -88,7 +91,35 @@ class RUserSeeder extends Seeder
             );
             $userModel = User::where('email', $user['email'])->first();
             if ($userModel) {
-                $userModel->roles()->syncWithoutDetaching([$userRole->id]);
+                $userModel->role_id = $userRole->id;
+                $userModel->save();
+            }
+        }
+
+        // 3 Staff
+        $staffs = [
+            ['name' => 'Staff One', 'email' => 'staff1@example.com', 'phone' => '0100000001'],
+            ['name' => 'Staff Two', 'email' => 'staff2@example.com', 'phone' => '0100000002'],
+            ['name' => 'Staff Three', 'email' => 'staff3@example.com', 'phone' => '0100000003'],
+        ];
+
+        foreach ($staffs as $staff) {
+            $staffObj = User::updateOrInsert(
+                ['email' => $staff['email']],
+                [
+                    'id' => (string) Str::uuid(),
+                    'name' => $staff['name'],
+                    'password' => Hash::make('password'),
+                    'phone' => $staff['phone'],
+                    'status' => 'Hoạt Động',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+            $staffModel = User::where('email', $staff['email'])->first();
+            if ($staffModel) {
+                $staffModel->role_id = $staffRole->id;
+                $staffModel->save();
             }
         }
     }

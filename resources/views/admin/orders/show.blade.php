@@ -344,7 +344,7 @@
                             </div>
                         </div>
                         @endif
-                        @if($order->delivery_method !== 'mixed' && $order->isParentOrder())
+                        @if($order->delivery_method !== 'mixed' && !$order->isParentOrder())
                         <div class="mt-4">
                             <h5 class="text-muted mb-3">Chi tiết đơn hàng</h5>
                             <div class="table-responsive">
@@ -411,9 +411,9 @@
                                                     </td>
                                                     <td>
                                                         @if($item->bookFormat)
-                                                             <span class="badge format-badge">{{ $item->bookFormat->format_name }}</span>
+                                                             <span class="badge bg-primary">{{ $item->bookFormat->format_name }}</span>
                                                          @elseif($item->collection_id)
-                                                             <span class="badge format-badge combo">Combo</span>
+                                                             <span class="badge bg-primary combo">Combo</span>
                                                          @else
                                                              <span class="text-muted">N/A</span>
                                                          @endif

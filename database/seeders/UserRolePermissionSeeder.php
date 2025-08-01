@@ -16,7 +16,8 @@ class UserRolePermissionSeeder extends Seeder
         $role = Role::first();
         $permission = Permission::first();
         if ($user && $role) {
-            $user->roles()->syncWithoutDetaching([$role->id]);
+            $user->role_id = $role->id;
+            $user->save();
         }
         if ($user && $permission) {
             $user->permissions()->syncWithoutDetaching([$permission->id]);
