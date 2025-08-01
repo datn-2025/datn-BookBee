@@ -880,4 +880,49 @@ class OrderController extends Controller
             return redirect()->route('orders.checkout')->with('error', 'Có lỗi xảy ra trong quá trình xử lý thanh toán.');
         }
     }
+
+    /**
+     * Store a preorder
+     */
+    public function storePreorder(Request $request)
+    {
+        try {
+            // Validation
+            $validated = $request->validate([
+                'book_id' => 'required|exists:books,id',
+                'book_format_id' => 'required|exists:book_formats,id',
+                'quantity' => 'required|integer|min:1|max:5',
+                'customer_name' => 'required|string|max:255',
+                'phone' => 'required|string|max:20',
+                'email' => 'required|email|max:255',
+                'province_code' => 'required|string',
+                'district_code' => 'required|string',
+                'ward_code' => 'required|string',
+                'address' => 'required|string|max:500',
+                'payment_method_id' => 'required|exists:payment_methods,id',
+                'selected_attributes' => 'nullable|array',
+            ]);
+
+            // For now, just return success since this is a preorder (not immediate order)
+            // You can implement actual preorder logic here (save to preorders table, send email, etc.)
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Đặt trước sách thành công! Chúng tôi sẽ liên hệ với bạn khi sách có sẵn.'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Dữ liệu không hợp lệ.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Preorder error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Có lỗi xảy ra khi đặt trước sách.'
+            ], 500);
+        }
+    }
 }

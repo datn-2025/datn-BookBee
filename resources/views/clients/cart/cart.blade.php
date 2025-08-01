@@ -217,7 +217,10 @@
                                         <div>
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Đơn giá</span>
                                             <div class="text-lg font-bold text-black">
-                                                {{ number_format($item->price ?? 0) }}đ
+                                                @php
+                                                    $finalPrice = ($item->price ?? 0) + ($attributeExtraPrice ?? 0);
+                                                @endphp
+                                                {{ number_format($finalPrice) }}đ
                                             </div>
                                         </div>
                                         
@@ -250,7 +253,10 @@
                                         <div>
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Thành tiền</span>
                                             <div class="text-xl font-black text-black item-total">
-                                                {{ number_format(($item->price ?? 0) * $item->quantity) }}đ
+                                                @php
+                                                    $itemTotal = $finalPrice * $item->quantity;
+                                                @endphp
+                                                {{ number_format($itemTotal) }}đ
                                             </div>
                                         </div>
                                     </div>
@@ -329,9 +335,14 @@
                                         @php
                                             $attributeIds = json_decode($item->attribute_value_ids, true);
                                             $attributes = collect();
+                                            $attributeExtraPrice = 0;
                                             if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
                                                 $query = DB::table('attribute_values')
                                                     ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
+                                                    ->join('book_attribute_values', function($join) use ($item) {
+                                                        $join->on('attribute_values.id', '=', 'book_attribute_values.attribute_value_id')
+                                                             ->where('book_attribute_values.book_id', '=', $item->book_id);
+                                                    })
                                                     ->whereIn('attribute_values.id', $attributeIds);
                                                 
                                                 // Nếu là ebook, chỉ lấy thuộc tính ngôn ngữ
@@ -343,8 +354,14 @@
                                                     });
                                                 }
                                                 
-                                                $attributes = $query->select('attributes.name as attr_name', 'attribute_values.value as attr_value')
-                                                    ->get();
+                                                $attributes = $query->select(
+                                                    'attributes.name as attr_name', 
+                                                    'attribute_values.value as attr_value',
+                                                    'book_attribute_values.extra_price'
+                                                )->get();
+                                                
+                                                // Calculate total extra price from attributes
+                                                $attributeExtraPrice = $attributes->sum('extra_price');
                                             }
                                         @endphp
                                         @if($attributes->count() > 0)
@@ -397,7 +414,10 @@
                                         <div>
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Đơn giá</span>
                                             <div class="text-lg font-bold text-black">
-                                                {{ number_format($item->price ?? 0) }}đ
+                                                @php
+                                                    $finalPrice = ($item->price ?? 0) + ($attributeExtraPrice ?? 0);
+                                                @endphp
+                                                {{ number_format($finalPrice) }}đ
                                             </div>
                                         </div>
                                         
@@ -458,7 +478,10 @@
                                         <div>
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Thành tiền</span>
                                             <div class="text-xl font-black text-black item-total">
-                                                {{ number_format(($item->price ?? 0) * $item->quantity) }}đ
+                                                @php
+                                                    $itemTotal = $finalPrice * $item->quantity;
+                                                @endphp
+                                                {{ number_format($itemTotal) }}đ
                                             </div>
                                         </div>
                                     </div>

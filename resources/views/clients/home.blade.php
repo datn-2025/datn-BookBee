@@ -416,7 +416,7 @@
                                     
                                     @if ($discount > 0)
                                         <div class="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 text-xs font-bold uppercase">
-                                            -{{ $discount }}%
+                                            -{{ number_format($discount) }} đ
                                         </div>
                                     @endif
                                 </div>
@@ -449,7 +449,7 @@
         </div>
     </section>
 
-    <!-- SÁCH NỔI BẬT - ADIDAS STYLE -->
+    <!-- TẤT CẢ SÁCH - ADIDAS STYLE -->
     <section class="bg-gray-50 py-20">
         <div class="max-w-7xl mx-auto px-4">
             <!-- Header -->
@@ -457,29 +457,134 @@
                 <div class="flex items-center gap-4">
                     <div class="w-1 h-12 bg-black"></div>
                     <div>
-                        <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-black">SÁCH NỔI BẬT</h2>
+                        <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-black">TẤT CẢ SÁCH</h2>
+                        <div class="w-16 h-0.5 bg-black mt-2"></div>
+                    </div>
+                </div>
+                <a href="{{ route('books.index') }}" 
+                   class="bg-black text-white px-6 py-3 font-bold text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors">
+                    XEM THÊM
+                </a>
+            </div>
+
+            <!-- Books Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="allBooksGrid">
+                @foreach ($allBooks as $index => $book)
+                    @php
+                        $format = $book->formats->first();
+                        $price = $format->price ?? 0;
+                        $discount = $format->discount ?? 0;
+                        $finalPrice = $discount > 0 ? $price - $discount : $price;
+                        
+                        // Check if book has ebook format
+                        $hasEbook = $book->formats->contains(function($format) {
+                            return stripos($format->format_name, 'ebook') !== false;
+                        });
+                    @endphp
+                    <div onclick="window.location='{{ route('books.show', ['slug' => $book->slug]) }}'"
+                         class="book-item group bg-white border-2 border-gray-100 hover:border-black transition-all duration-300 cursor-pointer {{ $index >= 8 ? 'hidden' : '' }}">
+                        
+                        <!-- Image Container -->
+                        <div class="aspect-square bg-gray-50 overflow-hidden relative">
+                            <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
+                                 alt="{{ $book->title }}"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                            
+                            @if ($discount > 0)
+                                <div class="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 text-xs font-bold uppercase">
+                                    -{{ number_format($discount) }} đ
+                                </div>
+                            @endif
+                            
+                            @if ($hasEbook)
+                                <div class="absolute top-3 right-3 bg-blue-600 text-white px-2 py-1 text-xs font-bold uppercase">
+                                    EBOOK
+                                </div>
+                            @endif
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="p-4 space-y-2">
+                            <h3 class="font-bold text-black text-sm uppercase tracking-wide group-hover:opacity-70 transition-opacity">
+                                {{ Str::limit($book->title, 40) }}
+                            </h3>
+                            <p class="text-xs text-gray-500 uppercase tracking-wider">
+                                {{ $book->category->name ?? 'CHƯA CÓ DANH MỤC' }}
+                            </p>
+                            <div class="flex items-center justify-between pt-2">
+                                <div class="price-section">
+                                    @if ($discount > 0)
+                                        <span class="text-gray-400 line-through text-sm">{{ number_format($price, 0, ',', '.') }}₫</span>
+                                        <span class="text-black font-bold text-lg ml-2">{{ number_format($finalPrice, 0, ',', '.') }}₫</span>
+                                    @else
+                                        <span class="text-black font-bold text-lg">{{ number_format($price, 0, ',', '.') }}₫</span>
+                                    @endif
+                                </div>
+                                <div class="w-6 h-0.5 bg-black group-hover:w-8 transition-all duration-300"></div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            
+            <!-- XEM THÊM Button -->
+            @if(count($allBooks) > 8)
+                <div class="text-center mt-8">
+                    <button id="showMoreBooks" 
+                            class="bg-black text-white px-8 py-3 font-bold text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors">
+                        XEM THÊM ({{ count($allBooks) - 8 }} sách)
+                    </button>
+                    <button id="showLessBooks" 
+                            class="bg-gray-600 text-white px-8 py-3 font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors hidden">
+                        THU GỌN
+                    </button>
+                </div>
+            @endif
+        </div>
+    </section>
+
+    <!-- SÁCH BÁN CHẠY - ADIDAS STYLE -->
+    <section class="bg-gray-50 py-20">
+        <div class="max-w-7xl mx-auto px-4">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-12">
+                <div class="flex items-center gap-4">
+                    <div class="w-1 h-12 bg-black"></div>
+                    <div>
+                        <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-black">SÁCH BÁN CHẠY</h2>
                         <div class="w-16 h-0.5 bg-black mt-2"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Grid Layout -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Grid Layout - 3 Columns Equal -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
-                <!-- Featured Book - Large -->
+                <!-- Best Selling Book -->
                 @if($featuredBooks->first())
-                <div class="lg:col-span-2 bg-black text-white relative overflow-hidden group cursor-pointer"
+                <div class="bg-black text-white relative overflow-hidden group cursor-pointer h-[600px]"
                      onclick="window.location='{{ route('books.show', ['slug' => $featuredBooks->first()->slug]) }}'">
                     <div class="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10"></div>
                     <img src="{{ $featuredBooks->first()->images->first() ? asset('storage/' . $featuredBooks->first()->images->first()->image_url) : ($featuredBooks->first()->cover_image ? asset('storage/' . $featuredBooks->first()->cover_image) : asset('images/default.jpg')) }}"
-                         alt="Featured Book"
+                         alt="Best Selling Book"
                          class="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-500">
                     
-                    <div class="relative z-20 p-8 flex flex-col justify-end h-80">
-                        <div class="space-y-4">
-                            <span class="bg-white text-black px-3 py-1 text-xs font-bold uppercase tracking-wider">NỔI BẬT</span>
-                            <h3 class="text-2xl font-bold uppercase tracking-tight">{{ $featuredBooks->first()->title }}</h3>
-                            <p class="text-lg font-bold">{{ number_format($featuredBooks->first()->formats->first()->price ?? 0, 0, ',', '.') }}₫</p>
+                    <div class="relative z-20 p-6 flex flex-col justify-end h-full">
+                        <div class="space-y-3">
+                            <span class="bg-white text-black px-3 py-1 text-xs font-bold uppercase tracking-wider">BÁN CHẠY</span>
+                            <h3 class="text-xl font-bold uppercase tracking-tight">{{ Str::limit($featuredBooks->first()->title, 40) }}</h3>
+                            <div class="flex items-center justify-between">
+                                @php
+                                    $format = $featuredBooks->first()->formats->first();
+                                    $price = $format->price ?? 0;
+                                    $discount = $format->discount ?? 0;
+                                    $finalPrice = $discount > 0 ? $price - $discount : $price;
+                                @endphp
+                                <p class="text-lg font-bold">{{ number_format($finalPrice, 0, ',', '.') }}₫</p>
+                                <p class="text-sm bg-white text-black px-2 py-1 rounded font-medium">
+                                    Đã bán: {{ number_format($featuredBooks->first()->total_sold ?? 0) }}
+                                </p>
+                            </div>
                             <div class="w-12 h-0.5 bg-white"></div>
                         </div>
                     </div>
@@ -487,22 +592,24 @@
                 @endif
 
                 <!-- Latest Books -->
-                <div class="bg-white border-2 border-gray-200 p-6">
+                <div class="bg-white border-2 border-gray-200 p-6 h-[600px] flex flex-col">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-lg font-bold uppercase tracking-wide">MỚI NHẤT</h3>
                         <div class="w-8 h-0.5 bg-black"></div>
                     </div>
-                    <div class="space-y-4">
+                    <div class="flex-1 space-y-4 overflow-hidden">
                         @foreach ($latestBooks->take(3) as $book)
                             <div onclick="window.location='{{ route('books.show', ['slug' => $book->slug]) }}'"
-                                 class="flex gap-3 p-2 hover:bg-gray-50 cursor-pointer group transition-colors">
+                                 class="flex gap-4 p-3 hover:bg-gray-50 cursor-pointer group transition-colors border-b border-gray-100 last:border-b-0">
                                 <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
                                      alt="{{ $book->title }}" 
-                                     class="w-12 h-16 object-cover">
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-sm group-hover:opacity-70 transition-opacity">{{ Str::limit($book->title, 30) }}</h4>
-                                    <p class="text-xs text-gray-500 uppercase tracking-wider mt-1">{{ $book->authors && $book->authors->count() ? $book->authors->first()->name : 'N/A' }}</p>
-                                    <p class="text-sm font-bold mt-1">{{ number_format($book->formats->first()->price ?? 0, 0, ',', '.') }}₫</p>
+                                     class="w-24 h-32 object-cover shadow-lg rounded flex-shrink-0">
+                                <div class="flex-1 min-w-0 flex flex-col justify-between">
+                                    <div>
+                                        <h4 class="font-bold text-base group-hover:opacity-70 transition-opacity leading-tight mb-2 truncate">{{ Str::limit($book->title, 30) }}</h4>
+                                        <p class="text-sm text-gray-500 uppercase tracking-wider mb-2 truncate">{{ $book->authors && $book->authors->count() ? $book->authors->first()->name : 'N/A' }}</p>
+                                    </div>
+                                    <p class="text-lg font-bold text-black truncate">{{ number_format($book->formats->first()->price ?? 0, 0, ',', '.') }}₫</p>
                                 </div>
                             </div>
                         @endforeach
@@ -510,30 +617,32 @@
                 </div>
 
                 <!-- Best Reviewed -->
-                <div class="bg-white border-2 border-gray-200 p-6">
+                <div class="bg-white border-2 border-gray-200 p-6 h-[600px] flex flex-col">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-lg font-bold uppercase tracking-wide">ĐÁNH GIÁ CAO</h3>
                         <div class="w-8 h-0.5 bg-black"></div>
                     </div>
-                    <div class="space-y-4">
+                    <div class="flex-1 space-y-4 overflow-hidden">
                         @foreach ($bestReviewedBooks->take(3) as $book)
                             @php
                                 $rating = round($book->reviews->avg('rating'), 1);
                             @endphp
                             <div onclick="window.location='{{ route('books.show', ['slug' => $book->slug]) }}'"
-                                 class="flex gap-3 p-2 hover:bg-gray-50 cursor-pointer group transition-colors">
+                                 class="flex gap-4 p-3 hover:bg-gray-50 cursor-pointer group transition-colors border-b border-gray-100 last:border-b-0">
                                 <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
                                      alt="{{ $book->title }}" 
-                                     class="w-12 h-16 object-cover">
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-sm group-hover:opacity-70 transition-opacity">{{ Str::limit($book->title, 30) }}</h4>
-                                    <div class="flex text-yellow-400 text-xs mt-1">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            {{ $i < $rating ? '★' : '☆' }}
-                                        @endfor
-                                        <span class="text-gray-500 ml-1">({{ $rating }})</span>
+                                     class="w-24 h-32 object-cover shadow-lg rounded flex-shrink-0">
+                                <div class="flex-1 min-w-0 flex flex-col justify-between">
+                                    <div>
+                                        <h4 class="font-bold text-base group-hover:opacity-70 transition-opacity leading-tight mb-2 truncate">{{ Str::limit($book->title, 30) }}</h4>
+                                        <div class="flex text-yellow-400 text-sm mb-2">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                {{ $i < $rating ? '★' : '☆' }}
+                                            @endfor
+                                            <span class="text-gray-500 ml-2 text-xs">({{ $rating }})</span>
+                                        </div>
                                     </div>
-                                    <p class="text-sm font-bold mt-1">{{ number_format($book->formats->first()->price ?? 0, 0, ',', '.') }}₫</p>
+                                    <p class="text-lg font-bold text-black truncate">{{ number_format($book->formats->first()->price ?? 0, 0, ',', '.') }}₫</p>
                                 </div>
                             </div>
                         @endforeach
@@ -541,45 +650,100 @@
                 </div>
             </div>
 
-            <!-- Sale Books Section -->
-            <div class="mt-12 bg-red-600 text-white p-8 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-white/10"></div>
-                <div class="relative z-10">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 class="text-2xl font-bold uppercase tracking-wide">GIẢM GIÁ ĐẶC BIỆT</h3>
-                            <div class="w-16 h-0.5 bg-white mt-2"></div>
+            <!-- Sale Books Section - Clean Minimal Style -->
+            <div class="mt-12 bg-white border-2 border-gray-200 relative overflow-hidden">
+                <!-- Simple Background Element -->
+                <div class="absolute top-0 right-0 w-32 h-32 bg-gray-50"></div>
+                
+                <div class="relative z-10 p-8">
+                    <!-- Header Section -->
+                    <div class="flex items-center justify-between mb-8">
+                        <div class="flex items-center gap-4">
+                            <div class="w-1 h-12 bg-black"></div>
+                            <div>
+                                <h3 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-red-600">GIẢM GIÁ ĐẶC BIỆT</h3>
+                                <div class="w-16 h-0.5 bg-black mt-2"></div>
+                            </div>
                         </div>
                         <div class="text-right">
-                            <span class="text-4xl font-black">SALE</span>
+                            <span class="bg-black text-white px-4 py-2 text-lg font-bold uppercase tracking-wider">SALE</span>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        @foreach ($saleBooks->take(2) as $book)
+                    
+                    <!-- Books Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="saleBooksGrid">
+                        @foreach ($saleBooks as $index => $book)
                             @php
                                 $format = $book->formats->first();
                                 $oldPrice = $format->price ?? 0;
                                 $discount = $format->discount ?? 0;
                                 $newPrice = $oldPrice - $discount;
+                                $discountPercent = $oldPrice > 0 ? round(($discount / $oldPrice) * 100) : 0;
                             @endphp
                             <div onclick="window.location='{{ route('books.show', ['slug' => $book->slug]) }}'"
-                                 class="flex gap-4 p-4 bg-white/10 hover:bg-white/20 cursor-pointer transition-colors">
-                                <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
-                                     alt="{{ $book->title }}" 
-                                     class="w-16 h-20 object-cover">
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-sm uppercase">{{ Str::limit($book->title, 25) }}</h4>
-                                    <div class="flex items-center gap-2 mt-2">
-                                        <span class="line-through text-white/60 text-sm">{{ number_format($oldPrice, 0, ',', '.') }}₫</span>
-                                        <span class="font-bold text-lg">{{ number_format($newPrice, 0, ',', '.') }}₫</span>
-                                    </div>
+                                 class="sale-book-item group bg-white border-2 border-gray-100 hover:border-black transition-all duration-300 cursor-pointer {{ $index >= 8 ? 'hidden' : '' }}">
+                                
+                                <!-- Image Container -->
+                                <div class="aspect-square bg-gray-50 overflow-hidden relative">
+                                    <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
+                                         alt="{{ $book->title }}"
+                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                    
                                     @if ($discount > 0)
-                                        <span class="inline-block bg-white text-red-600 text-xs px-2 py-1 mt-1 font-bold uppercase">-{{ number_format($discount, 0, ',', '.') }}₫</span>
+                                        <div class="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 text-xs font-bold uppercase">
+                                            -{{ number_format($discount) }} đ
+                                        </div>
                                     @endif
+                                </div>
+                                
+                                <!-- Content -->
+                                <div class="p-4 space-y-2">
+                                    <h3 class="font-bold text-black text-sm uppercase tracking-wide group-hover:opacity-70 transition-opacity">
+                                        {{ Str::limit($book->title, 40) }}
+                                    </h3>
+                                    <p class="text-xs text-gray-500 uppercase tracking-wider">
+                                        {{ $book->category->name ?? 'CHƯA CÓ DANH MỤC' }}
+                                    </p>
+                                    <div class="flex items-center justify-between pt-2">
+                                        <div class="price-section">
+                                            @if ($discount > 0)
+                                                <span class="text-gray-400 line-through text-sm">{{ number_format($oldPrice, 0, ',', '.') }}₫</span>
+                                                <span class="text-black font-bold text-lg ml-2">{{ number_format($newPrice, 0, ',', '.') }}₫</span>
+                                            @else
+                                                <span class="text-black font-bold text-lg">{{ number_format($oldPrice, 0, ',', '.') }}₫</span>
+                                            @endif
+                                        </div>
+                                        <div class="w-6 h-0.5 bg-black group-hover:w-8 transition-all duration-300"></div>
+                                    </div>
                                 </div>
                             </div>
                         @endforeach
                     </div>
+                    
+                    <!-- Call to Action -->
+                    @if(count($saleBooks) > 8)
+                        <div class="text-center mt-8">
+                            <button id="showMoreSaleBooks" 
+                                    class="bg-black text-white px-6 py-3 font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors">
+                                XEM TẤT CẢ KHUYẾN MÃI ({{ count($saleBooks) - 8 }} sách)
+                            </button>
+                            <button id="showLessSaleBooks" 
+                                    class="bg-black text-white px-6 py-3 font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors hidden">
+                                THU GỌN
+                            </button>
+                        </div>
+                    @else
+                        <div class="text-center mt-8">
+                            <button id="showMoreSaleBooks" 
+                                    class="bg-black text-white px-6 py-3 font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors">
+                                XEM TẤT CẢ KHUYẾN MÃI ({{ count($saleBooks) - 8 }} sách)
+                            </button>
+                            <button id="showLessSaleBooks" 
+                                    class="bg-black text-white px-6 py-3 font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors hidden">
+                                THU GỌN
+                            </button>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -712,5 +876,112 @@
 @endsection
 
 @push('scripts')
+    <script>
+        // XEM THÊM / THU GỌN functionality for books
+        document.addEventListener('DOMContentLoaded', function() {
+            const showMoreBtn = document.getElementById('showMoreBooks');
+            const showLessBtn = document.getElementById('showLessBooks');
+            const bookItems = document.querySelectorAll('.book-item');
+            
+            // Sale books expand/collapse functionality
+            const showMoreSaleBtn = document.getElementById('showMoreSaleBooks');
+            const showLessSaleBtn = document.getElementById('showLessSaleBooks');
+            const saleBookItems = document.querySelectorAll('.sale-book-item');
+            
+            if (showMoreBtn) {
+                showMoreBtn.addEventListener('click', function() {
+                    // Show all hidden books
+                    bookItems.forEach(function(item, index) {
+                        if (index >= 8) {
+                            item.classList.remove('hidden');
+                        }
+                    });
+                    
+                    // Toggle buttons
+                    showMoreBtn.classList.add('hidden');
+                    showLessBtn.classList.remove('hidden');
+                    
+                    // Smooth scroll to show the newly revealed books
+                    setTimeout(function() {
+                        if (bookItems[8]) {
+                            bookItems[8].scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'nearest' 
+                            });
+                        }
+                    }, 100);
+                });
+            }
+            
+            if (showLessBtn) {
+                showLessBtn.addEventListener('click', function() {
+                    // Hide books after index 7 (keep first 8 books)
+                    bookItems.forEach(function(item, index) {
+                        if (index >= 8) {
+                            item.classList.add('hidden');
+                        }
+                    });
+                    
+                    // Toggle buttons
+                    showLessBtn.classList.add('hidden');
+                    showMoreBtn.classList.remove('hidden');
+                    
+                    // Smooth scroll back to the section
+                    document.getElementById('allBooksGrid').scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                });
+            }
+            
+            // Sale books expand functionality
+            if (showMoreSaleBtn) {
+                showMoreSaleBtn.addEventListener('click', function() {
+                    // Show all hidden sale books
+                    saleBookItems.forEach(function(item, index) {
+                        if (index >= 8) {
+                            item.classList.remove('hidden');
+                        }
+                    });
+                    
+                    // Toggle buttons
+                    showMoreSaleBtn.classList.add('hidden');
+                    showLessSaleBtn.classList.remove('hidden');
+                    
+                    // Smooth scroll to show the newly revealed books
+                    setTimeout(function() {
+                        if (saleBookItems[8]) {
+                            saleBookItems[8].scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'nearest' 
+                            });
+                        }
+                    }, 100);
+                });
+            }
+            
+            // Sale books collapse functionality
+            if (showLessSaleBtn) {
+                showLessSaleBtn.addEventListener('click', function() {
+                    // Hide books after index 7 (keep first 8 books)
+                    saleBookItems.forEach(function(item, index) {
+                        if (index >= 8) {
+                            item.classList.add('hidden');
+                        }
+                    });
+                    
+                    // Toggle buttons
+                    showLessSaleBtn.classList.add('hidden');
+                    showMoreSaleBtn.classList.remove('hidden');
+                    
+                    // Smooth scroll back to the section
+                    document.getElementById('saleBooksGrid').scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                });
+            }
+        });
+    </script>
     <script src="{{ asset('js/home.js') }}"></script>
 @endpush
