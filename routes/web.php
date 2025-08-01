@@ -463,6 +463,13 @@ Route::prefix('ebook')->name('ebook.')->group(function() {
     });
 });
 
+// Ebook Refund routes
+Route::prefix('ebook-refund')->name('ebook-refund.')->middleware('auth')->group(function() {
+    Route::get('/{order}', [App\Http\Controllers\EbookRefundController::class, 'show'])->name('show');
+    Route::post('/{order}', [App\Http\Controllers\EbookRefundController::class, 'store'])->name('store');
+    Route::get('/preview/{order}', [App\Http\Controllers\EbookRefundController::class, 'preview'])->name('preview');
+});
+
 // AI Summary routes
 Route::prefix('ai-summary')->name('ai-summary.')->group(function () {
     // Book AI Summary routes

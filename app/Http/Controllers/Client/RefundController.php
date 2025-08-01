@@ -127,10 +127,10 @@ class RefundController extends Controller
             ]);
 
             // Cập nhật trạng thái thanh toán đơn hàng thành "Đang Hoàn Tiền"
-            $refundingStatus = \App\Models\PaymentStatus::where('name', 'Đang Hoàn Tiền')->first();
-            if ($refundingStatus) {
-                $order->update(['payment_status_id' => $refundingStatus->id]);
-            }
+            // $refundingPaymentStatus = \App\Models\PaymentStatus::where('name', 'Đang Hoàn Tiền')->first();
+            // if ($refundingPaymentStatus) {
+            //     $order->update(['payment_status_id' => $refundingPaymentStatus->id]);
+            // }
 
             DB::commit();
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class OrderItem extends Model
 {
@@ -13,6 +14,17 @@ class OrderItem extends Model
     protected $fillable = [
         'id', 'order_id', 'book_id', 'book_format_id', 'collection_id', 'is_combo', 'item_type', 'quantity', 'price', 'total',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid();
+            }
+        });
+    }
 
     public function order()
     {

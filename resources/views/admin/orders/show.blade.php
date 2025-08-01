@@ -344,7 +344,7 @@
                             </div>
                         </div>
                         @endif
-                        @if($order->delivery_method !== 'mixed' && $order->isParentOrder())
+                        @if($order->delivery_method !== 'mixed' && !$order->isParentOrder())
                         <div class="mt-4">
                             <h5 class="text-muted mb-3">Chi tiết đơn hàng</h5>
                             <div class="table-responsive">
@@ -357,6 +357,7 @@
                                             <th>Thuộc tính</th>
                                             <th>Giá</th>
                                             <th>Số lượng</th>
+                                            <th>Lượt tải Ebook</th>
                                             <th>Thành tiền</th>
                                         </tr>
                                     </thead>
@@ -410,9 +411,9 @@
                                                     </td>
                                                     <td>
                                                         @if($item->bookFormat)
-                                                             <span class="badge format-badge">{{ $item->bookFormat->format_name }}</span>
+                                                             <span class="badge bg-primary">{{ $item->bookFormat->format_name }}</span>
                                                          @elseif($item->collection_id)
-                                                             <span class="badge format-badge combo">Combo</span>
+                                                             <span class="badge bg-primary combo">Combo</span>
                                                          @else
                                                              <span class="text-muted">N/A</span>
                                                          @endif
@@ -428,6 +429,51 @@
                                                     </td>
                                                     <td>{{ number_format($item->price, 0, ',', '.') }}đ</td>
                                                     <td>{{ $item->quantity }}</td>
+                                                    <td class="ebook-download-cell">
+                                                        @if($item->bookFormat && $item->bookFormat->format_name === 'Ebook')
+                                                            @php
+                                                                $downloadCount = \App\Models\EbookDownload::where('user_id', $order->user_id)
+                                                                    ->where('order_id', $order->id)
+                                                                    ->where('book_format_id', $item->bookFormat->id)
+                                                                    ->count();
+                                                                $maxDownloads = $item->bookFormat->max_downloads ?? 5;
+                                                                $drmEnabled = $item->bookFormat->drm_enabled ?? true;
+                                                            @endphp
+                                                            <div class="text-center">
+                                                                <div class="mb-1">
+                                                                    <span class="ebook-download-badge {{ $downloadCount > 0 ? 'ebook-download-count' : 'ebook-download-zero' }}">
+                                                                        <i class="ri-download-line"></i>{{ $downloadCount }}
+                                                                    </span>
+                                                                </div>
+                                                                @if($drmEnabled)
+                                                                    <div class="mb-1">
+                                                                        <small class="text-muted fw-bold">Max: {{ $maxDownloads }}</small>
+                                                                        @if($downloadCount >= $maxDownloads)
+                                                                            <div class="mt-1">
+                                                                                <span class="ebook-download-badge ebook-download-limit" style="font-size: 0.6rem;">
+                                                                                    <i class="ri-forbid-line"></i>Hết lượt
+                                                                                </span>
+                                                                            </div>
+                                                                        @endif
+                                                                    </div>
+                                                                @else
+                                                                    <div class="mb-1">
+                                                                        <span class="ebook-unlimited" style="font-size: 0.8rem;">∞</span>
+                                                                    </div>
+                                                                @endif
+                                                                @if($downloadCount > 0)
+                                                                    <div class="ebook-last-download" style="font-size: 0.65rem;">
+                                                                        <i class="ri-time-line"></i>
+                                                                        <span>{{ \App\Models\EbookDownload::where('user_id', $order->user_id)->where('order_id', $order->id)->where('book_format_id', $item->bookFormat->id)->latest()->first()?->downloaded_at?->format('d/m H:i') ?? 'N/A' }}</span>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        @else
+                                                            <div class="text-center text-muted">
+                                                                <i class="ri-subtract-line"></i>
+                                                            </div>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ number_format($subtotal, 0, ',', '.') }}đ</td>
                                                 </tr>
                                             @endforeach
@@ -487,32 +533,64 @@
                                                     </td>
                                                     <td>{{ number_format($item->price, 0, ',', '.') }}đ</td>
                                                     <td>{{ $item->quantity }}</td>
+                                                    <td>
+                                                        @if($format && $format->format_name === 'Ebook')
+                                                            @php
+                                                                $downloadCount = \App\Models\EbookDownload::where('user_id', $order->user_id)
+                                                                    ->where('order_id', $order->id)
+                                                                    ->where('book_format_id', $format->id)
+                                                                    ->count();
+                                                                $maxDownloads = $format->max_downloads ?? 5;
+                                                                $drmEnabled = $format->drm_enabled ?? true;
+                                                            @endphp
+                                                            <div class="d-flex align-items-center">
+                                                                <span class="badge bg-{{ $downloadCount > 0 ? 'success' : 'secondary' }} me-2">
+                                                                    <i class="ri-download-line me-1"></i>{{ $downloadCount }}
+                                                                </span>
+                                                                @if($drmEnabled)
+                                                                    <small class="text-muted">/ {{ $maxDownloads }}</small>
+                                                                    @if($downloadCount >= $maxDownloads)
+                                                                        <span class="badge bg-danger ms-2">Hết lượt</span>
+                                                                    @endif
+                                                                @else
+                                                                    <small class="text-success">Không giới hạn</small>
+                                                                @endif
+                                                            </div>
+                                                            @if($downloadCount > 0)
+                                                                <small class="text-muted d-block mt-1">
+                                                                    Lần cuối: {{ \App\Models\EbookDownload::where('user_id', $order->user_id)->where('order_id', $order->id)->where('book_format_id', $format->id)->latest()->first()?->downloaded_at?->format('d/m/Y H:i') ?? 'N/A' }}
+                                                                </small>
+                                                            @endif
+                                                        @else
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ number_format($subtotal, 0, ',', '.') }}đ</td>
                                                 </tr>
                                             @endforeach
                                         @else
                                             <tr>
-                                                <td colspan="7" class="text-center">Không có chi tiết đơn hàng</td>
+                                                <td colspan="8" class="text-center">Không có chi tiết đơn hàng</td>
                                             </tr>
                                         @endif
                                     </tbody>
                                     <tfoot class="table-light">
                                         <tr>
-                                            <th colspan="6" class="text-end">Tổng tiền sản phẩm:</th>
+                                            <th colspan="7" class="text-end">Tổng tiền sản phẩm:</th>
                                             <td>{{ number_format($total ?? $order->total_amount, 0, ',', '.') }}đ</td>
                                         </tr>
                                         @if($order->voucher)
                                             <tr>
-                                                <th colspan="6" class="text-end">Giảm giá ({{ $order->voucher->code }}):</th>
+                                                <th colspan="7" class="text-end">Giảm giá ({{ $order->voucher->code }}):</th>
                                                 <td> {{ number_format($order->discount_amount, 0, ',', '.') }}đ</td>
                                             </tr>
                                         @endif
                                         <tr>
-                                            <th colspan="6" class="text-end">Vận Chuyển ({{ $order->shipping_fee == 20000 ? 'Giao Hàng Tiết Kiệm' : 'Giao Hàng Nhanh' }}):</th>
+                                            <th colspan="7" class="text-end">Vận Chuyển ({{ $order->shipping_fee == 20000 ? 'Giao Hàng Tiết Kiệm' : 'Giao Hàng Nhanh' }}):</th>
                                             <td> {{ number_format($order->shipping_fee, 0, ',', '.') }}đ</td>
                                         </tr>
                                         <tr class="fw-bold">
-                                            <th colspan="6" class="text-end">Tổng thanh toán:</th>
+                                            <th colspan="7" class="text-end">Tổng thanh toán:</th>
                                             <td>{{ number_format($order->total_amount, 0, ',', '.') }}đ</td>
                                         </tr>
                                     </tfoot>
@@ -590,19 +668,82 @@
                         @endif
 
                         @if($order->invoice)
-                        <div class="mb-4">
-                            <div class="d-flex mb-2">
-                                <div class="flex-shrink-0">
-                                    <div class="avatar-sm">
-                                        <div class="avatar-title bg-light text-primary rounded-circle shadow fs-3">
-                                            <i class="ri-file-text-line"></i>
-                                        </div>
+                        <div class="card mb-4">
+                            <div class="card-header bg-light py-3">
+                                <h6 class="m-0 font-weight-bold">
+                                    <i class="ri-file-text-line me-2"></i>THÔNG TIN HÓA ĐƠN
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="fw-bold text-primary mb-1">
+                                        <i class="ri-hashtag me-2"></i>Mã hóa đơn
+                                    </div>
+                                    <div class="ps-3">
+                                        <p class="mb-0">{{ $order->invoice->code ?? 'N/A' }}</p>
                                     </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-1">Hóa đơn</h6>
-                                    <p class="text-muted mb-0">{{ $order->invoice->invoice_number }}</p>
+                                <div class="mb-3">
+                                    <div class="fw-bold text-primary mb-1">
+                                        <i class="ri-calendar-line me-2"></i>Ngày xuất hóa đơn
+                                    </div>
+                                    <div class="ps-3">
+                                        <p class="mb-0">{{ $order->invoice->created_at->format('d/m/Y H:i') }}</p>
+                                    </div>
                                 </div>
+                                <div class="mb-3">
+                                    <div class="fw-bold text-primary mb-1">
+                                        <i class="ri-money-dollar-circle-line me-2"></i>Tổng tiền hóa đơn
+                                    </div>
+                                    <div class="ps-3">
+                                        <p class="mb-0 fw-bold text-success">{{ number_format($order->invoice->total_amount) }}đ</p>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="fw-bold text-primary mb-1">
+                                        <i class="ri-information-line me-2"></i>Trạng thái
+                                    </div>
+                                    <div class="ps-3">
+                                        @if($order->invoice->status == 'paid')
+                                            <span class="badge bg-success">Đã thanh toán</span>
+                                        @elseif($order->invoice->status == 'pending')
+                                            <span class="badge bg-warning">Chờ thanh toán</span>
+                                        @elseif($order->invoice->status == 'cancelled')
+                                            <span class="badge bg-danger">Đã hủy</span>
+                                        @else
+                                            <span class="badge bg-secondary">{{ $order->invoice->status }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <a href="{{ route('admin.invoices.show', $order->invoice->id) }}" class="btn btn-primary btn-sm">
+                                        <i class="ri-eye-line me-1"></i> Xem chi tiết hóa đơn
+                                    </a>
+                                    <a href="{{ route('admin.invoices.generate-pdf', $order->invoice->id) }}" target="_blank" class="btn btn-success btn-sm">
+                                        <i class="ri-file-pdf-line me-1"></i> Tải PDF hóa đơn
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        @else
+                        <div class="card mb-4">
+                            <div class="card-header bg-light py-3">
+                                <h6 class="m-0 font-weight-bold">
+                                    <i class="ri-file-text-line me-2"></i>THÔNG TIN HÓA ĐƠN
+                                </h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="avatar-lg mx-auto mb-3">
+                                    <div class="avatar-title bg-light text-muted rounded-circle fs-1">
+                                        <i class="ri-file-text-line"></i>
+                                    </div>
+                                </div>
+                                <p class="text-muted mb-3">Chưa có hóa đơn cho đơn hàng này</p>
+                                @if($order->paymentStatus->name === 'Đã Thanh Toán')
+                                    <p class="text-info small">Hóa đơn sẽ được tạo tự động sau khi thanh toán thành công</p>
+                                @else
+                                    <p class="text-warning small">Hóa đơn sẽ được tạo sau khi đơn hàng được thanh toán</p>
+                                @endif
                             </div>
                         </div>
                         @endif
@@ -659,6 +800,113 @@
                         @endif
                     </div>
                 </div>
+
+                {{-- Ebook Downloads Statistics --}}
+                @php
+                    $ebookItems = $order->orderItems->filter(function($item) {
+                        return $item->bookFormat && $item->bookFormat->format_name === 'Ebook';
+                    });
+                    // dd($ebookItems);
+                    $totalEbookDownloads = 0;
+                    $ebookStats = [];
+                    foreach($ebookItems as $item) {
+                        // dd($order->user_id, $order->id);
+                        $downloadCount = \App\Models\EbookDownload::where('user_id', $order->user_id)
+                            // ->where('order_id', $order->id)
+                            ->where('book_format_id', $item->bookFormat->id)
+                            ->count();
+                        $totalEbookDownloads += $downloadCount;
+                        $ebookStats[] = [
+                            'item' => $item,
+                            'downloads' => $downloadCount,
+                            'max_downloads' => $item->bookFormat->max_downloads ?? 5,
+                            'drm_enabled' => $item->bookFormat->drm_enabled ?? true
+                        ];
+                    }
+                @endphp
+                
+                @if($ebookItems->count() > 0)
+                <div class="card ebook-stats-card">
+                    <div class="card-header bg-gradient-primary">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <h5 class="card-title mb-0 text-gray">
+                                <i class="ri-download-line me-2"></i>Thống kê Ebook Downloads
+                            </h5>
+                            <span class="ebook-download-badge ebook-download-count">
+                                <i class="ri-download-cloud-line"></i>
+                                {{ $totalEbookDownloads }} lượt tải
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @foreach($ebookStats as $stat)
+                            <div class="ebook-download-item mb-3 p-3">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <h6 class="ebook-title mb-0 text-truncate" style="max-width: 200px;" title="{{ $stat['item']->book->title ?? 'N/A' }}">
+                                        <i class="ri-book-line me-1 text-primary"></i>
+                                        {{ Str::limit($stat['item']->book->title ?? 'N/A', 25) }}
+                                    </h6>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="ebook-download-badge {{ $stat['downloads'] > 0 ? 'ebook-download-count' : 'ebook-download-zero' }}">
+                                            {{ $stat['downloads'] }}
+                                        </span>
+                                        @if($stat['drm_enabled'])
+                                            <small class="text-muted fw-bold">/ {{ $stat['max_downloads'] }}</small>
+                                        @else
+                                            <span class="ebook-unlimited">∞</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                
+                                @if($stat['drm_enabled'])
+                                    <div class="ebook-progress-bar mb-2">
+                                        @php
+                                            $percentage = ($stat['downloads'] / $stat['max_downloads']) * 100;
+                                            $progressClass = $percentage >= 100 ? 'ebook-progress-danger' : ($percentage >= 80 ? 'ebook-progress-warning' : 'ebook-progress-success');
+                                        @endphp
+                                        <div class="ebook-progress-fill {{ $progressClass }}" 
+                                             style="width: {{ min($percentage, 100) }}%"></div>
+                                    </div>
+                                @endif
+                                
+                                @if($stat['downloads'] > 0)
+                                    @php
+                                        $lastDownload = \App\Models\EbookDownload::where('user_id', $order->user_id)
+                                            // ->where('order_id', $order->id)
+                                            ->where('book_format_id', $stat['item']->bookFormat->id)
+                                            ->latest()
+                                            ->first();
+                                    @endphp
+                                    <div class="ebook-last-download">
+                                        <i class="ri-time-line"></i>
+                                        <span>Lần cuối: {{ $lastDownload?->downloaded_at?->format('d/m/Y H:i') ?? 'N/A' }}</span>
+                                    </div>
+                                @else
+                                    <div class="ebook-last-download">
+                                        <i class="ri-information-line"></i>
+                                        <span>Chưa có lượt tải nào</span>
+                                    </div>
+                                @endif
+                                
+                                @if($stat['drm_enabled'] && $stat['downloads'] >= $stat['max_downloads'])
+                                    <div class="mt-2">
+                                        <span class="ebook-download-badge ebook-download-limit">
+                                            <i class="ri-forbid-line"></i>Đã hết lượt tải
+                                        </span>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                        
+                        {{-- @if($totalEbookDownloads > 0)
+                            <div class="ebook-stats-summary">
+                                <i class="ri-bar-chart-line me-2"></i>
+                                <strong>Tổng cộng {{ $totalEbookDownloads }} lượt tải từ {{ $ebookItems->count() }} ebook</strong>
+                            </div>
+                        @endif --}}
+                    </div>
+                </div>
+                @endif
 
                 {{-- GHN Shipping Information --}}
                 @if($order->delivery_method === 'delivery')

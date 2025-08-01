@@ -152,6 +152,7 @@
                                             <th>Mã đơn hàng</th>
                                             <th>Loại hóa đơn</th>
                                             <th>Khách hàng</th>
+                                            <th>Địa chỉ giao hàng</th>
                                             <th>Phương thức</th>
                                             <th>Tổng tiền</th>
                                             <th>Ngày tạo</th>
@@ -174,6 +175,20 @@
                                                     <div class="fw-medium">{{ $invoice->order->user->name }}</div>
                                                     <small class="text-muted"><i
                                                             class="fas fa-envelope-open me-1"></i>{{ $invoice->order->user->email }}</small>
+                                                </td>
+                                                <td>
+                                                    @if($invoice->order->delivery_method === 'pickup')
+                                                        <span class="badge bg-info"><i class="ri-store-2-line me-1"></i>Nhận tại cửa hàng</span>
+                                                    @elseif($invoice->order->delivery_method === 'ebook')
+                                                        <span class="badge bg-primary"><i class="ri-smartphone-line me-1"></i>Ebook</span>
+                                                    @elseif($invoice->order->address)
+                                                        <div class="text-truncate" style="max-width: 200px;" title="{{ $invoice->order->address->address_detail }}, {{ $invoice->order->address->ward }}, {{ $invoice->order->address->district }}, {{ $invoice->order->address->city }}">
+                                                            <i class="ri-map-pin-line me-1"></i>{{ $invoice->order->address->address_detail }}, {{ $invoice->order->address->ward }}
+                                                        </div>
+                                                        <small class="text-muted">{{ $invoice->order->address->district }}, {{ $invoice->order->address->city }}</small>
+                                                    @else
+                                                        <span class="text-muted">Không có địa chỉ</span>
+                                                    @endif
                                                 </td>
                                                 <td>{{ $invoice->order->paymentMethod->name ?? 'Không xác định' }}</td>
                                                 <td>{{ number_format($invoice->total_amount) }}đ</td>

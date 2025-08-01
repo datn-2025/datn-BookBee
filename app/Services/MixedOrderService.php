@@ -306,6 +306,9 @@ class MixedOrderService
             if ($paymentStatus) {
                 $physicalOrder->update(['payment_status_id' => $paymentStatus->id]);
                 $ebookOrder->update(['payment_status_id' => $paymentStatus->id]);
+                
+                // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' ngay sau khi thanh toán
+                $this->orderService->updateEbookOrderStatusOnPaymentSuccess($ebookOrder);
             }
         }
         
@@ -333,6 +336,9 @@ class MixedOrderService
         
         // Gửi email ebook ngay lập tức
         $this->emailService->sendEbookDownloadEmail($ebookOrder);
+        
+        // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
+        $this->orderService->updateEbookOrderStatusOnPaymentSuccess($ebookOrder);
         
         // Xóa giỏ hàng
         $this->orderService->clearUserCart($user);

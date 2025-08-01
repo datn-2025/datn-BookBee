@@ -603,16 +603,17 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <!-- Modular Cart JavaScript Files -->
-    <script src="{{ asset('js/cart/cart_base.js') }}"></script>
-    <script src="{{ asset('js/cart/cart_summary.js') }}"></script>
-    <script src="{{ asset('js/cart/cart_quantity.js') }}"></script>
+    {{-- <script src="{{ asset('js/cart/cart_base.js') }}"></script> --}}
+    {{-- <script src="{{ asset('js/cart/cart_summary.js') }}"></script> --}}
+    {{-- <script src="{{ asset('js/cart/cart_quantity.js') }}"></script> --}}
     <script src="{{ asset('js/cart/cart_products.js') }}"></script>
-    <script src="{{ asset('js/cart/cart_voucher.js') }}"></script>
+    <script src="{{ asset('js/cart/cart.js') }}"></script>
+    {{-- <script src="{{ asset('js/cart/cart_voucher.js') }}"></script>
     <script src="{{ asset('js/cart/cart_enhanced_ux.js') }}"></script>
-    <script src="{{ asset('js/cart/cart_smart_ux.js') }}"></script>
+    <script src="{{ asset('js/cart/cart_smart_ux.js') }}"></script> --}}
     <!-- Debug scripts -->
-    <script src="{{ asset('js/cart/debug_cart.js') }}"></script>
+    {{-- <script src="{{ asset('js/cart/debug_cart.js') }}"></script>
     @if(config('app.debug'))
         <script src="{{ asset('js/cart/cart_debug_test.js') }}"></script>
-    @endif
+    @endif --}}
 @endpush

@@ -577,9 +577,39 @@
                             @endphp
                             <span class="font-semibold adidas-font {{ $statusClass }}">{{ $statusText }}</span>
                         </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">GIÁ COMBO</span>
-                            <span class="text-black font-bold text-lg adidas-font">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
+                        <!-- Danh sách sách trong combo -->
+                        <div class="combo-books-list bg-white border border-gray-100 p-6 mt-6 rounded-lg">
+                            <h2
+                                class="text-lg font-bold text-black mb-4 flex items-center adidas-font uppercase tracking-wider border-b pb-3">
+                                <i class="fas fa-book text-base mr-2 text-black"></i>Danh sách sách trong combo
+                            </h2>
+                            <div class="grid grid-cols-1 gap-4 mt-4">
+                                @foreach($combo->books as $book)
+                                    <div class="flex items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                                        <div
+                                            class="flex-shrink-0 w-12 h-16 bg-gray-100 mr-4 flex items-center justify-center overflow-hidden">
+
+                                            <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
+                                                alt="{{ $book->title }}" id="mainImage"
+                                                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <a href="{{ route('books.show', $book->slug) }}"
+                                                class="text-base font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-200 line-clamp-2"
+                                                title="{{ $book->title }}">
+                                                {{ $book->title }}
+                                            </a>
+                                            @if($book->authors->count())
+                                                <p class="text-sm text-gray-500 mt-1">
+                                                    <span class="font-medium">Tác giả:</span>
+                                                    {{ $book->authors->pluck('name')->join(', ') }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1128,29 +1158,102 @@
                                 </h3>
                                 <p class="text-gray-600 mt-1 uppercase text-sm tracking-wide font-medium">Ưu đãi đặc biệt khi mua sách</p>
                             </div>
-                        </div>
-                    </div>
+                            {{-- Price Section --}}
+                            @php
+                                $formats = $book->formats->sortByDesc(fn($f) => $f->format_name === 'Ebook');
+                                $defaultFormat = $formats->first();
+                                $defaultPrice = $defaultFormat->price ?? $book->price;
+                                $defaultStock = $defaultFormat->stock ?? $book->stock;
+                                $discount = $defaultFormat->discount ?? 0;
+                                $finalPrice = $defaultPrice - $discount;
+                            @endphp
+                            <div class="price-section space-y-4">
+                                <div class="flex items-end space-x-4">
+                                    <span id="bookPrice" data-base-price="{{ $defaultPrice }}"
+                                        data-book-status="{{ $book->status }}"
+                                        class="text-4xl font-bold text-black adidas-font">{{ number_format($finalPrice, 0, ',', '.') }}₫</span>
+                                    @if ($discount > 0)
+                                        <span id="originalPrice"
+                                            class="text-xl text-gray-500 line-through adidas-font">{{ number_format($defaultPrice, 0, ',', '.') }}₫</span>
+                                        <span id="discountText"
+                                            class="bg-red-600 text-white px-3 py-1 text-sm font-bold adidas-font uppercase tracking-wider">-{{ number_format($discount, 0, ',', '.') }}₫</span>
+                                    @else
+                                        <span id="originalPrice" class="text-xl text-gray-500 line-through adidas-font"
+                                            style="display: none;"></span>
+                                        <span id="discountText"
+                                            class="bg-red-600 text-white px-3 py-1 text-sm font-bold adidas-font uppercase tracking-wider"
+                                            style="display: none;">
+                                            -<span id="discountAmount">0</span>₫
+                                        </span>
+                                    @endif
+                                    <!-- Stock Status with Enhanced Design -->
+                                    @php
+                                        $isEbook = false;
+                                        if (isset($defaultFormat->format_name)) {
+                                            $isEbook = stripos($defaultFormat->format_name, 'ebook') !== false;
+                                        }
+                                        $defaultStock = (int) ($defaultFormat->stock ?? $book->stock ?? 0);
 
-                    <!-- Enhanced Gift Container -->
-                    <div class="bg-white border-2 border-gray-100 relative overflow-hidden group hover:border-black transition-all duration-300">
-                        <!-- Geometric background accent -->
-                        <div class="absolute top-0 right-0 w-20 h-20 bg-black opacity-5 transform rotate-45 translate-x-10 -translate-y-10"></div>
-                        
-                        <div class="p-6 space-y-4">
-                            @foreach($bookGifts as $gift)
-                                <div class="flex items-start gap-6 p-4 border border-gray-100 hover:border-black hover:shadow-lg transition-all duration-300 group/item">
-                                    <!-- Gift Image/Icon -->
-                                    <div class="flex-shrink-0">
-                                        @if($gift->gift_image)
-                                            <div class="w-20 h-20 border-2 border-gray-200 group-hover/item:border-black transition-all duration-300">
-                                                <img src="{{ asset('storage/' . $gift->gift_image) }}" 
-                                                     alt="{{ $gift->gift_name }}" 
-                                                     class="w-full h-full object-cover">
-                                            </div>
-                                        @else
-                                            <div class="w-20 h-20 flex items-center justify-center bg-gray-100 border-2 border-gray-200 group-hover/item:border-black group-hover/item:bg-black group-hover/item:text-white transition-all duration-300">
-                                                <i class="fas fa-gift text-2xl"></i>
-                                            </div>
+                                        // Priority 1: Check book.status first 
+                                        switch ($book->status) {
+                                            case 'Ngừng Kinh Doanh':
+                                                $statusText = 'NGƯNG KINH DOANH';
+                                                $statusDot = 'bg-gray-500';
+                                                $badgeClass = 'bg-gray-100 text-gray-700 border-gray-300';
+                                                break;
+                                            case 'Sắp Ra Mắt':
+                                                $statusText = 'SẮP RA MẮT';
+                                                $statusDot = 'bg-yellow-500';
+                                                $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                                                break;
+                                            case 'Hết Hàng Tồn Kho':
+                                                $statusText = 'HẾT HÀNG TỒN KHO';
+                                                $statusDot = 'bg-red-500';
+                                                $badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                                break;
+                                            case 'Còn Hàng':
+                                            default:
+                                                // Priority 2: Only when status = 'Còn Hàng', check if ebook or stock levels
+                                                if ($isEbook) {
+                                                    $statusText = 'EBOOK - CÓ SẴN';
+                                                    $statusDot = 'bg-blue-500';
+                                                    $badgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+                                                } elseif ($defaultStock == 0) {
+                                                    $statusText = 'HẾT HÀNG (Stock)';
+                                                    $statusDot = 'bg-red-500';
+                                                    $badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                                } elseif ($defaultStock >= 1 && $defaultStock <= 9) {
+                                                    $statusText = 'SẮP HẾT HÀNG';
+                                                    $statusDot = 'bg-yellow-500';
+                                                    $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                                                } elseif ($defaultStock >= 10) {
+                                                    $statusText = 'CÒN HÀNG';
+                                                    $statusDot = 'bg-green-500';
+                                                    $badgeClass = 'bg-green-50 text-green-700 border-green-200';
+                                                } else {
+                                                    $statusText = 'HẾT HÀNG';
+                                                    $statusDot = 'bg-red-500';
+                                                    $badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                                }
+                                                break;
+                                        }
+                                    @endphp
+                                    <div class="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4 mt-2">
+                                        <span id="stockBadge"
+                                            class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }} whitespace-nowrap w-fit">
+                                            <span id="stockDot"
+                                                class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block flex-shrink-0"></span>
+                                            <span id="stockText" class="truncate">{{ $statusText }}</span>
+                                        </span>
+                                        @if(
+                                                ($book->status === 'Còn Hàng' && $defaultStock > 0) ||
+                                                $isEbook
+                                            )
+                                            <span id="stockQuantityDisplay"
+                                                class="text-xs sm:text-sm text-gray-600 adidas-font whitespace-nowrap">
+                                                (<span class="font-bold text-black" id="productQuantity">{{ $defaultStock }}</span> cuốn
+                                                còn lại)
+                                            </span>
                                         @endif
                                     </div>
 
@@ -1290,6 +1393,131 @@
                                             <i class="fas fa-chevron-down text-black"></i>
                                         </div>
                                     </div>
+                                    <!-- Preview Button for Ebook -->
+                                    <div id="previewSection" class="@if(!$isEbook) hidden @endif mt-4">
+                                        <a href="#" id="previewBtn"
+                                            class="adidas-btn w-full h-12 bg-blue-600 text-white font-bold text-sm uppercase tracking-wider transition-all duration-300 flex items-center justify-center hover:bg-blue-700 adidas-font">
+                                            <i class="fas fa-book-reader mr-2"></i>
+                                            <span>ĐỌC THỬ</span>
+                                        </a>
+                                        <p class="text-sm text-gray-600 mt-2 adidas-font">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Bạn có thể đọc thử một phần nội dung của sách
+                                        </p>
+                                    </div>
+                                </div>
+                            @endif
+                            <!-- Enhanced Attributes -->
+                            {{-- Thuộc tính --}}
+                            @if($book->attributeValues->count())
+                                <div id="bookAttributesGroup" class="attribute-group space-y-4">
+                                    <h3 class="text-sm font-bold text-black uppercase tracking-wider adidas-font">Tuỳ chọn sản phẩm</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        @foreach($book->attributeValues->unique('attribute_id') as $attrVal)
+                                            @php
+                                                $attributeName = $attrVal->attribute->name ?? '';
+                                                $isLanguageAttribute = stripos($attributeName, 'Ngôn Ngữ') !== false || stripos($attributeName, 'language') !== false;
+                                            @endphp
+                                            <div class="space-y-2 col-span-1 attribute-item"
+                                                data-attribute-name="{{ strtolower($attributeName) }}"
+                                                data-is-language="{{ $isLanguageAttribute ? 'true' : 'false' }}">
+                                                <label for="attribute_{{ $attrVal->id }}"
+                                                    class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">
+                                                    {{ $attributeName ?: 'Không rõ' }}
+                                                </label>
+                                                @php
+                                                    $filteredValues = \App\Models\BookAttributeValue::with('attributeValue')
+                                                        ->where('book_id', $book->id)
+                                                        ->whereHas('attributeValue', function ($q) use ($attrVal) {
+                                                            $q->where('attribute_id', $attrVal->attribute_id);
+                                                        })
+                                                        ->get();
+                                                @endphp
+                                                <div class="relative">
+                                                    <select name="attributes[{{ $attrVal->id }}]" id="attribute_{{ $attrVal->id }}"
+                                                        class="adidas-select w-full appearance-none bg-white">
+                                                        @foreach($filteredValues as $bookAttrVal)
+                                                            <option value="{{ $bookAttrVal->attribute_value_id }}"
+                                                                data-price="{{ $bookAttrVal->extra_price ?? 0 }}">
+                                                                {{ $bookAttrVal->attributeValue->value ?? 'Không rõ' }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
+                                                        <i class="fas fa-chevron-down text-black"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                            <!-- Enhanced Quantity & Add to Cart Section -->
+                            <div class="purchase-section space-y-6 pt-6">
+                                @php
+                                    $isEbook = false;
+                                    if (isset($defaultFormat->format_name)) {
+                                        $isEbook = stripos($defaultFormat->format_name, 'ebook') !== false;
+                                    }
+                                @endphp
+                                <div class="quantity-section space-y-3" @if($isEbook) style="display:none" @endif>
+                                    <label for="quantity"
+                                        class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">Số
+                                        lượng</label>
+                                    <div class="flex items-center w-fit">
+                                        <button type="button" id="decrementBtn" class="quantity-btn-enhanced">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <input type="number" id="quantity" value="1" min="1" class="quantity-input-enhanced" />
+                                        <button type="button" id="incrementBtn" class="quantity-btn-enhanced">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Enhanced Add to Cart Button -->
+                                <div class="space-y-4">
+                                    <button id="addToCartBtn"
+                                        class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
+                                        <i class="fas fa-shopping-bag mr-3"></i>
+                                        <span>THÊM VÀO GIỎ HÀNG</span>
+                                    </button>
+
+                                    <!-- Wishlist Button -->
+                                    <button
+                                        class="wishlist-btn w-full h-14 border-2 border-black text-black font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
+                                        <i class="far fa-heart mr-3"></i>
+                                        <span>YÊU THÍCH</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Share Section -->
+                            <div class="share-section pt-8 border-t border-gray-200">
+                                <h3 class="text-sm font-bold text-black uppercase tracking-wider mb-6 adidas-font">Chia sẻ sản phẩm
+                                </h3>
+                                <div class="flex space-x-4">
+                                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}"
+                                        target="_blank"
+                                        class="share-btn-enhanced w-12 h-12 flex items-center justify-center border-2 border-gray-200 hover:border-black transition-all duration-300">
+                                        <i class="fab fa-facebook-f text-lg"></i>
+                                    </a>
+                                    <a href="https://twitter.com/intent/tweet?url={{ urlencode(url()->current()) }}" target="_blank"
+                                        class="share-btn-enhanced w-12 h-12 flex items-center justify-center border-2 border-gray-200 hover:border-black transition-all duration-300">
+                                        <i class="fab fa-twitter text-lg"></i>
+                                    </a>
+                                    <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ urlencode(url()->current()) }}"
+                                        target="_blank"
+                                        class="share-btn-enhanced w-12 h-12 flex items-center justify-center border-2 border-gray-200 hover:border-black transition-all duration-300">
+                                        <i class="fab fa-linkedin-in text-lg"></i>
+                                    </a>
+                                    <a href="https://api.whatsapp.com/send?text={{ urlencode(url()->current()) }}" target="_blank"
+                                        class="share-btn-enhanced w-12 h-12 flex items-center justify-center border-2 border-gray-200 hover:border-black transition-all duration-300">
+                                        <i class="fab fa-whatsapp text-lg"></i>
+                                    </a>
+                                    <a href="https://t.me/share/url?url={{ urlencode(url()->current()) }}" target="_blank"
+                                        class="share-btn-enhanced w-12 h-12 flex items-center justify-center border-2 border-gray-200 hover:border-black transition-all duration-300">
+                                        <i class="fab fa-telegram-plane text-lg"></i>
+                                    </a>
                                 </div>
                             @endforeach
                         </div>
@@ -2247,21 +2475,148 @@
                     stockText = 'CÒN HÀNG';
                     stockClass = 'status-in-stock font-semibold';
                 }
-                bookStockElement.textContent = stockText;
-                bookStockElement.className = stockClass;
-            }
-            if (stockQuantityDisplay) {
-                if (stock > 0) {
-                    // Ensure the productQuantity span exists and update it
-                    let productQuantitySpan = document.getElementById('productQuantity');
-                    if (!productQuantitySpan) {
-                        stockQuantityDisplay.innerHTML = `(<span class="font-bold text-black" id="productQuantity">${stock}</span> cuốn còn lại)`;
-                    } else {
-                        productQuantitySpan.textContent = stock;
+                // Update stock display
+                const stockBadgeElement = document.getElementById('stockBadge');
+                const stockDotElement = document.getElementById('stockDot');
+                const stockTextElement = document.getElementById('stockText');
+                const stockQuantityDisplay = document.getElementById('stockQuantityDisplay');
+
+                if (isEbook) {
+                    // For eBooks - apply status priority logic too
+                    const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
+
+                    let stockText = '';
+                    let badgeClass = '';
+                    let dotClass = '';
+
+                    // Priority 1: Check books.status first (even for ebooks)
+                    switch (bookStatus) {
+                        case 'Ngừng Kinh Doanh':
+                            stockText = 'NGƯNG KINH DOANH';
+                            badgeClass = 'bg-gray-100 text-gray-700 border-gray-300';
+                            dotClass = 'bg-gray-500';
+                            break;
+                        case 'Sắp Ra Mắt':
+                            stockText = 'SẮP RA MẮT';
+                            badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                            dotClass = 'bg-yellow-500';
+                            break;
+                        case 'Hết Hàng Tồn Kho':
+                            stockText = 'HẾT HÀNG TỒN KHO';
+                            badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                            dotClass = 'bg-red-500';
+                            break;
+                        case 'Còn Hàng':
+                        default:
+                            // Only when status = 'Còn Hàng', show ebook available
+                            stockText = 'EBOOK - CÓ SẴN';
+                            badgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+                            dotClass = 'bg-blue-500';
+                            break;
+                    }
+
+                    if (stockTextElement) {
+                        stockTextElement.textContent = stockText;
+                    }
+                    if (stockBadgeElement) {
+                        stockBadgeElement.className = 'inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider ' + badgeClass + ' whitespace-nowrap w-fit';
+                    }
+                    if (stockDotElement) {
+                        stockDotElement.className = 'w-2 h-2 rounded-full mr-2 ' + dotClass + ' inline-block flex-shrink-0';
+                    }
+                    if (stockQuantityDisplay) {
+                        stockQuantityDisplay.style.display = 'none';
+                    }
+                    // Hide quantity section for ebooks
+                    const quantitySection = document.querySelector('.quantity-section');
+                    if (quantitySection) {
+                        quantitySection.style.display = 'none';
                     }
                     stockQuantityDisplay.style.display = 'inline';
                 } else {
-                    stockQuantityDisplay.style.display = 'none';
+                    // For physical books - apply status priority logic
+                    const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
+
+                    let stockText = '';
+                    let badgeClass = '';
+                    let dotClass = '';
+
+                    // Priority 1: Check books.status first
+                    switch (bookStatus) {
+                        case 'Ngừng Kinh Doanh':
+                            stockText = 'NGƯNG KINH DOANH';
+                            badgeClass = 'bg-gray-100 text-gray-700 border-gray-300';
+                            dotClass = 'bg-gray-500';
+                            break;
+                        case 'Sắp Ra Mắt':
+                            stockText = 'SẮP RA MẮT';
+                            badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                            dotClass = 'bg-yellow-500';
+                            break;
+                        case 'Hết Hàng Tồn Kho':
+                            stockText = 'HẾT HÀNG TỒN KHO';
+                            badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                            dotClass = 'bg-red-500';
+                            break;
+                        case 'Còn Hàng':
+                        default:
+                            // Priority 2: Only when status = 'Còn Hàng', check stock levels
+                            if (stock == 0) {
+                                stockText = 'HẾT HÀNG (Stock)';
+                                badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                dotClass = 'bg-red-500';
+                            } else if (stock >= 1 && stock <= 9) {
+                                stockText = 'SẮP HẾT HÀNG';
+                                badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                                dotClass = 'bg-yellow-500';
+                            } else if (stock >= 10) {
+                                stockText = 'CÒN HÀNG';
+                                badgeClass = 'bg-green-50 text-green-700 border-green-200';
+                                dotClass = 'bg-green-500';
+                            } else {
+                                stockText = 'HẾT HÀNG';
+                                badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                dotClass = 'bg-red-500';
+                            }
+                            break;
+                    }
+
+                    // Update elements
+                    if (stockTextElement) {
+                        stockTextElement.textContent = stockText;
+                    }
+                    if (stockBadgeElement) {
+                        stockBadgeElement.className = 'inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider ' + badgeClass + ' whitespace-nowrap w-fit';
+                    }
+                    if (stockDotElement) {
+                        stockDotElement.className = 'w-2 h-2 rounded-full mr-2 ' + dotClass + ' inline-block flex-shrink-0';
+                    }
+
+                    if (stockQuantityDisplay) {
+                        if (stock > 0 && bookStatus === 'Còn Hàng') {
+                            // Ensure the productQuantity span exists and update it
+                            let productQuantitySpan = document.getElementById('productQuantity');
+                            if (!productQuantitySpan) {
+                                stockQuantityDisplay.innerHTML = `(<span class="font-bold text-black" id="productQuantity">${stock}</span> cuốn còn lại)`;
+                            } else {
+                                productQuantitySpan.textContent = stock;
+                            }
+                            stockQuantityDisplay.style.display = 'inline';
+                        } else {
+                            stockQuantityDisplay.style.display = 'none';
+                        }
+                    }
+                    // Update productQuantityElement reference after potential recreation
+                    const refreshedProductQuantityElement = document.getElementById('productQuantity');
+                    if (refreshedProductQuantityElement) {
+                        refreshedProductQuantityElement.textContent = stock > 0 ? stock : 0;
+                    }
+
+                    // Show quantity section for physical books
+                    const quantitySection = document.querySelector('.quantity-section');
+                    if (quantitySection) {
+                        quantitySection.style.display = 'block';
+                    }
                 }
             }
             // Update productQuantityElement reference after potential recreation
@@ -2292,33 +2647,20 @@
                 if (parseInt(quantityInput.value) > stock) {
                     quantityInput.value = Math.min(parseInt(quantityInput.value), stock);
                 }
-            }
-        }
-    }
 
-    // Event listeners
-    $(document).ready(function() {
-        const formatSelect = document.getElementById('bookFormatSelect');
-        if (formatSelect) {
-            formatSelect.addEventListener('change', updatePriceAndStock);
-            
-            // Khởi tạo trạng thái ban đầu
-            const initialOption = formatSelect.options[formatSelect.selectedIndex];
-            const initialFormatName = initialOption.text.toLowerCase();
-            const attributeGroup = document.getElementById('attributeGroup');
-            const quantitySection = document.querySelector('.quantity-section');
-            
-            if (initialFormatName.includes('ebook')) {
-                if (quantitySection) {
-                    quantitySection.style.display = 'none';
-                }
-                
-                // Ẩn tất cả thuộc tính trừ ngôn ngữ cho ebook
-                if (attributeGroup) {
-                    const attributeItems = attributeGroup.querySelectorAll('.attribute-item');
+                // Show/hide attributes based on format type
+                const attributesGroup = document.getElementById('bookAttributesGroup');
+                if (attributesGroup) {
+                    const attributeItems = attributesGroup.querySelectorAll('.attribute-item');
+
                     attributeItems.forEach(item => {
-                        const isLanguage = item.getAttribute('data-is-language') === 'true';
-                        if (isLanguage) {
+                        const isLanguageAttr = item.dataset.isLanguage === 'true';
+
+                        if (isEbook) {
+                            // For ebooks, only show language attributes
+                            item.style.display = isLanguageAttr ? 'block' : 'none';
+                        } else {
+                            // For physical books, show all attributes
                             item.style.display = 'block';
                         } else {
                             item.style.display = 'none';
@@ -2425,42 +2767,123 @@
                         isComboExpanded = true;
                     }
                 }
+
+                // Initialize price and stock on page load
+                updatePriceAndStock();
+
+                // Initialize attribute visibility on page load
+                setTimeout(() => {
+                    updatePriceAndStock(); // Gọi lại để đảm bảo thuộc tính được ẩn/hiện đúng
+                }, 100);
             });
         }
 
-        // Initialize price and stock on page load
-        updatePriceAndStock();
-    });
+            // Add to cart function
+            function addToCart() {
+                // Check if we're on book page (not combo page)
+                @if(!isset($combo) && isset($book))
+                    // Check if user is logged in
+                    @auth
+                    @else
+                                                            if (typeof toastr !== 'undefined') {
+                            toastr.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
+                        } else {
+                            alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
+                        }
+                        setTimeout(() => {
+                            window.location.href = '{{ route("login") }}';
+                        }, 1500);
+                        return;
+                    @endauth
 
-    // Add to cart function
-    function addToCart() {
-        // Check if user is logged in
-        @auth
-        @else
-            if (typeof toastr !== 'undefined') {
-                toastr.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
-            } else {
-                alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
-            }
-            setTimeout(() => {
-                window.location.href = '{{ route("login") }}';
-            }, 1500);
-            return;
-        @endauth
+                                            // Get form data
+                                            const bookId = '{{ $book->id }}';
+                    const quantity = parseInt(document.getElementById('quantity').value) || 1;
 
-        // Get form data
-        const bookId = '{{ $book->id }}';
-        const quantity = parseInt(document.getElementById('quantity').value) || 1;
-        
-        // Get selected format
-        const formatSelect = document.getElementById('bookFormatSelect');
-        const bookFormatId = formatSelect ? formatSelect.value : null;
-        let isEbook = false;
-        
-        if (formatSelect && formatSelect.selectedOptions[0]) {
-            const selectedText = formatSelect.selectedOptions[0].textContent.trim().toLowerCase();
-            isEbook = selectedText.includes('ebook');
-        }
+                    // Get selected format
+                    const formatSelect = document.getElementById('bookFormatSelect');
+                    const bookFormatId = formatSelect ? formatSelect.value : null;
+                    let isEbook = false;
+
+                    if (formatSelect && formatSelect.selectedOptions[0]) {
+                        const selectedText = formatSelect.selectedOptions[0].textContent.trim().toLowerCase();
+                        isEbook = selectedText.includes('ebook');
+                    }
+
+                    // Get selected attributes - chỉ lấy thuộc tính ngôn ngữ cho ebooks
+                    const attributes = {};
+                    const attributeValueIds = [];
+                    const attributeSelects = document.querySelectorAll('[name^="attributes["]');
+
+                    attributeSelects.forEach(select => {
+                        if (select.value) {
+                            // Nếu là ebook, chỉ lấy thuộc tính ngôn ngữ
+                            if (isEbook) {
+                                const attributeItem = select.closest('.attribute-item');
+                                if (attributeItem && attributeItem.dataset.isLanguage === 'true') {
+                                    attributes[select.name] = select.value;
+                                    attributeValueIds.push(select.value);
+                                }
+                            } else {
+                                // Nếu không phải ebook, lấy tất cả thuộc tính
+                                attributes[select.name] = select.value;
+                                attributeValueIds.push(select.value);
+                            }
+                        }
+                    });
+
+                    // Validate based on book status (for both ebooks and physical books)
+                    const bookPriceElement = document.getElementById('bookPrice');
+                    const bookStatus = bookPriceElement?.dataset.bookStatus || 'Còn Hàng';
+
+                    // Priority 1: Check books.status first (applies to both ebooks and physical books)
+                    if (bookStatus === 'Ngừng Kinh Doanh' || bookStatus === 'Sắp Ra Mắt' || bookStatus === 'Hết Hàng Tồn Kho') {
+                        if (bookStatus === 'Ngừng Kinh Doanh') {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('Sản phẩm này hiện đã ngừng kinh doanh!');
+                            } else {
+                                alert('Sản phẩm này hiện đã ngừng kinh doanh!');
+                            }
+                        }else if (bookStatus === 'Sắp Ra Mắt') {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('Sản phẩm này hiện chưa ra mắt!');
+                            } else {
+                                alert('Sản phẩm này hiện chưa ra mắt!');
+                            }
+                        } else if (bookStatus === 'Hết Hàng Tồn Kho') {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('Sản phẩm này hiện hết hàng tồn kho!');
+                            } else {
+                                alert('Sản phẩm này hiện hết hàng tồn kho!');
+                            }
+                        }
+                       
+                        addToCartBtn.disabled = false;
+                        addToCartBtn.textContent = originalText;
+                        return;
+                    }
+
+                    // Additional stock validation for physical books only
+                    if (!isEbook) {
+                        // Get stock from format select instead of DOM element for reliability
+                        const formatSelect = document.getElementById('bookFormatSelect');
+                        let stock = 0;
+
+                        if (formatSelect && formatSelect.selectedOptions[0]) {
+                            stock = parseInt(formatSelect.selectedOptions[0].dataset.stock) || 0;
+                        }
+
+                        // Priority 2: Only when status = 'Còn Hàng', check stock levels for physical books
+                        if (bookStatus === 'Còn Hàng' && stock <= 0) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('Sản phẩm này hiện hết hàng!');
+                            } else {
+                                alert('Sản phẩm này hiện hết hàng!');
+                            }
+                            addToCartBtn.disabled = false;
+                            addToCartBtn.textContent = originalText;
+                            return;
+                        }
 
         // Get selected attributes
         const attributes = {};
@@ -2495,68 +2918,123 @@
                 return;
             }
 
-            if (quantity > stock) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('Số lượng vượt quá số lượng tồn kho!');
-                } else {
-                    alert('Số lượng vượt quá số lượng tồn kho!');
-                }
-                addToCartBtn.disabled = false;
-                addToCartBtn.textContent = originalText;
-                return;
-            }
-        }
-
-        // Disable button and show loading
-        const addToCartBtn = document.getElementById('addToCartBtn');
-        const originalText = addToCartBtn.textContent;
-        addToCartBtn.disabled = true;
-        addToCartBtn.textContent = 'Đang thêm...';
-
-        // Send request
-        fetch('{{ route("cart.add") }}', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                book_id: bookId,
-                quantity: quantity,
-                book_format_id: bookFormatId,
-                attributes: attributes
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.success('Đã thêm sản phẩm vào giỏ hàng!');
-                } else {
-                    alert('Đã thêm sản phẩm vào giỏ hàng!');
-                }
-                
-                // Dispatch cart count update event
-                if (typeof data.cart_count !== 'undefined') {
-                    document.dispatchEvent(new CustomEvent('cartItemAdded', {
-                        detail: { count: data.cart_count }
-                    }));
-                } else {
-                    // Fallback: refresh cart count from server
-                    if (window.CartCountManager && typeof window.CartCountManager.refreshFromServer === 'function') {
-                        window.CartCountManager.refreshFromServer();
+                                // Dispatch cart count update event
+                                if (typeof data.cart_count !== 'undefined') {
+                                    document.dispatchEvent(new CustomEvent('cartItemAdded', {
+                                        detail: { count: data.cart_count }
+                                    }));
+                                } else {
+                                    // Fallback: refresh cart count from server
+                                    if (window.CartCountManager && typeof window.CartCountManager.refreshFromServer === 'function') {
+                                        window.CartCountManager.refreshFromServer();
+                                    }
+                                }
+                            } else if (data.error) {
+                                if (typeof toastr !== 'undefined') {
+                                    // Kiểm tra nếu là lỗi trộn lẫn loại sản phẩm
+                                    if (data.cart_type) {
+                                        if (data.cart_type === 'physical_books') {
+                                            toastr.warning(data.error, 'Giỏ hàng có sách vật lý!', {
+                                                timeOut: 6000,
+                                                closeButton: true,
+                                                progressBar: true,
+                                                positionClass: 'toast-top-right'
+                                            });
+                                        } else if (data.cart_type === 'ebooks') {
+                                            toastr.warning(data.error, 'Giỏ hàng có sách điện tử!', {
+                                                timeOut: 6000,
+                                                closeButton: true,
+                                                progressBar: true,
+                                                positionClass: 'toast-top-right'
+                                            });
+                                        }
+                                    } else {
+                                        toastr.error(data.error);
+                                    }
+                                } else {
+                                    // Fallback alert if toastr is not available
+                                    alert(data.error);
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(' có lỗi xảy ra khi thêm vào giỏ hàng');
+                            } else {
+                                alert('có lỗi xảy ra khi thêm vào giỏ hàng');
+                            }
+                        })
+                        .finally(() => {
+                            // Restore button
+                            addToCartBtn.disabled = false;
+                            addToCartBtn.textContent = originalText;
+                        });
+                @else
+                    // This is combo page, addToCart function should not be called
+                    console.warn('addToCart function called on combo page');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning('Chức năng này chỉ khả dụng trên trang sách đơn');
                     }
-                }
-            } else if (data.error) {
-                if (typeof toastr !== 'undefined') {
-                    // Kiểm tra nếu là lỗi trộn lẫn loại sản phẩm
-                    if (data.cart_type) {
-                        if (data.cart_type === 'physical_books') {
-                            toastr.warning(data.error, 'Giỏ hàng có sách vật lý!', {
-                                timeOut: 6000,
-                                closeButton: true,
-                                progressBar: true,
-                                positionClass: 'toast-top-right'
+                @endif
+                            }
+
+            // Add related product to cart function
+            function addRelatedToCart(bookId) {
+                // Check if user is logged in
+                @auth
+                @else
+                                                if (typeof toastr !== 'undefined') {
+                        toastr.warning('Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng', 'Chưa đăng nhập!', {
+                            timeOut: 3000,
+                            positionClass: 'toast-top-right',
+                            closeButton: true,
+                            progressBar: true
+                        });
+                    } else {
+                        alert('Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng');
+                    }
+                    setTimeout(() => {
+                        window.location.href = '{{ route("login") }}';
+                    }, 1500);
+                    return;
+                @endauth
+
+                                // Default quantity for related products
+                                const quantity = 1;
+
+                // Find the button that was clicked
+                const button = event.target.closest('button');
+                const originalText = button.innerHTML;
+
+                // Disable button and show loading
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ĐANG THÊM...';
+
+                // Send request
+                fetch('{{ route("cart.add") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        book_id: bookId,
+                        book_format_id: null, // Use default format
+                        quantity: quantity,
+                        attribute_value_ids: JSON.stringify([]),
+                        attributes: {}
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                console.log('Non-JSON response:', text);
+                                throw new Error('Server returned non-JSON response');
                             });
                         } else if (data.cart_type === 'ebooks') {
                             toastr.warning(data.error, 'Giỏ hàng có sách điện tử!', {
@@ -3167,29 +3645,34 @@
                 attributeDiv.appendChild(newSelect);
                 attributesSection.appendChild(attributeDiv);
             }
-        });
-        
-        // Apply initial visibility based on selected format
-        filterPreorderAttributesByFormat();
-    }
 
-    function filterPreorderAttributesByFormat() {
-        const formatSelect = document.getElementById('preorderFormatSelect');
-        const attributeItems = document.querySelectorAll('.preorder-attribute-item');
-        
-        if (formatSelect && formatSelect.selectedOptions[0]) {
-            const selectedFormat = formatSelect.selectedOptions[0].textContent.toLowerCase();
-            const isEbook = selectedFormat.includes('ebook');
-            
-            attributeItems.forEach(item => {
-                const isLanguage = item.getAttribute('data-is-language') === 'true';
-                
-                if (isEbook) {
-                    // For ebook: only show language attributes
-                    if (isLanguage) {
-                        item.style.display = 'block';
-                    } else {
-                        item.style.display = 'none';
+            // Handle combo form submission
+            const comboForm = document.querySelector('form[action="{{ route("cart.add") }}"]');
+            if (comboForm) {
+                comboForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    // Check if user is logged in
+                    @auth
+                    @else
+                                                if (typeof toastr !== 'undefined') {
+                            toastr.error('Vui lòng đăng nhập để thêm combo vào giỏ hàng!');
+                        } else {
+                            alert('Vui lòng đăng nhập để thêm combo vào giỏ hàng!');
+                        }
+                        setTimeout(() => {
+                            window.location.href = '{{ route("login") }}';
+                        }, 1500);
+                        return;
+                    @endauth
+
+                                    // Get form data and convert to URLSearchParams for better debugging
+                                    const formData = new FormData(comboForm);
+                    const urlParams = new URLSearchParams();
+
+                    // Convert FormData to URLSearchParams
+                    for (let pair of formData.entries()) {
+                        urlParams.append(pair[0], pair[1]);
                     }
                 } else {
                     // For physical books: show all attributes

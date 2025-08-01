@@ -25,7 +25,6 @@ use App\Services\QrCodeService;
 use App\Services\VoucherService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -75,7 +74,7 @@ class OrderController extends Controller
         try {
             $cartItems = $this->orderService->validateCartItems($user);
         } catch (\Exception $e) {
-            Toastr::error($e->getMessage());
+            toastr()->error($e->getMessage());
             return redirect()->route('cart.index');
         }
 
@@ -138,7 +137,7 @@ class OrderController extends Controller
         try {
             $selectedCartItems = $this->orderService->validateCartItems($user);
         } catch (\Exception $e) {
-            Toastr::error($e->getMessage());
+            toastr()->error($e->getMessage());
             return redirect()->route('cart.index');
         }
         
@@ -269,7 +268,7 @@ class OrderController extends Controller
                         $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
                     }
                     
-                    Toastr::success($successMessage);
+                    toastr()->success($successMessage);
                     return redirect()->route('orders.show', $parentOrder->id);
                 }
                 
@@ -309,7 +308,7 @@ class OrderController extends Controller
                     $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
                 }
                 
-                Toastr::success($successMessage);
+                toastr()->success($successMessage);
                 return redirect()->route('orders.show', $parentOrder->id);
             }
             
@@ -351,6 +350,9 @@ class OrderController extends Controller
             
             // Gửi email ebook nếu đơn hàng có ebook
             $this->emailService->sendEbookPurchaseConfirmation($order);
+            
+            // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
+            $this->orderService->updateEbookOrderStatusOnPaymentSuccess($order);
                 
                 // Tạo và gửi hóa đơn ngay lập tức cho thanh toán ví
                 try {
@@ -368,7 +370,7 @@ class OrderController extends Controller
                     $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
                 }
                 
-                Toastr::success($successMessage);
+                toastr()->success($successMessage);
                 return redirect()->route('orders.show', $order->id);
             }
             
@@ -425,17 +427,17 @@ class OrderController extends Controller
                 $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
             }
             
-            Toastr::success($successMessage);
+            toastr()->success($successMessage);
             return redirect()->route('orders.show', $order->id);
             
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
-            Toastr::error('Lỗi validation: ' . $e->getMessage());
+            toastr()->error('Lỗi validation: ' . $e->getMessage());
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Lỗi khi tạo đơn hàng: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
-            Toastr::error($e->getMessage());
+            toastr()->error($e->getMessage());
             return redirect()->back()->with('error', 'Có lỗi xảy ra khi đặt hàng: ' . $e->getMessage());
         }
     }
@@ -521,13 +523,13 @@ class OrderController extends Controller
 
         // Authorization: Ensure the user owns the order
         if ($order->user_id !== $user->id) {
-            Toastr::error('Bạn không có quyền hủy đơn hàng này.');
+            toastr()->error('Bạn không có quyền hủy đơn hàng này.');
             return redirect()->back()->with('error', 'Bạn không có quyền hủy đơn hàng này.');
         }
 
         // Check if order status allows cancellation
         if (!\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name)) {
-            Toastr::error('Không thể hủy đơn hàng ở trạng thái hiện tại: ' . $order->orderStatus->name);
+            toastr()->error('Không thể hủy đơn hàng ở trạng thái hiện tại: ' . $order->orderStatus->name);
             return redirect()->back()->with('error', 'Không thể hủy đơn hàng ở trạng thái hiện tại: ' . $order->orderStatus->name);
         }
 
@@ -551,7 +553,7 @@ class OrderController extends Controller
             $cancelledStatus = OrderStatus::where('name', 'Đã hủy')->first();
             if (!$cancelledStatus) {
                 Log::error('Order status "Đã hủy" not found.');
-                Toastr::error('Lỗi hệ thống: Trạng thái hủy đơn hàng không tồn tại.');
+                toastr()->error('Lỗi hệ thống: Trạng thái hủy đơn hàng không tồn tại.');
                 DB::rollBack();
                 return redirect()->back()->with('error', 'Lỗi hệ thống khi hủy đơn hàng.');
             }
@@ -563,14 +565,61 @@ class OrderController extends Controller
                 'cancellation_reason' => implode(", ", $selectedReasons)
             ]);
 
-            DB::commit();
+            // Cộng lại tồn kho cho các sản phẩm trong đơn hàng
+            $order->orderItems->each(function ($item) {
+                if ($item->bookFormat && $item->bookFormat->stock !== null) {
+                    Log::info("Cộng lại tồn kho cho book_format_id {$item->bookFormat->id}, số lượng: {$item->quantity}");
+                    $item->bookFormat->increment('stock', $item->quantity);
+                }
+            });
 
-            Toastr::success('Đơn hàng đã được hủy thành công.');
+
+
+
+            // Hoàn tiền vào ví nếu đơn hàng đã thanh toán
+            if ($order->paymentStatus->name === 'Đã Thanh Toán') {
+                try {
+                    $paymentRefundService = app(\App\Services\PaymentRefundService::class);
+                    $refundResult = $paymentRefundService->refundToWallet($order, $order->total_amount);
+                    
+                    if ($refundResult) {
+                        Log::info('Order 3 cancellation refund successful', [
+                            'order_id' => $order->id,
+                            'order_code' => $order->order_code,
+                            'amount' => $order->total_amount,
+                            'user_id' => $order->user_id
+                        ]);
+                        
+                        toastr()->success('Đơn hàng đã được hủy và hoàn tiền vào ví thành công.');
+                    } else {
+                        Log::warning('Order cancellation refund failed but order still cancelled', [
+                            'order_id' => $order->id,
+                            'order_code' => $order->order_code
+                        ]);
+                        
+                        toastr()->success('Đơn hàng đã được hủy thành công. Tiền hoàn sẽ được xử lý trong thời gian sớm nhất.');
+                    }
+                } catch (\Exception $refundError) {
+                    Log::error('Order cancellation refund error', [
+                        'order_id' => $order->id,
+                        'error' => $refundError->getMessage(),
+                        'trace' => $refundError->getTraceAsString()
+                    ]);
+                    
+                    toastr()->success('Đơn hàng đã được hủy thành công. Tiền hoàn sẽ được xử lý trong thời gian sớm nhất.');
+                }
+            } else {
+                toastr()->success('Đơn hàng đã được hủy thành công.');
+            }
+
+
+
+            DB::commit();
             return redirect()->route('orders.index')->with('success', 'Đơn hàng đã được hủy thành công.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Lỗi khi hủy đơn hàng ' . $order->id . ': ' . $e->getMessage());
-            Toastr::error('Có lỗi xảy ra khi hủy đơn hàng: ' . $e->getMessage());
+            toastr()->error('Có lỗi xảy ra khi hủy đơn hàng: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Có lỗi xảy ra khi hủy đơn hàng.');
         }
     }
@@ -738,6 +787,9 @@ class OrderController extends Controller
                     
                     // Gửi email ebook nếu đơn hàng có ebook
                     $this->emailService->sendEbookPurchaseConfirmation($order);
+                    
+                    // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
+                    $this->orderService->updateEbookOrderStatusOnPaymentSuccess($order);
                 }
                 
                 // Tạo và gửi hóa đơn cho thanh toán VNPay thành công
@@ -758,7 +810,7 @@ class OrderController extends Controller
 
                 DB::commit();
 
-                Toastr::success('Thanh toán thành công! Đơn hàng của bạn đã được xác nhận.');
+                toastr()->success('Thanh toán thành công! Đơn hàng của bạn đã được xác nhận.');
                 return redirect()->route('orders.show', $order->id);
 
             } else {
@@ -813,7 +865,7 @@ class OrderController extends Controller
 
                 DB::commit();
 
-                Toastr::error('Thanh toán thất bại! Đơn hàng đã được hủy tự động.');
+                toastr()->error('Thanh toán thất bại! Đơn hàng đã được hủy tự động.');
                 return redirect()->route('orders.checkout')->with('error', 'Thanh toán thất bại. Vui lòng thử lại.');
             }
 
@@ -824,7 +876,7 @@ class OrderController extends Controller
                 'order_code' => $vnp_TxnRef
             ]);
 
-            Toastr::error('Có lỗi xảy ra trong quá trình xử lý thanh toán.');
+            toastr()->error('Có lỗi xảy ra trong quá trình xử lý thanh toán.');
             return redirect()->route('orders.checkout')->with('error', 'Có lỗi xảy ra trong quá trình xử lý thanh toán.');
         }
     }
