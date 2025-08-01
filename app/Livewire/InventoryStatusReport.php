@@ -17,7 +17,7 @@ class InventoryStatusReport extends Component
             ->select('id', 'title', 'cover_image', 'status')
             ->withSum('formats as total_stock', 'stock')
             ->having('total_stock', '>=', 1)
-            ->having('total_stock', '<=', 5)
+            ->having('total_stock', '<', 10)
             ->orderBy('total_stock')
             ->get();
 
