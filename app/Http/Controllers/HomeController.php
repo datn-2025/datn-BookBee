@@ -9,6 +9,7 @@ use App\Models\Review;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PaymentMethod;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Jorenvh\Share\ShareFacade;
@@ -23,7 +24,12 @@ class HomeController extends Controller
             ->take(8)
             ->get();
 
-        // $categories = Category::whereHas('books')->with('books')->take(3)->get();
+        // Fetch all books for "Tất cả sách" section
+        $allBooks = Book::with('category', 'formats', 'images')
+            ->orderBy('publication_date', 'desc')
+            ->take(12) // Display 12 books in the all books section
+            ->get();
+
         $categories = Category::withCount('books')
             ->orderBy('books_count', 'desc')
             ->with(['books' => function ($query) {
@@ -33,11 +39,9 @@ class HomeController extends Controller
             ->get();
 
 
-        $featuredBooks = Book::with(['formats' => function ($q) {
-            $q->orderByDesc('price');
-        }, 'authors', 'images'])
-            ->withMax('formats', 'price')
-            ->orderBy('formats_max_price', 'desc')
+        $featuredBooks = Book::with(['authors', 'images', 'formats'])
+            ->withSum('orderItems as total_sold', 'quantity')
+            ->orderBy('total_sold', 'desc')
             ->take(4)
             ->get();
 
@@ -57,7 +61,7 @@ class HomeController extends Controller
         }, 'authors', 'images'])
             ->withMax('formats', 'discount')
             ->orderBy('formats_max_discount', 'desc')
-            ->take(4)
+            ->take(8) // Increase to 8 books for expand/collapse functionality
             ->get();
 
         // Lấy 10 đánh giá mới nhất
@@ -80,7 +84,7 @@ class HomeController extends Controller
         // Lấy thống kê thực tế từ database
         $statistics = $this->getStatistics();
 
-        return view('clients.home', compact('books', 'categories', 'featuredBooks', 'latestBooks', 'bestReviewedBooks', 'saleBooks', 'reviews', 'articles', 'combos', 'statistics'));
+        return view('clients.home', compact('books', 'allBooks', 'categories', 'featuredBooks', 'latestBooks', 'bestReviewedBooks', 'saleBooks', 'reviews', 'articles', 'combos', 'statistics'));
     }
 
     public function show($slug)
@@ -114,7 +118,11 @@ class HomeController extends Controller
             ->telegram();
 
         $bookGifts = $book->gifts()->get();
-        return view('clients.show', compact('book', 'relatedBooks', 'shareButtons', 'bookGifts'));
+        
+        // Thêm payment methods để tránh lỗi undefined variable
+        $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)->get();
+        
+        return view('clients.show', compact('book', 'relatedBooks', 'shareButtons', 'bookGifts', 'paymentMethods'));
     }
 
     /**
@@ -133,7 +141,10 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-        return view('clients.show', compact('combo', 'relatedCombos'));
+        // Thêm payment methods cho preorder modal
+        $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)->get();
+
+        return view('clients.show', compact('combo', 'relatedCombos', 'paymentMethods'));
     }
 
     /**
