@@ -227,7 +227,7 @@
                                                         @if ($format->discount)
                                                             <del>{{ number_format($format->price) }}đ</del>
                                                             <span class="text-danger">
-                                                                {{ number_format($format->price * (1 - $format->discount / 100)) }}đ
+                                                                {{ number_format($format->price - $format->discount) }}đ
                                                             </span>
                                                         @else
                                                             {{ number_format($format->price) }}đ
