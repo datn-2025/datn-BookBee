@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('google_id')->nullable()->after('email');
+        Schema::table('orders', function (Blueprint $table) {
+            $table->enum('delivery_method', ['delivery', 'pickup', 'ebook', 'mixed'])->default('delivery')->after('shipping_fee');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('google_id');
+        Schema::table('orders', function (Blueprint $table) {
+            $table->dropColumn('delivery_method');
         });
     }
 };

@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('addresses', function (Blueprint $table) {
-            $table->dropColumn('phone');
+        Schema::table('wallet_transactions', function (Blueprint $table) {
+            $table->string('bill_image')->nullable()->after('customer_name')->comment('Ảnh bill chuyển khoản khi nạp tiền');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('addresses', function (Blueprint $table) {
-            $table->string('phone')->nullable();
+        Schema::table('wallet_transactions', function (Blueprint $table) {
+            $table->dropColumn('bill_image');
         });
     }
 };

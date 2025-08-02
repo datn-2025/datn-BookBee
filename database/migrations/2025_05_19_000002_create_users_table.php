@@ -16,14 +16,13 @@ return new class extends Migration
             $table->string('password');
             $table->string('phone', 20)->nullable();
             $table->enum('status', ['Hoạt Động', 'Bị Khóa', 'Chưa kích Hoạt'])->default('Chưa kích Hoạt');
-            $table->uuid('role_id');
-            $table->foreign('role_id')->references('id')->on('roles');
+            $table->uuid('role_id')->nullable();
+            $table->foreign('role_id')->references('id')->on('roles')->onDelete('set null');
             $table->string('remember_token')->nullable();
             $table->softDeletes();
             $table->timestamps();
             $table->index('email');
             $table->index('status');
-            $table->index('role_id');
         });
 
          Schema::create('password_reset_tokens', function (Blueprint $table) {
