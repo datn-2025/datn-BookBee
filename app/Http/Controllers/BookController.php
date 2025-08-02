@@ -39,6 +39,7 @@ class BookController extends Controller
 
         // Tạo query lấy sách
         $booksQuery = DB::table('books')
+            ->whereNull('books.deleted_at') // Loại trừ sách đã xóa mềm
             ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
             ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
             ->leftJoin('brands', 'books.brand_id', '=', 'brands.id')
@@ -167,14 +168,20 @@ class BookController extends Controller
 
         $authors = DB::table('authors')
             ->join('author_books', 'authors.id', '=', 'author_books.author_id')
-            ->join('books', 'author_books.book_id', '=', 'books.id')
+            ->join('books', function($join) {
+                $join->on('author_books.book_id', '=', 'books.id')
+                     ->whereNull('books.deleted_at'); // Loại trừ sách đã xóa mềm
+            })
             ->when($category, fn($query) => $query->where('books.category_id', $category->id))
             ->select('authors.id', 'authors.name')
             ->distinct()
             ->get();
 
         $brands = DB::table('brands')
-            ->join('books', 'brands.id', '=', 'books.brand_id')
+            ->join('books', function($join) {
+                $join->on('brands.id', '=', 'books.brand_id')
+                     ->whereNull('books.deleted_at'); // Loại trừ sách đã xóa mềm
+            })
             ->when($category, fn($query) => $query->where('books.category_id', $category->id))
             ->select('brands.id', 'brands.name')
             ->distinct()
@@ -218,6 +225,7 @@ class BookController extends Controller
         } else {
             // Tạo query tìm kiếm sách
             $booksQuery = DB::table('books')
+                ->whereNull('books.deleted_at') // Loại trừ sách đã xóa mềm
                 ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
                 ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
                 ->leftJoin('brands', 'books.brand_id', '=', 'brands.id')
@@ -251,8 +259,8 @@ class BookController extends Controller
                     'categories.name as category_name',
                     DB::raw('MIN(book_formats.price) as min_price'),
                     DB::raw('MAX(book_formats.price) as max_price'),
-                    DB::raw('MIN(CASE WHEN book_formats.discount > 0 THEN book_formats.price * (1 - book_formats.discount / 100) ELSE book_formats.price END) as min_sale_price'),
-                    DB::raw('MAX(CASE WHEN book_formats.discount > 0 THEN book_formats.price * (1 - book_formats.discount / 100) ELSE book_formats.price END) as max_sale_price'),
+                    DB::raw('MIN(CASE WHEN book_formats.discount > 0 THEN book_formats.price - book_formats.discount ELSE book_formats.price END) as min_sale_price'),
+                    DB::raw('MAX(CASE WHEN book_formats.discount > 0 THEN book_formats.price - book_formats.discount ELSE book_formats.price END) as max_sale_price'),
                     DB::raw('MIN(book_formats.discount) as min_discount'),
                     DB::raw('MAX(book_formats.discount) as max_discount'),
                     DB::raw('SUM(CASE WHEN book_formats.format_name NOT LIKE "%ebook%" AND book_formats.stock IS NOT NULL THEN book_formats.stock ELSE 0 END) as physical_stock'),

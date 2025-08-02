@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\BookSummary;
+use App\Models\Collection;
+use App\Models\ComboSummary;
 use App\Services\AISummaryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class AISummaryController extends Controller
 {
@@ -23,7 +26,7 @@ class AISummaryController extends Controller
     public function generateSummary(Request $request, $bookId): JsonResponse
     {
         try {
-            $book = Book::with(['author', 'category'])->findOrFail($bookId);
+            $book = Book::with(['authors', 'category'])->findOrFail($bookId);
 
             // Kiểm tra xem đã có summary chưa
             if ($book->hasSummary() && $book->summary->isCompleted()) {
@@ -85,7 +88,7 @@ class AISummaryController extends Controller
     public function regenerateSummary(Request $request, $bookId): JsonResponse
     {
         try {
-            $book = Book::with(['author', 'category', 'summary'])->findOrFail($bookId);
+            $book = Book::with(['authors', 'category', 'summary'])->findOrFail($bookId);
 
             // Xóa summary cũ nếu có
             if ($book->hasSummary()) {
@@ -166,7 +169,7 @@ class AISummaryController extends Controller
         ]);
 
         try {
-            $book = Book::with(['author', 'category', 'summary'])->findOrFail($bookId);
+            $book = Book::with(['authors', 'category', 'summary'])->findOrFail($bookId);
             $userMessage = trim($request->input('message'));
 
             // Làm sạch UTF-8 encoding cho user message
@@ -359,10 +362,251 @@ class AISummaryController extends Controller
     {
         return match($status) {
             'pending' => 'Đang chờ xử lý',
-            'processing' => 'Đang tạo tóm tắt',
+            'processing' => 'Đang xử lý',
             'completed' => 'Hoàn thành',
             'failed' => 'Thất bại',
             default => 'Không xác định'
         };
+    }
+
+    // COMBO AI SUMMARY METHODS
+
+    /**
+     * Tạo tóm tắt AI cho combo sách
+     */
+    public function generateComboSummary(Request $request, $comboId): JsonResponse
+    {
+        try {
+            $combo = Collection::with(['books.authors', 'books.category'])->findOrFail($comboId);
+
+            // Kiểm tra xem đã có summary chưa
+            if ($combo->hasSummary() && $combo->summary->isCompleted()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Combo đã có tóm tắt AI',
+                    'data' => $combo->summary
+                ]);
+            }
+
+            // Tạo summary mới
+            $summary = $this->aiSummaryService->generateComboSummaryWithFallback($combo);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tạo tóm tắt AI cho combo thành công',
+                'data' => $summary
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi tạo tóm tắt combo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Lấy tóm tắt AI của combo
+     */
+    public function getComboSummary($comboId): JsonResponse
+    {
+        try {
+            $combo = Collection::with('summary')->findOrFail($comboId);
+
+            if (!$combo->hasSummary()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Combo chưa có tóm tắt AI'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $combo->summary
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy combo'
+            ], 404);
+        }
+    }
+
+    /**
+     * Xóa tóm tắt AI và tạo lại cho combo
+     */
+    public function regenerateComboSummary(Request $request, $comboId): JsonResponse
+    {
+        try {
+            $combo = Collection::with(['books.authors', 'books.category', 'summary'])->findOrFail($comboId);
+
+            // Xóa summary cũ nếu có
+            if ($combo->hasSummary()) {
+                $combo->summary->delete();
+            }
+
+            // Tạo summary mới
+            $summary = $this->aiSummaryService->generateComboSummaryWithFallback($combo);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tạo lại tóm tắt AI cho combo thành công',
+                'data' => $summary
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi tạo lại tóm tắt combo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Kiểm tra trạng thái tóm tắt AI combo
+     */
+    public function checkComboStatus($comboId): JsonResponse
+    {
+        try {
+            $combo = Collection::with('summary')->findOrFail($comboId);
+
+            if (!$combo->hasSummary()) {
+                return response()->json([
+                    'success' => true,
+                    'status' => 'none',
+                    'message' => 'Chưa có tóm tắt'
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'status' => $combo->summary->status,
+                'message' => $this->getStatusMessage($combo->summary->status),
+                'data' => $combo->summary
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy combo'
+            ], 404);
+        }
+    }
+
+    /**
+     * Chat với AI về combo sách
+     */
+    public function chatWithComboAI(Request $request, $comboId): JsonResponse
+    {
+        $request->validate([
+            'message' => [
+                'required',
+                'string',
+                'min:3',
+                'max:300',
+                function ($attribute, $value, $fail) {
+                    // Kiểm tra UTF-8 hợp lệ
+                    if (!mb_check_encoding($value, 'UTF-8')) {
+                        $fail('Tin nhắn chứa ký tự không hợp lệ.');
+                    }
+                    
+                    // Kiểm tra không chỉ chứa whitespace
+                    if (trim($value) === '') {
+                        $fail('Tin nhắn không được để trống.');
+                    }
+                }
+            ]
+        ]);
+
+        try {
+            $combo = Collection::with(['books.authors'])->findOrFail($comboId);
+            $userMessage = trim($request->input('message'));
+
+            // Rate limiting - 10 tin nhắn mỗi phút
+            $sessionKey = 'combo_chat_' . $comboId;
+            $now = now();
+            $lastTime = session($sessionKey . '_last_time');
+            $chatCount = session($sessionKey . '_count', 0);
+
+            if ($lastTime && $now->diffInMinutes($lastTime) < 1) {
+                if ($chatCount >= 10) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Bạn đã gửi quá nhiều tin nhắn. Vui lòng đợi 1 phút trước khi gửi tiếp.'
+                    ], 429);
+                }
+            } else {
+                // Reset counter sau 1 phút
+                $chatCount = 0;
+            }
+
+            // Kiểm tra câu hỏi có liên quan đến combo không
+            if (!$this->isComboRelatedQuestion($userMessage)) {
+                // Lưu thông tin để tracking
+                session()->put($sessionKey . '_last_time', $now);
+                session()->put($sessionKey . '_count', $chatCount + 1);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tôi chỉ có thể trả lời các câu hỏi liên quan đến combo "' . $combo->name . '". Vui lòng hỏi về nội dung, các sách trong combo, giá trị của combo, hoặc thông tin khác liên quan đến combo này.'
+                ]);
+            }
+
+            // Gọi AI service
+            $aiResponse = $this->aiSummaryService->chatAboutCombo($combo, $userMessage);
+
+            // Cập nhật session tracking
+            session()->put($sessionKey . '_last_time', $now);
+            session()->put($sessionKey . '_count', $chatCount + 1);
+
+            return response()->json([
+                'success' => true,
+                'response' => $aiResponse,
+                'combo_name' => $combo->name,
+                'remaining_messages' => max(0, 10 - ($chatCount + 1))
+            ]);
+
+        } catch (\Exception $e) {
+            // Log chi tiết lỗi để debug
+            Log::error('Chat with Combo AI Controller Error', [
+                'combo_id' => $comboId,
+                'user_message' => $request->input('message'),
+                'error_message' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString(),
+                'user_agent' => $request->userAgent(),
+                'ip' => $request->ip()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi chat với AI về combo. Vui lòng thử lại sau.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Kiểm tra câu hỏi có liên quan đến combo không
+     */
+    private function isComboRelatedQuestion($message): bool
+    {
+        $comboKeywords = [
+            'combo', 'sách', 'book', 'đọc', 'tác giả', 'author', 'nội dung', 
+            'content', 'giá', 'price', 'mua', 'buy', 'review', 'đánh giá',
+            'tóm tắt', 'summary', 'chủ đề', 'theme', 'thể loại', 'genre',
+            'nhân vật', 'character', 'cốt truyện', 'plot', 'bộ', 'set',
+            'collection', 'gói', 'package', 'tiết kiệm', 'save', 'ưu đãi',
+            'khuyến mãi', 'discount', 'giá trị', 'value', 'lợi ích', 'benefit'
+        ];
+
+        $message = mb_strtolower($message);
+        
+        foreach ($comboKeywords as $keyword) {
+            if (mb_strpos($message, $keyword) !== false) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }
