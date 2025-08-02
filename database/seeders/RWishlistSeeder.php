@@ -12,9 +12,8 @@ class RWishlistSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = User::whereHas('role', function($query) {
-            $query->where('name', 'User');
-        })->get();
+    $userRole = \App\Models\Role::where('name', 'User')->first();
+    $users = $userRole ? User::where('role_id', $userRole->id)->get() : collect();
 
         // Kiểm tra nếu không có user nào
         if ($users->isEmpty()) {

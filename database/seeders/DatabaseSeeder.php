@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            PermissionSeeder::class,
+            // RoleSeeder::class,
             SettingsSeeder::class,    
             // // Thêm Settings trước
             // RoleSeeder::class,
@@ -63,6 +65,7 @@ class DatabaseSeeder extends Seeder
             RAttributeValueSeeder::class,
             RNewsArticleSeeder::class,
             RBookSeeder::class,
+            AuthorBookSeeder::class,
             RAddressSeeder::class,
             PaymentMethodSeeder::class,
             PaymentStatusSeeder::class,

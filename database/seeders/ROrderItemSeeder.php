@@ -20,7 +20,7 @@ class ROrderItemSeeder extends Seeder
         foreach ($orders as $order) {
             // Giả sử mỗi đơn hàng có từ 1 đến 3 sản phẩm
             $numOfItems = rand(1, 3);
-            
+
             for ($i = 0; $i < $numOfItems; $i++) {
                 // Chọn ngẫu nhiên một quyển sách
                 $book = Book::inRandomOrder()->first();
@@ -49,11 +49,13 @@ class ROrderItemSeeder extends Seeder
                 // Giả sử bạn có thêm một số thuộc tính cho OrderItem
                 // Thêm các AttributeValue nếu có
                 $attributeValues = $book->attributeValues->random(rand(1, 2)); // Lấy ngẫu nhiên 1-2 attributeValue cho sản phẩm
-                
+
                 // Dùng phương thức attach() để thêm liên kết giữa OrderItem và AttributeValue
                 foreach ($attributeValues as $attributeValue) {
                     // Thêm vào bảng liên kết order_item_attribute_values
-                    $orderItem->attributeValues()->attach($attributeValue->id);
+                    $orderItem->attributeValues()->attach($attributeValue->id, [
+                        'id' => (string) Str::uuid(),
+                    ]);
                 }
             }
         }
