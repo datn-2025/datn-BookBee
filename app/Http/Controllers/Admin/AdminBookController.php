@@ -131,7 +131,7 @@ class AdminBookController extends Controller
         }
 
         // Validation với thông báo tùy chỉnh
-        $validator = Validator::make($request->all(),[
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             // Slug sẽ được check unique thủ công phía dưới
             'description' => 'nullable|string',
@@ -141,13 +141,13 @@ class AdminBookController extends Controller
             'attribute_values.*.id' => 'required|distinct|exists:attribute_values,id',
             'attribute_values.*.extra_price' => 'nullable|numeric|min:0',
             'has_physical' => 'boolean',
-            'formats.physical.price' => 'required_if:has_physical,1|numeric|min:0',
-            'formats.physical.discount' => 'nullable|numeric|min:0|max:100',
-            'formats.physical.stock' => 'required_if:has_physical,1|integer|min:0',
+            'formats.physical.price' => 'required_if:has_physical,true|nullable|numeric|min:0',
+            'formats.physical.discount' => 'nullable|numeric|min:0',
+            'formats.physical.stock' => 'required_if:has_physical,true|nullable|integer|min:0',
             'has_ebook' => 'boolean',
-            'formats.ebook.price' => 'required_if:has_ebook,1|numeric|min:0',
-            'formats.ebook.discount' => 'nullable|numeric|min:0|max:100',
-            'formats.ebook.file' => 'required_if:has_ebook,1|mimes:pdf,epub|max:50000',
+            'formats.ebook.price' => 'required_if:has_ebook,true|nullable|numeric|min:0',
+            'formats.ebook.discount' => 'nullable|numeric|min:0',
+            'formats.ebook.file' => 'required_if:has_ebook,true|nullable|mimes:pdf,epub|max:50000',
             'formats.ebook.sample_file' => 'nullable|mimes:pdf,epub|max:10000',
             'formats.ebook.allow_sample_read' => 'boolean',
             'status' => 'required|string|max:50',
@@ -189,16 +189,12 @@ class AdminBookController extends Controller
             'publication_date.date' => 'Ngày xuất bản không hợp lệ',
         ]);
         // dd($request->all());
-        if($validator->fails()) {
+        if ($validator->fails()) {
             // Trả về lỗi validate về form, không toastr
             return back()->withInput()->withErrors($validator);
         }
-        // Kiểm tra xem ít nhất một định dạng sách được chọn
-        if (!$request->boolean('has_physical') && !$request->boolean('has_ebook')) {
-            return back()->withInput()->withErrors([
-                'format' => 'Vui lòng chọn ít nhất một định dạng sách (Sách vật lý hoặc Ebook)'
-            ]);
-        }
+        // Cho phép chọn 1 trong 2 định dạng sách (bỏ validation bắt buộc)
+        // Người dùng có thể chọn chỉ sách vật lý, chỉ ebook, hoặc cả hai
 
         $data = $request->only([
             'title',
@@ -304,16 +300,7 @@ class AdminBookController extends Controller
         }
 
         // Gán tác giả cho sách
-//        $book->author()->sync($request->input('author_ids', []));
-        if ($request->has('author_ids')) {
-            foreach ($request->input('author_ids') as $authorId) {
-                DB::table('author_books')->insert([
-                    'id' => Str::uuid(), // Tạo UUID mới
-                    'book_id' => $book->id,
-                    'author_id' => $authorId,
-                ]);
-            }
-        }
+        $book->authors()->sync($request->input('author_ids', []));
         Toastr::success('Thêm sách thành công!');
         return redirect()->route('admin.books.index');
     }
@@ -327,7 +314,8 @@ class AdminBookController extends Controller
             'formats:id,book_id,format_name,price,discount,stock,file_url,sample_file_url,allow_sample_read',
             'images:id,book_id,image_url',
             'attributeValues.attribute',
-            'reviews.user:id,name,email'
+            'reviews.user:id,name,email',
+            'gifts'
         ])->findOrFail($id);
 
         // Calculate average rating
@@ -405,12 +393,12 @@ class AdminBookController extends Controller
             'attribute_values.*.id' => 'required|distinct|exists:attribute_values,id',
             'attribute_values.*.extra_price' => 'nullable|numeric|min:0',
             'has_physical' => 'boolean',
-            'formats.physical.price' => 'required_if:has_physical,1|numeric|min:0',
-            'formats.physical.discount' => 'nullable|numeric|min:0|max:100',
-            'formats.physical.stock' => 'required_if:has_physical,1|integer|min:0',
+            'formats.physical.price' => 'required_if:has_physical,true|nullable|numeric|min:0',
+            'formats.physical.discount' => 'nullable|numeric|min:0',
+            'formats.physical.stock' => 'required_if:has_physical,true|nullable|integer|min:0',
             'has_ebook' => 'boolean',
-            'formats.ebook.price' => 'required_if:has_ebook,1|numeric|min:0',
-            'formats.ebook.discount' => 'nullable|numeric|min:0|max:100',
+            'formats.ebook.price' => 'required_if:has_ebook,true|nullable|numeric|min:0',
+            'formats.ebook.discount' => 'nullable|numeric|min:0',
             'formats.ebook.file' => 'nullable|mimes:pdf,epub|max:50000', // khác store: required_if -> nullable
             'formats.ebook.sample_file' => 'nullable|mimes:pdf,epub|max:10000',
             'formats.ebook.allow_sample_read' => 'boolean',
@@ -453,12 +441,8 @@ class AdminBookController extends Controller
         if ($validator->fails()) {
             return back()->withInput()->withErrors($validator->errors());
         }
-        // Kiểm tra xem ít nhất một định dạng sách được chọn
-        if (!$request->boolean('has_physical') && !$request->boolean('has_ebook')) {
-            return back()->withInput()->withErrors([
-                'format' => 'Vui lòng chọn ít nhất một định dạng sách (Sách vật lý hoặc Ebook)'
-            ]);
-        }
+        // Cho phép chọn 1 trong 2 định dạng sách (bỏ validation bắt buộc)
+        // Người dùng có thể chọn chỉ sách vật lý, chỉ ebook, hoặc cả hai
 
         $data = $request->only([
             'title',

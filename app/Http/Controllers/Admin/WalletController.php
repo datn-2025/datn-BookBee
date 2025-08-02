@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Services\WalletInvoiceService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class WalletController extends Controller
 {
@@ -69,10 +72,12 @@ class WalletController extends Controller
             
             // Số dư sau giao dịch: 
             // - Nếu là nạp tiền (Nap) và đã duyệt: cộng vào số dư
+            // - Nếu là hoàn tiền (HoanTien) và đã duyệt: cộng vào số dư  
             // - Nếu là rút tiền (Rut) và đã duyệt: không ảnh hưởng số dư (vì đã trừ khi tạo yêu cầu)
             // - Nếu là thanh toán (payment): trừ khỏi số dư
             if ($transaction->status === 'success') {
-                if ($transaction->type === 'Nap') {
+                if ($transaction->type === 'Nap' || $transaction->type === 'HOANTIEN') {
+                    // Nạp tiền và hoàn tiền: cộng vào số dư
                     $afterBalances[$transaction->id] = $sumBefore + $transaction->amount;
                 } elseif ($transaction->type === 'Rut') {
                     // Rút tiền: số dư không thay đổi vì đã trừ khi tạo yêu cầu
@@ -165,9 +170,11 @@ class WalletController extends Controller
         if ($transaction->status !== 'pending') {
             return back()->with('error', 'Chỉ có thể duyệt giao dịch đang chờ duyệt!');
         }
+        
         DB::transaction(function () use ($transaction) {
             $transaction->status = 'success';
             $transaction->save();
+            
             // Nếu là nạp thì cộng tiền, nếu là rút thì trừ wallet_lock
             if ($transaction->type === 'Nap') {
                 $transaction->wallet->increment('balance', $transaction->amount);
@@ -175,8 +182,27 @@ class WalletController extends Controller
                 $user = $transaction->wallet->user;
                 $user->wallet_lock = max(0, ($user->wallet_lock ?? 0) - $transaction->amount);
                 $user->save();
+                
+                // Tạo và gửi hóa đơn rút tiền
+                try {
+                    $walletInvoiceService = new WalletInvoiceService();
+                    $walletInvoiceService->createAndSendWithdrawInvoice($transaction);
+                    
+                    Log::info('Withdraw invoice created and sent after admin approval', [
+                        'transaction_id' => $transaction->id,
+                        'user_id' => $user->id,
+                        'amount' => $transaction->amount
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create withdraw invoice after admin approval', [
+                        'transaction_id' => $transaction->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    // Không throw exception để không ảnh hưởng đến việc duyệt giao dịch
+                }
             }
         });
+        
         return back()->with('success', 'Duyệt giao dịch thành công!');
     }
 

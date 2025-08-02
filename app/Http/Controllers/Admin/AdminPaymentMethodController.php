@@ -138,7 +138,7 @@ class AdminPaymentMethodController extends Controller
             $search = trim($request->search);
             $query->where('name', 'LIKE', '%' . $search . '%');
         }
-        
+
         $paymentMethods = $query->latest()->paginate(10)->withQueryString();
         return view('admin.payment-methods.trash', compact('paymentMethods'));
     }
@@ -208,6 +208,20 @@ class AdminPaymentMethodController extends Controller
 
                 if ($hasEbook) {
                     Mail::to($order->user->email)->send(new EbookPurchaseConfirmation($order));
+                }
+
+                // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
+                app(\App\Services\OrderService::class)->updateEbookOrderStatusOnPaymentSuccess($order);
+
+                // Tạo và gửi hóa đơn khi thanh toán thành công
+                try {
+                    app(\App\Services\InvoiceService::class)->processInvoiceForPaidOrder($order);
+                    Log::info('Invoice created and sent for admin-confirmed payment', ['order_id' => $order->id]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create invoice for admin-confirmed payment', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage()
+                    ]);
                 }
             }
         }

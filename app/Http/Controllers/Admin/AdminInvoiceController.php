@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class AdminInvoiceController extends Controller
-{  
-      public function index(Request $request)
-    {        
+{
+    public function index(Request $request)
+    {
         $query = Invoice::query();
         // $query->with([
         //     'order' => function($q) {
@@ -21,23 +21,31 @@ class AdminInvoiceController extends Controller
         //         $q->with(['book', 'book.author']);
         //     }
         // ]);  
-        // Lọc chỉ lấy các invoice có order với trạng thái 'Thành công'
-        $query->whereHas('order', function($q) {
-            $q->whereHas('orderStatus', function($q) {
-                $q->where('name', 'Thành công');
-            });
-        });
+        // Lọc theo loại hóa đơn
+        if ($request->filled('invoice_type')) {
+            $query->where('type', $request->invoice_type);
+        }
+
+        // Hiển thị tất cả hóa đơn (bỏ lọc theo trạng thái 'Thành công')
+        // $query->where(function($q) {
+        //     $q->where('type', 'refund')
+        //       ->orWhereHas('order', function($orderQ) {
+        //           $orderQ->whereHas('orderStatus', function($statusQ) {
+        //               $statusQ->where('name', 'Thành công');
+        //           });
+        //       });
+        // });
         $query->with([
-            'order' => function($q) {
+            'order' => function ($q) {
                 $q->with(['user', 'address', 'paymentMethod']);
                 //   ->where('order_status_id', 'completed'); // Thêm điều kiện lọc đơn hàng đã hoàn thành
             },
-            'items' => function($q) {
-                $q->with(['book', 'book.authors']);
+            'items' => function ($q) {
+                $q->with(['book', 'book.authors', 'collection']);
             }
-        ]);      
+        ]);
         // Gom các điều kiện tìm kiếm liên quan đến order và user
-        $query->whereHas('order', function($q) use ($request) {
+        $query->whereHas('order', function ($q) use ($request) {
             // Mã đơn hàng
             if ($request->filled('search_order_code')) {
                 $q->where('order_code', 'like', '%' . $request->search_order_code . '%');
@@ -47,7 +55,7 @@ class AdminInvoiceController extends Controller
                 $q->where('payment_method_id', $request->payment_method);
             }
             // Điều kiện liên quan đến user
-            $q->whereHas('user', function($userQ) use ($request) {
+            $q->whereHas('user', function ($userQ) use ($request) {
                 if ($request->filled('customer_name')) {
                     $userQ->where('name', 'like', '%' . $request->customer_name . '%');
                 }
@@ -71,19 +79,19 @@ class AdminInvoiceController extends Controller
 
     public function show($id)
     {
-        $invoice = Invoice::with(['order', 'order.user', 'items.book'])
+        $invoice = Invoice::with(['order', 'order.user', 'items.book', 'items.collection'])
             ->findOrFail($id);
-        
+
         return view('admin.invoices.show', compact('invoice'));
     }
 
     public function generatePdf($id)
     {
-        $invoice = Invoice::with(['order', 'order.user', 'items.book'])
+        $invoice = Invoice::with(['order', 'order.user', 'items.book', 'items.collection'])
             ->findOrFail($id);
 
         $pdf = PDF::loadView('admin.invoices.pdf', compact('invoice'));
-        
+
         return $pdf->download('invoice-' . $invoice->order->order_code . '.pdf');
     }
 }
