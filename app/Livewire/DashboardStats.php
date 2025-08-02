@@ -78,10 +78,10 @@ class DashboardStats extends Component
             ->whereNotNull('paid_at');
 
         if ($this->timePeriod) {
-            $balanceQuery ->whereBetween('created_at', [$start, $end]);
+            $balanceQuery->whereBetween('created_at', [$start, $end]);
         }
 
-        $this->balance = $balanceQuery ->sum('amount');
+        $this->balance = $balanceQuery->sum('amount');
     }
 
     public function render()
