@@ -56,12 +56,16 @@
                 <div class="card-header">
                     <h3 class="card-title">Quản lý Voucher</h3>
                     <div class="card-tools">
+                        @permission('voucher.create')
                         <a href="{{ route('admin.vouchers.create') }}" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Thêm mới
                         </a>
+                        @endpermission
+                        @permission('voucher.trash')    
                         <a href="{{ route('admin.vouchers.trash') }}" class="btn btn-secondary">
                             <i class="fas fa-trash"></i> Thùng rác
                         </a>
+                    @endpermission
                     </div>
                 </div>
                 <div class="card-body">
@@ -173,14 +177,19 @@
                                     </td>
                                     <td>
                                         <div class="btn-group">
+                                            @permission('voucher.show')
                                             <a href="{{ route('admin.vouchers.show', $voucher) }}"
                                                class="btn btn-info btn-sm" title="Chi tiết">
                                                 <i class="fas fa-eye"></i>
                                             </a>
+                                            @endpermission
+                                            @permission('voucher.edit')
                                             <a href="{{ route('admin.vouchers.edit', $voucher) }}"
                                                class="btn btn-warning btn-sm" title="Chỉnh sửa">
                                                 <i class="fas fa-edit"></i>
                                             </a>
+                                            @endpermission
+                                            @permission('voucher.delete')
                                             <form action="{{ route('admin.vouchers.destroy', $voucher) }}"
                                                   method="POST" class="d-inline">
                                                 @csrf
@@ -191,6 +200,7 @@
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </form>
+                                            @endpermission
                                         </div>
                                     </td>
                                 </tr>

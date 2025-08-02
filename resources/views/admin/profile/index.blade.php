@@ -52,7 +52,7 @@
                                                  style="width: 150px; height: 150px; object-fit: cover;">
                                         </div>
                                         <h5 class="font-size-16 mb-1">{{ $admin->name }}</h5>
-                                        <p class="text-muted mb-2">{{ $admin->role->name ?? 'Admin' }}</p>
+                                        <p class="text-muted mb-2">{{ optional($admin->role)->name ?? 'Admin' }}</p>
                                         <div class="mt-3">
                                             <div class="text-muted small">
                                                 <i class="fas fa-envelope me-1"></i>{{ $admin->email }}
@@ -74,6 +74,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-9">
+                                    @permission('profile.edit')
                                     <form action="{{ route('admin.profile.update') }}" method="POST" enctype="multipart/form-data">
                                         @csrf
                                         @method('PUT')
@@ -164,6 +165,8 @@
                                             </div>
                                         </div>
                                     </form>
+                                                                    @endpermission
+
                                 </div>
                             </div>
                         </div>
@@ -172,6 +175,7 @@
                         <div class="tab-pane" id="password-tab" role="tabpanel">
                             <div class="row justify-content-center">
                                 <div class="col-md-8">
+                                    @permission('profile.edit')
                                     <form action="{{ route('admin.profile.password.update') }}" method="POST">
                                         @csrf
                                         @method('PUT')
@@ -239,6 +243,7 @@
                                             </button>
                                         </div>
                                     </form>
+                                    @endpermission
                                 </div>
                             </div>
                         </div>

@@ -51,9 +51,11 @@
                                                 </div>
                                             </div>
                                             <div class="col-auto">
+                                                @permission('book.create')
                                                 <a href="{{ route('admin.books.create') }}" class="btn btn-success">
                                                     <i class="ri-add-circle-line align-middle me-1"></i> Thêm sách
                                                 </a>
+                                                @endpermission
                                             </div>
                                             <div class="col-auto">
                                                 <button type="button" class="btn btn-info btn-icon layout-rightside-btn">
@@ -92,6 +94,11 @@
                             <livewire:total-books-sold-chart />
                         </div>
                     </div><br><br>
+                    <div>
+                        <div class="col-12">
+                            <livewire:book-type-line-chart />
+                        </div>
+                    </div><br><br>
 
                     <div class="row mt-4">
                         <div class="col-xl-4 col-md-6">
@@ -104,6 +111,10 @@
                             <livewire:book-brand-chart />
                         </div>
                     </div>
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <livewire:voucher-effectiveness-report />
+                        </div>
 
                 </div> <!-- end .h-100 -->
             </div>

@@ -191,17 +191,54 @@
                             @foreach ($invoice->items as $item)
                                 <tr>
                                     <td class="ps-4">
-                                        <div class="d-flex align-items-center">
-                                            <img src="{{ $item->book->thumbnail ?? 'https://via.placeholder.com/60x80' }}"
-                                                alt="{{ $item->book->title }}" class="me-3"
-                                                style="width: 60px; height: 80px; object-fit: cover;">
-                                            <div>
-                                                <h6 class="mb-1">{{ $item->book->title }}</h6>
-                                                <p class="text-muted small mb-0">
-                                                    Tác giả: {{ $item->book->authors->first()->name ?? 'N/A' }}
-                                                </p>
+                                        @if ($item->book)
+                                            <div class="d-flex align-items-center">
+                                                <img src="{{ $item->book->thumbnail ?? 'https://via.placeholder.com/60x80' }}"
+                                                    alt="{{ $item->book->title }}" class="me-3"
+                                                    style="width: 60px; height: 80px; object-fit: cover;">
+                                                <div>
+                                                    <h6 class="mb-1">{{ $item->book->title }}</h6>
+                                                    <p class="text-muted small mb-0">
+                                                        Tác giả: {{ $item->book->authors->first()->name ?? 'N/A' }}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
+                                        @elseif($item->collection_id)
+                                            @php $collection = $item->collection; @endphp
+                                            @if ($collection)
+                                                <div class="d-flex align-items-center">
+                                                    <img src="{{ $collection->image ? asset('storage/' . $collection->image) : 'https://via.placeholder.com/60x80' }}"
+                                                        alt="{{ $collection->name }}" class="me-3"
+                                                        style="width: 60px; height: 80px; object-fit: cover;">
+                                                    <div>
+                                                        <h6 class="mb-1">{{ $collection->name }} (Combo)</h6>
+                                                        <p class="text-muted small mb-0">
+                                                            Bộ sưu tập: {{ $collection->books->count() }} sách
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div class="d-flex align-items-center">
+                                                    <img src="https://via.placeholder.com/60x80" alt="Combo không tồn tại"
+                                                        class="me-3"
+                                                        style="width: 60px; height: 80px; object-fit: cover;">
+                                                    <div>
+                                                        <h6 class="mb-1">Combo không tồn tại</h6>
+                                                        <p class="text-muted small mb-0">ID: {{ $item->collection_id }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @else
+                                            <div class="d-flex align-items-center">
+                                                <img src="https://via.placeholder.com/60x80" alt="Sản phẩm không tồn tại"
+                                                    class="me-3" style="width: 60px; height: 80px; object-fit: cover;">
+                                                <div>
+                                                    <h6 class="mb-1">Sản phẩm không tồn tại</h6>
+                                                    <p class="text-muted small mb-0">Book ID: {{ $item->book_id }}</p>
+                                                </div>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="text-end align-middle pe-4">{{ number_format($item->price) }}đ</td>
                                     <td class="text-center align-middle">{{ $item->quantity }}</td>

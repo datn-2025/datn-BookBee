@@ -96,7 +96,8 @@
                                                     </td>
                                                     <td>{{ $user->email }}</td>
                                                     <td>{{ $user->phone }}</td>
-                                                    <td>{{ $user->role ? $user->role->name : 'Chưa phân quyền' }}</td>
+                                                    <td>{{ $user->role ? $user->role->name : 'Chưa phân quyền' }}
+                                                    </td>
                                                     <td>
                                                         @if ($user->status === 'Hoạt Động')
                                                             <span class="badge bg-success">Hoạt Động</span>
@@ -109,17 +110,24 @@
                                                         @endif
                                                     </td>
                                                     <td>
+                                                        @permission('user.show')
                                                         <a href="{{ route('admin.users.show', ['id' => $user->id]) }}"
                                                             class="link-success fs-15">
                                                             <i class="las la-eye"></i>
                                                         </a>
-
+                                                        @endpermission
+                                                        @permission('user.edit')
                                                         <a href="{{ route('admin.users.edit', $user->id) }}"
                                                             class="link-success fs-15 ">
                                                             <i class="ri-edit-2-line align-bottom"></i>
                                                         </a>
-
-
+                                                        @endpermission
+                                                        @permission('user.manage-roles')
+                                                        <a href="{{ route('admin.users.roles-permissions.edit', $user->id) }}"
+                                                            class="link-success fs-15 ">
+                                                            <i class="ri-lock-unlock-line align-bottom"></i>
+                                                        </a>
+                                                    @endpermission
                                                     </td>
                                                 </tr>
                                             @endforeach

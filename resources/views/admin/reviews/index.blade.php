@@ -85,14 +85,16 @@
                                     @foreach (range(5, 1) as $i)
                                         <option value="{{ $i }}"
                                             {{ (int) old('rating', request('rating')) === $i ? 'selected' : '' }}>
-                                            {{ str_repeat('★', $i) }}{{ str_repeat('☆', 5 - $i) }} ({{ $i }} sao)
+                                            {{ str_repeat('★', $i) }}{{ str_repeat('☆', 5 - $i) }} ({{ $i }}
+                                            sao)
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label">Nội dung bình luận</label>
-                                <input type="text" name="cmt" class="form-control"    value="{{ old('cmt', request('cmt')) }}"
+                                <input type="text" name="cmt" class="form-control"
+                                    value="{{ old('cmt', request('cmt')) }}"
                                     placeholder="Tìm theo nội dung đánh giá hoặc phản hồi">
                             </div>
                             <div class="col-md-3 d-flex align-items-end">
@@ -138,10 +140,12 @@
                                                 <td>{{ $reviews->firstItem() + $index }}</td>
                                                 <td style="max-width: 200px; white-space: normal;">
                                                     @if ($review->book)
-                                                        <a href="{{ route('admin.books.show', ['id' => $review->book->id, 'slug' => Str::slug($review->book->title)]) }}"
-                                                            class="text-decoration-none fw-medium">
-                                                            {{ $review->book->title }}
-                                                        </a>
+                                                        @permission('review.show')
+                                                            <a href="{{ route('admin.books.show', ['id' => $review->book->id, 'slug' => Str::slug($review->book->title)]) }}"
+                                                                class="text-decoration-none fw-medium">
+                                                                {{ $review->book->title }}
+                                                            </a>
+                                                        @endpermission
                                                     @else
                                                         <span class="text-muted">Sản phẩm đã xóa</span>
                                                     @endif
@@ -171,10 +175,12 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-center">
-                                                    <a href="{{ route('admin.reviews.response', $review) }}"
-                                                        class="btn btn-sm btn-outline-primary" title="Xem & phản hồi">
-                                                        <i class="ri-chat-3-fill"></i>
-                                                    </a>
+                                                    @permission('review.response')
+                                                        <a href="{{ route('admin.reviews.response', $review) }}"
+                                                            class="btn btn-sm btn-outline-primary" title="Xem & phản hồi">
+                                                            <i class="ri-chat-3-fill"></i>
+                                                        </a>
+                                                    @endpermission
                                                 </td>
                                             </tr>
                                         @endforeach

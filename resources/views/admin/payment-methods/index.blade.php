@@ -23,25 +23,24 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="card-title mb-0">Danh sách phương thức thanh toán</h4>
-                    </div>
-
                     <div class="card-body">
                         <!-- Thanh công cụ -->
                         <div class="row g-4 mb-3">
                             <div class="col-md-6 d-flex align-items-center gap-2">
-                                <a href="{{ route('admin.payment-methods.create') }}" class="btn btn-success btn-sm">
-                                    <i class="ri-add-line me-1"></i> Thêm phương thức
-                                </a>
-                                <a href="{{ route('admin.payment-methods.trash') }}" class="btn btn-danger btn-sm px-4">
-                                    <i class="ri-delete-bin-line me-1"></i> Thùng rác
-                                    @if ($trashCount > 0)
-                                        <span class="badge bg-light text-danger ms-1">{{ $trashCount }}</span>
-                                    @endif
-                                </a>
+                                @permission('payment-method.create')
+                                    <a href="{{ route('admin.payment-methods.create') }}" class="btn btn-success btn-sm">
+                                        <i class="ri-add-line me-1"></i> Thêm phương thức
+                                    </a>
+                                @endpermission
+                                @permission('payment-method.trash')
+                                    <a href="{{ route('admin.payment-methods.trash') }}" class="btn btn-danger btn-sm px-4">
+                                        <i class="ri-delete-bin-line me-1"></i> Thùng rác
+                                        @if ($trashCount > 0)
+                                            <span class="badge bg-light text-danger ms-1">{{ $trashCount }}</span>
+                                        @endif
+                                    </a>
+                                @endpermission
                             </div>
-
                             <div class="col-md-6">
                                 <form method="GET" action="{{ route('admin.payment-methods.index') }}"
                                     class="d-flex justify-content-md-end align-items-center gap-2">
@@ -69,15 +68,18 @@
                                             style="width:75px;height:75px"></lord-icon>
                                         <h5 class="mt-3 text-danger">Không tìm thấy phương thức thanh toán phù hợp</h5>
                                         <p class="text-muted">Không có phương thức nào khớp với từ khóa
-                                            <strong>"{{ request()->get('search') }}"</strong>.<br>Vui lòng kiểm tra lại từ
+                                            <strong>"{{ request()->get('search') }}"</strong>.<br>Vui lòng kiểm tra lại
+                                            từ
                                             khóa hoặc thử lại với nội dung khác.
                                         </p>
                                     @else
                                         <lord-icon src="https://cdn.lordicon.com/nocovwne.json" trigger="loop"
                                             colors="primary:#405189,secondary:#0ab39c"
                                             style="width:100px;height:100px"></lord-icon>
-                                        <h5 class="mt-3 text-muted">Danh sách phương thức thanh toán hiện đang trống</h5>
-                                        <p class="text-muted">Nhấn <strong>“Thêm phương thức”</strong> để bắt đầu thiết lập
+                                        <h5 class="mt-3 text-muted">Danh sách phương thức thanh toán hiện đang trống
+                                        </h5>
+                                        <p class="text-muted">Nhấn <strong>“Thêm phương thức”</strong> để bắt đầu thiết
+                                            lập
                                             hệ thống thanh toán.</p>
                                     @endif
                                 </div>
@@ -112,21 +114,25 @@
                                                 </td>
                                                 <td>
                                                     <div class="btn-group gap-2">
-                                                        <a href="{{ route('admin.payment-methods.edit', $method) }}"
-                                                            class="btn btn-sm btn-warning" title="Chỉnh sửa">
-                                                            <i class="ri-edit-2-line"></i>
-                                                        </a>
-                                                        <form
-                                                            action="{{ route('admin.payment-methods.destroy', $method) }}"
-                                                            method="POST" class="d-inline"
-                                                            onsubmit="return confirm('{{ $method->payments_count > 0 ? 'Phương thức này đang được sử dụng trong đơn hàng. Bạn có chắc chắn muốn xóa?' : 'Bạn có chắc chắn muốn xóa phương thức thanh toán này không?'}}')">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-sm btn-danger"
-                                                                title="Xóa tạm thời phương thức thanh toán">
-                                                                <i class="ri-delete-bin-fill"></i>
-                                                            </button>
-                                                        </form>
+                                                        @permission('payment-method.edit')
+                                                            <a href="{{ route('admin.payment-methods.edit', $method) }}"
+                                                                class="btn btn-sm btn-warning" title="Chỉnh sửa">
+                                                                <i class="ri-edit-2-line"></i>
+                                                            </a>
+                                                        @endpermission
+                                                        @permission('payment-method.delete')
+                                                            <form
+                                                                action="{{ route('admin.payment-methods.destroy', $method) }}"
+                                                                method="POST" class="d-inline"
+                                                                onsubmit="return confirm('{{ $method->payments_count > 0 ? 'Phương thức này đang được sử dụng trong đơn hàng. Bạn có chắc chắn muốn xóa?' : 'Bạn có chắc chắn muốn xóa phương thức thanh toán này không?' }}')">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-sm btn-danger"
+                                                                    title="Xóa tạm thời phương thức thanh toán">
+                                                                    <i class="ri-delete-bin-fill"></i>
+                                                                </button>
+                                                            </form>
+                                                        @endpermission
                                                     </div>
                                                 </td>
                                             </tr>

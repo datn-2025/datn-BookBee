@@ -21,12 +21,16 @@
                 <div class="d-flex align-items-center justify-content-between">
                     <h4 class="card-title mb-0">Danh Sách Combo</h4>
                     <div class="button-group">
+                        @permission('collection.create')
                         <a href="{{ route('admin.collections.create') }}" class="btn btn-primary btn-sm me-2" style="background-color:#405189; border-color: #405189">
                             <i class="ri-add-line me-1"></i> Thêm combo mới
                         </a>
+                        @endpermission
+                        @permission('collection.trash')
                         <a href="{{ route('admin.collections.trash') }}" class="btn btn-outline-danger btn-sm me-2">
                             <i class="ri-delete-bin-2-line me-1"></i> Thùng rác
                         </a>
+                        @endpermission
                     </div>
                 </div>
             </div>
@@ -74,6 +78,7 @@
                                 <th class="text-center">Ngày bắt đầu</th>
                                 <th class="text-center">Ngày kết thúc</th>
                                 <th class="text-center">Giá combo</th>
+                                <th class="text-center">Số lượng</th>
                                 <th class="text-center" style="width: 100px;">Tùy chọn</th>
                             </tr>
                         </thead>
@@ -104,16 +109,28 @@
                                 <td class="text-center">{{ $collection->end_date ? date('d/m/Y', strtotime($collection->end_date)) : '-' }}</td>
                                 <td class="text-primary fw-bold text-center">{{ $collection->combo_price ? number_format($collection->combo_price, 0, ',', '.') . ' đ' : '-' }}</td>
                                 <td class="text-center">
+                                    @if($collection->combo_stock !== null)
+                                        <span class="badge {{ $collection->combo_stock > 10 ? 'bg-success' : ($collection->combo_stock > 0 ? 'bg-warning' : 'bg-danger') }}">
+                                            {{ $collection->combo_stock }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted">Không giới hạn</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
                                     <div class="dropdown d-inline-block">
                                         <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                             <i class="ri-more-fill align-middle"></i>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end">
+                                            @permission('collection.edit')
                                             <li><a href="{{ route('admin.collections.edit', $collection->id) }}" class="dropdown-item">
                                                 <i class="ri-pencil-fill align-bottom me-2 text-muted"></i> Sửa
                                             </a></li>
+                                            @endpermission
                                             @if($collection->deleted_at)
                                                 <li>
+                                                    @permission('collection.forceDelete')
                                                     <form action="{{ route('admin.collections.forceDelete', $collection->id) }}" method="POST" onsubmit="return confirm('Xóa vĩnh viễn combo này?');">
                                                         @csrf
                                                         @method('DELETE')
@@ -121,9 +138,11 @@
                                                             <i class="ri-delete-bin-2-fill align-bottom me-2"></i> Xóa cứng
                                                         </button>
                                                     </form>
+                                                    @endpermission
                                                 </li>
                                             @else
                                                 <li>
+                                                    @permission('collection.delete')
                                                     <form action="{{ route('admin.collections.destroy', $collection->id) }}" method="POST" onsubmit="return confirm('Xóa mềm combo này?');">
                                                         @csrf
                                                         @method('DELETE')
@@ -131,6 +150,7 @@
                                                             <i class="ri-delete-bin-fill align-bottom me-2"></i> Xóa mềm
                                                         </button>
                                                     </form>
+                                                    @endpermission
                                                 </li>
                                             @endif
                                         </ul>
@@ -139,7 +159,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted">Chưa có combo nào.</td>
+                                <td colspan="8" class="text-center text-muted">Chưa có combo nào.</td>
                             </tr>
                             @endforelse
                         </tbody>
