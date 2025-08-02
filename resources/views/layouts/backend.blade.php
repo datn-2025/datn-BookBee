@@ -24,7 +24,9 @@
     <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.3.67/css/materialdesignicons.min.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <link href="https://cdn.lineawesome.com/1.3.0/line-awesome/css/line-awesome.min.css" rel="stylesheet" />
+    <link rel= "stylesheet"
+        href= "https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
 
@@ -293,9 +295,8 @@
                                 title="Tài khoản">
                                 <span class="d-flex align-items-center">
                                     <img class="rounded-circle header-profile-user"
-                                        src="{{ auth()->user()->avatar ? asset('storage/' . auth()->user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=6366f1&color=fff&size=50' }}" 
-                                        alt="Avatar"
-                                        style="width: 32px; height: 32px; object-fit: cover;">
+                                        src="{{ auth()->user()->avatar ? asset('storage/' . auth()->user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=6366f1&color=fff&size=50' }}"
+                                        alt="Avatar" style="width: 32px; height: 32px; object-fit: cover;">
                                     <span class="text-start ms-xl-2">
                                         <span
                                             class="d-none d-xl-inline-block ms-1 fw-medium user-name-text">{{ auth()->user()->name }}</span>
@@ -385,157 +386,220 @@
                             </a>
                         </li> <!-- end Dashboard Menu -->
                         <li class="menu-title"><span data-key="t-menu">Quản Lý Hệ Thống</span></li>
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="{{ route('admin.users.index') }}">
-                                <i class="ri-account-circle-line"></i> <span data-key="t-authentication">Quản lý người
-                                    dùng</span>
-                            </a>
-                        </li>
-
+                        @permission('user.view')
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="#sidebarUsers" data-bs-toggle="collapse">
+                                    <i class="ri-account-circle-line"></i> <span data-key="t-authentication">Quản lý người
+                                        dùng</span>
+                                </a>
+                                <div class="collapse menu-dropdown" id="sidebarUsers">
+                                    <ul class="nav nav-sm flex-column">
+                                        @permission('user.view')
+                                        <li><a href="{{ route('admin.users.index') }}" class="nav-link">Danh sách người
+                                                dùng</a></li>
+                                        @endpermission
+                                        @permission('role.view')
+                                            <li><a href="{{ route('admin.roles.index') }}" class="nav-link">Danh sách vai trò</a></li>
+                                        @endpermission
+                                        @permission('permission.view')
+                                            <li><a href="{{ route('admin.permissions.index') }}" class="nav-link">Danh sách quyền</a></li>
+                                        @endpermission
+                                    </ul>
+                                </div>
+                            </li>
+                            
+                        @endpermission
                         <!-- Quản lý sản phẩm -->
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="#sidebarApps" data-bs-toggle="collapse"
-                                aria-expanded="false">
-                                <i class="ri-apps-2-line"></i> <span data-key="t-apps">Quản lý sản phẩm</span>
-                            </a>
-                            <div class="collapse menu-dropdown" id="sidebarApps">
-                                <ul class="nav nav-sm flex-column">
-                                    <li><a href="{{ route('admin.books.index') }}" class="nav-link">Danh sách</a>
-                                    </li>
-                                    <li><a href="{{ route('admin.attributes.index') }}" class="nav-link">Thuộc
-                                            tính</a></li>
-                                    <li><a href="{{ route('admin.collections.index') }}" class="nav-link">Combo sách</a></li>
-                                </ul>
-                            </div>
-                        </li>
-
+                        @permission('book.view')
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="#sidebarApps" data-bs-toggle="collapse"
+                                    aria-expanded="false">
+                                    <i class="ri-apps-2-line"></i> <span data-key="t-apps">Quản lý sản phẩm</span>
+                                </a>
+                                <div class="collapse menu-dropdown" id="sidebarApps">
+                                    <ul class="nav nav-sm flex-column">
+                                        <li><a href="{{ route('admin.books.index') }}" class="nav-link">Danh sách</a>
+                                        </li>
+                                        @permission('attribute.view')
+                                            <li><a href="{{ route('admin.attributes.index') }}" class="nav-link">Thuộc
+                                                    tính</a></li>
+                                        @endpermission
+                                        @permission('collection.view')
+                                            <li><a href="{{ route('admin.collections.index') }}" class="nav-link">Combo
+                                                    sách</a></li>
+                                        @endpermission
+                                    </ul>
+                                </div>
+                            </li>
+                        @endpermission
                         <!-- Quản lý danh mục -->
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="#sidebarCate" data-bs-toggle="collapse"
-                                aria-expanded="false">
-                                <i class="ri-apps-2-line"></i> <span data-key="t-categories">Quản lý danh mục sản
-                                    phẩm</span>
-                            </a>
-                            <div class="collapse menu-dropdown" id="sidebarCate">
-                                <ul class="nav nav-sm flex-column">
-                                    <li><a href="{{ route('admin.categories.index') }}" class="nav-link">Loại
-                                            sách</a></li>
-                                    <li><a href="{{ route('admin.categories.authors.index') }}" class="nav-link">Tác
-                                            giả</a></li>
-                                    <li><a href="{{ route('admin.categories.brands.brand') }}"
-                                            class="nav-link">Thương hiệu</a></li>
-                                </ul>
-                            </div>
-                        </li>
+                        @permission('category.view')
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="#sidebarCate" data-bs-toggle="collapse"
+                                    aria-expanded="false">
+                                    <i class="ri-apps-2-line"></i> <span data-key="t-categories">Quản lý danh mục sản
+                                        phẩm</span>
+                                </a>
+                                <div class="collapse menu-dropdown" id="sidebarCate">
+                                    <ul class="nav nav-sm flex-column">
 
+                                        <li><a href="{{ route('admin.categories.index') }}" class="nav-link">Loại
+                                                sách</a></li>
+
+                                        <li><a href="{{ route('admin.categories.authors.index') }}" class="nav-link">Tác
+                                                giả</a></li>
+                                        <li><a href="{{ route('admin.categories.brands.brand') }}"
+                                                class="nav-link">Thương hiệu</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                        @endpermission
                         <!-- Đơn hàng -->
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="{{ route('admin.orders.index') }}">
-                                <i class="ri-pages-line"></i> <span data-key="t-orders">Quản lý đơn hàng</span>
-                            </a>
-                        </li>
-
+                        @permission('order.view')
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="#sidebarOrders" data-bs-toggle="collapse"
+                                    aria-expanded="false">
+                                    <i class="ri-pages-line"></i> <span data-key="t-orders">Quản lý đơn hàng</span>
+                                </a>
+                                <div class="collapse menu-dropdown" id="sidebarOrders">
+                                    <ul class="nav nav-sm flex-column">
+                                        <li><a href="{{ route('admin.orders.index') }}" class="nav-link">Danh sách đơn
+                                                hàng</a></li>
+                                        @permission('refund.view')
+                                            <li><a href="{{ route('admin.refunds.index') }}" class="nav-link">Yêu cầu hoàn
+                                                    tiền</a></li>
+                                        @endpermission
+                                    </ul>
+                                </div>
+                            </li>
+                        @endpermission
                         <!-- Tin tức -->
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="#sidebarNews" data-bs-toggle="collapse"
-                                aria-expanded="false">
-                                <i class="ri-newspaper-line"></i> <span data-key="t-news">Quản lý tin tức</span>
-                            </a>
-                            <div class="collapse menu-dropdown" id="sidebarNews">
-                                <ul class="nav nav-sm flex-column">
-                                    <li><a href="{{ route('admin.news.index') }}" class="nav-link">Danh sách</a></li>
-                                    <li><a href="{{ route('admin.news.create') }}" class="nav-link">Thêm mới</a></li>
-                                </ul>
-                            </div>
-                        </li>
+                        @permission('news.view')
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="#sidebarNews" data-bs-toggle="collapse"
+                                    aria-expanded="false">
+                                    <i class="ri-newspaper-line"></i> <span data-key="t-news">Quản lý tin tức</span>
+                                </a>
+                                <div class="collapse menu-dropdown" id="sidebarNews">
+                                    <ul class="nav nav-sm flex-column">
+                                        <li><a href="{{ route('admin.news.index') }}" class="nav-link">Danh sách</a></li>
+                                        @permission('news.create')
+                                            <li><a href="{{ route('admin.news.create') }}" class="nav-link">Thêm mới</a></li>
+                                        @endpermission
+                                    </ul>
+                                </div>
+                            </li>
+                        @endpermission
 
                         <!-- Liên hệ -->
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="#sidebarContacts" data-bs-toggle="collapse"
-                                aria-expanded="false">
-                                <i class="ri-mail-line"></i> <span data-key="t-contacts">Quản lý liên hệ</span>
-                            </a>
-                            <div class="collapse menu-dropdown" id="sidebarContacts">
-                                <ul class="nav nav-sm flex-column">
-                                    <li><a href="{{ route('admin.contacts.index') }}" class="nav-link">Danh sách liên
-                                            hệ</a></li>
-                                </ul>
-                            </div>
-                        </li>
-
+                        @permission('contact.view')
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="#sidebarContacts" data-bs-toggle="collapse"
+                                    aria-expanded="false">
+                                    <i class="ri-mail-line"></i> <span data-key="t-contacts">Quản lý liên hệ</span>
+                                </a>
+                                <div class="collapse menu-dropdown" id="sidebarContacts">
+                                    <ul class="nav nav-sm flex-column">
+                                        <li><a href="{{ route('admin.contacts.index') }}" class="nav-link">Danh sách liên
+                                                hệ</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                        @endpermission
                         <!-- Khuyến mãi -->
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="#sidebarAdvanceUI" data-bs-toggle="collapse"
-                                aria-expanded="false">
-                                <i class="ri-stack-line"></i> <span data-key="t-promotions">Quản lý khuyến mãi</span>
-                            </a>
-                            <div class="collapse menu-dropdown" id="sidebarAdvanceUI">
-                                <ul class="nav nav-sm flex-column">
-                                    <li><a href="{{ route('admin.vouchers.index') }}" class="nav-link">Danh sách</a>
-                                    </li>
-                                    <li><a href="advance-ui-nestable.html" class="nav-link">Thêm</a></li>
-                                </ul>
-                            </div>
-                        </li>
-
+                        @permission('voucher.view')
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="#sidebarAdvanceUI" data-bs-toggle="collapse"
+                                    aria-expanded="false">
+                                    <i class="ri-stack-line"></i> <span data-key="t-promotions">Quản lý khuyến mãi</span>
+                                </a>
+                                <div class="collapse menu-dropdown" id="sidebarAdvanceUI">
+                                    <ul class="nav nav-sm flex-column">
+                                        @permission('voucher.view')
+                                            <li><a href="{{ route('admin.vouchers.index') }}" class="nav-link">Danh sách</a>
+                                            </li>
+                                        @endpermission
+                                        @permission('voucher.create')
+                                            <li><a href="advance-ui-nestable.html" class="nav-link">Thêm</a></li>
+                                        @endpermission
+                                    </ul>
+                                </div>
+                            </li>
+                        @endpermission
                         <!-- Thanh toán -->
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="#sidebarForms" data-bs-toggle="collapse"
-                                aria-expanded="false">
-                                <i class="ri-file-list-3-line"></i> <span data-key="t-payments">Thanh toán & phương
-                                    thức</span>
-                            </a>
-                            <div class="collapse menu-dropdown" id="sidebarForms">
-                                <ul class="nav nav-sm flex-column">
-                                    <li><a href="{{ route('admin.payment-methods.index') }}" class="nav-link">Danh
-                                            sách</a></li>
-                                    <li><a href="{{ route('admin.payment-methods.create') }}"
-                                            class="nav-link">Thêm</a></li>
-                                    <li><a href="{{ route('admin.payment-methods.history') }}" class="nav-link">Lịch
-                                            sử thanh toán</a></li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="#sidebarWallets" data-bs-toggle="collapse"
-                                role="button" aria-expanded="false" aria-controls="sidebarWallets">
-                                <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Quản lý ví</span>
-                            </a>
-                            <div class="collapse menu-dropdown" id="sidebarWallets">
-                                <ul class="nav nav-sm flex-column">
-                                    <li class="nav-item">
-                                        <a href="{{ route('admin.wallets.index') }}" class="nav-link"
-                                            data-key="t-basic-elements">Danh
-                                            sách</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{ route('admin.wallets.depositHistory') }}" class="nav-link"
-                                            data-key="t-basic-elements">Nạp ví</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{{ route('admin.wallets.withdrawHistory') }}" class="nav-link"
-                                            data-key="t-basic-elements">Rút ví</a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="{{ route('admin.reviews.index') }}">
-                                <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Bình luận & Đánh giá</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="{{ route('admin.invoices.index') }}">
-                                <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Hóa Đơn</span>
-                            </a>
-                        </li>
-                        <li class="menu-title"><span data-key="t-menu">Cấu Hình</span></li>
-                        <li class="nav-item">
-                            <a class="nav-link menu-link" href="{{ route('admin.settings.index') }}">
-                                <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Cấu hình website</span>
-                            </a>
-                        </li>
+                        @permission('payment-method.view')
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="#sidebarForms" data-bs-toggle="collapse"
+                                    aria-expanded="false">
+                                    <i class="ri-file-list-3-line"></i> <span data-key="t-payments">Thanh toán & phương
+                                        thức</span>
+                                </a>
+                                <div class="collapse menu-dropdown" id="sidebarForms">
+                                    <ul class="nav nav-sm flex-column">
+                                        <li><a href="{{ route('admin.payment-methods.index') }}" class="nav-link">Danh
+                                                sách</a></li>
+                                        @permission('payment-method.create')
+                                            <li><a href="{{ route('admin.payment-methods.create') }}"
+                                                    class="nav-link">Thêm</a></li>
+                                        @endpermission
+                                        @permission('payment-method.history')
+                                            <li><a href="{{ route('admin.payment-methods.history') }}" class="nav-link">Lịch
+                                                    sử thanh toán</a></li>
+                                        @endpermission
+                                    </ul>
+                                </div>
+                            </li>
+                        @endpermission
+                        @permission('wallet.view')
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="#sidebarWallets" data-bs-toggle="collapse"
+                                    role="button" aria-expanded="false" aria-controls="sidebarWallets">
+                                    <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Quản lý ví</span>
+                                </a>
+                                <div class="collapse menu-dropdown" id="sidebarWallets">
+                                    <ul class="nav nav-sm flex-column">
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.wallets.index') }}" class="nav-link"
+                                                data-key="t-basic-elements">Danh
+                                                sách</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.wallets.depositHistory') }}" class="nav-link"
+                                                data-key="t-basic-elements">Nạp ví</a>
+                                        </li>
 
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.wallets.withdrawHistory') }}" class="nav-link"
+                                                data-key="t-basic-elements">Rút ví</a>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            </li>
+                        @endpermission
+                        @permission('review.view')
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="{{ route('admin.reviews.index') }}">
+                                    <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Bình luận & Đánh
+                                        giá</span>
+                                </a>
+                            </li>
+                        @endpermission
+                        @permission('invoice.view')
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="{{ route('admin.invoices.index') }}">
+                                    <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Hóa Đơn</span>
+                                </a>
+                            </li>
+                        @endpermission
+                        @permission('setting.view')
+                            <li class="menu-title"><span data-key="t-menu">Cấu Hình</span></li>
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="{{ route('admin.settings.index') }}">
+                                    <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Cấu hình website</span>
+                                </a>
+                            </li>
+                        @endpermission
 
                     </ul>
                 </div>
