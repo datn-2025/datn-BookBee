@@ -25,7 +25,7 @@ class BookFormatFactory extends Factory
             'book_id' => Book::factory(),
             'format_name' => $format,
             'price' => $this->faker->numberBetween($priceRange[0], $priceRange[1]),
-            'discount' => $this->faker->optional(0.3)->numberBetween(5, 25), // 30% chance of having a discount
+            'discount' => $this->faker->optional(0.3)->numberBetween(5000, 25000), // 30% chance of having a discount
             'stock' => $isPhysical ? $this->faker->numberBetween(10, 100) : null, // Chỉ format vật lý mới có stock
             'file_url' => !$isPhysical ? 'ebooks/book.pdf' : null,
             'sample_file_url' => !$isPhysical ? 'ebooks/sample.pdf' : null,
