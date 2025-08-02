@@ -36,7 +36,7 @@ class GenerateBookSummary extends Command
     private function generateForBook($bookId)
     {
         try {
-            $book = Book::with(['author', 'category', 'summary'])->findOrFail($bookId);
+            $book = Book::with(['authors', 'category', 'summary'])->findOrFail($bookId);
             
             $this->info("Generating summary for: {$book->title}");
 
@@ -64,7 +64,7 @@ class GenerateBookSummary extends Command
     {
         $this->info('Generating summaries for all books...');
         
-        $books = Book::with(['author', 'category', 'summary'])->get();
+        $books = Book::with(['authors', 'category', 'summary'])->get();
         $progressBar = $this->output->createProgressBar($books->count());
         
         $generated = 0;
