@@ -7,31 +7,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
 
-class Cart extends Model
+class EbookDownload extends Model
 {
     use HasFactory;
 
+    public $incrementing = false;
+    protected $keyType = 'string';
+
     protected $fillable = [
-        'id',
         'user_id',
-        'book_id',
+        'order_id',
+        'order_item_id',
         'book_format_id',
-        'collection_id',
-        'is_combo',
-        'quantity',
-        'attribute_value_ids',
-        'price'
+        'ip_address',
+        'user_agent',
+        'downloaded_at'
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
-        'price' => 'decimal:2',
-        'attribute_value_ids' => 'array',
-        'is_combo' => 'boolean'
+        'downloaded_at' => 'datetime'
     ];
-
-    public $incrementing = false;
-    protected $keyType = 'string';
 
     protected static function boot()
     {
@@ -41,6 +36,9 @@ class Cart extends Model
             if (empty($model->id)) {
                 $model->id = (string) Str::uuid();
             }
+            if (empty($model->downloaded_at)) {
+                $model->downloaded_at = now();
+            }
         });
     }
 
@@ -49,9 +47,9 @@ class Cart extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function book(): BelongsTo
+    public function order(): BelongsTo
     {
-        return $this->belongsTo(Book::class);
+        return $this->belongsTo(Order::class);
     }
 
     public function bookFormat(): BelongsTo
@@ -59,8 +57,8 @@ class Cart extends Model
         return $this->belongsTo(BookFormat::class);
     }
 
-    public function collection(): BelongsTo
+    public function orderItem(): BelongsTo
     {
-        return $this->belongsTo(Collection::class);
+        return $this->belongsTo(OrderItem::class);
     }
 }

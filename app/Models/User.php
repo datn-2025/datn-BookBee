@@ -10,6 +10,13 @@ use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
+    /**
+     * Get the role that owns the user.
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
@@ -26,7 +33,6 @@ class User extends Authenticatable
         'password',
         'phone',
         'status',
-        'role_id',
         'reset_token',
         'avatar',
         'activation_token',
@@ -59,17 +65,20 @@ class User extends Authenticatable
 
     public function isAdmin()
     {
-        return isset($this->role) && strtolower($this->role->name) === 'admin';
+        return $this->role && strtolower($this->role->name) !== 'user';
     }
+
 
     public function isActive()
     {
         return $this->status === 'Hoạt Động';
     }
 
-    public function role()
+
+
+    public function permissions()
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsToMany(Permission::class, 'user_permissions');
     }
 
     public $incrementing = false;
@@ -115,6 +124,30 @@ class User extends Authenticatable
     {
         return $this->hasMany(Cart::class);
     }
+
+    public function hasPermission(string $permission): bool
+    {
+        $rolePermissions = $this->role ? $this->role->permissions->pluck('slug') : collect();
+        $userPermissions = $this->permissions->pluck('slug');
+        return $rolePermissions->merge($userPermissions)->unique()->contains($permission);
+    }
+
+
+    public function hasAnyPermission(array $permissions): bool
+    {
+        $rolePermissions = $this->role ? $this->role->permissions->pluck('slug') : collect();
+        $userPermissions = $this->permissions->pluck('slug');
+        return $rolePermissions->merge($userPermissions)->intersect($permissions)->isNotEmpty();
+    }
+
+    public function hasAllPermissions(array $permissions): bool
+    {
+        $rolePermissions = $this->role ? $this->role->permissions->pluck('slug') : collect();
+        $userPermissions = $this->permissions->pluck('slug');
+        $allPermissions = $rolePermissions->merge($userPermissions)->unique();
+        return collect($permissions)->diff($allPermissions)->isEmpty();
+    }
+
 
     public function wallet()
     {

@@ -59,7 +59,8 @@ class Book extends Model
 
     public function authors(): BelongsToMany
     {
-        return $this->belongsToMany(Author::class, 'author_books');
+        return $this->belongsToMany(Author::class, 'author_books')
+            ->using(AuthorBook::class);
     }
 
     public function formats(): HasMany
@@ -109,6 +110,11 @@ class Book extends Model
     public function hasSummary()
     {
         return $this->summary()->exists();
+    }
+
+    public function gifts(): HasMany
+    {
+        return $this->hasMany(BookGift::class);
     }
     
 }
