@@ -4,53 +4,15 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderStatus;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderClientController extends Controller
 {
-    public function index(Request $request)
-    {
-        $status = $request->query('status');
-        
-        $query = Order::with(['orderItems.book.images', 'orderStatus', 'voucher'])
-            ->where('user_id', Auth::id())
-            ->latest();
-            
-        if ($status) {
-            $query->whereHas('orderStatus', function($q) use ($status) {
-                $q->where('name', $status);
-            });
-        }
-        
-        $orders = $query->paginate(10);
-        
-        // Lấy số lượng đơn hàng theo từng trạng thái
-        $orderCounts = Order::where('user_id', Auth::id())
-            ->join('order_statuses', 'orders.order_status_id', '=', 'order_statuses.id')
-            ->selectRaw('order_statuses.name as status, count(*) as count')
-            ->groupBy('order_statuses.name')
-            ->pluck('count', 'status')
-            ->toArray();
-            
-        $orderCounts['all'] = array_sum($orderCounts);
-        
-        // Màu sắc cho từng trạng thái
-        $orderStatusColors = [
-            'Chờ xác nhận' => 'bg-yellow-100 text-yellow-800',
-            'Đã xác nhận' => 'bg-blue-100 text-blue-800',
-            'Đang chuẩn bị' => 'bg-indigo-100 text-indigo-800',
-            'Đang giao hàng' => 'bg-purple-100 text-purple-800',
-            'Đã giao hàng' => 'bg-green-100 text-green-800',
-            'Đã nhận hàng' => 'bg-green-100 text-green-800',
-            'Thành công' => 'bg-green-100 text-green-800',
-            'Đã hủy' => 'bg-red-100 text-red-800',
-            'Giao thất bại' => 'bg-red-100 text-red-800',
-            'Đã hoàn tiền' => 'bg-gray-100 text-gray-800',
-        ];
-        
-        return view('clients.account.orders', compact('orders', 'orderCounts', 'orderStatusColors'));
-    }
+    // Method index đã được thay thế bằng unified()
 
     /**
      * Hiển thị chi tiết đơn hàng
@@ -59,15 +21,22 @@ class OrderClientController extends Controller
     {
         $order = Order::with([
             'orderItems.book.images',
+            'orderItems.collection',
+            'orderItems.bookFormat',
+            'orderItems.attributeValues',
             'orderStatus',
             'paymentStatus',
             'shippingAddress',
             'billingAddress',
-            'voucher'
+            'voucher',
+            'childOrders.orderItems.book.images',
+            'childOrders.orderItems.collection',
+            'childOrders.orderItems.bookFormat',
+            'refundRequests' // Thêm để load thông tin yêu cầu hoàn tiền
         ])->where('user_id', Auth::id())
           ->findOrFail($id);
 
-        return view('clients.account.order-detail', compact('order'));
+        return view('clients.account.order-details', compact('order'));
     }
 
     /**
@@ -79,23 +48,81 @@ class OrderClientController extends Controller
             'cancellation_reason' => 'nullable|string|max:1000'
         ]);
 
-        $order = Order::where('user_id', Auth::id())
-                    ->whereIn('order_status_id', function($query) {
-                        $query->select('id')
-                              ->from('order_statuses')
-                              ->whereIn('name', ['Chờ xác nhận', 'Đã xác nhận', 'Đang chuẩn bị']);
-                    })
-                    ->findOrFail($id);
+        $order = Order::where('user_id', Auth::id())->findOrFail($id);
+        
+        // Kiểm tra xem đơn hàng có thể hủy hay không
+        if (!\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name)) {
+            return redirect()->route('account.orders.index')
+                ->with('error', 'Không thể hủy đơn hàng ở trạng thái hiện tại: ' . $order->orderStatus->name);
+        }
 
-        // Kiểm tra nếu đơn hàng có thể hủy
-        $order->update([
-            'order_status_id' => OrderStatus::where('name', 'Đã hủy')->first()->id,
-            'cancelled_at' => now(),
-            'cancellation_reason' => $request->cancellation_reason ?? 'Khách hàng hủy đơn hàng'
-        ]);
+        DB::beginTransaction();
+        try {
+            // Cập nhật trạng thái đơn hàng thành "Đã hủy"
+            $order->update([
+                'order_status_id' => OrderStatus::where('name', 'Đã hủy')->first()->id,
+                'cancelled_at' => now(),
+                'cancellation_reason' => $request->cancellation_reason ?? 'Khách hàng hủy đơn hàng'
+            ]);
 
-        return redirect()->route('account.orders.index')
-            ->with('success', 'Đã hủy đơn hàng thành công');
+            // Cộng lại tồn kho cho các sản phẩm trong đơn hàng
+            $order->orderItems->each(function ($item) {
+                if ($item->bookFormat && $item->bookFormat->stock !== null) {
+                    Log::info("+ lại tồn kho cho book_format_id {$item->bookFormat->id}, số lượng: {$item->quantity}");
+                    $item->bookFormat->increment('stock', $item->quantity);
+                }
+            });
+
+            // Hoàn tiền vào ví nếu đơn hàng đã thanh toán
+            if ($order->paymentStatus->name === 'Đã Thanh Toán') {
+                try {
+                    $paymentRefundService = app(\App\Services\PaymentRefundService::class);
+                    $refundResult = $paymentRefundService->refundToWallet($order, $order->total_amount);
+                    
+                    if ($refundResult) {
+                        Log::info('Order 1 cancellation refund successful', [
+                            'order_id' => $order->id,
+                            'order_code' => $order->order_code,
+                            'amount' => $order->total_amount,
+                            'user_id' => $order->user_id
+                        ]);
+                        
+                        $message = 'Đã hủy đơn hàng và hoàn tiền vào ví thành công';
+                    } else {
+                        Log::warning('Order cancellation refund failed but order still cancelled', [
+                            'order_id' => $order->id,
+                            'order_code' => $order->order_code
+                        ]);
+                        
+                        $message = 'Đã hủy đơn hàng thành công. Tiền hoàn sẽ được xử lý trong thời gian sớm nhất.';
+                    }
+                } catch (\Exception $refundError) {
+                    Log::error('Order cancellation refund error', [
+                        'order_id' => $order->id,
+                        'error' => $refundError->getMessage(),
+                        'trace' => $refundError->getTraceAsString()
+                    ]);
+                    
+                    $message = 'Đã hủy đơn hàng thành công. Tiền hoàn sẽ được xử lý trong thời gian sớm nhất.';
+                }
+            } else {
+                $message = 'Đã hủy đơn hàng thành công';
+            }
+
+            DB::commit();
+            return redirect()->route('account.orders.index')->with('success', $message);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error cancelling order', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('account.orders.index')
+                ->with('error', 'Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại sau.');
+        }
     }
 
     /**
@@ -115,5 +142,136 @@ class OrderClientController extends Controller
 
         return redirect()->route('account.orders.index')
             ->with('success', 'Đã xóa đơn hàng thành công');
+    }
+
+    /**
+     * Hiển thị trang đơn hàng gộp với thiết kế mới
+     */
+    public function unified(Request $request)
+    {
+        $status = $request->query('status', 'all');
+        
+        $query = Order::with([
+            'orderItems.book.images',
+            'orderItems.collection', 
+            'orderItems.bookFormat',
+            'orderStatus', 
+            'paymentStatus',
+            'paymentMethod',
+            'address',
+            'voucher',
+            'reviews',
+            'refundRequests'
+        ])->where('user_id', Auth::id())
+          ->latest();
+            
+        // Lọc theo trạng thái nếu không phải 'all'
+        if ($status !== 'all') {
+            $statusMap = [
+                'pending' => 'Chờ xác nhận',
+                'confirmed' => 'Đã xác nhận', 
+                'preparing' => 'Đang chuẩn bị',
+                'shipping' => 'Đang giao hàng',
+                'delivered' => ['Đã giao', 'Đã giao hàng', 'Thành công'],
+                'cancelled' => 'Đã hủy'
+            ];
+            
+            if (isset($statusMap[$status])) {
+                $statusNames = is_array($statusMap[$status]) ? $statusMap[$status] : [$statusMap[$status]];
+                $query->whereHas('orderStatus', function($q) use ($statusNames) {
+                    $q->whereIn('name', $statusNames);
+                });
+            }
+        }
+        
+        $orders = $query->paginate(10);
+        
+        // Lấy thông tin cửa hàng
+        $storeSettings = Setting::first();
+        
+        return view('clients.account.orders', compact('orders', 'storeSettings'));
+    }
+
+    /**
+     * Hủy đơn hàng từ trang unified orders
+     */
+    public function cancel(Request $request, $id)
+    {
+        $request->validate([
+            'cancellation_reason' => 'nullable|string|max:1000'
+        ]);
+
+        $order = Order::where('user_id', Auth::id())->findOrFail($id);
+        
+        // Kiểm tra xem đơn hàng có thể hủy hay không
+        if (!\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name)) {
+            return redirect()->back()->with('error', 'Không thể hủy đơn hàng ở trạng thái hiện tại: ' . $order->orderStatus->name);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Cập nhật trạng thái đơn hàng thành "Đã hủy"
+            $order->update([
+                'order_status_id' => OrderStatus::where('name', 'Đã hủy')->first()->id,
+                'cancelled_at' => now(),
+                'cancellation_reason' => $request->cancellation_reason ?? 'Khách hàng hủy đơn hàng'
+            ]);
+
+             $order->orderItems->each(function ($item) {
+                if ($item->bookFormat && $item->bookFormat->stock !== null) {
+                    Log::info("Cộng lại tồn kho cho book_format_id {$item->bookFormat->id}, số lượng: {$item->quantity}");
+                    $item->bookFormat->increment('stock', $item->quantity);
+                }
+            });
+
+            // Hoàn tiền vào ví nếu đơn hàng đã thanh toán
+            if ($order->paymentStatus->name === 'Đã Thanh Toán') {
+                try {
+                    $paymentRefundService = app(\App\Services\PaymentRefundService::class);
+                    $refundResult = $paymentRefundService->refundToWallet($order, $order->total_amount);
+                    
+                    if ($refundResult) {
+                        Log::info('Order 2 cancellation refund successful', [
+                            'order_id' => $order->id,
+                            'order_code' => $order->order_code,
+                            'amount' => $order->total_amount,
+                            'user_id' => $order->user_id
+                        ]);
+                        
+                        $message = 'Đã hủy đơn hàng và hoàn tiền vào ví thành công';
+                    } else {
+                        Log::warning('Order cancellation refund failed but order still cancelled', [
+                            'order_id' => $order->id,
+                            'order_code' => $order->order_code
+                        ]);
+                        
+                        $message = 'Đã hủy đơn hàng thành công. Tiền hoàn sẽ được xử lý trong thời gian sớm nhất.';
+                    }
+                } catch (\Exception $refundError) {
+                    Log::error('Order cancellation refund error', [
+                        'order_id' => $order->id,
+                        'error' => $refundError->getMessage(),
+                        'trace' => $refundError->getTraceAsString()
+                    ]);
+                    
+                    $message = 'Đã hủy đơn hàng thành công. Tiền hoàn sẽ được xử lý trong thời gian sớm nhất.';
+                }
+            } else {
+                $message = 'Đã hủy đơn hàng thành công';
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', $message);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error cancelling order', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()->with('error', 'Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại sau.');
+        }
     }
 }

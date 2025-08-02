@@ -11,6 +11,7 @@ use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Models\Book;
+use App\Models\Cart;
 use Carbon\Carbon;
 
 class CartController extends Controller
@@ -26,132 +27,148 @@ class CartController extends Controller
         }
 
         $user = Auth::user();
-        
-        // Query cơ bản cho cart items mà không join với collections để tránh duplicate
-        $cart = DB::table('carts')
-            ->join('books', 'carts.book_id', '=', 'books.id')
-            ->leftJoin('book_formats', 'carts.book_format_id', '=', 'book_formats.id')
-            ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
-            ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
+
+        // Query để lấy tất cả cart items bao gồm cả sách đơn lẻ và combo
+        $cartQuery = DB::table('carts')
             ->where('carts.user_id', $user->id)
             ->select(
                 'carts.id',
                 'carts.user_id',
                 'carts.book_id',
                 'carts.book_format_id',
+                'carts.collection_id',
+                'carts.is_combo',
                 'carts.quantity',
                 'carts.attribute_value_ids',
                 'carts.price',
                 'carts.created_at',
                 'carts.updated_at',
-                'books.title',
-                'books.cover_image as image',
-                DB::raw('COALESCE(book_formats.format_name, "Bản thường") as format_name'),
-                DB::raw('COALESCE(GROUP_CONCAT(DISTINCT authors.name SEPARATOR ", "), "Chưa cập nhật") as author_name'),
-                DB::raw('COALESCE(carts.quantity, 1) as quantity'),
-                DB::raw('COALESCE(carts.price, 0) as price'),
-                DB::raw('COALESCE(book_formats.stock, 0) as stock'),
-                DB::raw('COALESCE(carts.attribute_value_ids, "[]") as attribute_value_ids')
-            )
-            ->groupBy(
-                'carts.id',
-                'carts.user_id',
-                'carts.book_id',
-                'carts.book_format_id',
-                'carts.quantity',
-                'carts.attribute_value_ids',
-                'carts.price',
-                'carts.created_at',
-                'carts.updated_at',
-                'books.title',
-                'books.cover_image',
-                'book_formats.format_name',
-                'book_formats.stock'
-            )
-            ->get();
+                DB::raw('COALESCE(carts.is_selected, 1) as is_selected')
+            );
 
-        // Sau đó thêm thông tin collection/combo cho từng item riêng biệt
-        foreach ($cart as $item) {
-            // Lấy thông tin combo (collection) đang hoạt động - chỉ lấy 1 combo đầu tiên
-            $comboInfo = DB::table('book_collections')
-                ->join('collections', 'book_collections.collection_id', '=', 'collections.id')
-                ->where('book_collections.book_id', $item->book_id)
-                ->where(function($query) {
-                    $query->whereNull('collections.start_date')
-                          ->orWhere('collections.start_date', '<=', now());
-                })
-                ->where(function($query) {
-                    $query->whereNull('collections.end_date')
-                          ->orWhere('collections.end_date', '>=', now());
-                })
-                ->whereNull('collections.deleted_at')
-                ->where('collections.combo_price', '>', 0)
-                ->select(
-                    'collections.id as collection_id',
-                    'collections.name as collection_name',
-                    'collections.combo_price',
-                    'collections.start_date as combo_start_date',
-                    'collections.end_date as combo_end_date'
-                )
-                ->first();
+        $cartItems = $cartQuery->get();
+        $cart = collect();
 
-            // Thêm thông tin combo vào item
-            if ($comboInfo) {
-                $item->collection_id = $comboInfo->collection_id;
-                $item->collection_name = $comboInfo->collection_name;
-                $item->combo_price = $comboInfo->combo_price;
-                $item->combo_start_date = $comboInfo->combo_start_date;
-                $item->combo_end_date = $comboInfo->combo_end_date;
+        foreach ($cartItems as $cartItem) {
+            if ($cartItem->is_combo && $cartItem->collection_id) {
+                // Xử lý các combo items
+                $combo = DB::table('collections')
+                    ->where('id', $cartItem->collection_id)
+                    ->where('status', 'active')
+                    ->whereNotNull('combo_price')
+                    ->first();
+
+                if ($combo) {
+                    // Lấy danh sách sách trong combo
+                    $comboBooks = DB::table('book_collections')
+                        ->join('books', 'book_collections.book_id', '=', 'books.id')
+                        ->where('book_collections.collection_id', $cartItem->collection_id)
+                        ->select('books.id', 'books.title', 'books.cover_image')
+                        ->get();
+
+                    $item = (object) [
+                        'id' => $cartItem->id,
+                        'user_id' => $cartItem->user_id,
+                        'book_id' => null, // Combo không có book_id cụ thể
+                        'book_format_id' => null,
+                        'collection_id' => $cartItem->collection_id,
+                        'is_combo' => true,
+                        'quantity' => $cartItem->quantity,
+                        'attribute_value_ids' => $cartItem->attribute_value_ids,
+                        'price' => $combo->combo_price, // Sử dụng giá combo
+                        'created_at' => $cartItem->created_at,
+                        'updated_at' => $cartItem->updated_at,
+                        'title' => $combo->name,
+                        'image' => $combo->cover_image,
+                        'format_name' => 'Combo sách',
+                        'author_name' => count($comboBooks) . ' cuốn sách',
+                        'stock' => null, // Combo không có tồn kho
+                        'gifts' => collect(), // Combo không có quà tặng
+                        'combo_books' => $comboBooks,
+                        'start_date' => $combo->start_date,
+                        'end_date' => $combo->end_date,
+                        'cover_image' => $combo->cover_image,
+                        'is_selected' => isset($cartItem->is_selected) ? $cartItem->is_selected : 1
+                    ];
+
+                    $cart->push($item);
+                }
             } else {
-                $item->collection_id = null;
-                $item->collection_name = null;
-                $item->combo_price = null;
-                $item->combo_start_date = null;
-                $item->combo_end_date = null;
+                // Xử lý sách đơn lẻ
+                $bookInfo = DB::table('books')
+                    ->leftJoin('book_formats', function ($join) use ($cartItem) {
+                        $join->on('book_formats.book_id', '=', 'books.id')
+                            ->where('book_formats.id', '=', $cartItem->book_format_id);
+                    })
+                    ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
+                    ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
+                    ->where('books.id', $cartItem->book_id)
+                    ->select(
+                        'books.title',
+                        'books.cover_image',
+                        DB::raw('COALESCE(book_formats.format_name, "Bản thường") as format_name'),
+                        DB::raw('COALESCE(book_formats.stock, 0) as stock'),
+                        DB::raw('COALESCE(GROUP_CONCAT(DISTINCT authors.name SEPARATOR ", "), "Chưa cập nhật") as author_name')
+                    )
+                    ->groupBy('books.id', 'books.title', 'books.cover_image', 'book_formats.format_name', 'book_formats.stock')
+                    ->first();
+
+                if ($bookInfo) {
+                    // Lấy thông tin gifts cho sách đơn lẻ
+                    $gifts = DB::table('book_gifts')
+                        ->where('book_id', $cartItem->book_id)
+                        ->where(function ($query) {
+                            $query->whereNull('start_date')
+                                ->orWhere('start_date', '<=', now());
+                        })
+                        ->where(function ($query) {
+                            $query->whereNull('end_date')
+                                ->orWhere('end_date', '>=', now());
+                        })
+                        ->where('quantity', '>', 0)
+                        ->select('gift_name as name', 'gift_description as description', 'gift_image as image')
+                        ->get()
+                        ->map(function ($gift) {
+                            // Đảm bảo tất cả các đối tượng gift có các thuộc tính mong đợi
+                            return (object) [
+                                'name' => $gift->name ?? 'Quà tặng',
+                                'description' => $gift->description ?? '',
+                                'image' => $gift->image ?? null
+                            ];
+                        });
+
+                    $item = (object) [
+                        'id' => $cartItem->id,
+                        'user_id' => $cartItem->user_id,
+                        'book_id' => $cartItem->book_id,
+                        'book_format_id' => $cartItem->book_format_id,
+                        'collection_id' => null,
+                        'is_combo' => false,
+                        'quantity' => $cartItem->quantity,
+                        'attribute_value_ids' => $cartItem->attribute_value_ids,
+                        'price' => $cartItem->price,
+                        'created_at' => $cartItem->created_at,
+                        'updated_at' => $cartItem->updated_at,
+                        'title' => $bookInfo->title,
+                        'image' => $bookInfo->cover_image,
+                        'format_name' => $bookInfo->format_name,
+                        'author_name' => $bookInfo->author_name,
+                        'stock' => $bookInfo->stock,
+                        'gifts' => $gifts,
+                        'is_selected' => isset($cartItem->is_selected) ? $cartItem->is_selected : 1
+                    ];
+
+                    $cart->push($item);
+                }
             }
         }
-        
-        // Thêm thông tin gifts cho từng item
-        foreach ($cart as $item) {
-            $item->gifts = DB::table('book_gifts')
-                ->where('book_id', $item->book_id)
-                ->where(function($query) {
-                    $query->whereNull('start_date')
-                          ->orWhere('start_date', '<=', now());
-                })
-                ->where(function($query) {
-                    $query->whereNull('end_date')
-                          ->orWhere('end_date', '>=', now());
-                })
-                ->where('quantity', '>', 0)
-                ->get();
-        }
 
+        // Tính tổng giá trị giỏ hàng
         $total = 0;
         foreach ($cart as $item) {
-            // Ưu tiên giá combo nếu có và đang trong thời gian khuyến mại
-            $itemPrice = $item->price;
-            if ($item->collection_id && $item->combo_price) {
-                // Kiểm tra thời gian combo
-                $now = now();
-                $comboValid = true;
-                
-                if ($item->combo_start_date && $now->lt($item->combo_start_date)) {
-                    $comboValid = false;
-                }
-                if ($item->combo_end_date && $now->gt($item->combo_end_date)) {
-                    $comboValid = false;
-                }
-                
-                if ($comboValid && $item->combo_price < $itemPrice) {
-                    $itemPrice = $item->combo_price;
-                    $item->is_combo_price = true;
-                    $item->original_price = $item->price;
-                    $item->price = $itemPrice; // Update giá hiển thị
-                }
+            if (isset($item->is_selected) && $item->is_selected) {
+                $total += $item->price * $item->quantity;
             }
-            
-            $total += $itemPrice * $item->quantity;
         }
         // dd($total);
 
@@ -165,11 +182,19 @@ class CartController extends Controller
     public function addToCart(Request $request)
     {
         if (!Auth::check()) {
-            return response()->json(['error' => 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.'], 401);
+            if (request()->wantsJson()) {
+                return response()->json(['error' => 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.'], 401);
+            }
+            return back()->with('error', 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.');
         }
 
         try {
-            // Validate request data
+            // Kiểm tra nếu đây là combo request - hỗ trợ nhiều cách phát hiện combo
+            if ($request->has(['combo_id', 'collection_id']) || $request->input('type') === 'combo') {
+                return $this->addComboToCart($request);
+            }
+
+            // Validate dữ liệu request cho sách
             $validated = $request->validate([
                 'book_id' => 'required|exists:books,id',
                 'quantity' => 'required|integer|min:1',
@@ -181,10 +206,10 @@ class CartController extends Controller
             $bookId = $validated['book_id'];
             $quantity = $validated['quantity'];
             $bookFormatId = $validated['book_format_id'] ?? null;
-            
+
             // Xử lý attribute_value_ids từ form
             $attributeValueIds = [];
-            
+
             // Cách 1: Nếu gửi lên dưới dạng JSON string
             if (!empty($validated['attribute_value_ids'])) {
                 $decoded = json_decode($validated['attribute_value_ids'], true);
@@ -192,7 +217,7 @@ class CartController extends Controller
                     $attributeValueIds = $decoded;
                 }
             }
-            
+
             // Cách 2: Nếu gửi lên dưới dạng attributes[key] = value
             if (!empty($validated['attributes']) && is_array($validated['attributes'])) {
                 foreach ($validated['attributes'] as $key => $value) {
@@ -201,32 +226,103 @@ class CartController extends Controller
                     }
                 }
             }
-            
+
             // Validation: Chỉ giữ lại những UUID hợp lệ và tồn tại trong database
             $validAttributeIds = [];
+            $formatInfo = null;
+
+            // Lấy thông tin format trước để biết có phải ebook không
+            if ($bookFormatId) {
+                $formatInfo = DB::table('book_formats')
+                    ->where('id', $bookFormatId)
+                    ->first();
+            }
+
+            $isEbook = $formatInfo && stripos($formatInfo->format_name, 'ebook') !== false;
+
             if (!empty($attributeValueIds)) {
-                $validAttributeIds = DB::table('attribute_values')
-                    ->whereIn('id', $attributeValueIds)
-                    ->pluck('id')
-                    ->toArray();
-                
-                // Log để debug
+                if ($isEbook) {
+                    // Đối với ebook: chỉ lấy thuộc tính ngôn ngữ
+                    $validAttributeIds = DB::table('attribute_values')
+                        ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
+                        ->whereIn('attribute_values.id', $attributeValueIds)
+                        ->where(function ($q) {
+                            $q->where('attributes.name', 'LIKE', '%Ngôn Ngữ%')
+                                ->orWhere('attributes.name', 'LIKE', '%language%')
+                                ->orWhere('attributes.name', 'LIKE', '%Language%');
+                        })
+                        ->pluck('attribute_values.id')
+                        ->toArray();
+
+                    // Kiểm tra xem có thuộc tính ngôn ngữ hợp lệ không
+                    if (empty($validAttributeIds)) {
+                        Log::warning('Ebook không có thuộc tính ngôn ngữ hợp lệ:', [
+                            'book_id' => $bookId,
+                            'requested_attributes' => $attributeValueIds,
+                            'format_id' => $bookFormatId
+                        ]);
+
+                        return response()->json([
+                            'error' => 'Vui lòng chọn ngôn ngữ cho sách điện tử'
+                        ], 422);
+                    }
+                } else {
+                    // Đối với sách vật lý: giữ lại tất cả thuộc tính hợp lệ
+                    $validAttributeIds = DB::table('attribute_values')
+                        ->whereIn('id', $attributeValueIds)
+                        ->pluck('id')
+                        ->toArray();
+                }
+
+                // Log để debug - Cải thiện
                 Log::info('Cart addToCart - Attribute validation:', [
                     'requested_ids' => $attributeValueIds,
-                    'valid_ids' => $validAttributeIds
+                    'valid_ids' => $validAttributeIds,
+                    'is_ebook' => $isEbook,
+                    'format_name' => $formatInfo ? $formatInfo->format_name : 'N/A',
+                    'filtered_count' => count($validAttributeIds),
+                    'original_count' => count($attributeValueIds)
+                ]);
+            } else {
+                // Nếu không có thuộc tính nào được gửi lên
+                if ($isEbook) {
+                    // Kiểm tra xem sách này có yêu cầu thuộc tính ngôn ngữ không
+                    $hasLanguageAttributes = DB::table('book_attribute_values')
+                        ->join('attribute_values', 'book_attribute_values.attribute_value_id', '=', 'attribute_values.id')
+                        ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
+                        ->where('book_attribute_values.book_id', $bookId)
+                        ->where(function ($q) {
+                            $q->where('attributes.name', 'LIKE', '%Ngôn Ngữ%')
+                                ->orWhere('attributes.name', 'LIKE', '%language%')
+                                ->orWhere('attributes.name', 'LIKE', '%Language%');
+                        })
+                        ->exists();
+
+                    if ($hasLanguageAttributes) {
+                        return response()->json([
+                            'error' => 'Vui lòng chọn ngôn ngữ cho sách điện tử'
+                        ], 422);
+                    }
+                }
+
+                Log::info('Cart addToCart - No attributes provided:', [
+                    'is_ebook' => $isEbook,
+                    'book_format_id' => $bookFormatId,
+                    'note' => $isEbook ? 'Ebook without language requirement' : 'Physical book without attributes'
                 ]);
             }
-            
+
             // Loại bỏ duplicate và chuyển thành JSON string
             $validAttributeIds = array_unique($validAttributeIds);
-            $attributeJson = json_encode(array_values($validAttributeIds));
-
+            $attributeJson = json_encode(value: array_values($validAttributeIds));
+            // dd($attributeJson);
             // Lấy thông tin book format
             if ($bookFormatId) {
+                // dd($bookFormatId);
                 $bookInfo = DB::table('books')
-                    ->join('book_formats', function($join) use ($bookFormatId) {
+                    ->join('book_formats', function ($join) use ($bookFormatId) {
                         $join->on('books.id', '=', 'book_formats.book_id')
-                             ->where('book_formats.id', '=', $bookFormatId);
+                            ->where('book_formats.id', '=', $bookFormatId);
                     })
                     ->where('books.id', $bookId)
                     ->select(
@@ -239,6 +335,7 @@ class CartController extends Controller
                         'book_formats.discount'
                     )
                     ->first();
+                // dd($bookInfo);
             } else {
                 // Nếu không có format được chọn, lấy format đầu tiên
                 $bookInfo = DB::table('books')
@@ -255,7 +352,7 @@ class CartController extends Controller
                         'book_formats.discount'
                     )
                     ->first();
-                
+
                 if ($bookInfo) {
                     $bookFormatId = $bookInfo->format_id;
                 }
@@ -270,14 +367,14 @@ class CartController extends Controller
             if (isset($bookInfo->format_name)) {
                 $isEbook = stripos($bookInfo->format_name, 'ebook') !== false;
             }
-            
+
             // Debug log
             Log::info('Cart addToCart - Product type check:', [
                 'book_id' => $bookId,
                 'format_name' => $bookInfo->format_name ?? 'N/A',
                 'is_ebook' => $isEbook
             ]);
-            
+
             // Log thông tin sản phẩm đang thêm vào giỏ hàng (không còn kiểm tra xung đột loại sản phẩm)
             Log::info('Cart addToCart - Adding product to cart:', [
                 'book_id' => $bookId,
@@ -286,7 +383,7 @@ class CartController extends Controller
                 'quantity' => $quantity,
                 'user_id' => Auth::id()
             ]);
-            
+
             // Nếu là ebook: luôn set quantity = 1, bỏ qua check tồn kho
             if ($isEbook) {
                 $quantity = 1;
@@ -311,43 +408,53 @@ class CartController extends Controller
             // Tính giá cuối cùng sau khi áp dụng discount (nếu có)
             $finalPrice = $bookInfo->price;
             if (isset($bookInfo->discount) && $bookInfo->discount > 0) {
-                $finalPrice = $bookInfo->price * (1 - $bookInfo->discount / 100);
+                // Discount giờ là số tiền VNĐ trực tiếp, không phải phần trăm
+                $finalPrice = $bookInfo->price - $bookInfo->discount;
+                // Đảm bảo giá không âm
+                $finalPrice = max(0, $finalPrice);
             }
-            
+            // dd($finalPrice);
+
             // Kiểm tra combo price (nếu sách thuộc combo đang hoạt động)
-            $comboInfo = DB::table('book_collections')
-                ->join('collections', 'book_collections.collection_id', '=', 'collections.id')
-                ->where('book_collections.book_id', $bookId)
-                ->where(function($query) {
-                    $query->whereNull('collections.start_date')
-                          ->orWhere('collections.start_date', '<=', now());
-                })
-                ->where(function($query) {
-                    $query->whereNull('collections.end_date')
-                          ->orWhere('collections.end_date', '>=', now());
-                })
-                ->whereNull('collections.deleted_at')
-                ->where('collections.combo_price', '>', 0)
-                ->first();
-                
-            if ($comboInfo && $comboInfo->combo_price < $finalPrice) {
-                $finalPrice = $comboInfo->combo_price;
-                Log::info('Applied combo pricing:', [
-                    'book_id' => $bookId,
-                    'original_price' => $bookInfo->price,
-                    'combo_price' => $comboInfo->combo_price,
-                    'collection_name' => $comboInfo->name ?? 'Unknown'
-                ]);
+            // $comboInfo = DB::table('book_collections')
+            //     ->join('collections', 'book_collections.collection_id', '=', 'collections.id')
+            //     ->where('book_collections.book_id', $bookId)
+            //     ->where(function($query) {
+            //         $query->whereNull('collections.start_date')
+            //               ->orWhere('collections.start_date', '<=', now());
+            //     })
+            //     ->where(function($query) {
+            //         $query->whereNull('collections.end_date')
+            //               ->orWhere('collections.end_date', '>=', now());
+            //     })
+            //     ->whereNull('collections.deleted_at')
+            //     ->where('collections.combo_price', '>', 0)
+            //     ->first();
+
+            // if ($comboInfo && $comboInfo->combo_price < $finalPrice) {
+            //     $finalPrice = $comboInfo->combo_price;
+            //     Log::info('Applied combo pricing:', [
+            //         'book_id' => $bookId,
+            //         'original_price' => $bookInfo->price,
+            //         'combo_price' => $comboInfo->combo_price,
+            //         'collection_name' => $comboInfo->name ?? 'Unknown'
+            //     ]);
+            // }
+
+            // Check: Giá tiền không được âm hoặc bằng 0
+            if ($finalPrice <= 0) {
+                return response()->json([
+                    'error' => 'Giá sản phẩm không hợp lệ. Vui lòng liên hệ quản trị viên.'
+                ], 422, ['Content-Type' => 'application/json']);
             }
 
             // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa (bao gồm cả thuộc tính)
-            $existingCart = DB::table('carts')
-                ->where('user_id', Auth::id())
+            $existingCart = Cart::where('user_id', Auth::id())
                 ->where('book_id', $bookId)
                 ->where('book_format_id', $bookFormatId)
-                ->where('attribute_value_ids', $attributeJson)
+                ->whereJsonContains('attribute_value_ids', json_decode($attributeJson, true))
                 ->first();
-
+            // dd($existingCart);   
             if ($existingCart) {
                 // Nếu là ebook: luôn giữ số lượng là 1
                 if ($isEbook) {
@@ -358,9 +465,10 @@ class CartController extends Controller
                             'updated_at' => now()
                         ]);
                     return response()->json([
-                        'success' => 'Đã thêm sách điện tử vào giỏ hàng',
-                        'stock' => $bookInfo->stock,
-                        'current_quantity' => 1
+                        'error' => 'Sách này đã có trong giỏ hàng',
+                        // 'stock' => $bookInfo->stock,
+                        // 'current_quantity' => 1,
+                        // 'cart_count' => (int) DB::table('carts')->where('user_id', Auth::id())->sum('quantity')
                     ]);
                 }
                 // Kiểm tra tổng số lượng sau khi thêm (chỉ với sách vật lý)
@@ -368,9 +476,9 @@ class CartController extends Controller
                 if (!$isEbook && $newQuantity > $bookInfo->stock) {
                     return response()->json([
                         'error' => "Số lượng tổng cộng vượt quá tồn kho. Tồn kho hiện tại: {$bookInfo->stock}, số lượng trong giỏ: {$existingCart->quantity}",
-                        'available_stock' => $bookInfo->stock,
-                        'current_cart_quantity' => $existingCart->quantity
-                    ], 422);
+                        // 'available_stock' => $bookInfo->stock,
+                        // 'current_cart_quantity' => $existingCart->quantity
+                    ]);
                 }
                 // Cập nhật số lượng và giá (case giá có thể thay đổi)
                 DB::table('carts')
@@ -380,17 +488,22 @@ class CartController extends Controller
                         'price' => $finalPrice,
                         'updated_at' => now()
                     ]);
+
+                // Get updated cart count
+                $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+
                 return response()->json([
                     'success' => 'Đã thêm ' . $quantity . ' sản phẩm "' . $bookInfo->title . '" vào giỏ hàng',
                     'stock' => $bookInfo->stock,
-                    'current_quantity' => $newQuantity
+                    'current_quantity' => $newQuantity,
+                    'cart_count' => (int) $cartCount
                 ]);
             } else {
                 // Nếu là ebook: luôn set quantity = 1
                 if ($isEbook) {
                     $quantity = 1;
                 }
-                
+
                 try {
                     DB::table('carts')->insert([
                         'id' => Str::uuid(),
@@ -403,11 +516,15 @@ class CartController extends Controller
                         'created_at' => now(),
                         'updated_at' => now()
                     ]);
-                    
+
+                    // Get updated cart count
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+
                     return response()->json([
                         'success' => 'Đã thêm sản phẩm "' . $bookInfo->title . '" vào giỏ hàng',
                         'stock' => $bookInfo->stock,
-                        'current_quantity' => $quantity
+                        'current_quantity' => $quantity,
+                        'cart_count' => (int) $cartCount
                     ]);
                 } catch (\Illuminate\Database\QueryException $e) {
                     // Nếu bị duplicate key error (unique constraint violation)
@@ -419,7 +536,7 @@ class CartController extends Controller
                             ->where('book_format_id', $bookFormatId)
                             ->where('attribute_value_ids', $attributeJson)
                             ->first();
-                            
+
                         if ($existingCart) {
                             if ($isEbook) {
                                 return response()->json([
@@ -436,7 +553,7 @@ class CartController extends Controller
                                         'current_cart_quantity' => $existingCart->quantity
                                     ], 422);
                                 }
-                                
+
                                 DB::table('carts')
                                     ->where('id', $existingCart->id)
                                     ->update([
@@ -444,7 +561,7 @@ class CartController extends Controller
                                         'price' => $finalPrice,
                                         'updated_at' => now()
                                     ]);
-                                    
+
                                 return response()->json([
                                     'success' => 'Đã thêm ' . $quantity . ' sản phẩm "' . $bookInfo->title . '" vào giỏ hàng',
                                     'stock' => $bookInfo->stock,
@@ -457,16 +574,316 @@ class CartController extends Controller
                 }
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'error' => 'Dữ liệu không hợp lệ: ' . implode(', ', $e->validator->errors()->all())
-            ], 422);
+            $errorMsg = 'Dữ liệu không hợp lệ: ' . implode(', ', $e->validator->errors()->all());
+            if (request()->wantsJson()) {
+                return response()->json(['error' => $errorMsg], 422);
+            }
+            return back()->with('error', $errorMsg);
         } catch (\Exception $e) {
             Log::error('Error in addToCart:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            return response()->json(['error' => 'Có lỗi xảy ra khi thêm vào giỏ hàng'], 500);
+
+            $errorMsg = 'Có lỗi xảy ra khi thêm vào giỏ hàng';
+            if (request()->wantsJson()) {
+                return response()->json(['error' => $errorMsg], 500);
+            }
+            return back()->with('error', $errorMsg);
+        }
+    }
+
+    public function addComboToCart(Request $request)
+    {
+        if (!Auth::check()) {
+            if (request()->wantsJson()) {
+                return response()->json(['error' => 'Bạn cần đăng nhập để thêm combo vào giỏ hàng.'], 401);
+            }
+            return back()->with('error', 'Bạn cần đăng nhập để thêm combo vào giỏ hàng.');
+        }
+
+        try {
+            Log::info('addComboToCart called with data:', $request->all());
+
+            // Validate request data - accept both combo_id and collection_id
+            $validated = $request->validate([
+                'combo_id' => 'nullable|exists:collections,id',
+                'collection_id' => 'nullable|exists:collections,id',
+                'quantity' => 'required|integer|min:1',
+                'type' => 'nullable|string'
+            ]);
+
+            // Use combo_id if available, otherwise use collection_id
+            $collectionId = $validated['combo_id'] ?? $validated['collection_id'];
+
+            if (!$collectionId) {
+                if (request()->wantsJson()) {
+                    return response()->json(['error' => 'Dữ liệu không hợp lệ: Không tìm thấy ID combo'], 422);
+                }
+                return back()->with('error', 'Dữ liệu không hợp lệ: Không tìm thấy ID combo');
+            }
+
+            $quantity = $validated['quantity'];
+
+            Log::info('Validated data:', ['collection_id' => $collectionId, 'quantity' => $quantity]);
+
+            // Lấy thông tin combo với kiểm tra ngày hiệu lực
+            $combo = DB::table('collections')
+                ->where('id', $collectionId)
+                ->where('status', 'active')
+                ->whereNotNull('combo_price')
+                ->where(function ($query) {
+                    $query->whereNull('start_date')
+                        ->orWhere('start_date', '<=', now());
+                })
+                ->where(function ($query) {
+                    $query->whereNull('end_date')
+                        ->orWhere('end_date', '>=', now());
+                })
+                ->whereNull('deleted_at')
+                ->first();
+
+            Log::info('Combo found:', ['combo' => $combo]);
+
+            if ($combo && $combo->combo_price <= 0) {
+                $errorMsg = 'Giá combo không hợp lệ. Vui lòng liên hệ quản trị viên.';
+                if (request()->wantsJson()) {
+                    return response()->json(['error' => $errorMsg], 422);
+                }
+                return back()->with('error', $errorMsg);
+            }
+
+            if (!$combo) {
+                // Kiểm tra xem combo có tồn tại nhưng không trong thời gian hiệu lực không
+                $expiredCombo = DB::table('collections')
+                    ->where('id', $collectionId)
+                    ->whereNotNull('combo_price')
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                if ($expiredCombo) {
+                    $now = now();
+                    $startDate = $expiredCombo->start_date ? \Carbon\Carbon::parse($expiredCombo->start_date) : null;
+                    $endDate = $expiredCombo->end_date ? \Carbon\Carbon::parse($expiredCombo->end_date) : null;
+
+                    if ($startDate && $now < $startDate) {
+                        $errorMsg = 'Combo chưa bắt đầu. Thời gian bắt đầu: ' . $startDate->format('d/m/Y H:i');
+                        if (request()->wantsJson()) {
+                            return response()->json(['error' => $errorMsg], 422);
+                        }
+                        return back()->with('error', $errorMsg);
+                    }
+
+                    if ($endDate && $now > $endDate) {
+                        $errorMsg = 'Combo đã kết thúc. Thời gian kết thúc: ' . $endDate->format('d/m/Y H:i');
+                        if (request()->wantsJson()) {
+                            return response()->json(['error' => $errorMsg], 422);
+                        }
+                        return back()->with('error', $errorMsg);
+                    }
+
+                    if ($expiredCombo->status !== 'active') {
+                        $errorMsg = 'Combo hiện không khả dụng';
+                        if (request()->wantsJson()) {
+                            return response()->json(['error' => $errorMsg], 422);
+                        }
+                        return back()->with('error', $errorMsg);
+                    }
+                }
+
+                $errorMsg = 'Combo không tồn tại hoặc không còn khả dụng';
+                if (request()->wantsJson()) {
+                    return response()->json(['error' => $errorMsg], 404);
+                }
+                return back()->with('error', $errorMsg);
+            }
+
+            // Kiểm tra số lượng tồn kho combo
+            if ($combo->combo_stock !== null) {
+                // Lấy tổng số lượng combo đã có trong giỏ hàng
+                $existingQuantity = DB::table('carts')
+                    ->where('user_id', Auth::id())
+                    ->where('collection_id', $collectionId)
+                    ->where('is_combo', true)
+                    ->sum('quantity');
+
+                $totalRequestedQuantity = $existingQuantity + $quantity;
+
+                if ($combo->combo_stock <= 0) {
+                    $errorMsg = 'Combo đã hết hàng';
+                    if (request()->wantsJson()) {
+                        return response()->json(['error' => $errorMsg], 422);
+                    }
+                    return back()->with('error', $errorMsg);
+                }
+
+                if ($totalRequestedQuantity > $combo->combo_stock) {
+                    $errorMsg = "Số lượng yêu cầu vượt quá số lượng tồn kho. Tồn kho hiện tại: {$combo->combo_stock}, bạn đã có {$existingQuantity} trong giỏ hàng";
+                    if (request()->wantsJson()) {
+                        return response()->json([
+                            'error' => $errorMsg,
+                            'available_stock' => $combo->combo_stock,
+                            'current_in_cart' => $existingQuantity
+                        ], 422);
+                    }
+                    return back()->with('error', $errorMsg);
+                }
+            }
+
+            // Kiểm tra xem combo đã có trong giỏ hàng chưa
+            $existingCart = DB::table('carts')
+                ->where('user_id', Auth::id())
+                ->where('collection_id', $collectionId)
+                ->where('is_combo', true)
+                ->first();
+
+            Log::info('Existing cart check:', ['existing' => $existingCart ? 'yes' : 'no']);
+
+            if ($existingCart) {
+                // Cập nhật số lượng
+                $newQuantity = $existingCart->quantity + $quantity;
+
+                Log::info('Updating existing cart:', ['old_quantity' => $existingCart->quantity, 'new_quantity' => $newQuantity]);
+
+                try {
+                    $updateResult = DB::table('carts')
+                        ->where('id', $existingCart->id)
+                        ->update([
+                            'quantity' => $newQuantity,
+                            'price' => $combo->combo_price,
+                            'updated_at' => now()
+                        ]);
+
+                    Log::info('Cart update result:', ['affected_rows' => $updateResult]);
+
+                    // Get updated cart count
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+
+                    Log::info('Cart count calculated:', ['cart_count' => $cartCount]);
+
+                    $successMessage = 'Đã thêm ' . $quantity . ' combo "' . $combo->name . '" vào giỏ hàng';
+
+                    // Check if request wants JSON
+                    $wantsJson = request()->wantsJson();
+                    $hasAjaxHeader = request()->ajax();
+                    $acceptsJson = request()->accepts(['application/json']);
+
+                    Log::info('Response format check:', [
+                        'wantsJson' => $wantsJson,
+                        'hasAjaxHeader' => $hasAjaxHeader,
+                        'acceptsJson' => $acceptsJson,
+                        'headers' => request()->headers->all()
+                    ]);
+
+                    if ($wantsJson || $hasAjaxHeader) {
+                        $response = response()->json([
+                            'success' => $successMessage,
+                            'current_quantity' => $newQuantity,
+                            'cart_count' => (int) $cartCount
+                        ]);
+
+                        Log::info('Returning JSON response:', $response->getData(true));
+                        return $response;
+                    }
+
+                    Log::info('Returning redirect response');
+                    return back()->with('success', $successMessage);
+                } catch (\Exception $dbException) {
+                    Log::error('Database error in cart update:', [
+                        'error' => $dbException->getMessage(),
+                        'trace' => $dbException->getTraceAsString()
+                    ]);
+
+                    if (request()->wantsJson()) {
+                        return response()->json(['error' => 'Lỗi cập nhật giỏ hàng: ' . $dbException->getMessage()], 500);
+                    }
+                    return back()->with('error', 'Lỗi cập nhật giỏ hàng: ' . $dbException->getMessage());
+                }
+            } else {
+                // Thêm combo mới vào giỏ hàng
+                Log::info('Adding new combo to cart:', [
+                    'user_id' => Auth::id(),
+                    'collection_id' => $collectionId,
+                    'quantity' => $quantity,
+                    'price' => $combo->combo_price
+                ]);
+
+                $cartId = Str::uuid();
+
+                $insertData = [
+                    'id' => $cartId,
+                    'user_id' => Auth::id(),
+                    'book_id' => null,
+                    'book_format_id' => null,
+                    'collection_id' => $collectionId,
+                    'is_combo' => true,
+                    'quantity' => $quantity,
+                    'attribute_value_ids' => json_encode([]),
+                    'price' => $combo->combo_price,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ];
+
+                Log::info('Insert data prepared:', $insertData);
+
+                $result = DB::table('carts')->insert($insertData);
+
+                Log::info('Insert result:', ['success' => $result]);
+
+                // Get updated cart count
+                $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+
+                Log::info('Cart count after insert:', ['cart_count' => $cartCount]);
+
+                $successMessage = 'Đã thêm combo "' . $combo->name . '" vào giỏ hàng';
+
+                // Check if request wants JSON
+                $wantsJson = request()->wantsJson();
+                $hasAjaxHeader = request()->ajax();
+
+                Log::info('Response format check (new combo):', [
+                    'wantsJson' => $wantsJson,
+                    'hasAjaxHeader' => $hasAjaxHeader
+                ]);
+
+                if ($wantsJson || $hasAjaxHeader) {
+                    $response = response()->json([
+                        'success' => $successMessage,
+                        'current_quantity' => $quantity,
+                        'cart_count' => (int) $cartCount
+                    ]);
+
+                    Log::info('Returning JSON response (new combo):', $response->getData(true));
+                    return $response;
+                }
+
+                Log::info('Returning redirect response (new combo)');
+                return back()->with('success', $successMessage);
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error in addComboToCart:', [
+                'errors' => $e->validator->errors()->all(),
+                'request_data' => $request->all()
+            ]);
+
+            $errorMsg = 'Dữ liệu không hợp lệ: ' . implode(', ', $e->validator->errors()->all());
+            if (request()->wantsJson()) {
+                return response()->json(['error' => $errorMsg], 422);
+            }
+            return back()->with('error', $errorMsg);
+        } catch (\Exception $e) {
+            Log::error('Error in addComboToCart:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+
+            $errorMsg = 'Có lỗi xảy ra khi thêm combo vào giỏ hàng';
+            if (request()->wantsJson()) {
+                return response()->json(['error' => $errorMsg], 500);
+            }
+            return back()->with('error', $errorMsg);
         }
     }
 
@@ -477,165 +894,277 @@ class CartController extends Controller
                 return response()->json(['error' => 'Bạn cần đăng nhập để cập nhật giỏ hàng.'], 401);
             }
 
-            $bookId = $request->book_id;
-            $bookFormatId = $request->book_format_id; // Thêm để xác định chính xác item cần update
-            $attributeValueIds = $request->attribute_value_ids; // Thêm để xác định chính xác item
+            $isCombo = $request->boolean('is_combo', false);
             $quantity = (int)$request->quantity;
 
-            // Get the specific cart item with all identification data
-            $cartItemQuery = DB::table('carts')
-                ->where('user_id', Auth::id())
-                ->where('book_id', $bookId);
+            if ($isCombo) {
+                // Xử lý cập nhật số lượng combo
+                $collectionId = $request->collection_id;
 
-            // Add specific format and attribute constraints if provided
-            if ($bookFormatId) {
-                $cartItemQuery->where('book_format_id', $bookFormatId);
-            }
-
-            if ($attributeValueIds) {
-                $cartItemQuery->where('attribute_value_ids', $attributeValueIds);
-            }
-
-            $cartItem = $cartItemQuery->first();
-
-            if (!$cartItem) {
-                return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
-            }
-
-            // Kiểm tra tồn kho và thông tin sách với format cụ thể
-            $bookInfo = DB::table('books')
-                ->leftJoin('book_formats', function($join) use ($cartItem) {
-                    $join->on('books.id', '=', 'book_formats.book_id')
-                         ->where('book_formats.id', '=', $cartItem->book_format_id);
-                })
-                ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
-                ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
-                ->where('books.id', $bookId)
-                ->select(
-                    'books.*',
-                    'book_formats.id as format_id',
-                    DB::raw('COALESCE(book_formats.format_name, "Bản thường") as format_name'),
-                    DB::raw('COALESCE(authors.name, "Chưa cập nhật") as author_name'),
-                    DB::raw('COALESCE(book_formats.stock, 0) as stock'),
-                    DB::raw('COALESCE(book_formats.price, 0) as price')
-                )
-                ->first();
-
-            if (!$bookInfo) {
-                return response()->json(['error' => 'Không tìm thấy sách hoặc định dạng sách'], 404);
-            }
-
-            // Kiểm tra loại sách (ebook hay sách vật lý)
-            $isEbook = false;
-            if (isset($bookInfo->format_name)) {
-                $isEbook = stripos($bookInfo->format_name, 'ebook') !== false;
-            }
-            
-            // Tính giá hiện tại (bao gồm combo nếu có)
-            $currentPrice = $bookInfo->price;
-            if (isset($bookInfo->discount) && $bookInfo->discount > 0) {
-                $currentPrice = $bookInfo->price * (1 - $bookInfo->discount / 100);
-            }
-            
-            // Kiểm tra combo price
-            $comboInfo = DB::table('book_collections')
-                ->join('collections', 'book_collections.collection_id', '=', 'collections.id')
-                ->where('book_collections.book_id', $bookId)
-                ->where(function($query) {
-                    $query->whereNull('collections.start_date')
-                          ->orWhere('collections.start_date', '<=', now());
-                })
-                ->where(function($query) {
-                    $query->whereNull('collections.end_date')
-                          ->orWhere('collections.end_date', '>=', now());
-                })
-                ->whereNull('collections.deleted_at')
-                ->where('collections.combo_price', '>', 0)
-                ->first();
-                
-            if ($comboInfo && $comboInfo->combo_price < $currentPrice) {
-                $currentPrice = $comboInfo->combo_price;
-            }
-
-            // Logic tách biệt cho ebook và sách vật lý
-            if ($isEbook) {
-                // EBOOK: Luôn giữ số lượng = 1, không cho phép thay đổi
-                $updateQuery = DB::table('carts')
-                    ->where('user_id', Auth::id())
-                    ->where('book_id', $bookId)
-                    ->where('book_format_id', $cartItem->book_format_id);
-
-                if ($cartItem->attribute_value_ids) {
-                    $updateQuery->where('attribute_value_ids', $cartItem->attribute_value_ids);
+                if (!$collectionId) {
+                    return response()->json(['error' => 'Thiếu thông tin combo để cập nhật.'], 400);
                 }
 
-                $updateQuery->update([
-                    'quantity' => 1,
-                    'updated_at' => now()
-                ]);
+                // Lấy thông tin cart item combo
+                $cartItem = DB::table('carts')
+                    ->where('user_id', Auth::id())
+                    ->where('collection_id', $collectionId)
+                    ->where('is_combo', true)
+                    ->first();
 
-                return response()->json([
-                    'success' => 'Sách điện tử luôn có số lượng cố định là 1',
-                    'data' => [
-                        'stock' => 999, // Ebook không giới hạn tồn kho
-                        'price' => $bookInfo->price,
-                        'quantity' => 1,
-                        'is_ebook' => true
-                    ]
-                ]);
-            } else {
-                // SÁCH VẬT LÝ: Kiểm tra tồn kho và cho phép thay đổi số lượng
-                if ($quantity > $bookInfo->stock) {
-                    return response()->json([
-                        'error' => "Số lượng yêu cầu vượt quá số lượng tồn kho. Tồn kho hiện tại: {$bookInfo->stock}",
-                        'available_stock' => $bookInfo->stock,
-                        'is_ebook' => false
-                    ], 422);
+                if (!$cartItem) {
+                    return response()->json(['error' => 'Không tìm thấy combo trong giỏ hàng'], 404);
+                }
+
+                // Lấy thông tin combo với kiểm tra ngày hiệu lực
+                $combo = DB::table('collections')
+                    ->where('id', $collectionId)
+                    ->where('status', 'active')
+                    ->whereNotNull('combo_price')
+                    ->where(function ($query) {
+                        $query->whereNull('start_date')
+                            ->orWhere('start_date', '<=', now());
+                    })
+                    ->where(function ($query) {
+                        $query->whereNull('end_date')
+                            ->orWhere('end_date', '>=', now());
+                    })
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                if (!$combo) {
+                    return response()->json(['error' => 'Combo không còn khả dụng hoặc đã hết thời gian hiệu lực'], 404);
                 }
 
                 if ($quantity > 0) {
-                    // Cập nhật số lượng cho sách vật lý
+                    // Kiểm tra số lượng tồn kho combo
+                    if ($combo->combo_stock !== null) {
+                        if ($combo->combo_stock <= 0) {
+                            return response()->json(['error' => 'Combo đã hết hàng'], 422);
+                        }
+
+                        if ($quantity > $combo->combo_stock) {
+                            return response()->json([
+                                'error' => "Số lượng yêu cầu vượt quá số lượng tồn kho. Tồn kho hiện tại: {$combo->combo_stock}",
+                                'available_stock' => $combo->combo_stock
+                            ], 422);
+                        }
+                    }
+
+                    // Update combo quantity
+                    DB::table('carts')
+                        ->where('user_id', Auth::id())
+                        ->where('collection_id', $collectionId)
+                        ->where('is_combo', true)
+                        ->update([
+                            'quantity' => $quantity,
+                            'price' => $combo->combo_price,
+                            'updated_at' => now()
+                        ]);
+
+                    // Lấy số lượng cart đã cập nhật
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+
+                    return response()->json([
+                        'success' => 'Đã cập nhật số lượng combo',
+                        'data' => [
+                            'price' => $combo->combo_price,
+                            'quantity' => $quantity,
+                            'is_combo' => true
+                        ],
+                        'cart_count' => (int) $cartCount
+                    ]);
+                } else {
+                    // Xóa combo khi số lượng = 0
+                    $deletedCount = DB::table('carts')
+                        ->where('user_id', Auth::id())
+                        ->where('collection_id', $collectionId)
+                        ->where('is_combo', true)
+                        ->delete();
+
+                    if ($deletedCount > 0) {
+                        $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                        return response()->json([
+                            'success' => 'Đã xóa combo khỏi giỏ hàng',
+                            'cart_count' => (int) $cartCount
+                        ]);
+                    } else {
+                        return response()->json(['error' => 'Không tìm thấy combo để xóa'], 404);
+                    }
+                }
+            } else {
+                // Xử lý cập nhật số lượng sách đơn lẻ (logic hiện tại)
+                $bookId = $request->book_id;
+                $bookFormatId = $request->book_format_id;
+                $attributeValueIds = $request->attribute_value_ids;
+
+                // Lấy cart item cụ thể với tất cả dữ liệu định danh
+                $cartItemQuery = Cart::where('user_id', Auth::id())
+                    ->where('book_id', $bookId)
+                    ->where('is_combo', 0)->get();
+                // dd($cartItemQuery->toSql());
+                if ($bookFormatId) {
+                    $cartItemQuery->where('book_format_id', $bookFormatId);
+                }
+                if ($attributeValueIds) {
+                    $cartItemQuery->where('attribute_value_ids', $attributeValueIds);
+                }
+
+                $cartItem = $cartItemQuery->first();
+                // dd($cartItemQuery);
+                if (!$cartItem) {
+                    return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
+                }
+
+                // Kiểm tra tồn kho và thông tin sách với format cụ thể
+                $bookInfo = DB::table('books')
+                    ->leftJoin('book_formats', function ($join) use ($cartItem) {
+                        $join->on('books.id', '=', 'book_formats.book_id')
+                            ->where('book_formats.id', '=', $cartItem->book_format_id);
+                    })
+                    ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
+                    ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
+                    ->where('books.id', $bookId)
+                    ->select(
+                        'books.*',
+                        'book_formats.id as format_id',
+                        DB::raw('COALESCE(book_formats.format_name, "Bản thường") as format_name'),
+                        DB::raw('COALESCE(authors.name, "Chưa cập nhật") as author_name'),
+                        DB::raw('COALESCE(book_formats.stock, 0) as stock'),
+                        DB::raw('COALESCE(book_formats.price, 0) as price')
+                    )
+                    ->first();
+
+                if (!$bookInfo) {
+                    return response()->json(['error' => 'Không tìm thấy sách hoặc định dạng sách'], 404);
+                }
+
+                // Kiểm tra loại sách (ebook hay sách vật lý)
+                $isEbook = false;
+                if (isset($bookInfo->format_name)) {
+                    $isEbook = stripos($bookInfo->format_name, 'ebook') !== false;
+                }
+
+                // Tính giá hiện tại (bao gồm combo nếu có)
+                $currentPrice = $bookInfo->price;
+                if (isset($bookInfo->discount) && $bookInfo->discount > 0) {
+                    $currentPrice = $bookInfo->price - $bookInfo->discount;
+                }
+
+                // Kiểm tra combo price
+                $comboInfo = DB::table('book_collections')
+                    ->join('collections', 'book_collections.collection_id', '=', 'collections.id')
+                    ->where('book_collections.book_id', $bookId)
+                    ->where(function ($query) {
+                        $query->whereNull('collections.start_date')
+                            ->orWhere('collections.start_date', '<=', now());
+                    })
+                    ->where(function ($query) {
+                        $query->whereNull('collections.end_date')
+                            ->orWhere('collections.end_date', '>=', now());
+                    })
+                    ->whereNull('collections.deleted_at')
+                    ->where('collections.combo_price', '>', 0)
+                    ->first();
+
+                if ($comboInfo && $comboInfo->combo_price < $currentPrice) {
+                    $currentPrice = $comboInfo->combo_price;
+                }
+
+                // Logic tách biệt cho ebook và sách vật lý
+                if ($isEbook) {
+                    // EBOOK: Luôn giữ số lượng = 1, không cho phép thay đổi
                     $updateQuery = DB::table('carts')
                         ->where('user_id', Auth::id())
                         ->where('book_id', $bookId)
                         ->where('book_format_id', $cartItem->book_format_id);
 
                     if ($cartItem->attribute_value_ids) {
-                        $updateQuery->where('attribute_value_ids', $cartItem->attribute_value_ids);
+                        $updateQuery->whereJsonContains('attribute_value_ids', $cartItem->attribute_value_ids);
                     }
 
                     $updateQuery->update([
-                        'quantity' => $quantity,
-                        'price' => $currentPrice, // Cập nhật giá mới (có thể là combo price)
+                        'quantity' => 1,
+                        'price' => $currentPrice, // Cập nhật giá hiện tại
                         'updated_at' => now()
                     ]);
 
+                    // Lấy số lượng cart đã cập nhật
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+
                     return response()->json([
-                        'success' => 'Đã cập nhật số lượng sản phẩm',
+                        'success' => 'Sách điện tử luôn có số lượng cố định là 1',
                         'data' => [
-                            'stock' => $bookInfo->stock,
-                            'price' => $currentPrice, // Trả về giá đã được áp dụng combo (nếu có)
-                            'quantity' => $quantity,
-                            'is_ebook' => false
-                        ]
+                            'stock' => 999, // Ebook không giới hạn tồn kho
+                            'price' => $currentPrice,
+                            'quantity' => 1,
+                            'is_ebook' => true
+                        ],
+                        'cart_count' => (int) $cartCount
                     ]);
                 } else {
-                    // Xóa sản phẩm khi số lượng = 0
-                    $deleteQuery = DB::table('carts')
-                        ->where('user_id', Auth::id())
-                        ->where('book_id', $bookId)
-                        ->where('book_format_id', $cartItem->book_format_id);
-
-                    if ($cartItem->attribute_value_ids) {
-                        $deleteQuery->where('attribute_value_ids', $cartItem->attribute_value_ids);
+                    // SÁCH VẬT LÝ: Kiểm tra tồn kho và cho phép thay đổi số lượng
+                    if ($quantity > $bookInfo->stock) {
+                        return response()->json([
+                            'error' => "Số lượng yêu cầu vượt quá số lượng tồn kho. Tồn kho hiện tại: {$bookInfo->stock}",
+                            'available_stock' => $bookInfo->stock,
+                            'is_ebook' => false
+                        ], 422);
                     }
 
-                    $deletedCount = $deleteQuery->delete();
+                    if ($quantity > 0) {
+                        // dd($quantity);
+                        // Cập nhật số lượng cho sách vật lý
+                        $updateQuery = DB::table('carts')
+                            ->where('user_id', Auth::id())
+                            ->where('book_id', $bookId)
+                            ->where('book_format_id', $cartItem->book_format_id);
 
-                    if ($deletedCount > 0) {
-                        return response()->json(['success' => 'Đã xóa sản phẩm khỏi giỏ hàng']);
+                        if ($cartItem->attribute_value_ids) {
+                            $updateQuery->whereJsonContains('attribute_value_ids', $cartItem->attribute_value_ids);
+                        }
+                        // dd($quantity, $currentPrice);
+                        $updateQuery->update([
+                            'quantity' => $quantity,
+                            'price' => $currentPrice, // Cậ nhật giá mới (có thể là combo price)
+                            'updated_at' => now()
+                        ]);
+                        // Lấy số lượng cart đã cập nhật
+                        $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                        // dd($cartCount);
+
+                        return response()->json([
+                            'success' => 'Đã cập nhật số lượng sản phẩm',
+                            'data' => [
+                                'stock' => $bookInfo->stock,
+                                'price' => $currentPrice, // Trả về giá đã được áp dụng combo (nếu có)
+                                'quantity' => $quantity,
+                                'is_ebook' => false
+                            ],
+                            'cart_count' => (int) $cartCount
+                        ]);
                     } else {
-                        return response()->json(['error' => 'Không tìm thấy sản phẩm để xóa'], 404);
+                        // Xóa sản phẩm khi số lượng = 0
+                        $deleteQuery = DB::table('carts')
+                            ->where('user_id', Auth::id())
+                            ->where('book_id', $bookId)
+                            ->where('book_format_id', $cartItem->book_format_id);
+
+                        if ($cartItem->attribute_value_ids) {
+                            $deleteQuery->where('attribute_value_ids', $cartItem->attribute_value_ids);
+                        }
+
+                        $deletedCount = $deleteQuery->delete();
+
+                        if ($deletedCount > 0) {
+                            $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                            return response()->json([
+                                'success' => 'Đã xóa sản phẩm khỏi giỏ hàng',
+                                'cart_count' => (int) $cartCount
+                            ]);
+                        } else {
+                            return response()->json(['error' => 'Không tìm thấy sản phẩm để xóa'], 404);
+                        }
                     }
                 }
             }
@@ -655,47 +1184,82 @@ class CartController extends Controller
             if (!Auth::check()) {
                 return response()->json(['error' => 'Bạn cần đăng nhập để xóa sản phẩm khỏi giỏ hàng.'], 401);
             }
+            $isCombo = $request->boolean('is_combo', false);
+            $collectionId = $request->collection_id;
 
-            $bookId = $request->book_id;
-            $bookFormatId = $request->book_format_id;
-            $attributeValueIds = $request->attribute_value_ids;
+            if ($isCombo) {
+                if (!$collectionId) {
+                    return response()->json(['error' => 'Thiếu thông tin combo để xóa.'], 400);
+                }
 
-            Log::info('Removing cart item:', [
-                'user_id' => Auth::id(),
-                'book_id' => $bookId,
-                'book_format_id' => $bookFormatId,
-                'attribute_value_ids' => $attributeValueIds
-            ]);
-
-            // Tìm cart item cụ thể để xóa
-            $query = DB::table('carts')
-                ->where('user_id', Auth::id())
-                ->where('book_id', $bookId);
-
-            // Nếu có book_format_id, thêm vào điều kiện
-            if ($bookFormatId) {
-                $query->where('book_format_id', $bookFormatId);
-            }
-
-            // Nếu có attribute_value_ids, thêm vào điều kiện
-            if ($attributeValueIds) {
-                $query->where('attribute_value_ids', $attributeValueIds);
-            }
-
-            $deletedCount = $query->delete();
-
-            if ($deletedCount > 0) {
-                Log::info('Cart item removed successfully:', [
-                    'deleted_count' => $deletedCount
+                Log::info('Removing combo from cart:', [
+                    'user_id' => Auth::id(),
+                    'collection_id' => $collectionId
                 ]);
-                return response()->json(['success' => 'Đã xóa sản phẩm khỏi giỏ hàng']);
-            } else {
-                Log::warning('No cart item found to delete');
-                return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
-            }
 
+                $deletedCount = DB::table('carts')
+                    ->where('user_id', Auth::id())
+                    ->where('collection_id', $collectionId)
+                    ->where('is_combo', true)
+                    ->delete();
+
+                if ($deletedCount > 0) {
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                    Log::info('Combo removed successfully:', [
+                        'deleted_count' => $deletedCount,
+                        'remaining_cart_count' => $cartCount
+                    ]);
+                    return response()->json([
+                        'success' => 'Đã xóa combo khỏi giỏ hàng',
+                        'cart_count' => (int) $cartCount
+                    ]);
+                } else {
+                    Log::warning('Không tìm thấy combo để xóa');
+                    return response()->json(['error' => 'Không tìm thấy combo trong giỏ hàng'], 404);
+                }
+            } else {
+                // Xóa sách đơn lẻ
+                $bookId = $request->book_id;
+                $bookFormatId = $request->book_format_id;
+                $attributeValueIds = $request->attribute_value_ids;
+
+                if (!$bookId) {
+                    return response()->json(['error' => 'Thiếu thông tin sách để xóa.'], 400);
+                }
+
+                $query = DB::table('carts')
+                    ->where('user_id', Auth::id())
+                    ->where('book_id', $bookId)
+                    ->where('is_combo', false);
+
+                if ($bookFormatId) {
+                    $query->where('book_format_id', $bookFormatId);
+                }
+                // TẠM THỜI BỎ QUA attribute_value_ids để đảm bảo xóa được sản phẩm
+                // Nếu muốn kiểm tra sâu hơn, sẽ bổ sung logic so sánh sau
+                // if ($attributeValueIds) {
+                //     if (is_string($attributeValueIds)) {
+                //         $attributeValueIdsArray = json_decode($attributeValueIds, true);
+                //     } else {
+                //         $attributeValueIdsArray = $attributeValueIds;
+                //     }
+                //     $query->whereJsonContains('attribute_value_ids', $attributeValueIdsArray);
+                // }
+
+                $deletedCount = $query->delete();
+
+                if ($deletedCount > 0) {
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                    return response()->json([
+                        'success' => 'Đã xóa sản phẩm khỏi giỏ hàng',
+                        'cart_count' => (int) $cartCount
+                    ]);
+                } else {
+                    return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
+                }
+            }
         } catch (\Exception $e) {
-            Log::error('Error in removeFromCart:', [
+            Log::error('Lỗi trong removeFromCart:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -711,12 +1275,12 @@ class CartController extends Controller
     //     ]);
 
     //     $voucherCode = strtoupper($request->code);
-        
+
     //     // Kiểm tra voucher có tồn tại không
     //     $basicVoucher = DB::table('vouchers')
     //         ->where('code', $voucherCode)
     //         ->first();
-            
+
     //     if (!$basicVoucher) {
     //         Log::info("Voucher không tồn tại trong database: " . $voucherCode);
     //         return response()->json([
@@ -753,31 +1317,31 @@ class CartController extends Controller
     //             return response()->json([
     //                 'error' => 'Mã giảm giá đã bị vô hiệu hóa hoặc bị khóa'
     //             ], 400);
-                
+
     //         case 'expired':
     //             Log::info("Voucher đã hết hạn theo status: " . $voucherCode);
     //             return response()->json([
     //                 'error' => 'Mã giảm giá đã hết hạn'
     //             ], 400);
-                
+
     //         case 'used':
     //         case 'exhausted':
     //             Log::info("Voucher đã được sử dụng hết: " . $voucherCode);
     //             return response()->json([
     //                 'error' => 'Mã giảm giá đã hết lượt sử dụng'
     //             ], 400);
-                
+
     //         case 'pending':
     //         case 'scheduled':
     //             Log::info("Voucher chưa được kích hoạt: " . $voucherCode);
     //             return response()->json([
     //                 'error' => 'Mã giảm giá chưa được kích hoạt'
     //             ], 400);
-                
+
     //         case 'active':
     //             // Trạng thái hợp lệ, tiếp tục kiểm tra
     //             break;
-                
+
     //         default:
     //             Log::info("Voucher có trạng thái không xác định: " . $voucherCode, [
     //                 'status' => $basicVoucher->status
@@ -789,11 +1353,11 @@ class CartController extends Controller
 
     //     // 3. Kiểm tra thời gian hiệu lực
     //     $now = Carbon::now();
-        
+
     //     if ($basicVoucher->valid_from !== null || $basicVoucher->valid_to !== null) {
     //         $validFrom = $basicVoucher->valid_from ? Carbon::parse($basicVoucher->valid_from) : null;
     //         $validTo = $basicVoucher->valid_to ? Carbon::parse($basicVoucher->valid_to) : null;
-            
+
     //         // Kiểm tra chưa tới thời gian hiệu lực
     //         if ($validFrom && $now < $validFrom) {
     //             Log::info("Voucher chưa tới thời gian hiệu lực: " . $voucherCode, [
@@ -805,7 +1369,7 @@ class CartController extends Controller
     //                     $validFrom->format('d/m/Y H:i'))
     //             ], 400);
     //         }
-            
+
     //         // Kiểm tra đã hết hạn
     //         if ($validTo && $now > $validTo) {
     //             Log::info("Voucher đã hết hạn: " . $voucherCode, [
@@ -865,14 +1429,14 @@ class CartController extends Controller
     //     // 8. Áp dụng voucher thành công - cập nhật số lượng và lưu session
     //     try {
     //         DB::beginTransaction();
-            
+
     //         // Giảm số lượng voucher nếu có giới hạn số lượng
     //         if ($basicVoucher->quantity !== null) {
     //             $updated = DB::table('vouchers')
     //                 ->where('code', $voucherCode)
     //                 ->where('quantity', '>', 0) // Đảm bảo vẫn còn số lượng
     //                 ->decrement('quantity');
-                    
+
     //             if (!$updated) {
     //                 DB::rollBack();
     //                 return response()->json([
@@ -887,9 +1451,9 @@ class CartController extends Controller
     //             'discount_amount' => $discountAmount,
     //             'applied_at' => now()->toDateTimeString()
     //         ]]);
-            
+
     //         DB::commit();
-            
+
     //         Log::info("Áp dụng voucher thành công: " . $voucherCode, [
     //             'discount_amount' => $discountAmount,
     //             'order_total' => $request->total
@@ -906,7 +1470,7 @@ class CartController extends Controller
     //                 'min_order_value' => $basicVoucher->min_order_value
     //             ]
     //         ]);
-            
+
     //     } catch (\Exception $e) {
     //         DB::rollBack();
     //         Log::error('Lỗi khi áp dụng voucher: ' . $voucherCode, [
@@ -922,7 +1486,7 @@ class CartController extends Controller
     // public function removeVoucher()
     // {
     //     session()->forget('applied_voucher');
-        
+
     //     return response()->json([
     //         'success' => 'Đã xóa mã giảm giá'
     //     ]);
@@ -947,7 +1511,8 @@ class CartController extends Controller
 
             return response()->json([
                 'success' => "Đã xóa tất cả sản phẩm khỏi giỏ hàng",
-                'deleted_count' => $deletedCount
+                'deleted_count' => $deletedCount,
+                'cart_count' => 0
             ]);
         } catch (\Exception $e) {
             Log::error('Error in clearCart:', [
@@ -974,21 +1539,21 @@ class CartController extends Controller
     {
         try {
             $bookId = $request->book_id;
-            
+
             if (!$bookId) {
-                return response()->json(['error' => 'Book ID is required'], 400);
+                return response()->json(['error' => 'Cần có Book ID'], 400);
             }
-            
+
             $comboInfo = DB::table('book_collections')
                 ->join('collections', 'book_collections.collection_id', '=', 'collections.id')
                 ->where('book_collections.book_id', $bookId)
-                ->where(function($query) {
+                ->where(function ($query) {
                     $query->whereNull('collections.start_date')
-                          ->orWhere('collections.start_date', '<=', now());
+                        ->orWhere('collections.start_date', '<=', now());
                 })
-                ->where(function($query) {
+                ->where(function ($query) {
                     $query->whereNull('collections.end_date')
-                          ->orWhere('collections.end_date', '>=', now());
+                        ->orWhere('collections.end_date', '>=', now());
                 })
                 ->whereNull('collections.deleted_at')
                 ->where('collections.combo_price', '>', 0)
@@ -1000,7 +1565,7 @@ class CartController extends Controller
                     'collections.end_date'
                 ])
                 ->first();
-                
+
             if ($comboInfo) {
                 return response()->json([
                     'success' => true,
@@ -1009,16 +1574,54 @@ class CartController extends Controller
             } else {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No active combo found for this book'
+                    'message' => 'Không tìm thấy combo đang hoạt động cho cuốn sách này'
                 ]);
             }
-            
         } catch (\Exception $e) {
-            Log::error('Error getting combo info:', [
+            Log::error('Lỗi khi lấy thông tin combo:', [
                 'error' => $e->getMessage(),
                 'book_id' => $request->book_id ?? null
             ]);
-            return response()->json(['error' => 'Server error'], 500);
+            return response()->json(['error' => 'Lỗi máy chủ'], 500);
         }
+    }
+
+    /**
+     * Lấy số lượng item trong giỏ hàng cho các request AJAX
+     */
+    public function getCartCount()
+    {
+        if (!Auth::check()) {
+            return response()->json(['count' => 0]);
+        }
+
+        $user = Auth::user();
+
+        // Tính tổng tất cả số lượng trong giỏ hàng cho user này
+        $totalCount = DB::table('carts')
+            ->where('user_id', $user->id)
+            ->sum('quantity');
+
+        return response()->json(['count' => (int) $totalCount]);
+    }
+
+    /**
+     * API cập nhật trạng thái chọn sản phẩm trong giỏ hàng
+     */
+    public function updateSelected(Request $request)
+    {
+        $request->validate([
+            'cart_id' => 'required|exists:carts,id',
+            'is_selected' => 'required|boolean',
+        ]);
+        $cartId = $request->input('cart_id');
+        $isSelected = $request->input('is_selected');
+        $userId = Auth::id();
+        $cart = DB::table('carts')->where('id', $cartId)->where('user_id', $userId)->first();
+        if (!$cart) {
+            return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
+        }
+        DB::table('carts')->where('id', $cartId)->update(['is_selected' => $isSelected]);
+        return response()->json(['success' => 'Cập nhật trạng thái chọn sản phẩm thành công']);
     }
 }
