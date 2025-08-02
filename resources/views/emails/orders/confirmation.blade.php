@@ -83,7 +83,17 @@
                 <tbody>
                     @foreach($order->orderItems as $item)
                     <tr>
-                        <td>{{ $item->book->title }}</td>
+                        <td>
+                            @if($item->is_combo)
+                                {{ $item->collection->name ?? 'Combo không xác định' }}
+                                <small>(Combo)</small>
+                            @else
+                                {{ $item->book->title ?? 'Sách không xác định' }}
+                                @if($item->bookFormat)
+                                    <small>({{ $item->bookFormat->format_name }})</small>
+                                @endif
+                            @endif
+                        </td>
                         <td>{{ $item->quantity }}</td>
                         <td>{{ number_format($item->price) }} VNĐ</td>
                         <td>{{ number_format($item->total) }} VNĐ</td>
@@ -103,10 +113,42 @@
         </div>
 
         <div class="shipping-info">
+            @if($order->delivery_method === 'ebook')
+            <h2>Thông tin ebook</h2>
+            <p><strong>Phương thức:</strong> Sách điện tử (Ebook)</p>
+            <p><strong>Người nhận:</strong> {{ $order->recipient_name }}</p>
+            <p><strong>Email:</strong> {{ $order->recipient_email }}</p>
+            <p><strong>Lưu ý:</strong> Link tải ebook sẽ được gửi đến email của bạn sau khi đơn hàng được xác nhận.</p>
+            @elseif($order->delivery_method === 'pickup')
+            <h2>Thông tin nhận hàng</h2>
+            <p><strong>Phương thức:</strong> Nhận tại cửa hàng</p>
+            <p><strong>Người nhận:</strong> {{ $order->recipient_name ?? ($order->address ? $order->address->recipient_name : '') }}</p>
+            <p><strong>Số điện thoại:</strong> {{ $order->recipient_phone ?? ($order->address ? $order->address->phone : '') }}</p>
+            <p><strong>Địa chỉ cửa hàng:</strong> 
+                @if(isset($storeSettings) && $storeSettings->address)
+                    {{ $storeSettings->address }}
+                @else
+                    123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh
+                @endif
+            </p>
+            <p><strong>Điện thoại:</strong> 
+                @if(isset($storeSettings) && $storeSettings->phone)
+                    {{ $storeSettings->phone }}
+                @else
+                    1900 1234
+                @endif
+            </p>
+            <p><strong>Giờ mở cửa:</strong> 8:00 - 22:00 (Thứ 2 - Chủ nhật)</p>
+            <p><em>Vui lòng mang theo mã đơn hàng {{ $order->order_code }} khi đến nhận sách.</em></p>
+            @else
             <h2>Thông tin giao hàng</h2>
-            <p>Người nhận: {{ $order->address->recipient_name }}</p>
-            <p>Số điện thoại: {{ $order->address->phone }}</p>
-            <p>Địa chỉ: {{ $order->address->address_detail }}, {{ $order->address->ward }}, {{ $order->address->district }}, {{ $order->address->city }}</p>
+            <p><strong>Phương thức:</strong> Giao hàng tận nơi</p>
+            <p><strong>Người nhận:</strong> {{ $order->recipient_name ?? ($order->address ? $order->address->recipient_name : '') }}</p>
+            <p><strong>Số điện thoại:</strong> {{ $order->recipient_phone ?? ($order->address ? $order->address->phone : '') }}</p>
+            @if($order->address)
+            <p><strong>Địa chỉ:</strong> {{ $order->address->address_detail }}, {{ $order->address->ward }}, {{ $order->address->district }}, {{ $order->address->city }}</p>
+            @endif
+            @endif
         </div>
 
         <div class="footer">

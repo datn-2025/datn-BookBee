@@ -2,8 +2,6 @@
 @section('title', 'Tìm kiếm sách')
 
 @push('styles')
-<!-- Search Page CSS -->
-<link rel="stylesheet" href="{{ asset('css/search.css') }}">
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -515,317 +513,32 @@
         font-weight: 400;
     }
 
-    /* Utility classes for better compatibility */
-    .line-clamp-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    
-    .min-h-screen {
-        min-height: 100vh;
-    }
-    
-    .gap-6 {
-        gap: 1.5rem;
-    }
-    
-    .gap-4 {
-        gap: 1rem;
-    }
-    
-    .gap-2 {
-        gap: 0.5rem;
-    }
-    
-    .space-y-3 > * + * {
-        margin-top: 0.75rem;
-    }
-    
-    .space-y-1 > * + * {
-        margin-top: 0.25rem;
-    }
-    
-    /* Grid system */
-    .grid {
-        display: grid;
-    }
-    
-    .grid-cols-1 {
-        grid-template-columns: repeat(1, minmax(0, 1fr));
-    }
-    
-    @media (min-width: 640px) {
-        .sm\:grid-cols-2 {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-    }
-    
-    @media (min-width: 768px) {
-        .md\:grid-cols-3 {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-    }
-    
-    @media (min-width: 1024px) {
-        .lg\:grid-cols-4 {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-        }
-    }
-    
-    /* Flexbox utilities */
-    .flex {
-        display: flex;
-    }
-    
-    .items-center {
-        align-items: center;
-    }
-    
-    .justify-center {
-        justify-content: center;
-    }
-    
-    .justify-between {
-        justify-content: space-between;
-    }
-    
-    .flex-wrap {
-        flex-wrap: wrap;
-    }
-    
-    /* Position utilities */
-    .relative {
-        position: relative;
-    }
-    
-    .absolute {
-        position: absolute;
-    }
-    
-    .inset-0 {
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-    }
-    
-    /* Z-index */
-    .z-10 {
-        z-index: 10;
-    }
-    
-    /* Padding and margin */
-    .py-20 {
-        padding-top: 5rem;
-        padding-bottom: 5rem;
-    }
-    
-    .px-4 {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    
-    .p-4 {
-        padding: 1rem;
-    }
-    
-    .mb-8 {
-        margin-bottom: 2rem;
-    }
-    
-    .mb-2 {
-        margin-bottom: 0.5rem;
-    }
-    
-    .mr-1 {
-        margin-right: 0.25rem;
-    }
-    
-    .mr-2 {
-        margin-right: 0.5rem;
-    }
-    
-    .mr-4 {
-        margin-right: 1rem;
-    }
-    
-    .mt-2 {
-        margin-top: 0.5rem;
-    }
-    
-    /* Width and height */
-    .w-1 {
-        width: 0.25rem;
-    }
-    
-    .w-6 {
-        width: 1.5rem;
-    }
-    
-    .w-8 {
-        width: 2rem;
-    }
-    
-    .w-16 {
-        width: 4rem;
-    }
-    
-    .w-72 {
-        width: 18rem;
-    }
-    
-    .w-96 {
-        width: 24rem;
-    }
-    
-    .h-0\.5 {
-        height: 0.125rem;
-    }
-    
-    .h-1 {
-        height: 0.25rem;
-    }
-    
-    .h-12 {
-        height: 3rem;
-    }
-    
-    .h-32 {
-        height: 8rem;
-    }
-    
-    .max-w-7xl {
-        max-width: 80rem;
-    }
-    
-    .mx-auto {
-        margin-left: auto;
-        margin-right: auto;
-    }
-    
-    /* Text utilities */
-    .text-xs {
-        font-size: 0.75rem;
-        line-height: 1rem;
-    }
-    
-    .text-sm {
-        font-size: 0.875rem;
-        line-height: 1.25rem;
-    }
-    
-    .font-medium {
-        font-weight: 500;
-    }
-    
-    .font-bold {
-        font-weight: 700;
-    }
-    
-    .uppercase {
-        text-transform: uppercase;
-    }
-    
-    .tracking-wider {
-        letter-spacing: 0.05em;
-    }
-    
-    /* Colors */
-    .text-gray-500 {
-        color: #6b7280;
-    }
-    
-    .text-gray-400 {
-        color: #9ca3af;
-    }
-    
-    .text-black {
-        color: #000000;
-    }
-    
-    .bg-white {
-        background-color: #ffffff;
-    }
-    
-    .bg-black {
-        background-color: #000000;
-    }
-    
-    .bg-gray-800 {
-        background-color: #1f2937;
-    }
-    
-    /* Hover states */
-    .hover\:text-black:hover {
-        color: #000000;
-    }
-    
-    .hover\:bg-gray-800:hover {
-        background-color: #1f2937;
-    }
-    
-    /* Transitions */
-    .transition-colors {
-        transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 150ms;
-    }
-    
-    .transition-all {
-        transition-property: all;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 150ms;
-    }
-    
-    .duration-200 {
-        transition-duration: 200ms;
-    }
-    
-    .duration-300 {
-        transition-duration: 300ms;
-    }
-    
-    /* Overflow */
-    .overflow-hidden {
-        overflow: hidden;
-    }
-    
-    .pointer-events-none {
-        pointer-events: none;
-    }
-    
-    /* Opacity */
-    .opacity-10 {
-        opacity: 0.1;
-    }
-    
-    .opacity-5 {
-        opacity: 0.05;
-    }
-    
-    .opacity-70 {
-        opacity: 0.7;
-    }
-    
-    /* Display */
-    .inline-block {
-        display: inline-block;
-    }
-    
-    .text-decoration-none {
-        text-decoration: none;
-    }
-
     /* Responsive */
     @media (max-width: 768px) {
+        .adidas-filter-sidebar {
+            max-width: 100%;
+        }
+        
+        .adidas-filter-title {
+            font-size: 1rem;
+        }
+        
+        .adidas-filter-option {
+            padding: 0.875rem 2.5rem 0.875rem 1.25rem;
+            font-size: 0.8rem;
+        }
+        
+        .adidas-price-inputs {
+            padding: 0.875rem 1.25rem;
+        }
+        
         .results-header-adidas {
             flex-direction: column;
             align-items: stretch;
             gap: 1rem;
         }
     }
+</style>
 </style>
 @endpush
 
@@ -1088,7 +801,7 @@
 <div class="adidas-filter-sidebar">
     <!-- Header -->
     <div class="adidas-filter-header">
-        <h3 class="adidas-filter-title">LỌC & SẮP XẾP</h3>
+        <h3 class="adidas-filter-title">Lọc & Sắp xếp</h3>
         <button class="adidas-close-btn" onclick="closeFilterSidebar()">
             <i class="fas fa-times"></i>
         </button>
@@ -1099,29 +812,21 @@
         <!-- Sort By Section -->
         <div class="adidas-filter-group">
             <button class="adidas-filter-group-header" onclick="toggleAdidasSection('adidas-sort')">
-                SẮP XẾP THEO
+                <span>SORT BY</span>
                 <i class="fas fa-chevron-down" id="adidas-sort-icon"></i>
             </button>
-            <div class="adidas-filter-group-content show" id="adidas-sort">
-                <div class="adidas-filter-option {{ ($filters['sort'] ?? 'newest') == 'newest' ? 'active' : '' }}" 
-                     onclick="selectSort('newest')">
-                    MỚI NHẤT
+            <div class="adidas-filter-group-content" id="adidas-sort">
+                <div class="adidas-filter-option {{ $filters['sort'] == 'price_asc' ? 'active' : '' }}" onclick="selectSort('price_asc')">
+                    GIÁ (THẤP - CAO)
                 </div>
-                <div class="adidas-filter-option {{ ($filters['sort'] ?? '') == 'price_asc' ? 'active' : '' }}" 
-                     onclick="selectSort('price_asc')">
-                    GIÁ THẤP ĐẾN CAO
+                <div class="adidas-filter-option {{ $filters['sort'] == 'newest' ? 'active' : '' }}" onclick="selectSort('newest')">
+                    MỚI NHẤT TRƯỚC
                 </div>
-                <div class="adidas-filter-option {{ ($filters['sort'] ?? '') == 'price_desc' ? 'active' : '' }}" 
-                     onclick="selectSort('price_desc')">
-                    GIÁ CAO ĐẾN THẤP
+                <div class="adidas-filter-option {{ $filters['sort'] == 'oldest' ? 'active' : '' }}" onclick="selectSort('oldest')">
+                    BÁN CHẠY NHẤT
                 </div>
-                <div class="adidas-filter-option {{ ($filters['sort'] ?? '') == 'name_asc' ? 'active' : '' }}" 
-                     onclick="selectSort('name_asc')">
-                    TÊN A-Z
-                </div>
-                <div class="adidas-filter-option {{ ($filters['sort'] ?? '') == 'name_desc' ? 'active' : '' }}" 
-                     onclick="selectSort('name_desc')">
-                    TÊN Z-A
+                <div class="adidas-filter-option {{ $filters['sort'] == 'price_desc' ? 'active' : '' }}" onclick="selectSort('price_desc')">
+                    GIÁ (CAO - THẤP)
                 </div>
             </div>
         </div>
@@ -1129,103 +834,76 @@
         <!-- Danh mục Section -->
         <div class="adidas-filter-group">
             <button class="adidas-filter-group-header" onclick="toggleAdidasSection('adidas-category')">
-                DANH MỤC
+                <span>DANH MỤC</span>
                 <i class="fas fa-chevron-down" id="adidas-category-icon"></i>
             </button>
             <div class="adidas-filter-group-content" id="adidas-category">
-                <div class="adidas-filter-option {{ !($filters['category'] ?? '') ? 'active' : '' }}" 
-                     onclick="selectFilter('category', '')">
+                <div class="adidas-filter-option {{ !$filters['category'] ? 'active' : '' }}" onclick="selectFilter('category', '')">
                     TẤT CẢ DANH MỤC
                 </div>
-                @if(isset($categories))
-                    @foreach($categories as $category)
-                        <div class="adidas-filter-option {{ ($filters['category'] ?? '') == $category->id ? 'active' : '' }}" 
-                             onclick="selectFilter('category', '{{ $category->id }}')">
-                            {{ strtoupper($category->name) }}
-                        </div>
-                    @endforeach
-                @endif
+                @foreach($categories as $category)
+                    <div class="adidas-filter-option {{ $filters['category'] == $category->id ? 'active' : '' }}" onclick="selectFilter('category', '{{ $category->id }}')">
+                        {{ strtoupper($category->name) }}
+                    </div>
+                @endforeach
             </div>
         </div>
 
         <!-- Tác giả Section -->
         <div class="adidas-filter-group">
             <button class="adidas-filter-group-header" onclick="toggleAdidasSection('adidas-author')">
-                TÁC GIẢ
+                <span>TÁC GIẢ</span>
                 <i class="fas fa-chevron-down" id="adidas-author-icon"></i>
             </button>
             <div class="adidas-filter-group-content" id="adidas-author">
-                <div class="adidas-filter-option {{ !($filters['author'] ?? '') ? 'active' : '' }}" 
-                     onclick="selectFilter('author', '')">
+                <div class="adidas-filter-option {{ !$filters['author'] ? 'active' : '' }}" onclick="selectFilter('author', '')">
                     TẤT CẢ TÁC GIẢ
                 </div>
-                @if(isset($authors))
-                    @foreach($authors as $author)
-                        <div class="adidas-filter-option {{ ($filters['author'] ?? '') == $author->id ? 'active' : '' }}" 
-                             onclick="selectFilter('author', '{{ $author->id }}')">
-                            {{ strtoupper($author->name) }}
-                        </div>
-                    @endforeach
-                @endif
+                @foreach($authors as $author)
+                    <div class="adidas-filter-option {{ $filters['author'] == $author->id ? 'active' : '' }}" onclick="selectFilter('author', '{{ $author->id }}')">
+                        {{ strtoupper($author->name) }}
+                    </div>
+                @endforeach
             </div>
         </div>
 
         <!-- Nhà xuất bản Section -->
         <div class="adidas-filter-group">
             <button class="adidas-filter-group-header" onclick="toggleAdidasSection('adidas-brand')">
-                NHÀ XUẤT BẢN
+                <span>NHÀ XUẤT BẢN</span>
                 <i class="fas fa-chevron-down" id="adidas-brand-icon"></i>
             </button>
             <div class="adidas-filter-group-content" id="adidas-brand">
-                <div class="adidas-filter-option {{ !($filters['brand'] ?? '') ? 'active' : '' }}" 
-                     onclick="selectFilter('brand', '')">
+                <div class="adidas-filter-option {{ !$filters['brand'] ? 'active' : '' }}" onclick="selectFilter('brand', '')">
                     TẤT CẢ NXB
                 </div>
-                @if(isset($brands))
-                    @foreach($brands as $brand)
-                        <div class="adidas-filter-option {{ ($filters['brand'] ?? '') == $brand->id ? 'active' : '' }}" 
-                             onclick="selectFilter('brand', '{{ $brand->id }}')">
-                            {{ strtoupper($brand->name) }}
-                        </div>
-                    @endforeach
-                @endif
+                @foreach($brands as $brand)
+                    <div class="adidas-filter-option {{ $filters['brand'] == $brand->id ? 'active' : '' }}" onclick="selectFilter('brand', '{{ $brand->id }}')">
+                        {{ strtoupper($brand->name) }}
+                    </div>
+                @endforeach
             </div>
         </div>
 
         <!-- Khoảng giá Section -->
         <div class="adidas-filter-group">
             <button class="adidas-filter-group-header" onclick="toggleAdidasSection('adidas-price')">
-                KHOẢNG GIÁ
+                <span>KHOẢNG GIÁ</span>
                 <i class="fas fa-chevron-down" id="adidas-price-icon"></i>
             </button>
             <div class="adidas-filter-group-content" id="adidas-price">
                 <div class="adidas-price-inputs">
                     <input type="number" 
-                           class="adidas-price-input" 
                            id="adidas-min-price" 
-                           placeholder="TỪ"
-                           value="{{ $filters['min_price'] ?? '' }}">
+                           class="adidas-price-input" 
+                           placeholder="Giá từ"
+                           value="{{ $filters['min_price'] }}">
                     <span class="adidas-price-separator">-</span>
                     <input type="number" 
-                           class="adidas-price-input" 
                            id="adidas-max-price" 
-                           placeholder="ĐẾN"
-                           value="{{ $filters['max_price'] ?? '' }}">
-                </div>
-                <div class="adidas-filter-option" onclick="selectPriceRange('', '')">
-                    TẤT CẢ GIÁ
-                </div>
-                <div class="adidas-filter-option" onclick="selectPriceRange('0', '100000')">
-                    DƯỚI 100.000Đ
-                </div>
-                <div class="adidas-filter-option" onclick="selectPriceRange('100000', '300000')">
-                    100.000Đ - 300.000Đ
-                </div>
-                <div class="adidas-filter-option" onclick="selectPriceRange('300000', '500000')">
-                    300.000Đ - 500.000Đ
-                </div>
-                <div class="adidas-filter-option" onclick="selectPriceRange('500000', '')">
-                    TRÊN 500.000Đ
+                           class="adidas-price-input" 
+                           placeholder="Giá đến"
+                           value="{{ $filters['max_price'] }}">
                 </div>
             </div>
         </div>
@@ -1234,7 +912,7 @@
     <!-- Apply Button -->
     <div class="adidas-filter-footer">
         <button class="adidas-apply-btn" onclick="applyAdidasFilters()">
-            ÁP DỤNG BỘ LỌC
+            ÁP DỤNG ({{ $books->count() }})
         </button>
     </div>
 </div>
@@ -1332,14 +1010,6 @@ function selectFilter(filterType, filterValue) {
         el.classList.remove('active');
     });
     event.target.classList.add('active');
-}
-
-// Select Price Range
-function selectPriceRange(minPrice, maxPrice) {
-    document.getElementById('adidas-min-price').value = minPrice;
-    document.getElementById('adidas-max-price').value = maxPrice;
-    adidasFilters.min_price = minPrice;
-    adidasFilters.max_price = maxPrice;
 }
 
 // Apply All Adidas Filters
