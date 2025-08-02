@@ -1,0 +1,604 @@
+/* Admin Orders Enhancement CSS */
+
+/* Mixed Order Styling */
+.mixed-order-badge {
+    background: linear-gradient(45deg, #ffc107, #28a745);
+    color: white;
+    font-weight: bold;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Order Type Icons */
+.order-type-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    font-size: 12px;
+}
+
+.order-type-ebook {
+    background: linear-gradient(45deg, #6f42c1, #8e44ad);
+    color: white;
+}
+
+.order-type-physical {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+}
+
+.order-type-pickup {
+    background: linear-gradient(45deg, #fd7e14, #ffc107);
+    color: white;
+}
+
+.order-type-mixed {
+    background: linear-gradient(45deg, #dc3545, #e83e8c);
+    color: white;
+}
+
+/* Parent-Child Order Relationship */
+.parent-order-link {
+    background: linear-gradient(45deg, #17a2b8, #138496);
+    color: white !important;
+    text-decoration: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.parent-order-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    color: white !important;
+}
+
+.child-order-link {
+    background: linear-gradient(45deg, #6c757d, #5a6268);
+    color: white !important;
+    text-decoration: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    transition: all 0.3s ease;
+    margin-right: 0.25rem;
+}
+
+.child-order-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    color: white !important;
+}
+
+.order-relationship {
+    background-color: #f8f9fa;
+    border-left: 3px solid #17a2b8;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    border-radius: 0.25rem;
+}
+
+/* Order Status Badges */
+.order-status-badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.order-status-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.order-status-badge:hover::before {
+    left: 100%;
+}
+
+.status-pending {
+    background: linear-gradient(45deg, #ffc107, #ffca2c);
+    color: #212529;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+.status-confirmed {
+    background: linear-gradient(45deg, #17a2b8, #20c997);
+    color: white;
+    box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3);
+}
+
+.status-shipping {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+.status-delivered {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.status-cancelled {
+    background: linear-gradient(45deg, #dc3545, #c82333);
+    color: white;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.status-refunded {
+    background: linear-gradient(45deg, #6c757d, #5a6268);
+    color: white;
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+}
+
+/* Child Orders Cards */
+.child-order-card {
+    transition: all 0.3s ease;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.child-order-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #007bff, #0056b3);
+}
+
+.child-order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.child-order-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.child-order-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Order Items Table */
+.order-items-table {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.order-items-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    padding: 1rem;
+    border: none;
+}
+
+.order-items-table thead th {
+    background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+    color: #374151;
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 1rem 0.75rem;
+}
+
+.order-items-table td {
+    padding: 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.order-items-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.order-items-table tbody tr:hover {
+    background-color: #f8fafc;
+    transform: translateX(2px);
+}
+
+.order-items-table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    border-color: #f1f3f4;
+}
+
+/* Product Image Styling */
+.product-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.product-image:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    position: relative;
+}
+
+/* Format Badges */
+.format-badge {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+}
+
+.format-badge.combo {
+    background: linear-gradient(45deg, #f093fb, #f5576c);
+}
+
+/* Attribute Badges */
+.attribute-badge {
+    background-color: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    margin: 0.125rem;
+    display: inline-block;
+}
+
+/* Order Summary Cards */
+.order-summary-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Ebook Downloads Statistics */
+.ebook-stats-card {
+    border: 1px solid #e3e6f0;
+    border-radius: 0.35rem;
+    transition: all 0.3s ease;
+}
+
+.ebook-stats-card:hover {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    transform: translateY(-2px);
+}
+
+.ebook-download-item {
+    background: #f8f9fc;
+    border: 1px solid #e3e6f0;
+    border-radius: 0.35rem;
+    transition: all 0.2s ease;
+}
+
+.ebook-download-item:hover {
+    background: #eaecf4;
+    border-color: #d1d3e2;
+}
+
+.ebook-progress-bar {
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    background-color: #e9ecef;
+}
+
+.ebook-progress-fill {
+    height: 100%;
+    transition: width 0.6s ease;
+}
+
+.ebook-progress-success {
+    background: linear-gradient(90deg, #1cc88a, #17a673);
+}
+
+.ebook-progress-warning {
+    background: linear-gradient(90deg, #f6c23e, #dda20a);
+}
+
+.ebook-progress-danger {
+    background: linear-gradient(90deg, #e74a3b, #c0392b);
+}
+
+.ebook-download-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.ebook-download-count {
+    background: linear-gradient(45deg, #4e73df, #224abe);
+    color: white;
+    box-shadow: 0 2px 4px rgba(78, 115, 223, 0.2);
+}
+
+.ebook-download-zero {
+    background: #6c757d;
+    color: white;
+}
+
+.ebook-download-limit {
+    background: linear-gradient(45deg, #e74a3b, #c0392b);
+    color: white;
+    animation: pulse-danger 2s infinite;
+}
+
+@keyframes pulse-danger {
+    0% { transform: scale(1); box-shadow: 0 2px 4px rgba(231, 74, 59, 0.2); }
+    50% { transform: scale(1.05); box-shadow: 0 4px 8px rgba(231, 74, 59, 0.4); }
+    100% { transform: scale(1); box-shadow: 0 2px 4px rgba(231, 74, 59, 0.2); }
+}
+
+.ebook-unlimited {
+    color: #1cc88a;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.ebook-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #5a5c69;
+    line-height: 1.2;
+}
+
+.ebook-last-download {
+    font-size: 0.75rem;
+    color: #858796;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.ebook-stats-summary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.ebook-stats-summary .badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+}
+
+/* Table Column Optimization */
+.order-items-table th:nth-child(7),
+.order-items-table td:nth-child(7) {
+    min-width: 150px;
+    max-width: 200px;
+}
+
+.order-items-table .ebook-download-cell {
+    padding: 0.75rem 0.5rem;
+    vertical-align: middle;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .order-items-table {
+        font-size: 0.875rem;
+    }
+    
+    .order-items-table th,
+    .order-items-table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .child-order-card {
+        margin-bottom: 1rem;
+    }
+    
+    .order-type-icon {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+    }
+    
+    .child-order-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .order-status-badge {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .child-order-card {
+        padding: 1rem;
+    }
+    
+    .product-image {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .ebook-download-item {
+        padding: 0.75rem;
+    }
+    
+    .ebook-title {
+        font-size: 0.8rem;
+    }
+    
+    .ebook-download-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .order-items-table {
+        font-size: 0.85rem;
+    }
+    
+    .child-order-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .child-order-icon {
+        margin-bottom: 0.5rem;
+        margin-right: 0;
+    }
+}
+
+/* Animation for loading states */
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Loading Animation */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Notification Badges */
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(45deg, #dc3545, #c82333);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Success/Error Messages */
+.alert-enhanced {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.alert-error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+/* Print Styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .order-items-table {
+        box-shadow: none;
+    }
+    
+    .child-order-card {
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+}
