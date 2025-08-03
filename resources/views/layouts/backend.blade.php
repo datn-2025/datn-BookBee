@@ -398,6 +398,9 @@
                                         <li><a href="{{ route('admin.users.index') }}" class="nav-link">Danh sách người
                                                 dùng</a></li>
                                         @endpermission
+                                        @permission('staff.view')
+                                        <li><a href="{{ route('admin.staff.index') }}" class="nav-link">Danh sách nhân viên</a></li>
+                                        @endpermission
                                         @permission('role.view')
                                             <li><a href="{{ route('admin.roles.index') }}" class="nav-link">Danh sách vai trò</a></li>
                                         @endpermission

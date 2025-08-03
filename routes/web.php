@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\NewsArticleController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\AuthorController;
 use App\Http\Controllers\Login\LoginController;
@@ -327,9 +328,22 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit')->middleware('checkpermission:user.edit');
         Route::put('/{id}', [UserController::class, 'update'])->name('update')->middleware('checkpermission:user.edit');
         Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy')->middleware('checkpermission:user.delete');
-    Route::get('/{id}/roles-permissions', [UserController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:user.manage-roles');
-    Route::put('/{id}/roles-permissions', [UserController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:user.manage-roles');
+    // Route::get('/{id}/roles-permissions', [UserController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:user.manage-roles');
+    // Route::put('/{id}/roles-permissions', [UserController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:user.manage-roles');
     });
+
+        // Staff
+        Route::prefix('staffs')->name('staff.')->middleware('checkpermission:staff.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\StaffController::class, 'index'])->name('index')->middleware('checkpermission:staff.view');
+        Route::get('/create', [\App\Http\Controllers\Admin\StaffController::class, 'create'])->name('create')->middleware('checkpermission:staff.create');
+        Route::post('/', [\App\Http\Controllers\Admin\StaffController::class, 'store'])->name('store')->middleware('checkpermission:staff.create');
+            Route::get('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'show'])->name('show')->middleware('checkpermission:staff.show');
+            Route::get('/{id}/edit', [\App\Http\Controllers\Admin\StaffController::class, 'edit'])->name('edit')->middleware('checkpermission:staff.edit');
+            Route::put('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'update'])->name('update')->middleware('checkpermission:staff.edit');
+            Route::delete('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'destroy'])->name('destroy')->middleware('checkpermission:staff.delete');
+            Route::get('/{id}/roles-permissions', [\App\Http\Controllers\Admin\StaffController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:staff.manage-roles');
+            Route::put('/{id}/roles-permissions', [\App\Http\Controllers\Admin\StaffController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:staff.manage-roles');
+        });
 
     // Permissions
     Route::prefix('permissions')->name('permissions.')->middleware('checkpermission:permission.view')->group(function () {

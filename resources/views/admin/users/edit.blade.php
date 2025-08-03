@@ -48,22 +48,12 @@
                             </div>
                         </div>
 
-                        <div class="row mb-3">
+                        {{-- <div class="row mb-3">
                             <label class="col-sm-2 col-form-label">Vai trò</label>
-                            <div class="col-sm-10">
-                                <select name="role_id" class="form-select @error('role_id') is-invalid @enderror">
-                                    <option value="">-- Chọn vai trò --</option>
-                                    @foreach($roles as $role)
-                                        <option value="{{ $role->id }}" {{ $user->role && $user->role->id == $role->id ? 'selected' : '' }}>
-                                            {{ $role->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('role_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                            <div class="col-sm-10 d-flex align-items-center">
+                                <span class="form-control-plaintext">{{ $user->role ? $user->role->name : 'Chưa phân quyền' }}</span>
                             </div>
-                        </div>
+                        </div> --}}
 
                         <div class="row mb-3">
                             <label class="col-sm-2 col-form-label">Trạng thái</label>
