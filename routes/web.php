@@ -361,7 +361,7 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     });
     // Vouchers
     Route::prefix('vouchers')->name('vouchers.')->middleware('checkpermission:voucher.view')->group(function () {
-        Route::get('/get-condition-options', [VoucherController::class, 'getConditionOptions'])->name('getConditionOptions')->middleware('checkpermission:voucher.get-condition-options');
+        Route::get('/get-condition-options', [VoucherController::class, 'getConditionOptions'])->name('getConditionOptions')->middleware('checkpermission:voucher.get-condition-option');
         Route::get('/search', [VoucherController::class, 'search'])->name('search')->middleware('checkpermission:voucher.search');
         Route::get('/trash', [VoucherController::class, 'trash'])->name('trash')->middleware('checkpermission:voucher.trash');
         Route::post('/restore/{id}', [VoucherController::class, 'restore'])->name('restore')->middleware('checkpermission:voucher.restore');
