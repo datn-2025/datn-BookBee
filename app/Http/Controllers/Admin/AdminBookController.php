@@ -15,6 +15,7 @@ use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Admin\GiftController;
 use App\Models\BookGift;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class AdminBookController extends Controller
@@ -130,7 +131,7 @@ class AdminBookController extends Controller
         }
 
         // Validation với thông báo tùy chỉnh
-        $validator = Validator::make($request->all(),[
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             // Slug sẽ được check unique thủ công phía dưới
             'description' => 'nullable|string',
@@ -188,7 +189,7 @@ class AdminBookController extends Controller
             'publication_date.date' => 'Ngày xuất bản không hợp lệ',
         ]);
         // dd($request->all());
-        if($validator->fails()) {
+        if ($validator->fails()) {
             // Trả về lỗi validate về form, không toastr
             return back()->withInput()->withErrors($validator);
         }
