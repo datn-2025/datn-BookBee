@@ -352,34 +352,39 @@
                                                         <i class="ri-bookmark-line me-1"></i>{{ $attribute->name }}
                                                     </h6>
                                                     
-                                                    <!-- Hiển thị thuộc tính hiện có -->
-                                                    @php
-                                                        // Lấy thuộc tính hiện có của sách cho attribute này
-                                                        $bookAttributes = $book->attributeValues->filter(function($attributeValue) use ($attribute) {
-                                                            return $attributeValue->attribute_id == $attribute->id;
-                                                        });
-                                                    @endphp
-                                                    
-                                                    @if($bookAttributes->count() > 0)
+                                    <!-- Hiển thị thuộc tính hiện có -->
+                                    @php
+                                        // Lấy BookAttributeValue records cho attribute này với debug
+                                        $bookAttributes = $book->bookAttributeValues->filter(function($bookAttributeValue) use ($attribute) {
+                                            return $bookAttributeValue->attributeValue && 
+                                                   $bookAttributeValue->attributeValue->attribute &&
+                                                   $bookAttributeValue->attributeValue->attribute->id == $attribute->id;
+                                        });
+                                        
+                                        // Debug thông tin - hiển thị trong môi trường debug
+                                    @endphp
+                                    
+                                                   @if($bookAttributes->count() > 0)
                                                         <div class="mb-3">
                                                             <h6 class="text-success mb-2">Thuộc tính hiện có:</h6>
                                                             @foreach($bookAttributes as $bookAttr)
                                                                 <div class="d-flex justify-content-between align-items-center p-2 mb-2 bg-light rounded">
                                                                     <div>
-                                                                        <span class="badge bg-primary me-2">{{ $bookAttr->value ?? 'N/A' }}</span>
+                                                                        <span class="badge bg-primary me-2">{{ $bookAttr->attributeValue ? $bookAttr->attributeValue->value : 'N/A' }}</span>
                                                                         <small class="text-muted">
-                                                                            Giá thêm: {{ number_format($bookAttr->pivot->extra_price ?? 0) }}đ | 
-                                                                            Tồn kho: {{ $bookAttr->pivot->stock ?? 0 }}
+                                                                            Giá thêm: {{ number_format($bookAttr->extra_price  ?? 0) }}đ | 
+                                                                            Tồn kho: {{ $bookAttr->stock ?? 0 }} |
+                                                                            SKU: {{ $bookAttr->sku ?? 'Chưa có' }}
                                                                         </small>
                                                                     </div>
                                                                     <div>
-                                                                        <input type="hidden" name="existing_attributes[{{ $bookAttr->id }}][attribute_value_id]" value="{{ $bookAttr->id }}">
+                                                                        <input type="hidden" name="existing_attributes[{{ $bookAttr->id }}][attribute_value_id]" value="{{ $bookAttr->attribute_value_id }}">
                                                                         <input type="hidden" name="existing_attributes[{{ $bookAttr->id }}][keep]" value="1" class="keep-attribute">
                                                                         <input type="number" name="existing_attributes[{{ $bookAttr->id }}][extra_price]" 
-                                                                               value="{{ $bookAttr->pivot->extra_price ?? 0 }}" class="form-control form-control-sm d-inline-block me-2" 
-                                                                               style="width: 100px;" placeholder="Giá thêm" min="0">
+                                                                               value="{{ $bookAttr->extra_price ?? 0 }}" class="form-control form-control-sm d-inline-block me-2" 
+                                                                               style="width: 100px;" placeholder="Giá thêm" min="0" step="1000">
                                                                         <input type="number" name="existing_attributes[{{ $bookAttr->id }}][stock]" 
-                                                                               value="{{ $bookAttr->pivot->stock ?? 0 }}" class="form-control form-control-sm d-inline-block me-2" 
+                                                                               value="{{ $bookAttr->stock ?? 0 }}" class="form-control form-control-sm d-inline-block me-2" 
                                                                                style="width: 80px;" placeholder="Tồn kho" min="0">
                                                                         <button type="button" class="btn btn-sm btn-danger remove-existing-attribute" 
                                                                                 data-attribute-id="{{ $bookAttr->id }}">
@@ -620,7 +625,7 @@
                             </div>
                             <div class="col-6">
                                 <div class="p-2 bg-light rounded">
-                                    <div class="fw-bold text-success">{{ $book->attributeValues->count() }}</div>
+                                    <div class="fw-bold text-success">{{ $book->bookAttributeValues->count() }}</div>
                                     <small class="text-muted">Biến thể</small>
                                 </div>
                             </div>
@@ -714,330 +719,6 @@ $(document).ready(function() {
     // Image preview
     const coverInput = document.getElementById('cover_image');
     const imagesInput = document.getElementById('images');
-    
-    if (coverInput) {
-        coverInput.addEventListener('change', function(e) {
-            const preview = document.getElementById('cover_preview');
-            preview.innerHTML = '';
-            
-            if (e.target.files[0]) {
-                const img = document.createElement('img');
-                img.src = URL.createObjectURL(e.target.files[0]);
-                img.className = 'img-thumbnail';
-                img.style.maxHeight = '200px';
-                preview.appendChild(img);
-            }
-        });
-    }
-    
-    if (imagesInput) {
-        imagesInput.addEventListener('change', function(e) {
-            const preview = document.getElementById('images_preview');
-            preview.innerHTML = '';
-            
-            Array.from(e.target.files).forEach(file => {
-                const col = document.createElement('div');
-                col.className = 'col-6 mb-2';
-                
-                const img = document.createElement('img');
-                img.src = URL.createObjectURL(file);
-                img.className = 'img-thumbnail w-100';
-                img.style.height = '100px';
-                img.style.objectFit = 'cover';
-                
-                col.appendChild(img);
-                preview.appendChild(col);
-            });
-        });
-    }
-});
-</script>
-@endpush
-@endsection
-        // Step 3: Media
-        if ($('#cover_image').val() || $('#images').val()) {
-            $('#step-3').addClass('completed');
-        } else if ($('#step-2').hasClass('completed')) {
-            $('#step-3').addClass('active');
-        }
-        
-        // Step 4: Publishing
-        if ($('#publication_date').val() || $('#publisher').val()) {
-            $('#step-4').addClass('completed');
-        } else if ($('#step-3').hasClass('completed')) {
-            $('#step-4').addClass('active');
-        }
-    }
-
-    // Enhanced file upload with drag & drop
-    function initializeFileUpload() {
-        // Upload area click handlers
-        $('.upload-area').on('click', function(e) {
-            e.preventDefault();
-            const targetInput = $(this).data('target');
-            $(targetInput).click();
-        });
-
-        // Drag & Drop functionality
-        $('.upload-area').on('dragover', function(e) {
-            e.preventDefault();
-            $(this).addClass('border-primary').css('background-color', '#f8f9ff');
-        });
-
-        $('.upload-area').on('dragleave', function(e) {
-            e.preventDefault();
-            $(this).removeClass('border-primary').css('background-color', '');
-        });
-
-        $('.upload-area').on('drop', function(e) {
-            e.preventDefault();
-            $(this).removeClass('border-primary').css('background-color', '');
-            
-            const files = e.originalEvent.dataTransfer.files;
-            const targetInput = $(this).data('target');
-            $(targetInput)[0].files = files;
-            $(targetInput).trigger('change');
-        });
-
-        // Enhanced preview functionality
-        $('#cover_image').on('change', function() {
-            const file = this.files[0];
-            const preview = $('#cover_preview');
-            preview.empty();
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.html(`
-                        <div class="text-center">
-                            <img src="${e.target.result}" class="img-fluid rounded shadow-sm" 
-                                 style="max-height: 200px;" alt="Cover preview">
-                            <div class="mt-2">
-                                <span class="badge bg-success">Ảnh bìa mới</span>
-                                <p class="mt-1 mb-0 text-muted small">${file.name}</p>
-                            </div>
-                        </div>
-                    `);
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        $('#images').on('change', function() {
-            const files = this.files;
-            const preview = $('#images_preview');
-            preview.empty();
-            
-            if (files.length > 0) {
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        preview.append(`
-                            <div class="col-6 mb-2">
-                                <div class="existing-image">
-                                    <img src="${e.target.result}" class="img-fluid rounded shadow-sm" 
-                                         style="height: 100px; width: 100%; object-fit: cover;" alt="New image">
-                                    <div class="text-center mt-1">
-                                        <span class="badge bg-warning text-dark">Mới</span>
-                                    </div>
-                                </div>
-                            </div>
-                        `);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            }
-        });
-    }
-
-    // Form validation enhancement
-    function enhanceFormValidation() {
-        $('#bookForm').on('submit', function(e) {
-            let isValid = true;
-            const requiredFields = ['title', 'category_id'];
-            
-            // Clear previous errors
-            $('.is-invalid').removeClass('is-invalid');
-            $('.invalid-feedback').remove();
-            
-            requiredFields.forEach(function(field) {
-                const input = $(`#${field}`);
-                if (!input.val()) {
-                    isValid = false;
-                    input.addClass('is-invalid');
-                    
-                    if (!input.next('.invalid-feedback').length) {
-                        input.after('<div class="invalid-feedback">Trường này là bắt buộc</div>');
-                    }
-                }
-            });
-
-            if (!isValid) {
-                e.preventDefault();
-                $('html, body').animate({
-                    scrollTop: $('.is-invalid').first().offset().top - 100
-                }, 500);
-                
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('Vui lòng điền đầy đủ thông tin bắt buộc', 'Lỗi');
-                }
-            } else {
-                // Show loading state
-                const submitBtn = $(this).find('button[type="submit"]');
-                const originalText = submitBtn.html();
-                submitBtn.prop('disabled', true).html('<i class="ri-loader-4-line ri-spin me-2"></i>Đang cập nhật...');
-                
-                // Reset after delay (fallback)
-                setTimeout(() => {
-                    submitBtn.prop('disabled', false).html(originalText);
-                }, 5000);
-            }
-        });
-    }
-
-    // Enhanced hover effects for existing images
-    function initializeImageHovers() {
-        $('.existing-image').hover(
-            function() {
-                $(this).find('img').css('transform', 'scale(1.05)');
-            },
-            function() {
-                $(this).find('img').css('transform', 'scale(1)');
-            }
-        );
-    }
-
-    // Auto-resize textareas
-    function initializeAutoResize() {
-        $('textarea').on('input', function() {
-            this.style.height = 'auto';
-            this.style.height = (this.scrollHeight) + 'px';
-        });
-    }
-
-    // Price formatting
-    function initializePriceFormatting() {
-        $('#price, .attribute-extra-price').on('input', function() {
-            let value = $(this).val().replace(/[^\d]/g, '');
-            if (value) {
-                $(this).val(parseInt(value).toLocaleString('vi-VN'));
-            }
-        });
-
-        $('#price, .attribute-extra-price').on('blur', function() {
-            let value = $(this).val().replace(/[^\d]/g, '');
-            $(this).val(value);
-        });
-    }
-
-    // Initialize all enhancements
-    updateProgressSteps();
-    initializeFileUpload();
-    enhanceFormValidation();
-    initializeImageHovers();
-    initializeAutoResize();
-    initializePriceFormatting();
-
-    // Update progress on form changes
-    $('input, textarea, select').on('input change', function() {
-        updateProgressSteps();
-    });
-
-    // Smooth scroll for step navigation
-    $('.step').on('click', function() {
-        const stepNumber = $(this).attr('id').split('-')[1];
-        let targetSection;
-        
-        switch(stepNumber) {
-            case '1':
-                targetSection = $('.card').first();
-                break;
-            case '2':
-                targetSection = $('.card').eq(1);
-                break;
-            case '3':
-                targetSection = $('.card').eq(2);
-                break;
-            case '4':
-                targetSection = $('.card').eq(3);
-                break;
-        }
-        
-        if (targetSection) {
-            $('html, body').animate({
-                scrollTop: targetSection.offset().top - 20
-            }, 500);
-        }
-    });
-
-    // Unsaved changes warning
-    let hasChanges = false;
-    $('input, textarea, select').on('change', function() {
-        if (!hasChanges) {
-            hasChanges = true;
-            $(window).on('beforeunload', function() {
-                return 'Bạn có thay đổi chưa được lưu. Bạn có chắc muốn rời khỏi trang?';
-            });
-        }
-    });
-
-    $('#bookForm').on('submit', function() {
-        $(window).off('beforeunload');
-    });
-});
-
-// Toggle format sections
-function toggleFormatSections() {
-    const physicalCheckbox = document.getElementById('has_physical');
-    const physicalForm = document.getElementById('physical_format');
-    const ebookCheckbox = document.getElementById('has_ebook');
-    const ebookForm = document.getElementById('ebook_format');
-    
-    if (physicalCheckbox && physicalForm) {
-        physicalForm.style.display = physicalCheckbox.checked ? 'block' : 'none';
-    }
-    
-    if (ebookCheckbox && ebookForm) {
-        ebookForm.style.display = ebookCheckbox.checked ? 'block' : 'none';
-    }
-}
-
-// Toggle gift section
-function toggleGiftSection() {
-    const giftCheckbox = document.getElementById('has_gift');
-    const giftSection = document.getElementById('gift_section');
-    
-    if (giftCheckbox && giftSection) {
-        giftSection.style.display = giftCheckbox.checked ? 'block' : 'none';
-    }
-}
-
-// Event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    const physicalCheckbox = document.getElementById('has_physical');
-    const ebookCheckbox = document.getElementById('has_ebook');
-    const giftCheckbox = document.getElementById('has_gift');
-    
-    if (physicalCheckbox) {
-        physicalCheckbox.addEventListener('change', toggleFormatSections);
-    }
-    
-    if (ebookCheckbox) {
-        ebookCheckbox.addEventListener('change', toggleFormatSections);
-    }
-    
-    if (giftCheckbox) {
-        giftCheckbox.addEventListener('change', toggleGiftSection);
-    }
-    
-    // Initial toggle
-    toggleFormatSections();
-    toggleGiftSection();
-    
-    // Preview images
-    const coverInput = document.getElementById('cover_image');
-    const imagesInput = document.getElementById('images');
     const giftImageInput = document.querySelector('input[name="gift_image"]');
     
     if (coverInput) {
@@ -1075,7 +756,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    
+
     if (giftImageInput) {
         giftImageInput.addEventListener('change', function(e) {
             const preview = document.getElementById('gift_image_preview');
@@ -1090,52 +771,53 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // Handle attribute value addition
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.add-attribute-btn')) {
-            const button = e.target.closest('.add-attribute-btn');
-            const attributeGroup = button.closest('.attribute-group');
-            
-            if (!attributeGroup) {
-                console.error('Không tìm thấy attribute-group');
-                return;
-            }
-            
-            const select = attributeGroup.querySelector('.attribute-select');
-            const extraPriceInput = attributeGroup.querySelector('.attribute-extra-price');
-            const stockInput = attributeGroup.querySelector('.attribute-stock');
-            const selectedValuesContainer = attributeGroup.querySelector('.selected-variants-container');
-            
-            if (!select || !extraPriceInput || !stockInput || !selectedValuesContainer) {
-                console.error('Không tìm thấy các element cần thiết');
-                return;
-            }
-            
-            const selectedOption = select.options[select.selectedIndex];
-            if (!selectedOption.value) {
-                alert('Vui lòng chọn một giá trị thuộc tính');
-                return;
-            }
-            
-            const attributeId = select.getAttribute('data-attribute-id');
-            const attributeName = select.getAttribute('data-attribute-name');
-            const valueId = selectedOption.value;
-            const valueName = selectedOption.getAttribute('data-value-name');
-            const extraPrice = parseFloat(extraPriceInput.value) || 0;
-            const stock = parseInt(stockInput.value) || 0;
-            
-            // Kiểm tra xem thuộc tính này đã được thêm chưa
-            const existingValue = attributeGroup.querySelector(`input[name="attribute_values[${valueId}][id]"]`);
-            if (existingValue) {
-                alert(`Thuộc tính ${valueName} đã được thêm`);
-                return;
-            }
-            
-            // Tạo element hiển thị thuộc tính đã chọn
-            const selectedDiv = document.createElement('div');
-            selectedDiv.className = 'selected-attribute-value mb-2 p-3 border rounded bg-white shadow-sm';
-            selectedDiv.innerHTML = `
+
+    // Handle attribute value addition with event delegation
+    $(document).on('click', '.add-attribute-btn', function(e) {
+        e.preventDefault();
+        console.log('Add attribute button clicked');
+        
+        const button = $(this);
+        const attributeGroup = button.closest('.attribute-group');
+        
+        if (attributeGroup.length === 0) {
+            console.error('Không tìm thấy attribute-group');
+            return;
+        }
+        
+        const select = attributeGroup.find('.attribute-select')[0];
+        const extraPriceInput = attributeGroup.find('.attribute-extra-price')[0];
+        const stockInput = attributeGroup.find('.attribute-stock')[0];
+        const selectedValuesContainer = attributeGroup.find('.selected-variants-container')[0];
+        
+        if (!select || !extraPriceInput || !stockInput || !selectedValuesContainer) {
+            console.error('Không tìm thấy các element cần thiết');
+            return;
+        }
+        
+        const selectedOption = select.options[select.selectedIndex];
+        if (!selectedOption.value) {
+            alert('Vui lòng chọn một giá trị thuộc tính');
+            return;
+        }
+        
+        const attributeId = select.getAttribute('data-attribute-id');
+        const attributeName = select.getAttribute('data-attribute-name');
+        const valueId = selectedOption.value;
+        const valueName = selectedOption.getAttribute('data-value-name');
+        const extraPrice = parseFloat(extraPriceInput.value) || 0;
+        const stock = parseInt(stockInput.value) || 0;
+        
+        // Kiểm tra xem thuộc tính này đã được thêm chưa
+        const existingValue = attributeGroup.find(`input[name="attribute_values[${valueId}][id]"]`);
+        if (existingValue.length > 0) {
+            alert(`Thuộc tính ${valueName} đã được thêm`);
+            return;
+        }
+        
+        // Tạo element hiển thị thuộc tính đã chọn
+        const selectedDiv = $(`
+            <div class="selected-attribute-value mb-2 p-3 border rounded bg-white shadow-sm">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="flex-grow-1">
                         <div class="fw-medium text-dark mb-1">
@@ -1160,52 +842,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="hidden" name="attribute_values[${valueId}][id]" value="${valueId}">
                 <input type="hidden" name="attribute_values[${valueId}][extra_price]" value="${extraPrice}">
                 <input type="hidden" name="attribute_values[${valueId}][stock]" value="${stock}">
-            `;
-            
-            selectedValuesContainer.appendChild(selectedDiv);
-            
-            // Reset form
-            select.selectedIndex = 0;
-            extraPriceInput.value = '0';
-            stockInput.value = '0';
-        }
+            </div>
+        `);
         
-        // Handle attribute value removal
-        if (e.target.closest('.remove-attribute-value')) {
-            const button = e.target.closest('.remove-attribute-value');
-            const selectedDiv = button.closest('.selected-attribute-value');
-            if (selectedDiv) {
-                selectedDiv.remove();
-            }
-        }
+        $(selectedValuesContainer).append(selectedDiv);
         
-        // Handle existing attribute removal
-        if (e.target.closest('.remove-existing-attribute')) {
-            const button = e.target.closest('.remove-existing-attribute');
-            const attributeDiv = button.closest('.d-flex');
-            if (attributeDiv && confirm('Bạn có chắc chắn muốn xóa thuộc tính này?')) {
-                // Thay vì xóa element, đánh dấu để xóa bằng cách set keep = 0
-                const keepInput = attributeDiv.querySelector('.keep-attribute');
-                if (keepInput) {
-                    keepInput.value = '0';
-                }
-                // Ẩn element thay vì xóa hoàn toàn
-                attributeDiv.style.display = 'none';
-            }
+        // Reset form
+        select.selectedIndex = 0;
+        extraPriceInput.value = '0';
+        stockInput.value = '0';
+        
+        console.log('Attribute added successfully');
+    });
+    
+    // Handle attribute value removal
+    $(document).on('click', '.remove-attribute-value', function(e) {
+        e.preventDefault();
+        const selectedDiv = $(this).closest('.selected-attribute-value');
+        if (selectedDiv.length > 0) {
+            selectedDiv.remove();
         }
     });
-});
-
-// Initialize Select2
-$(document).ready(function() {
-    if (typeof $.fn.select2 !== 'undefined') {
-        $('.select2-authors').select2({
-            theme: 'bootstrap-5',
-            placeholder: 'Tìm kiếm và chọn tác giả...',
-            allowClear: true,
-            width: '100%'
-        });
-    }
+    
+    // Handle existing attribute removal
+    $(document).on('click', '.remove-existing-attribute', function(e) {
+        e.preventDefault();
+        const button = $(this);
+        const attributeDiv = button.closest('.d-flex');
+        
+        if (attributeDiv.length > 0 && confirm('Bạn có chắc chắn muốn xóa thuộc tính này?')) {
+            // Thay vì xóa element, đánh dấu để xóa bằng cách set keep = 0
+            const keepInput = attributeDiv.find('.keep-attribute');
+            if (keepInput.length > 0) {
+                keepInput.val('0');
+            }
+            // Ẩn element thay vì xóa hoàn toàn
+            attributeDiv.hide();
+        }
+    });
 });
 </script>
 @endpush
