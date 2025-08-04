@@ -27,7 +27,8 @@ class AdminBookController extends Controller
                 'authors:id,name',
                 'brand:id,name',
                 'formats:id,book_id,format_name,price,discount,stock',
-                'images:id,book_id,image_url'
+                'images:id,book_id,image_url',
+                'attributeValues:id,value' // Thêm attributeValues để hiển thị biến thể
             ])
             ->withSum(['formats as total_stock' => function ($query) {
                 $query->whereIn('format_name', ['Bìa mềm', 'Bìa cứng']);
@@ -139,6 +140,7 @@ class AdminBookController extends Controller
             'attribute_values' => 'nullable|array',
             'attribute_values.*.id' => 'required|distinct|exists:attribute_values,id',
             'attribute_values.*.extra_price' => 'nullable|numeric|min:0',
+            'attribute_values.*.stock' => 'nullable|integer|min:0', // Validation cho số lượng tồn kho biến thể
             'has_physical' => 'boolean',
             'formats.physical.price' => 'required_if:has_physical,true|nullable|numeric|min:0',
             'formats.physical.discount' => 'nullable|numeric|min:0',
@@ -183,17 +185,28 @@ class AdminBookController extends Controller
             'formats.ebook.file.required_if' => 'Vui lòng chọn file ebook',
             'formats.ebook.file.mimes' => 'File ebook phải có định dạng PDF hoặc EPUB',
             'formats.ebook.file.max' => 'Kích thước file ebook không được vượt quá 50MB',
-            'attribute_values.*.id.distinct' => 'Không được chọn trùng thuộc tính cho sách',
+            'attribute_values.*.distinct' => 'Không được chọn trùng thuộc tính cho sách',
+            'attribute_values.*.stock.integer' => 'Số lượng tồn kho biến thể phải là số nguyên',
+            'attribute_values.*.stock.min' => 'Số lượng tồn kho biến thể không được âm',
             'publication_date.required' => 'Vui lòng nhập ngày xuất bản',
             'publication_date.date' => 'Ngày xuất bản không hợp lệ',
         ]);
+        $validator->after(function ($validator) use ($request) {
+            if (!$request->boolean('has_physical') && !$request->boolean('has_ebook')) {
+                $validator->errors()->add('format_required', 'Vui lòng chọn ít nhất một định dạng sách (Sách vật lý hoặc Ebook).');
+            }
+        });
+
         // dd($request->all());
         if($validator->fails()) {
             // Trả về lỗi validate về form, không toastr
             return back()->withInput()->withErrors($validator);
         }
-        // Cho phép chọn 1 trong 2 định dạng sách (bỏ validation bắt buộc)
-        // Người dùng có thể chọn chỉ sách vật lý, chỉ ebook, hoặc cả hai
+        
+        // Validation bắt buộc chọn ít nhất một định dạng sách
+        if (!$request->boolean('has_physical') && !$request->boolean('has_ebook')) {
+            return back()->withInput()->withErrors(['format_required' => 'Vui lòng chọn ít nhất một định dạng sách (Sách vật lý hoặc Ebook).']);
+        }
 
         $data = $request->only([
             'title',
@@ -270,14 +283,16 @@ class AdminBookController extends Controller
             $book->formats()->create($ebookFormat);
         }
 
-        // Lưu thuộc tính và giá thêm
+        // Lưu thuộc tính, giá thêm và số lượng tồn kho theo biến thể
         if ($request->filled('attribute_values')) {
             foreach ($request->attribute_values as $valueId => $data) {
                 // Sử dụng create thay vì attach để đảm bảo UUID được tạo tự động
                 BookAttributeValue::create([
                     'book_id' => $book->id,
                     'attribute_value_id' => $data['id'],
-                    'extra_price' => $data['extra_price'] ?? 0
+                    'extra_price' => $data['extra_price'] ?? 0,
+                    'stock' => $data['stock'] ?? 0, // Thêm quản lý số lượng tồn kho theo biến thể
+                    'sku' => $this->generateVariantSku($book, $data['id']) // Tạo mã SKU cho biến thể
                 ]);
             }
         }
@@ -304,6 +319,59 @@ class AdminBookController extends Controller
         return redirect()->route('admin.books.index');
     }
 
+    /**
+     * Tạo mã SKU cho biến thể sản phẩm
+     * Theo docs biến thể: Mã cha + hậu tố phân biệt
+     */
+    private function generateVariantSku($book, $attributeValueId)
+    {
+        // Lấy thông tin attribute value để tạo hậu tố
+        $attributeValue = \App\Models\AttributeValue::with('attribute')->find($attributeValueId);
+        
+        if (!$attributeValue) {
+            return $book->isbn . '-VAR-' . substr($attributeValueId, 0, 8);
+        }
+
+        // Tạo mã cha từ ISBN hoặc ID sách
+        $parentCode = $book->isbn ?: 'BOOK-' . substr($book->id, 0, 8);
+        
+        // Tạo hậu tố dựa trên loại thuộc tính
+        $suffix = '';
+        $attributeName = strtolower($attributeValue->attribute->name ?? '');
+        $attributeValueName = strtolower($attributeValue->value ?? '');
+        
+        // Định dạng sách
+        if (strpos($attributeName, 'định dạng') !== false || strpos($attributeName, 'format') !== false) {
+            if (strpos($attributeValueName, 'cứng') !== false) {
+                $suffix = 'BC'; // Bìa cứng
+            } elseif (strpos($attributeValueName, 'mềm') !== false) {
+                $suffix = 'BM'; // Bìa mềm
+            } else {
+                $suffix = 'DF'; // Định dạng khác
+            }
+        }
+        // Ngôn ngữ
+        elseif (strpos($attributeName, 'ngôn ngữ') !== false || strpos($attributeName, 'language') !== false) {
+            if (strpos($attributeValueName, 'việt') !== false) {
+                $suffix = 'VI'; // Tiếng Việt
+            } elseif (strpos($attributeValueName, 'anh') !== false || strpos($attributeValueName, 'english') !== false) {
+                $suffix = 'EN'; // Tiếng Anh
+            } else {
+                $suffix = 'LG'; // Ngôn ngữ khác
+            }
+        }
+        // Kích thước
+        elseif (strpos($attributeName, 'kích thước') !== false || strpos($attributeName, 'size') !== false) {
+            $suffix = 'SZ';
+        }
+        // Mặc định
+        else {
+            $suffix = 'VAR';
+        }
+        
+        return $parentCode . '-' . $suffix;
+    }
+
     public function show($id, $slug)
     {
         $book = Book::with([
@@ -313,7 +381,9 @@ class AdminBookController extends Controller
             'formats:id,book_id,format_name,price,discount,stock,file_url,sample_file_url,allow_sample_read',
             'images:id,book_id,image_url',
             'attributeValues.attribute',
-            'reviews.user:id,name,email',
+            'reviews' => function($query) {
+                $query->with('user:id,name,email')->orderBy('created_at', 'desc');
+            },
             'gifts'
         ])->findOrFail($id);
 
@@ -330,7 +400,9 @@ class AdminBookController extends Controller
             }
             $attributes[$attributeName][] = [
                 'value' => $attributeValue->value,
-                'extra_price' => $attributeValue->pivot->extra_price ?? 0
+                'extra_price' => $attributeValue->pivot->extra_price ?? 0,
+                'stock' => $attributeValue->pivot->stock ?? 0,
+                'sku' => $attributeValue->pivot->sku ?? null
             ];
         }
 
@@ -342,7 +414,7 @@ class AdminBookController extends Controller
         $book = Book::with([
             'formats',
             'images',
-            'attributeValues',
+            'attributeValues.attribute',
             'authors' // sửa lại đúng quan hệ many-to-many
         ])->findOrFail($id);
 
@@ -362,9 +434,15 @@ class AdminBookController extends Controller
         foreach ($book->attributeValues as $attributeValue) {
             $selectedAttributeValues[$attributeValue->id] = [
                 'id' => $attributeValue->id,
-                'extra_price' => $attributeValue->pivot->extra_price ?? 0
+                'extra_price' => $attributeValue->pivot->extra_price ?? 0,
+                'stock' => $attributeValue->pivot->stock ?? 0,
+                'sku' => $attributeValue->pivot->sku ?? null
             ];
         }
+        // // dd($attributes->name);
+        // foreach($attributes as $item){
+        //     dd($item->name);
+        // }
 
         return view('admin.books.edit', compact(
             'book',
@@ -391,6 +469,7 @@ class AdminBookController extends Controller
             'attribute_values' => 'nullable|array',
             'attribute_values.*.id' => 'required|distinct|exists:attribute_values,id',
             'attribute_values.*.extra_price' => 'nullable|numeric|min:0',
+            'attribute_values.*.stock' => 'nullable|integer|min:0', // Validation cho số lượng tồn kho biến thể
             'has_physical' => 'boolean',
             'formats.physical.price' => 'required_if:has_physical,true|nullable|numeric|min:0',
             'formats.physical.discount' => 'nullable|numeric|min:0',
@@ -440,8 +519,11 @@ class AdminBookController extends Controller
         if ($validator->fails()) {
             return back()->withInput()->withErrors($validator->errors());
         }
-        // Cho phép chọn 1 trong 2 định dạng sách (bỏ validation bắt buộc)
-        // Người dùng có thể chọn chỉ sách vật lý, chỉ ebook, hoặc cả hai
+        
+        // Validation bắt buộc chọn ít nhất một định dạng sách
+        if (!$request->boolean('has_physical') && !$request->boolean('has_ebook')) {
+            return back()->withInput()->withErrors(['format_required' => 'Vui lòng chọn ít nhất một định dạng sách (Sách vật lý hoặc Ebook).']);
+        }
 
         $data = $request->only([
             'title',
@@ -572,18 +654,37 @@ class AdminBookController extends Controller
             $book->formats()->where('format_name', 'Ebook')->delete();
         }
 
-        // Cập nhật thuộc tính và giá thêm
-        // Xóa tất cả các liên kết thuộc tính hiện tại
-        $book->attributeValues()->detach();
+        // Cập nhật thuộc tính, giá thêm và số lượng tồn kho theo biến thể
+        // Xử lý thuộc tính hiện có
+        if ($request->filled('existing_attributes')) {
+            foreach ($request->existing_attributes as $valueId => $data) {
+                if (isset($data['keep']) && $data['keep'] == '1') {
+                    // Cập nhật thuộc tính hiện có
+                    $book->attributeValues()->updateExistingPivot($valueId, [
+                        'extra_price' => $data['extra_price'] ?? 0,
+                        'stock' => $data['stock'] ?? 0,
+                    ]);
+                } else {
+                    // Xóa thuộc tính nếu keep = 0
+                    $book->attributeValues()->detach($valueId);
+                }
+            }
+        }
 
-        // Thêm lại các thuộc tính mới
+        // Thêm các thuộc tính mới
         if ($request->filled('attribute_values')) {
             foreach ($request->attribute_values as $valueId => $data) {
-                BookAttributeValue::create([
-                    'book_id' => $book->id,
-                    'attribute_value_id' => $data['id'],
-                    'extra_price' => $data['extra_price'] ?? 0
-                ]);
+                // Kiểm tra xem thuộc tính đã tồn tại chưa để tránh trùng lặp
+                if (!$book->attributeValues()->where('attribute_value_id', $data['id'])->exists()) {
+                    $book->attributeValues()->attach($data['id'], [
+                         'id' => (string) Str::uuid(),
+                        'extra_price' => $data['extra_price'] ?? 0,
+                        'stock' => $data['stock'] ?? 0,
+                        'sku' => $this->generateVariantSku($book, $data['id']),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
             }
         }
 

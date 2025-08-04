@@ -29,24 +29,60 @@
                                         @endforeach
                                     </p>
                                     <p><strong>Trạng thái đánh giá:</strong>
-                                        <span class="badge {{ $review->status === 'visible' ? 'bg-success' : 'bg-secondary' }}">
-                                            {{ $review->status === 'visible' ? 'Hiển thị' : 'Đã ẩn' }}
+                                        @php
+                                            $statusConfig = match($review->status) {
+                                                'approved' => ['class' => 'bg-success', 'text' => 'Đã duyệt'],
+                                                'pending' => ['class' => 'bg-warning', 'text' => 'Chờ duyệt'],
+                                                'hidden' => ['class' => 'bg-secondary', 'text' => 'Đã ẩn'],
+                                                'visible' => ['class' => 'bg-info', 'text' => 'Hiển thị (Legacy)'],
+                                                default => ['class' => 'bg-dark', 'text' => $review->status]
+                                            };
+                                        @endphp
+                                        <span class="badge {{ $statusConfig['class'] }}">
+                                            {{ $statusConfig['text'] }}
                                         </span>
                                     </p>
                                     <form action="{{ route('admin.reviews.update-status', $review->id) }}" method="POST" onsubmit="return disableSubmitOnce(this)">
                                         @csrf
                                         @method('PATCH')
-                                        <button type="submit" class="btn btn-sm btn-{{ $review->status === 'hidden' ? 'danger' : 'primary' }}" title="{{ $review->status === 'hidden' ? 'Hiển thị' : 'Ẩn' }}">
-                                            <i class="fas fa-eye{{ $review->status === 'hidden' ? '-slash' : '' }}"></i>
+                                        @php
+                                            $buttonConfig = match($review->status) {
+                                                'approved', 'visible' => ['class' => 'btn-warning', 'icon' => 'fa-eye-slash', 'title' => 'Ẩn đánh giá'],
+                                                'hidden' => ['class' => 'btn-success', 'icon' => 'fa-eye', 'title' => 'Hiển thị đánh giá'],
+                                                'pending' => ['class' => 'btn-primary', 'icon' => 'fa-check', 'title' => 'Duyệt đánh giá'],
+                                                default => ['class' => 'btn-secondary', 'icon' => 'fa-edit', 'title' => 'Cập nhật trạng thái']
+                                            };
+                                        @endphp
+                                        <button type="submit" class="btn btn-sm {{ $buttonConfig['class'] }}" title="{{ $buttonConfig['title'] }}">
+                                            <i class="fas {{ $buttonConfig['icon'] }}"></i>
                                         </button>
                                     </form>
                                 </div>
 
                                 <div class="col-md-6">
-
-                                    <p><strong>Sản phẩm:</strong> {{ $review->book->title ?? 'Đã xóa' }}</p>
-                                    <p><strong>Tác giả:</strong> {{ $review->book->authors->first()->name ?? 'N/A' }}</p>
-
+                                    <p><strong>Loại sản phẩm:</strong> 
+                                        <span class="badge {{ $review->isComboReview() ? 'bg-success' : 'bg-primary' }} text-white">
+                                            {{ $review->product_type }}
+                                        </span>
+                                    </p>
+                                    <p><strong>Sản phẩm:</strong> {{ $review->product_name }}</p>
+                                    @if(!$review->isComboReview() && $review->book)
+                                        <p><strong>Tác giả:</strong> {{ $review->book->authors->first()->name ?? 'N/A' }}</p>
+                                    @endif
+                                    @if($review->order && $review->order->orderItems->count() > 0)
+                                        @php
+                                            $orderItem = $review->isComboReview() 
+                                                ? $review->order->orderItems->where('collection_id', $review->collection_id)->first()
+                                                : $review->order->orderItems->where('book_id', $review->book_id)->first();
+                                        @endphp
+                                        @if($orderItem)
+                                            <p><strong>Định dạng:</strong> 
+                                                <span class="badge {{ strtolower($orderItem->format) === 'ebook' ? 'bg-info' : 'bg-secondary' }} text-white">
+                                                    {{ $orderItem->format }}
+                                                </span>
+                                            </p>
+                                        @endif
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -82,87 +118,133 @@
                         </div>
 
                         {{-- Thông tin sản phẩm --}}
-                        @isset($review->book)
-                            <div class="card mb-4">
-                                <div class="card-header bg-light">
-                                    <h5 class="mb-0">Thông tin sản phẩm</h5>
-                                </div>
-                                <div class="card-body row">
-                                    <div class="col-md-3 text-center">
-                                        <img src="{{ $review->book->cover_image ? asset('storage/' . $review->book->cover_image) : asset('images/placeholder.jpg') }}" class="img-fluid rounded shadow-sm" alt="{{ $review->book->title }}" style="max-height: 300px;">
+                        @if($review->isComboReview())
+                            @isset($review->collection)
+                                <div class="card mb-4">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="mb-0">Thông tin Combo</h5>
                                     </div>
+                                    <div class="card-body row">
+                                        <div class="col-md-3 text-center">
+                                            <img src="{{ $review->collection->cover_image ? asset('storage/' . $review->collection->cover_image) : asset('images/placeholder.jpg') }}" class="img-fluid rounded shadow-sm" alt="{{ $review->collection->name }}" style="max-height: 300px;">
+                                        </div>
+                                        
+                                        <div class="col-md-9">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p><strong>Tên Combo:</strong> {{ $review->collection->name }}</p>
+                                                    <p><strong>Mô tả:</strong> {{ $review->collection->description ?? 'Không có mô tả' }}</p>
+                                                    <p><strong>Giá Combo:</strong> {{ number_format($review->collection->combo_price) }} VNĐ</p>
+                                                    <p><strong>Số lượng sách:</strong> {{ $review->collection->books->count() }} cuốn</p>
+                                                </div>
+                                                
+                                                <div class="col-md-6">
+                                                    <p><strong>Đánh giá trung bình:</strong>
+                                                        @if ($review->collection->average_rating > 0)
+                                                            @for ($i = 1; $i <= 5; $i++)
+                                                                <i class="fas fa-star{{ $i <= round($review->collection->average_rating) ? ' text-warning' : ' text-muted' }}"></i>
+                                                            @endfor
+                                                            ({{ number_format($review->collection->average_rating, 1) }}/5)
+                                                        @else
+                                                            <span class="text-muted">Chưa có đánh giá</span>
+                                                        @endif
+                                                    </p>
+                                                    <p><strong>Số lượng đánh giá:</strong> {{ $review->collection->review_count ?? 0 }}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mt-3 d-flex gap-2">
+                                                <a href="{{ route('combos.show', $review->collection->id) }}" class="btn btn-outline-success" target="_blank">
+                                                    <i class="fas fa-eye me-1"></i> Xem Combo
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endisset
+                        @else
+                            @isset($review->book)
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h5 class="mb-0">Thông tin sản phẩm</h5>
+                                    </div>
+                                    <div class="card-body row">
+                                        <div class="col-md-3 text-center">
+                                            <img src="{{ $review->book->cover_image ? asset('storage/' . $review->book->cover_image) : asset('images/placeholder.jpg') }}" class="img-fluid rounded shadow-sm" alt="{{ $review->book->title }}" style="max-height: 300px;">
+                                        </div>
 
-                                    <div class="col-md-9">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                @isset($review->book->isbn)
-                                                    <p><strong>ISBN:</strong> {{ $review->book->isbn }}</p>
-                                                @endisset
-                                                <p><strong>Tên:</strong> {{ $review->book->title }}</p>
-                                                @isset($review->book->author)
-                                                    <p><strong>Tác giả:</strong> {{ $review->book->author->name }}</p>
-                                                @endisset
-                                                @isset($review->book->brand)
-                                                    <p><strong>Thương hiệu:</strong> {{ $review->book->brand->name }}</p>
-                                                @endisset
-                                                @isset($review->book->category)
-                                                    <p><strong>Thể loại:</strong> {{ $review->book->category->name }}</p>
-                                                @endisset
-                                                @isset($review->book->publication_date)
-                                                    <p><strong>Ngày xuất bản:</strong> {{ $review->book->publication_date->format('d/m/Y') }}</p>
-                                                @endisset
-                                                @isset($review->book->page_count)
-                                                    <p><strong>Số trang:</strong> {{ $review->book->page_count }}</p>
-                                                @endisset
+                                        <div class="col-md-9">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    @isset($review->book->isbn)
+                                                        <p><strong>ISBN:</strong> {{ $review->book->isbn }}</p>
+                                                    @endisset
+                                                    <p><strong>Tên:</strong> {{ $review->book->title }}</p>
+                                                    @if($review->book->authors->count() > 0)
+                                                        <p><strong>Tác giả:</strong> {{ $review->book->authors->first()->name }}</p>
+                                                    @endif
+                                                    @isset($review->book->brand)
+                                                        <p><strong>Thương hiệu:</strong> {{ $review->book->brand->name }}</p>
+                                                    @endisset
+                                                    @isset($review->book->category)
+                                                        <p><strong>Thể loại:</strong> {{ $review->book->category->name }}</p>
+                                                    @endisset
+                                                    @isset($review->book->publication_date)
+                                                        <p><strong>Ngày xuất bản:</strong> {{ $review->book->publication_date->format('d/m/Y') }}</p>
+                                                    @endisset
+                                                    @isset($review->book->page_count)
+                                                        <p><strong>Số trang:</strong> {{ $review->book->page_count }}</p>
+                                                    @endisset
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <p><strong>Trạng thái sản phẩm:</strong>
+                                                        <span class="badge {{ $review->book->is_active ? 'bg-success' : 'bg-danger' }}">
+                                                            {{ $review->book->is_active ? 'Còn hàng' : 'Hết hàng' }}
+                                                        </span>
+                                                    </p>
+                                                    @isset($review->orderItem)
+                                                        <p><strong>Định dạng:</strong> <span class="badge {{ strtolower($review->orderItem->format) === 'ebook' ? 'bg-info' : 'bg-primary' }}">{{ ucfirst($review->orderItem->format) }}</span></p>
+                                                        @isset($review->orderItem->language)
+                                                            <p><strong>Ngôn ngữ:</strong> {{ $review->orderItem->language }}</p>
+                                                        @endisset
+                                                        @isset($review->orderItem->dimensions)
+                                                            <p><strong>Kích thước:</strong> {{ $review->orderItem->dimensions }}</p>
+                                                        @endisset
+                                                    @else
+                                                        <p class="text-muted">Không có thông tin đơn hàng liên quan.</p>
+                                                    @endisset
+                                                </div>
                                             </div>
 
-                                            <div class="col-md-6">
-                                                <p><strong>Trạng thái sản phẩm:</strong>
-                                                    <span class="badge {{ $review->book->is_active ? 'bg-success' : 'bg-danger' }}">
-                                                        {{ $review->book->is_active ? 'Còn hàng' : 'Hết hàng' }}
-                                                    </span>
-                                                </p>
-                                                @isset($review->orderItem)
-                                                    <p><strong>Định dạng:</strong> <span class="badge {{ strtolower($review->orderItem->format) === 'ebook' ? 'bg-info' : 'bg-primary' }}">{{ ucfirst($review->orderItem->format) }}</span></p>
-                                                    @isset($review->orderItem->language)
-                                                        <p><strong>Ngôn ngữ:</strong> {{ $review->orderItem->language }}</p>
-                                                    @endisset
-                                                    @isset($review->orderItem->dimensions)
-                                                        <p><strong>Kích thước:</strong> {{ $review->orderItem->dimensions }}</p>
-                                                    @endisset
+                                            <hr>
+
+                                            <p><strong>Đánh giá trung bình:</strong>
+                                                @if ($review->book->reviews_avg_rating)
+                                                    @foreach (range(1, 5) as $i)
+                                                        <i class="fas fa-star{{ $i <= round($review->book->reviews_avg_rating) ? ' text-warning' : ' text-muted' }}"></i>
+                                                    @endforeach
+                                                    ({{ number_format($review->book->reviews_avg_rating, 1) }}/5)
                                                 @else
-                                                    <p class="text-muted">Không có thông tin đơn hàng liên quan.</p>
-                                                @endisset
+                                                    <span class="text-muted">Chưa có đánh giá</span>
+                                                @endif
+                                            </p>
+
+                                            <p><strong>Số lượng đánh giá:</strong> {{ $review->book->reviews_count ?? 0 }}</p>
+                                            <p><strong>Số lượng đã bán:</strong> {{ $review->book->sold_count ?? 0 }}</p>
+
+                                            <div class="mt-3 d-flex gap-2">
+                                                <a href="{{ route('admin.books.show', ['id' => $review->book->id, 'slug' => $review->book->slug ?? Str::slug($review->book->title)]) }}" class="btn btn-outline-dark" target="_blank">
+                                                    <i class="fas fa-cogs me-1"></i> Xem ở trang quản trị
+                                                </a>
+                                                <a href="{{ route('books.show', $review->book->slug ?? $review->book->id) }}" class="btn btn-outline-primary" target="_blank">
+                                                    <i class="fas fa-eye me-1"></i> Xem ở giao diện khách hàng
+                                                </a>
                                             </div>
-                                        </div>
-
-                                        <hr>
-
-                                        <p><strong>Đánh giá trung bình:</strong>
-                                            @if ($review->book->reviews_avg_rating)
-                                                @foreach (range(1, 5) as $i)
-                                                    <i class="fas fa-star{{ $i <= round($review->book->reviews_avg_rating) ? ' text-warning' : ' text-muted' }}"></i>
-                                                @endforeach
-                                                ({{ number_format($review->book->reviews_avg_rating, 1) }}/5)
-                                            @else
-                                                <span class="text-muted">Chưa có đánh giá</span>
-                                            @endif
-                                        </p>
-
-                                        <p><strong>Số lượng đánh giá:</strong> {{ $review->book->reviews_count ?? 0 }}</p>
-                                        <p><strong>Số lượng đã bán:</strong> {{ $review->book->sold_count ?? 0 }}</p>
-
-                                        <div class="mt-3 d-flex gap-2">
-                                            <a href="{{ route('admin.books.show', ['id' => $review->book->id, 'slug' => $review->book->slug ?? Str::slug($review->book->title)]) }}" class="btn btn-outline-dark" target="_blank">
-                                                <i class="fas fa-cogs me-1"></i> Xem ở trang quản trị
-                                            </a>
-                                            <a href="{{ route('books.show', $review->book->slug ?? $review->book->id) }}" class="btn btn-outline-primary" target="_blank">
-                                                <i class="fas fa-eye me-1"></i> Xem ở giao diện khách hàng
-                                            </a>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            @endif
                         @endif
 
                         {{-- Đánh giá khác --}}

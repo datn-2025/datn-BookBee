@@ -64,8 +64,9 @@ class HomeController extends Controller
             ->take(8) // Increase to 8 books for expand/collapse functionality
             ->get();
 
-        // Lấy 10 đánh giá mới nhất
+        // Lấy 10 đánh giá mới nhất (chỉ hiển thị reviews đã được duyệt)
         $reviews = Review::with('user', 'book')
+            ->whereIn('status', ['approved', 'visible'])
             ->orderBy('rating', 'desc')
             ->latest()
             ->take(10)
@@ -96,7 +97,9 @@ class HomeController extends Controller
             'brand',
             'formats',
             'images',
-            'reviews.user',
+            'reviews' => function($query) {
+                $query->whereIn('status', ['approved', 'visible'])->with('user');
+            },
             'attributeValues.attribute'
         ])->where('slug', $slug)->firstOrFail();
 

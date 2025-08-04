@@ -161,8 +161,15 @@ class OrderClientController extends Controller
             'address',
             'voucher',
             'reviews',
-            'refundRequests'
+            'refundRequests',
+            'childOrders.orderItems.book.images',
+            'childOrders.orderItems.collection',
+            'childOrders.orderItems.bookFormat',
+            'childOrders.orderStatus',
+            'childOrders.paymentStatus',
+            'childOrders.refundRequests'
         ])->where('user_id', Auth::id())
+          ->whereNull('parent_order_id') // Chỉ lấy đơn hàng cha hoặc đơn hàng đơn lẻ
           ->latest();
             
         // Lọc theo trạng thái nếu không phải 'all'

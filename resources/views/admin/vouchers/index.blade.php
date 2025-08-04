@@ -154,9 +154,9 @@
                                                     @case('brand')
                                                         Thương hiệu: {{ $condition->brandCondition->name }}
                                                         @break
-                                                    @case('book')
+                                                    {{-- @case('book')
                                                         Sách: {{ $condition->bookCondition->title }}
-                                                        @break
+                                                        @break --}}
                                                 @endswitch
                                             </div>
                                         @endforeach

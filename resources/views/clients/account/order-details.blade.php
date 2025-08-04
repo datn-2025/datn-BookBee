@@ -73,7 +73,19 @@
             @endif
                         </div>
                         <div class="flex items-center gap-4">
-                            <span class="status-badge bg-white text-black">
+                            @php
+                                $orderStatusName = $order->orderStatus->name ?? '';
+                                $orderStatusClass = match($orderStatusName) {
+                                    'Chờ xác nhận' => 'bg-yellow-500 text-white',
+                                    'Đã xác nhận' => 'bg-blue-500 text-white',
+                                    'Đang chuẩn bị' => 'bg-indigo-500 text-white',
+                                    'Đang giao hàng' => 'bg-purple-500 text-white',
+                                    'Đã giao', 'Thành công' => 'bg-green-500 text-white',
+                                    'Đã hủy' => 'bg-red-500 text-white',
+                                    default => 'bg-gray-500 text-white'
+                                };
+                            @endphp
+                            <span class="status-badge {{ $orderStatusClass }}">
                                 {{ $order->orderStatus->name }}
                             </span>
                             <div class="text-right">
@@ -204,7 +216,18 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600 uppercase tracking-wide">Trạng thái thanh toán:</span>
-                                <span class="font-bold text-black">{{ $order->paymentStatus->name ?? 'Chưa thanh toán' }}</span>
+                                @php
+                                    $paymentStatusName = $order->paymentStatus->name ?? 'Chưa thanh toán';
+                                    $paymentStatusClass = match($paymentStatusName) {
+                                        'Đã Thanh Toán' => 'text-green-600 font-bold',
+                                        'Chờ Thanh Toán', 'Chờ Xử Lý' => 'text-yellow-600 font-bold',
+                                        'Đang Xử Lý' => 'text-blue-600 font-bold',
+                                        'Thất Bại' => 'text-red-600 font-bold',
+                                        'Chưa thanh toán' => 'text-gray-600 font-bold',
+                                        default => 'text-black font-bold'
+                                    };
+                                @endphp
+                                <span class="{{ $paymentStatusClass }}">{{ $paymentStatusName }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600 uppercase tracking-wide">Phí vận chuyển:</span>
@@ -407,6 +430,8 @@
                                 </div>
                             @endforeach
                         </div>
+                        
+
                     @else
                         <div class="text-center py-12">
                             <div class="w-20 h-20 bg-gray-100 border-2 border-gray-300 flex items-center justify-center mx-auto mb-6">
@@ -477,13 +502,9 @@
                         });
 
                         $ebookItems = $order->orderItems->filter(function($item) {
-                            // Trường hợp 1: Mua trực tiếp ebook
+                            // Chỉ hiển thị ebook khi mua trực tiếp ebook, không bao gồm sách vật lý có ebook kèm theo
                             if (!$item->is_combo && $item->bookFormat && $item->bookFormat->format_name === 'Ebook') {
                                 return true;
-                            }
-                            // Trường hợp 2: Mua sách vật lý có ebook kèm theo
-                            if (!$item->is_combo && $item->book && $item->book->formats) {
-                                return $item->book->formats->contains('format_name', 'Ebook');
                             }
                             return false;
                         });
@@ -538,50 +559,7 @@
                                                     @endif
                                                 </div>
                                             </div>
-                                        @elseif(!$item->is_combo && $item->book && $item->book->formats->contains('format_name', 'Ebook'))
-                                            {{-- Trường hợp 2: Mua sách vật lý có ebook kèm theo --}}
-                                            @php
-                                                $ebookFormat = $item->book->formats->where('format_name', 'Ebook')->first();
-                                                // dd($ebookFormat);
-                                            @endphp
-                                            @if($ebookFormat && $ebookFormat->file_url)
-                                                <div class="flex items-center justify-between p-4 bg-white border border-green-300 rounded">
-                                                    <div>
-                                                        <h5 class="font-bold text-black">{{ $item->book->title ?? 'Sách không xác định' }}</h5>
-                                                        <p class="text-sm text-gray-600">Định dạng: Ebook (Kèm theo sách vật lý)</p>
-                                                        @if($item->book->authors->isNotEmpty())
-                                                            <p class="text-sm text-gray-600">Tác giả: {{ $item->book->authors->first()->name }}</p>
-                                                        @endif
-                                                    </div>
-                                                    <div class="flex gap-2">
-                                                        @if(in_array($order->paymentStatus->name, ['Đang Hoàn Tiền', 'Đã Hoàn Tiền']))
-                                                            <span class="inline-flex items-center gap-2 px-4 py-2 bg-gray-400 text-white font-bold uppercase tracking-wide cursor-not-allowed">
-                                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
-                                                                </svg>
-                                                                Không khả dụng
-                                                            </span>
-                                                        @else
-                                                            <a href="{{ route('ebook.view', $ebookFormat->id) }}" 
-                                                               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wide transition-all duration-300"
-                                                               target="_blank">
-                                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                                                </svg>
-                                                                Đọc Online
-                                                            </a>
-                                                            <a href="{{ route('ebook.download', $ebookFormat->id) }}?order_id={{ $order->id }}" 
-                                                               class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                                                </svg>
-                                                                Tải Xuống
-                                                            </a>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            @endif
+
                                         @endif
                                     @endforeach
                                 </div>
@@ -594,7 +572,10 @@
                                         <strong>Lưu ý:</strong> Bạn có thể đọc ebook online hoặc tải xuống để đọc offline. File tải xuống sẽ có định dạng PDF.
                                     </p>
                                 </div>
-
+                                {{-- Hiển thị thông báo khi có yêu cầu hoàn tiền (dựa trên trạng thái từ bảng refund_request) --}}
+                                @php
+                                    $latestRefundRequest = $order->refundRequests->sortByDesc('created_at')->first();
+                                @endphp
                                 {{-- Hiển thị thông báo trạng thái hoàn tiền cho ebook (dựa trên refund_request) --}}
                                 @if($latestRefundRequest && $ebookItems->isNotEmpty())
                                     @if($latestRefundRequest->status === 'pending')
@@ -683,7 +664,7 @@
                         // dd($hasEbook);
                     @endphp
                     
-                    @if(\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name) || $canRefundEbook)
+                    @if(!$order->isParentOrder() && (\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name) || $canRefundEbook))
                         <div class="flex items-center gap-3 mb-6">
                             <div class="w-1 h-5 bg-black"></div>
                             <h4 class="text-base font-bold uppercase tracking-wide text-black">THAO TÁC ĐƠN HÀNG</h4>
@@ -745,7 +726,9 @@
                             </div>
                         </div>
                     @endif
-
+                        @php
+                                    $latestRefundRequest = $order->refundRequests->sortByDesc('created_at')->first();
+                                @endphp
                     {{-- Hiển thị phần yêu cầu hoàn tiền chỉ cho đơn hàng vật lý và hỗn hợp (không phải ebook thuần túy) --}}
                     @if($order->orderStatus->name === 'Thành công' && $order->paymentStatus->name === 'Đã Thanh Toán' && in_array($order->delivery_method, ['delivery', 'pickup', 'mixed']))
                         @php
@@ -778,10 +761,7 @@
                         </div>
                     @endif
 
-                    {{-- Hiển thị thông báo khi có yêu cầu hoàn tiền (dựa trên trạng thái từ bảng refund_request) --}}
-                    @php
-                        $latestRefundRequest = $order->refundRequests->sortByDesc('created_at')->first();
-                    @endphp
+                    
                     
                     @if($latestRefundRequest && in_array($order->delivery_method, ['delivery', 'pickup', 'mixed']))
                         <div class="flex items-center gap-3 mb-6">
@@ -918,6 +898,8 @@ function toggleCancelForm() {
     const form = document.getElementById('cancelForm');
     form.classList.toggle('active');
 }
+
+
 
 // GHN Tracking functionality
 @if($order->delivery_method === 'delivery' && $order->ghn_order_code)

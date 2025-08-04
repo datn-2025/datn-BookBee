@@ -18,7 +18,7 @@ class ReviewFactory extends Factory
             'book_id' => Book::factory(),
             'rating' => $this->faker->numberBetween(1, 5),
             'comment' => $this->faker->boolean(80) ? $this->faker->paragraph : null, // 80% chance of having a comment
-            'status' => $this->faker->randomElement(['visible', 'hidden']),
+            'status' => $this->faker->randomElement(['approved', 'pending', 'hidden']),
             'admin_response' => $this->faker->optional()->text(),
         ];
     }
@@ -37,6 +37,15 @@ class ReviewFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'status' => 'pending'
+            ];
+        });
+    }
+    
+    public function hidden(): Factory
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'status' => 'hidden'
             ];
         });
     }
