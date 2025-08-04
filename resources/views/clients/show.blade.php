@@ -94,6 +94,34 @@
             letter-spacing: 1px;
         }
 
+        /* Simplified Variant Overview */
+        .product-detail-page .variant-overview {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+        }
+
+        .product-detail-page .variant-item {
+            cursor: pointer;
+        }
+
+        .product-detail-page .variant-item.out-of-stock {
+            background: #f8f8f8;
+            border: 1px dashed #ddd;
+            cursor: not-allowed;
+        }
+
+        /* Simplified Select Options Styling */
+        .product-detail-page .adidas-select option {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .product-detail-page .adidas-select option:disabled {
+            color: #ef4444;
+            background-color: #fef2f2;
+            font-style: italic;
+        }
+
         /* Enhanced Ebook Status Styling */
         .product-detail-page .ebook-badge {
             background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
@@ -1373,6 +1401,63 @@
                                 </div>
                             @endif
 
+                            {{-- Tổng quan biến thể sản phẩm --}}
+                            @if($book->attributeValues->count())
+                                <div class="variant-overview bg-gray-50 border border-gray-200 p-4 rounded">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <h3 class="text-sm font-bold text-black uppercase tracking-wider adidas-font">
+                                            <i class="fas fa-list-ul mr-2"></i>Biến thể sản phẩm
+                                        </h3>
+                                        @php
+                                            $totalVariants = $book->attributeValues->count();
+                                        @endphp
+                                        <div class="text-xs text-gray-600">
+                                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                                {{ $totalVariants }} biến thể
+                                            </span>
+                                        </div>
+                                    </div>
+                                    @php
+                                        $groupedVariants = $book->attributeValues->groupBy(function($item) {
+                                            return $item->attribute->name ?? 'Khác';
+                                        });
+                                    @endphp
+                                    <div class="space-y-3">
+                                        @foreach($groupedVariants as $attributeName => $variants)
+                                            <div class="border-l-4 border-blue-500 pl-3 bg-white rounded-r-lg p-3 shadow-sm">
+                                                <div class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-2">
+                                                    <i class="fas fa-tag text-blue-500 mr-2"></i>
+                                                    {{ $attributeName }}
+                                                </div>
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                                    @foreach($variants as $variant)
+                                                        @php
+                                                            $stock = $variant->pivot->stock ?? 0;
+                                                            $sku = $variant->pivot->sku ?? '';
+                                                            $extraPrice = $variant->pivot->extra_price ?? 0;
+                                                        @endphp
+                                                        <div class="bg-gray-50 p-2 rounded border variant-item"
+                                                             data-variant-value="{{ $variant->value }}"
+                                                             data-attribute-name="{{ $attributeName }}">
+                                                            <div class="font-medium text-gray-800 text-sm">{{ $variant->value }}</div>
+                                                            <div class="flex justify-between items-center mt-1 text-xs">
+                                                                <span class="text-gray-600">Số lượng: {{ $stock }}</span>
+                                                                @if($sku)
+                                                                    <span class="text-blue-600 font-mono">{{ $sku }}</span>
+                                                                @endif
+                                                            </div>
+                                                            @if($extraPrice > 0)
+                                                                <div class="text-blue-600 text-xs mt-1">+{{ number_format($extraPrice) }}đ</div>
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
                             <!-- Enhanced Format Selection -->
                             @if ($book->formats->count())
                                 <div class="format-selection space-y-3">
@@ -1456,14 +1541,50 @@
                                                     <select name="attributes[{{ $attrVal->id }}]" id="attribute_{{ $attrVal->id }}"
                                                         class="adidas-select w-full appearance-none bg-white">
                                                         @foreach($filteredValues as $bookAttrVal)
+                                                            @php
+                                                                $variantStock = $bookAttrVal->stock ?? 0;
+                                                                $variantSku = $bookAttrVal->sku ?? '';
+                                                                $extraPrice = $bookAttrVal->extra_price ?? 0;
+                                                                $displayText = $bookAttrVal->attributeValue->value ?? 'Không rõ';
+                                                                
+                                                                // Simple display with stock and SKU
+                                                                if ($variantStock > 0) {
+                                                                    $displayText .= " (Số lượng: {$variantStock})";
+                                                                } else {
+                                                                    $displayText .= " (Hết hàng)";
+                                                                }
+                                                                
+                                                                if ($variantSku) {
+                                                                    $displayText .= " - {$variantSku}";
+                                                                }
+                                                            @endphp
                                                             <option value="{{ $bookAttrVal->attribute_value_id }}"
-                                                                data-price="{{ $bookAttrVal->extra_price ?? 0 }}">
-                                                                {{ $bookAttrVal->attributeValue->value ?? 'Không rõ' }}
+                                                                data-price="{{ $extraPrice }}"
+                                                                data-stock="{{ $variantStock }}"
+                                                                data-sku="{{ $variantSku }}"
+                                                                {{ $variantStock == 0 ? 'disabled' : '' }}>
+                                                                {{ $displayText }}
                                                             </option>
                                                         @endforeach
                                                     </select>
                                                     <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
                                                         <i class="fas fa-chevron-down text-black"></i>
+                                                    </div>
+                                                </div>
+                                                
+                                                {{-- Thông tin biến thể đã chọn --}}
+                                                <div id="variant_info_{{ $attrVal->id }}" class="mt-2 text-xs text-gray-600 hidden">
+                                                    <div class="bg-blue-50 border border-blue-200 p-3 rounded">
+                                                        <div class="grid grid-cols-2 gap-3">
+                                                            <div>
+                                                                <span class="font-semibold">SKU:</span> 
+                                                                <span id="selected_sku_{{ $attrVal->id }}" class="font-mono text-blue-600">-</span>
+                                                            </div>
+                                                            <div>
+                                                                <span class="font-semibold">Số lượng:</span> 
+                                                                <span id="selected_stock_{{ $attrVal->id }}" class="font-semibold text-green-600">-</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -2109,6 +2230,8 @@
                 let stock = 0;
                 let discount = 0;
                 let isEbook = false;
+                let variantStock = 0;
+                let selectedVariantInfo = [];
 
                 // Get format data
                 if (formatSelect && formatSelect.selectedOptions[0]) {
@@ -2119,14 +2242,57 @@
                     const selectedText = selectedOption.textContent.trim().toLowerCase();
                     isEbook = selectedText.includes('ebook');
                 }
-                // Add attribute extra costs
+
+                // Add attribute extra costs and get variant stock
                 const attributeSelects = document.querySelectorAll('[name^="attributes["]');
+                let totalVariantStock = stock; // Start with format stock
+                let lowestVariantStock = stock;
+                
                 attributeSelects.forEach(select => {
                     if (select.selectedOptions[0]) {
-                        const extraPrice = parseFloat(select.selectedOptions[0].dataset.price) || 0;
+                        const selectedOption = select.selectedOptions[0];
+                        const extraPrice = parseFloat(selectedOption.dataset.price) || 0;
+                        const attributeStock = parseInt(selectedOption.dataset.stock) || 0;
+                        const attributeSku = selectedOption.dataset.sku || '';
+                        
                         finalPrice += extraPrice;
+                        
+                        // For physical books, use the minimum stock among variants
+                        if (!isEbook && attributeStock >= 0) {
+                            lowestVariantStock = Math.min(lowestVariantStock, attributeStock);
+                            selectedVariantInfo.push({
+                                selectId: select.id,
+                                stock: attributeStock,
+                                sku: attributeSku
+                            });
+                        }
+                        
+                        // Update variant info display (simplified)
+                        const attributeId = select.id.replace('attribute_', '');
+                        const skuElement = document.getElementById(`selected_sku_${attributeId}`);
+                        const stockElement = document.getElementById(`selected_stock_${attributeId}`);
+                        const infoElement = document.getElementById(`variant_info_${attributeId}`);
+                        
+                        if (skuElement) {
+                            const displaySku = attributeSku || 'N/A';
+                            skuElement.textContent = displaySku;
+                        }
+                        
+                        if (stockElement) {
+                            stockElement.textContent = `${attributeStock}`;
+                        }
+                        
+                        if (infoElement) {
+                            infoElement.classList.remove('hidden');
+                        }
                     }
                 });
+                
+                // Use the lowest variant stock for physical books
+                if (!isEbook && selectedVariantInfo.length > 0) {
+                    stock = lowestVariantStock;
+                }
+
                 // Calculate final price with discount
                 const priceAfterDiscount = finalPrice - discount;
                 // Update price display
@@ -2274,9 +2440,20 @@
                             // Ensure the productQuantity span exists and update it
                             let productQuantitySpan = document.getElementById('productQuantity');
                             if (!productQuantitySpan) {
-                                stockQuantityDisplay.innerHTML = `(<span class="font-bold text-black" id="productQuantity">${stock}</span> cuốn còn lại)`;
+                                let stockText = stock;
+                                // Add variant info if available
+                                if (selectedVariantInfo.length > 0) {
+                                    const variantSkus = selectedVariantInfo.map(v => v.sku).filter(sku => sku).join(', ');
+                                    stockText = `${stock} ${variantSkus ? `(${variantSkus})` : ''}`;
+                                }
+                                stockQuantityDisplay.innerHTML = `(<span class="font-bold text-black" id="productQuantity">${stockText}</span> cuốn còn lại)`;
                             } else {
-                                productQuantitySpan.textContent = stock;
+                                let stockText = stock;
+                                if (selectedVariantInfo.length > 0) {
+                                    const variantSkus = selectedVariantInfo.map(v => v.sku).filter(sku => sku).join(', ');
+                                    stockText = `${stock} ${variantSkus ? `(${variantSkus})` : ''}`;
+                                }
+                                productQuantitySpan.innerHTML = stockText;
                             }
                             stockQuantityDisplay.style.display = 'inline';
                         } else {
@@ -2339,6 +2516,49 @@
                 }
             }
 
+            // Initialize variant overview interactions
+            function initializeVariantOverview() {
+                const variantItems = document.querySelectorAll('.variant-item:not(.out-of-stock)');
+                
+                variantItems.forEach(item => {
+                    // Add click interaction to select variant
+                    item.addEventListener('click', function() {
+                        const variantValue = this.dataset.variantValue;
+                        const attributeName = this.dataset.attributeName;
+                        const stock = this.dataset.stock;
+                        const sku = this.dataset.sku;
+                        
+                        // Find corresponding select by matching attribute name
+                        const attributeSelects = document.querySelectorAll('[name^="attributes["]');
+                        attributeSelects.forEach(select => {
+                            // Get the label text to match with attribute name
+                            const label = select.closest('.attribute-item').querySelector('label');
+                            if (label && label.textContent.trim().toLowerCase().includes(attributeName.toLowerCase())) {
+                                const options = select.querySelectorAll('option');
+                                options.forEach(option => {
+                                    const optionText = option.textContent.trim();
+                                    // Match by variant value (before any stock info)
+                                    if (optionText.includes(variantValue) || optionText.startsWith(variantValue)) {
+                                        select.value = option.value;
+                                        // Trigger change event to update price and stock
+                                        select.dispatchEvent(new Event('change'));
+                                        
+                                        // Add visual feedback
+                                        item.style.transform = 'scale(0.95)';
+                                        setTimeout(() => {
+                                            item.style.transform = '';
+                                        }, 150);
+                                        
+                                        // Show simple feedback
+                                        console.log(`Selected variant: ${variantValue} (${attributeName})`);
+                                    }
+                                });
+                            }
+                        });
+                    });
+                });
+            }
+
             // Event listeners
             $(document).ready(function () {
                 const formatSelect = document.getElementById('bookFormatSelect');
@@ -2351,6 +2571,8 @@
                     select.addEventListener('change', updatePriceAndStock);
                 });
 
+                // Initialize variant overview interactions
+                initializeVariantOverview();
 
                 // Handle add to cart button
                 const addToCartBtn = document.getElementById('addToCartBtn');
