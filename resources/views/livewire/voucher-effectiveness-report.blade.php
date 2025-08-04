@@ -4,11 +4,11 @@
         <div class="col-md-9 d-flex justify-content-end gap-2 flex-wrap">
             <div>
                 <label>Từ ngày:</label>
-                <input type="date" wire:model.defer="fromDate" class="form-control" />
+                <input type="date" wire:model="fromDate" class="voucher-input form-control" value="{{ $fromDate }}" />
             </div>
             <div>
                 <label>Đến ngày:</label>
-                <input type="date" wire:model.defer="toDate" class="form-control" />
+                <input type="date" wire:model="toDate" class="voucher-input form-control" value="{{ $toDate }}" />
             </div>
             <div class="d-flex gap-2 align-items-end">
                 <button wire:click="applyCustomFilter" class="btn btn-primary">Áp dụng</button>

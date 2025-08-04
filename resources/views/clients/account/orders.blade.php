@@ -109,6 +109,11 @@
                                             HỖN HỢP
                                         </span>
                                         @endif
+                                        @if($order->isParentOrder())
+                                        <span class="ml-2 px-2 py-1 bg-blue-500 text-white text-xs font-bold uppercase tracking-wide rounded">
+                                            ĐƠN HÀNG CHA
+                                        </span>
+                                        @endif
                                     </h3>
                                     </div>
                                     <p class="text-sm text-gray-600 uppercase tracking-wide">
@@ -118,7 +123,19 @@
                             </div>
                             
                             <div class="flex items-center gap-4">
-                                <span class="status-badge bg-black text-white">
+                                @php
+                                    $orderStatusName = $order->orderStatus->name ?? '';
+                                    $orderStatusClass = match($orderStatusName) {
+                                        'Chờ xác nhận' => 'bg-yellow-500 text-white',
+                                        'Đã xác nhận' => 'bg-blue-500 text-white',
+                                        'Đang chuẩn bị' => 'bg-indigo-500 text-white',
+                                        'Đang giao hàng' => 'bg-purple-500 text-white',
+                                        'Đã giao', 'Thành công' => 'bg-green-500 text-white',
+                                        'Đã hủy' => 'bg-red-500 text-white',
+                                        default => 'bg-gray-500 text-white'
+                                    };
+                                @endphp
+                                <span class="status-badge {{ $orderStatusClass }}">
                                     {{ $order->orderStatus->name }}
                                 </span>
                                 <div class="text-right">
@@ -126,6 +143,14 @@
                                     <p class="text-2xl font-black text-black">
                                         {{ number_format($order->total_amount, 0, ',', '.') }}đ
                                     </p>
+                                    @if($order->isParentOrder())
+                                    <button type="button" class="mt-2 px-3 py-1 bg-black text-white text-xs font-bold uppercase tracking-wide rounded hover:bg-gray-800 transition-colors" onclick="toggleChildOrders('{{ $order->id }}')">
+                                        <span id="toggle-text-{{ $order->id }}">XEM CHI TIẾT</span>
+                                        <svg id="toggle-icon-{{ $order->id }}" class="inline-block w-3 h-3 ml-1 transition-transform" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </button>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -133,6 +158,234 @@
 
                     <!-- Order Content -->
                     <div class="p-8">
+                        @if($order->isParentOrder())
+                            <!-- Child Orders Section -->
+                            <div id="child-orders-{{ $order->id }}" class="hidden mb-8">
+                                <div class="flex items-center gap-3 mb-6">
+                                    <div class="w-1 h-5 bg-blue-500"></div>
+                                    <h4 class="text-base font-bold uppercase tracking-wide text-black">ĐƠN HÀNG CON</h4>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    @foreach($order->childOrders as $childOrder)
+                                    <div class="bg-gray-50 border-2 border-gray-200 p-6">
+                                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+                                            <div>
+                                                <h5 class="text-lg font-bold text-black mb-2">
+                                                    #{{ $childOrder->order_code }}
+                                                    <span class="ml-2 px-2 py-1 bg-gray-500 text-white text-xs font-bold uppercase tracking-wide rounded">
+                                                        {{ $childOrder->delivery_method === 'pickup' ? 'NHẬN TẠI CỬA HÀNG' : ($childOrder->delivery_method === 'ebook' ? 'EBOOK' : 'GIAO HÀNG') }}
+                                                    </span>
+                                                </h5>
+                                                <p class="text-sm text-gray-600">{{ $childOrder->created_at->format('d/m/Y H:i') }}</p>
+                                            </div>
+                                            <div class="flex items-center gap-4">
+                                                @php
+                                                    $childOrderStatusName = $childOrder->orderStatus->name ?? '';
+                                                    $childOrderStatusClass = match($childOrderStatusName) {
+                                                        'Chờ xác nhận' => 'bg-yellow-500 text-white',
+                                                        'Đã xác nhận' => 'bg-blue-500 text-white',
+                                                        'Đang chuẩn bị' => 'bg-indigo-500 text-white',
+                                                        'Đang giao hàng' => 'bg-purple-500 text-white',
+                                                        'Đã giao', 'Thành công' => 'bg-green-500 text-white',
+                                                        'Đã hủy' => 'bg-red-500 text-white',
+                                                        default => 'bg-gray-500 text-white'
+                                                    };
+                                                @endphp
+                                                <span class="status-badge {{ $childOrderStatusClass }}">
+                                                    {{ $childOrder->orderStatus->name }}
+                                                </span>
+                                                <div class="text-right">
+                                                    <p class="text-lg font-bold text-black">
+                                                        {{ number_format($childOrder->total_amount, 0, ',', '.') }}đ
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Child Order Products -->
+                                        @if($childOrder->orderItems->count() > 0)
+                                        <div class="mt-6 border-t border-gray-300 pt-4">
+                                            <h6 class="text-sm font-bold uppercase tracking-wide text-black mb-4">SẢN PHẨM ({{ $childOrder->orderItems->sum('quantity') }} sản phẩm)</h6>
+                                            <div class="space-y-6">
+                                                @foreach($childOrder->orderItems as $item)
+                                                <div class="flex flex-col lg:flex-row gap-6 p-6 border-2 border-gray-200 hover:border-black transition-all duration-300">
+                                                    <!-- Product Image -->
+                                                    <div class="flex-shrink-0">
+                                                        <div class="w-24 h-32 bg-gray-200 border-2 border-gray-300 overflow-hidden">
+                                                            @if($item->isCombo())
+                                                                @if($item->collection && $item->collection->cover_image)
+                                                                    <img src="{{ asset('storage/' . $item->collection->cover_image) }}" 
+                                                                         alt="{{ $item->collection->name }}" 
+                                                                         class="w-full h-full object-cover">
+                                                                @else
+                                                                    <div class="w-full h-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center">
+                                                                        <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                                        </svg>
+                                                                    </div>
+                                                                @endif
+                                                            @else
+                                                                @if($item->book && $item->book->cover_image)
+                                                                    <img src="{{ asset('storage/' . $item->book->cover_image) }}" 
+                                                                         alt="{{ $item->book->title }}" 
+                                                                         class="w-full h-full object-cover">
+                                                                @else
+                                                                    <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+                                                                        <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                @endif
+                                                            @endif
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Product Info -->
+                                                    <div class="flex-1">
+                                                        @if($item->isCombo())
+                                                            <div class="flex items-center gap-2 mb-2">
+                                                                <span class="inline-flex items-center px-3 py-1 text-xs font-bold uppercase tracking-wide bg-purple-100 text-purple-800 border border-purple-200">
+                                                                    COMBO
+                                                                </span>
+                                                            </div>
+                                                            <h5 class="text-lg font-bold text-black mb-2">
+                                                                {{ $item->collection->name ?? 'Combo không xác định' }}
+                                                            </h5>
+                                                        @else
+                                                            <h5 class="text-lg font-bold text-black mb-2">
+                                                                {{ $item->book->title ?? 'Sách không xác định' }}
+                                                            </h5>
+                                                            @if($item->bookFormat)
+                                                                <p class="text-sm text-gray-600 uppercase tracking-wide mb-2">
+                                                                    Định dạng: {{ $item->bookFormat->format_name }}
+                                                                </p>
+                                                            @endif
+                                                        @endif
+                                                        
+                                                        <div class="flex items-center gap-6 text-sm">
+                                                            <span class="text-gray-600 uppercase tracking-wide">Số lượng: <span class="font-bold text-black">{{ $item->quantity }}</span></span>
+                                                            <span class="text-gray-600 uppercase tracking-wide">Đơn giá: <span class="font-bold text-black">{{ number_format($item->price) }}đ</span></span>
+                                                            <span class="text-gray-600 uppercase tracking-wide">Thành tiền: <span class="font-bold text-black">{{ number_format($item->price * $item->quantity) }}đ</span></span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Review Section for Child Order -->
+                                                    @if(in_array($childOrder->orderStatus->name, ['Đã giao', 'Thành công']))
+                                                        <div class="lg:w-80 flex-shrink-0">
+                                                            @php
+                                                                // Kiểm tra đánh giá cho combo hoặc sách trong đơn hàng con
+                                                                if ($item->isCombo()) {
+                                                                    $review = $childOrder->reviews()->withTrashed()->where('collection_id', $item->collection_id)->first();
+                                                                } else {
+                                                                    $review = $childOrder->reviews()->withTrashed()->where('book_id', $item->book_id)->first();
+                                                                }
+                                                            @endphp
+
+                                                            @if($review && !$review->trashed())
+                                                                <div class="bg-gray-50 border-2 border-gray-200 p-4">
+                                                                    <div class="flex items-center gap-2 mb-2">
+                                                                        <div class="w-1 h-4 bg-green-500"></div>
+                                                                        <h6 class="font-bold text-sm uppercase tracking-wide text-black">ĐÁNH GIÁ CỦA BẠN</h6>
+                                                                    </div>
+                                                                    <div class="flex items-center text-yellow-400 mb-2">
+                                                                        @for($i = 1; $i <= 5; $i++)
+                                                                            <i class="fas fa-star {{ $i <= $review->rating ? '' : 'text-gray-300' }}"></i>
+                                                                        @endfor
+                                                                    </div>
+                                                                    <p class="text-sm text-gray-600 italic">"{{ $review->comment ?? 'Không có nhận xét' }}"</p>
+                                                                    @if($review->admin_response)
+                                                                        <div class="mt-3 pt-3 border-t border-gray-300">
+                                                                            <p class="text-xs font-bold uppercase tracking-wide text-black mb-1">Phản hồi từ BookBee:</p>
+                                                                            <p class="text-sm text-gray-600">{{ $review->admin_response }}</p>
+                                                                        </div>
+                                                                    @endif
+                                                                    {{-- <div class="flex gap-2 mt-3">
+                                                                        @if ($review->user_id === auth()->id())
+                                                                            <a href="{{ route('account.reviews.edit', $review->id) }}" 
+                                                                               class="px-3 py-1 bg-black text-white text-xs font-medium hover:bg-gray-900 transition-colors duration-150">
+                                                                                Sửa đánh giá
+                                                                            </a>
+                                                                            <form action="{{ route('account.reviews.destroy', $review->id) }}" method="POST" 
+                                                                                  onsubmit="return confirm('Bạn có chắc chắn muốn xóa đánh giá này?');" class="inline">
+                                                                                @csrf
+                                                                                @method('DELETE')
+                                                                                <button type="submit" 
+                                                                                        class="px-3 py-1 bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition-colors duration-150">
+                                                                                    Xóa
+                                                                                </button>
+                                                                            </form>
+                                                                        @endif
+                                                                    </div> --}}
+                                                                </div>
+                                                            @else
+                                                                <form action="{{ route('account.reviews.store') }}" method="POST" class="space-y-4 review-form bg-gray-50 border-2 border-gray-200 p-4 quick-review-form">
+                                                                    @csrf
+                                                                    <input type="hidden" name="order_id" value="{{ $childOrder->id }}">
+                                                                    @if($item->isCombo())
+                                                                        <input type="hidden" name="collection_id" value="{{ $item->collection_id }}">
+                                                                    @else
+                                                                        <input type="hidden" name="book_id" value="{{ $item->book_id }}">
+                                                                    @endif
+                                                                    
+                                                                    <div class="flex items-center gap-2 mb-3">
+                                                                        <div class="w-1 h-4 bg-blue-500"></div>
+                                                                        <h6 class="font-bold text-sm uppercase tracking-wide text-black">
+                                                                            ĐÁNH GIÁ {{ $item->isCombo() ? 'COMBO' : 'SẢN PHẨM' }}
+                                                                        </h6>
+                                                                    </div>
+                                                                    
+                                                                    <div class="star-rating flex flex-row-reverse justify-end items-center gap-1 quick-star-group" data-order="{{ $childOrder->id }}" data-item="{{ $item->isCombo() ? 'combo_'.$item->collection_id : 'book_'.$item->book_id }}">
+                                                                        @for($i = 5; $i >= 1; $i--)
+                                                                            <input type="radio" id="child-star-{{$childOrder->id}}-{{ $item->isCombo() ? 'combo_'.$item->collection_id : 'book_'.$item->book_id }}-{{ $i }}" name="rating" value="{{ $i }}" class="sr-only" {{ old('rating', 5) == $i ? 'checked' : '' }}>
+                                                                            <label for="child-star-{{$childOrder->id}}-{{ $item->isCombo() ? 'combo_'.$item->collection_id : 'book_'.$item->book_id }}-{{ $i }}" class="text-gray-300 text-2xl cursor-pointer transition-colors hover:text-yellow-400 quick-star-label" data-star="{{ $i }}">★</label>
+                                                                        @endfor
+                                                                    </div>
+                                                                    
+                                                                    <div>
+                                                                        <textarea name="comment" rows="4" 
+                                                                                  class="w-full px-4 py-3 border-2 border-gray-300 focus:border-black focus:outline-none text-sm" 
+                                                                                  placeholder="Chia sẻ cảm nhận của bạn về {{ $item->isCombo() ? 'combo' : 'sản phẩm' }} này...">{{ old('comment') }}</textarea>
+                                                                    </div>
+                                                                    
+                                                                    <button type="submit" 
+                                                                            class="w-full px-6 py-3 bg-black hover:bg-gray-800 text-white font-bold uppercase tracking-wide transition-all duration-300">
+                                                                        GỬI ĐÁNH GIÁ
+                                                                    </button>
+                                                                </form>
+                                                            @endif
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        @endif
+                                        
+                                        <!-- Child Order Actions -->
+                                        <div class="flex gap-2 mt-4">
+                                            <a href="{{ route('orders.show', $childOrder->id) }}" 
+                                               class="inline-flex items-center px-4 py-2 border-2 border-black text-black hover:bg-black hover:text-white font-bold text-xs uppercase tracking-wide transition-all duration-300">
+                                                XEM CHI TIẾT
+                                            </a>
+                                            
+                                            @if(\App\Helpers\OrderStatusHelper::canBeCancelled($childOrder->orderStatus->name))
+                                                <form action="{{ route('account.orders.cancel', $childOrder->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <button type="submit" 
+                                                            class="inline-flex items-center px-4 py-2 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-bold text-xs uppercase tracking-wide transition-all duration-300"
+                                                            onclick="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')">
+                                                        HỦY ĐƠN HÀNG
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                         <!-- Order Info Grid -->
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                             <!-- Order Details -->
@@ -171,7 +424,18 @@
                                                 @endif
                                             </span>
                                         @else
-                                            <span class="font-bold text-black">{{ $order->paymentStatus->name ?? 'Chưa thanh toán' }}</span>
+                                            @php
+                                                $paymentStatusName = $order->paymentStatus->name ?? 'Chưa thanh toán';
+                                                $paymentStatusClass = match($paymentStatusName) {
+                                                    'Đã Thanh Toán' => 'text-green-600 font-bold',
+                                                    'Chờ Thanh Toán', 'Chờ Xử Lý' => 'text-yellow-600 font-bold',
+                                                    'Đang Xử Lý' => 'text-blue-600 font-bold',
+                                                    'Thất Bại' => 'text-red-600 font-bold',
+                                                    'Chưa thanh toán' => 'text-gray-600 font-bold',
+                                                    default => 'text-black font-bold'
+                                                };
+                                            @endphp
+                                            <span class="{{ $paymentStatusClass }}">{{ $paymentStatusName }}</span>
                                         @endif
                                     </div>
                                     <div class="flex justify-between">
@@ -255,7 +519,7 @@
                         </div>
 
                         <!-- Order Items -->
-                        @if($order->orderItems->count() > 0)
+                        @if(!$order->isParentOrder() && $order->orderItems->count() > 0)
                         <div class="border-t-2 border-gray-200 pt-8">
                             <div class="flex items-center gap-3 mb-6">
                                 <div class="w-1 h-5 bg-black"></div>
@@ -326,13 +590,18 @@
                                         </div>
 
                                         <!-- Review Section -->
-                                        @if(!$item->isCombo() && in_array($order->orderStatus->name, ['Đã giao', 'Thành công']))
+                                        @if(in_array($order->orderStatus->name, ['Đã giao', 'Thành công']))
                                             <div class="lg:w-80 flex-shrink-0">
                                                 @php
-                                                    $review = $order->reviews()->where('book_id', $item->book_id)->first();
+                                                    // Kiểm tra đánh giá cho combo hoặc sách
+                                                    if ($item->isCombo()) {
+                                                        $review = $order->reviews()->withTrashed()->where('collection_id', $item->collection_id)->first();
+                                                    } else {
+                                                        $review = $order->reviews()->withTrashed()->where('book_id', $item->book_id)->first();
+                                                    }
                                                 @endphp
 
-                                                @if($review)
+                                                @if($review && !$review->trashed())
                                                     <div class="bg-gray-50 border-2 border-gray-200 p-4">
                                                         <div class="flex items-center gap-2 mb-2">
                                                             <div class="w-1 h-4 bg-green-500"></div>
@@ -343,41 +612,76 @@
                                                                 <i class="fas fa-star {{ $i <= $review->rating ? '' : 'text-gray-300' }}"></i>
                                                             @endfor
                                                         </div>
-                                                        <p class="text-sm text-gray-600 italic">"{{ $review->comment }}"</p>
+                                                        <p class="text-sm text-gray-600 italic">"{{ $review->comment ?? 'Không có nhận xét' }}"</p>
                                                         @if($review->admin_response)
                                                             <div class="mt-3 pt-3 border-t border-gray-300">
                                                                 <p class="text-xs font-bold uppercase tracking-wide text-black mb-1">Phản hồi từ BookBee:</p>
                                                                 <p class="text-sm text-gray-600">{{ $review->admin_response }}</p>
                                                             </div>
                                                         @endif
+                                                        <div class="flex gap-2 mt-3">
+                                                            @if ($review->user_id === auth()->id())
+                                                                <a href="{{ route('account.reviews.edit', $review->id) }}" 
+                                                                   class="px-3 py-1 bg-black text-white text-xs font-medium hover:bg-gray-900 transition-colors duration-150">
+                                                                    Sửa đánh giá
+                                                                </a>
+                                                                <form action="{{ route('account.reviews.destroy', $review->id) }}" method="POST" 
+                                                                      onsubmit="return confirm('Bạn có chắc chắn muốn xóa đánh giá này?');" class="inline">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button type="submit" 
+                                                                            class="px-3 py-1 bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition-colors duration-150">
+                                                                        Xóa
+                                                                    </button>
+                                                                </form>
+                                                            @endif
+                                                        </div>
                                                     </div>
                                                 @else
-                                                    <form action="{{ route('account.reviews.store') }}" method="POST" class="space-y-4 review-form bg-gray-50 border-2 border-gray-200 p-4">
+                                                    <form action="{{ route('account.reviews.store') }}" method="POST" class="space-y-4 review-form bg-gray-50 border-2 border-gray-200 p-4 quick-review-form">
                                                         @csrf
                                                         <input type="hidden" name="order_id" value="{{ $order->id }}">
-                                                        <input type="hidden" name="book_id" value="{{ $item->book_id }}">
+                                                        @if($item->isCombo())
+                                                            <input type="hidden" name="collection_id" value="{{ $item->collection_id }}">
+                                                        @else
+                                                            <input type="hidden" name="book_id" value="{{ $item->book_id }}">
+                                                        @endif
                                                         
                                                         <div class="flex items-center gap-2 mb-3">
                                                             <div class="w-1 h-4 bg-blue-500"></div>
-                                                            <h6 class="font-bold text-sm uppercase tracking-wide text-black">ĐÁNH GIÁ SẢN PHẨM</h6>
+                                                            <h6 class="font-bold text-sm uppercase tracking-wide text-black">
+                                                                ĐÁNH GIÁ {{ $item->isCombo() ? 'COMBO' : 'SẢN PHẨM' }}
+                                                            </h6>
                                                         </div>
                                                         
-                                                        <div class="star-rating flex flex-row-reverse justify-end items-center gap-1">
+                                                        <div class="star-rating flex flex-row-reverse justify-end items-center gap-1 quick-star-group" data-order="{{ $order->id }}" data-item="{{ $item->isCombo() ? 'combo_'.$item->collection_id : 'book_'.$item->book_id }}">
                                                             @for($i = 5; $i >= 1; $i--)
-                                                                <input type="radio" id="star-{{$item->id}}-{{ $i }}" name="rating" value="{{ $i }}" class="sr-only" {{ old('rating', 5) == $i ? 'checked' : '' }}>
-                                                                <label for="star-{{$item->id}}-{{ $i }}" class="text-gray-300 text-2xl cursor-pointer transition-colors hover:text-yellow-400">★</label>
+                                                                <input type="radio" id="star-{{$order->id}}-{{ $item->isCombo() ? 'combo_'.$item->collection_id : 'book_'.$item->book_id }}-{{ $i }}" name="rating" value="{{ $i }}" class="sr-only" {{ old('rating', 5) == $i ? 'checked' : '' }}>
+                                                                <label for="star-{{$order->id}}-{{ $item->isCombo() ? 'combo_'.$item->collection_id : 'book_'.$item->book_id }}-{{ $i }}" class="text-gray-300 text-2xl cursor-pointer transition-colors hover:text-yellow-400 quick-star-label" data-star="{{ $i }}">★</label>
                                                             @endfor
                                                         </div>
                                                         
                                                         <textarea name="comment" rows="3" 
                                                                   class="w-full px-3 py-2 border-2 border-gray-300 focus:border-black focus:ring-0 text-sm" 
-                                                                  placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..." 
-                                                                  required>{{ old('comment') }}</textarea>
+                                                                  placeholder="Chia sẻ trải nghiệm của bạn về {{ $item->isCombo() ? 'combo' : 'sản phẩm' }} này...">{{ old('comment') }}</textarea>
                                                         
-                                                        <button type="submit" 
-                                                                class="w-full px-4 py-3 bg-black hover:bg-gray-800 text-white text-sm font-bold uppercase tracking-wide transition-colors duration-300">
-                                                            GỬI ĐÁNH GIÁ
-                                                        </button>
+                                                        <div class="flex gap-2">
+                                                            <button type="submit" 
+                                                                    class="flex-1 px-4 py-3 bg-black hover:bg-gray-800 text-white text-sm font-bold uppercase tracking-wide transition-colors duration-300">
+                                                                GỬI ĐÁNH GIÁ
+                                                            </button>
+                                                            @if($item->isCombo())
+                                                                <a href="{{ route('account.reviews.create.combo', ['orderId' => $order->id, 'collectionId' => $item->collection_id]) }}" 
+                                                                   class="px-3 py-3 bg-gray-200 text-black text-xs font-medium hover:bg-gray-300 transition-colors duration-150">
+                                                                    Chi tiết
+                                                                </a>
+                                                            @else
+                                                                <a href="{{ route('account.reviews.create', ['orderId' => $order->id, 'bookId' => $item->book_id]) }}" 
+                                                                   class="px-3 py-3 bg-gray-200 text-black text-xs font-medium hover:bg-gray-300 transition-colors duration-150">
+                                                                    Chi tiết
+                                                                </a>
+                                                            @endif
+                                                        </div>
                                                     </form>
                                                 @endif
                                             </div>
@@ -402,7 +706,7 @@
                                     </a>
                                 </div>
                                 
-                                @if(\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name))
+                                @if(!$order->isParentOrder() && \App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name))
                                     <form action="{{ route('account.orders.cancel', $order->id) }}" method="POST" class="inline">
                                         @csrf
                                         @method('PUT')
@@ -454,10 +758,66 @@
 </div>
 @endsection
 
+@push('styles')
+<style>
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.4;
+    }
+    
+    .child-order-item:hover {
+        transform: translateY(-1px);
+    }
+    
+    .product-image-container:hover img {
+        transform: scale(1.05);
+    }
+    
+    .review-section {
+        backdrop-filter: blur(10px);
+    }
+    
+    .star-hover:hover {
+        transform: scale(1.1);
+    }
+    
+    .gradient-border {
+        background: linear-gradient(45deg, #f3f4f6, #e5e7eb);
+        padding: 1px;
+        border-radius: 12px;
+    }
+    
+    .gradient-border-inner {
+        background: white;
+        border-radius: 11px;
+    }
+</style>
+@endpush
+
 @push('scripts')
 <script>
-// Enhanced star rating interaction
+// Enhanced star rating interaction and quick review functionality
 document.addEventListener('DOMContentLoaded', function() {
+    // Toggle child orders visibility
+    window.toggleChildOrders = function(orderId) {
+        const childOrdersDiv = document.getElementById('child-orders-' + orderId);
+        const toggleText = document.getElementById('toggle-text-' + orderId);
+        const toggleIcon = document.getElementById('toggle-icon-' + orderId);
+        
+        if (childOrdersDiv.classList.contains('hidden')) {
+            childOrdersDiv.classList.remove('hidden');
+            toggleText.textContent = 'ẨN CHI TIẾT';
+            toggleIcon.style.transform = 'rotate(180deg)';
+        } else {
+            childOrdersDiv.classList.add('hidden');
+            toggleText.textContent = 'XEM CHI TIẾT';
+            toggleIcon.style.transform = 'rotate(0deg)';
+        }
+    };
+    // Star rating interaction
     const starRatings = document.querySelectorAll('.star-rating');
     
     starRatings.forEach(rating => {
@@ -492,6 +852,124 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    // Quick review form submission
+    const quickReviewForms = document.querySelectorAll('.quick-review-form');
+    
+    quickReviewForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            
+            // Disable button and show loading
+            submitButton.disabled = true;
+            submitButton.textContent = 'ĐANG GỬI...';
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const successDiv = document.createElement('div');
+                    successDiv.className = 'bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4';
+                    successDiv.innerHTML = '<strong>Thành công!</strong> ' + data.message;
+                    
+                    this.parentNode.insertBefore(successDiv, this);
+                    
+                    // Reload page after 2 seconds
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    // Show error message
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4';
+                    errorDiv.innerHTML = '<strong>Lỗi!</strong> ' + (data.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+                    
+                    this.parentNode.insertBefore(errorDiv, this);
+                    
+                    // Re-enable button
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4';
+                errorDiv.innerHTML = '<strong>Lỗi!</strong> Có lỗi xảy ra, vui lòng thử lại.';
+                
+                this.parentNode.insertBefore(errorDiv, this);
+                
+                // Re-enable button
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            });
+        });
+    });
+
+    // Enhanced star interaction for quick review
+    const quickStarGroups = document.querySelectorAll('.quick-star-group');
+    
+    quickStarGroups.forEach(group => {
+        const stars = group.querySelectorAll('.quick-star-label');
+        const inputs = group.querySelectorAll('input[type="radio"]');
+        
+        stars.forEach(star => {
+            star.addEventListener('mouseenter', function() {
+                const rating = parseInt(this.dataset.star);
+                highlightStars(stars, rating);
+            });
+            
+            star.addEventListener('click', function() {
+                const rating = parseInt(this.dataset.star);
+                const input = group.querySelector(`input[value="${rating}"]`);
+                if (input) {
+                    input.checked = true;
+                    highlightStars(stars, rating);
+                }
+            });
+        });
+        
+        group.addEventListener('mouseleave', function() {
+            const checkedInput = group.querySelector('input:checked');
+            if (checkedInput) {
+                const rating = parseInt(checkedInput.value);
+                highlightStars(stars, rating);
+            } else {
+                resetStars(stars);
+            }
+        });
+    });
+    
+    function highlightStars(stars, rating) {
+        stars.forEach(star => {
+            const starValue = parseInt(star.dataset.star);
+            if (starValue <= rating) {
+                star.style.color = '#f59e0b'; // yellow
+            } else {
+                star.style.color = '#d1d5db'; // gray
+            }
+        });
+    }
+    
+    function resetStars(stars) {
+        stars.forEach(star => {
+            star.style.color = '#d1d5db'; // gray
+        });
+    }
 });
 </script>
 @endpush

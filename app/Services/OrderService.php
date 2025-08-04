@@ -93,7 +93,9 @@ class OrderService
         // Tạo các order items
         foreach ($cartItems as $item) {
             $total = $item->price * $item->quantity;
-            OrderItem::create([
+            
+            // Tạo order item với thông tin combo nếu có
+            $orderItemData = [
                 'id' => (string) Str::uuid(),
                 'order_id' => $order->id,
                 'book_id' => $item->book_id,
@@ -101,7 +103,45 @@ class OrderService
                 'quantity' => $item->quantity,
                 'price' => $item->price,
                 'total' => $total
-            ]);
+            ];
+            
+            // Thêm thông tin combo nếu có
+            if (isset($item->is_combo) && $item->is_combo) {
+                $orderItemData['collection_id'] = $item->collection_id;
+                $orderItemData['is_combo'] = true;
+                $orderItemData['item_type'] = 'combo';
+            } else {
+                $orderItemData['is_combo'] = false;
+                $orderItemData['item_type'] = 'book';
+            }
+            
+            $orderItem = OrderItem::create($orderItemData);
+            
+            // Lưu thuộc tính sản phẩm vào bảng order_item_attribute_values
+            if (!empty($item->attribute_value_ids) && $item->attribute_value_ids !== '[]' && !$item->is_combo) {
+                $attributeIds = [];
+                
+                // Xử lý attribute_value_ids có thể là JSON string hoặc array
+                if (is_string($item->attribute_value_ids)) {
+                    $decoded = json_decode($item->attribute_value_ids, true);
+                    if (is_array($decoded)) {
+                        $attributeIds = $decoded;
+                    }
+                } elseif (is_array($item->attribute_value_ids)) {
+                    $attributeIds = $item->attribute_value_ids;
+                }
+                
+                // Lưu thuộc tính vào bảng order_item_attribute_values
+                if (!empty($attributeIds)) {
+                    foreach ($attributeIds as $attributeValueId) {
+                        \App\Models\OrderItemAttributeValue::create([
+                            'id' => (string) Str::uuid(),
+                            'order_item_id' => $orderItem->id,
+                            'attribute_value_id' => $attributeValueId
+                        ]);
+                    }
+                }
+            }
         }
 
         // Nếu có voucher, tạo applied voucher
@@ -119,10 +159,19 @@ class OrderService
 
         // Xóa sản phẩm khỏi giỏ hàng
         foreach ($cartItems as $item) {
-            Cart::where('user_id', $data['user_id'])
-                ->where('book_id', $item->book_id)
-                ->where('book_format_id', $item->book_format_id)
-                ->delete();
+            if (isset($item->is_combo) && $item->is_combo) {
+                // Xóa combo từ giỏ hàng
+                Cart::where('user_id', $data['user_id'])
+                    ->where('collection_id', $item->collection_id)
+                    ->where('is_combo', 1)
+                    ->delete();
+            } else {
+                // Xóa sách đơn lẻ từ giỏ hàng
+                Cart::where('user_id', $data['user_id'])
+                    ->where('book_id', $item->book_id)
+                    ->where('book_format_id', $item->book_format_id)
+                    ->delete();
+            }
         }
         Log::info('Cart items deleted for user: ' . $data['user_id']);
 
@@ -359,6 +408,7 @@ class OrderService
      */
     public function createOrderWithItems(array $orderData, $cartItems)
     {
+        // dd($orderData['delivery_method']);
         // 1. Tạo Order
         $order = Order::create([
             'id' => (string) Str::uuid(),
@@ -705,17 +755,19 @@ class OrderService
     /**
      * Chuẩn bị dữ liệu đơn hàng
      */
-    public function prepareOrderData($request, User $user, $addressId, $voucherId, $subtotal, $discountAmount)
+    public function prepareOrderData($request, User $user, $addressId, $voucherId, $subtotal, $discountAmount, $shipper_method)
     {
+        // dd($request->all());
+        // dd($request->shipping_method);
         $orderStatus = OrderStatus::where('name', 'Chờ xác nhận')->firstOrFail();
         $paymentStatus = PaymentStatus::where('name', 'Chờ Xử Lý')->firstOrFail();
         
-        $finalTotalAmount = $subtotal + $request->shipping_fee_applied - $discountAmount;
+        $finalTotalAmount = $subtotal + (float) $request->shipping_fee_applied - (float) $discountAmount;
         
         // Đối với đơn hàng ebook, sử dụng thông tin user nếu không có thông tin người nhận
         $isEbookOrder = $request->delivery_method === 'ebook';
-
-        return [
+        // dd($shipper_method);
+        $order =  [
             'user_id' => $user->id,
             'order_code' => 'BBE-' . time(),
             'address_id' => $addressId,
@@ -728,10 +780,13 @@ class OrderService
             'order_status_id' => $orderStatus->id,
             'payment_status_id' => $paymentStatus->id,
             'total_amount' => $finalTotalAmount,
-            'shipping_fee' => ($request->delivery_method === 'pickup' || $isEbookOrder) ? 0 : $request->shipping_fee_applied,
+            'shipping_fee' => ($request->shipping_method === 'pickup' || $isEbookOrder) ? 0 : $request->shipping_fee_applied,
             'discount_amount' => (int) $discountAmount,
             'delivery_method' => $request->delivery_method,
         ];
+        // dd($order);
+        // dd($order['delivery_method']);
+        return $order;
     }
 
     /**
@@ -767,6 +822,7 @@ class OrderService
             $addressId, 
             $voucherData['voucher_id'], 
             $subtotal, 
+            $request->shipping_method,
             $actualDiscountAmount
         );
 
@@ -871,7 +927,7 @@ class OrderService
      */
     public function processOrderCreationWithWallet($request, User $user)
     {
-        // 1. Xử lý địa chỉ giao hàng
+        // dd($request->all());
         $addressId = $this->handleDeliveryAddress($request, $user);
         
         // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook
@@ -894,14 +950,17 @@ class OrderService
 
         // 6. Kiểm tra nếu là thanh toán ví
         $isWalletPayment = stripos($paymentMethod->name, 'ví điện tử') !== false;
-        
+
+        $shipping_method = $request->shipping_method;
+        // dd($shipping_method);
         // 7. Chuẩn bị dữ liệu đơn hàng
         $orderData = $this->prepareOrderData(
             $request, 
             $user, 
             $addressId, 
             $voucherData['voucher_id'], 
-            $subtotal, 
+            $subtotal,
+            $shipping_method,
             $actualDiscountAmount
         );
 

@@ -87,18 +87,36 @@ class OrderController extends Controller
         $mixedFormatCart = false;
 
         foreach ($cartItems as $item) {
+            // Kiểm tra combo - combo luôn là sách vật lý
+            if (isset($item->is_combo) && $item->is_combo) {
+                $hasPhysicalBook = true;
+                
+                // Nếu đã có ebook, thì đây là giỏ hàng hỗn hợp
+                if ($hasEbook) {
+                    $mixedFormatCart = true;
+                    break;
+                }
+            }
+            
+            // Kiểm tra sách đơn lẻ
             if ($item->bookFormat) {
                 // Kiểm tra format_name để xác định loại sách
                 if (strtolower($item->bookFormat->format_name) === 'ebook') {
                     $hasEbook = true;
+                    
+                    // Nếu đã có sách vật lý (bao gồm combo), thì đây là giỏ hàng hỗn hợp
+                    if ($hasPhysicalBook) {
+                        $mixedFormatCart = true;
+                        break;
+                    }
                 } else {
                     $hasPhysicalBook = true;
-                }
-
-                // Nếu tìm thấy cả hai loại, dừng vòng lặp
-                if ($hasPhysicalBook && $hasEbook) {
-                    $mixedFormatCart = true;
-                    break;
+                    
+                    // Nếu đã có ebook, thì đây là giỏ hàng hỗn hợp
+                    if ($hasEbook) {
+                        $mixedFormatCart = true;
+                        break;
+                    }
                 }
             }
         }
@@ -132,7 +150,7 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        
+        // dd($request->all());
         // Validate giỏ hàng (kiểm tra sản phẩm được chọn, số lượng tồn kho và trạng thái)
         try {
             $selectedCartItems = $this->orderService->validateCartItems($user);
@@ -313,7 +331,9 @@ class OrderController extends Controller
             }
             
             // Xử lý đơn hàng thông thường (chỉ có một loại sản phẩm)
+            // dd($request->all());
             $orderResult = $this->orderService->processOrderCreationWithWallet($request, $user);
+            // dd($orderResult);
             $order = $orderResult['order'];
             $paymentMethod = $orderResult['payment_method'];
             $cartItems = $orderResult['cart_items'];
@@ -923,6 +943,33 @@ class OrderController extends Controller
                 'success' => false,
                 'error' => 'Có lỗi xảy ra khi đặt trước sách.'
             ], 500);
+        }
+    }
+
+     private function generateQrCode(Order $order)
+    {
+        try {
+            // Create QR code with order information
+            $orderInfo = [
+                'id' => $order->id,
+                'customer' => $order->user->name ?? 'N/A',
+                'total' => $order->total_amount,
+                'date' => $order->created_at->format('Y-m-d H:i:s')
+            ];
+
+            $qrCode = QrCode::format('png')
+                ->size(200)
+                ->errorCorrection('H')
+                ->generate(json_encode($orderInfo));
+
+            $filename = 'order_qr/order_' . substr($order->id, 0, 8) . '.png';
+            Storage::disk('public')->put($filename, $qrCode);
+
+            // Update order with QR code path
+            $order->update(['qr_code' => $filename]);
+
+        } catch (\Exception $e) {
+            Log::error('Error generating QR code: ' . $e->getMessage());
         }
     }
 }

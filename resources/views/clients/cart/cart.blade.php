@@ -164,8 +164,12 @@
                                         </div>
                                     @endif
                                     <!-- Combo Badge -->
-                                    <div class="absolute -top-2 -left-2 bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase">
+                                    <div class="absolute -top-2 -left-2 bg-green-600 text-white px-3 py-1 text-xs font-bold uppercase rounded-r">
                                         <i class="fas fa-layer-group mr-1"></i>COMBO
+                                    </div>
+                                    <!-- Quantity Badge -->
+                                    <div class="absolute -top-2 -right-2 bg-black text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                                        {{ $item->quantity }}
                                     </div>
                                 </div>
                                 

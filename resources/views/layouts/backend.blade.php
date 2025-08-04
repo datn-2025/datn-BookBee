@@ -91,6 +91,41 @@
             transform: rotate(180deg);
             transition: transform 0.3s ease;
         }
+
+        /* Simple Validation Error Styling */
+        .invalid-feedback {
+            display: block !important;
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #f5c6cb;
+            font-size: 0.875rem;
+            margin-top: 6px;
+        }
+
+        .form-control.is-invalid,
+        .form-select.is-invalid {
+            border-color: #dc3545;
+        }
+
+        .form-control.is-invalid:focus,
+        .form-select.is-invalid:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+
+        /* Simple success feedback styling */
+        .valid-feedback {
+            display: block !important;
+            background-color: #d4edda;
+            color: #155724;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #c3e6cb;
+            font-size: 0.875rem;
+            margin-top: 6px;
+        }
     </style>
 
     @livewireStyles

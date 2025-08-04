@@ -995,13 +995,18 @@ class CartController extends Controller
             } else {
                 // Xử lý cập nhật số lượng sách đơn lẻ (logic hiện tại)
                 $bookId = $request->book_id;
+                // dd($bookId);
                 $bookFormatId = $request->book_format_id;
                 $attributeValueIds = $request->attribute_value_ids;
 
                 // Lấy cart item cụ thể với tất cả dữ liệu định danh
                 $cartItemQuery = Cart::where('user_id', Auth::id())
-                    ->where('book_id', $bookId)
-                    ->where('is_combo', 0)->get();
+                ->where('book_id', $bookId)
+                ->where('is_combo', 0)
+                ->when($bookFormatId, fn($q) => $q->where('book_format_id', $bookFormatId))
+                // ->when($attributeValueIds, fn($q) => $q->where('attribute_value_ids', $attributeValueIds))
+                ->first(); // ✅ chỉ lấy 1 bản ghi
+                // dd($cartItemQuery);
                 // dd($cartItemQuery->toSql());
                 if ($bookFormatId) {
                     $cartItemQuery->where('book_format_id', $bookFormatId);
@@ -1009,18 +1014,16 @@ class CartController extends Controller
                 if ($attributeValueIds) {
                     $cartItemQuery->where('attribute_value_ids', $attributeValueIds);
                 }
-
-                $cartItem = $cartItemQuery->first();
+                $cartItem = $cartItemQuery;
                 // dd($cartItemQuery);
                 if (!$cartItem) {
                     return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
                 }
-
                 // Kiểm tra tồn kho và thông tin sách với format cụ thể
                 $bookInfo = DB::table('books')
-                    ->leftJoin('book_formats', function ($join) use ($cartItem) {
+                    ->leftJoin('book_formats', function ($join) use ($bookFormatId) {
                         $join->on('books.id', '=', 'book_formats.book_id')
-                            ->where('book_formats.id', '=', $cartItem->book_format_id);
+                            ->where('book_formats.id', '=', $bookFormatId);
                     })
                     ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
                     ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
