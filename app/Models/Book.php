@@ -91,6 +91,14 @@ class Book extends Model
     }
 
     /**
+     * Relationship để lấy BookAttributeValue records với nested relationships
+     */
+    public function bookAttributeValues(): HasMany
+    {
+        return $this->hasMany(BookAttributeValue::class);
+    }
+
+    /**
      * Lấy tổng số lượng tồn kho của tất cả biến thể
      */
     public function getTotalVariantStockAttribute(): int
