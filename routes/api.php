@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ConversationController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GhnController;
@@ -28,4 +31,21 @@ Route::prefix('ghn')->group(function () {
     Route::post('/services', [GhnController::class, 'getServices']);
     Route::post('/lead-time', [GhnController::class, 'getLeadTime']);
     Route::get('/tracking/{orderCode}', [GhnController::class, 'trackOrder'])->name('api.ghn.tracking');
+});
+
+Route::post('/login', [AuthController::class, 'login']);
+
+// Route public để tìm admin theo email (không cần auth)
+Route::get('/admin/find-by-email', [ConversationController::class, 'findAdminByEmail']);
+
+Route::apiResource('users', UserController::class);
+// ->middleware('auth:sanctum'); // Ensure that the UserController is protected by Sanctum authentication
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/messages', [ConversationController::class, 'index']);
+    Route::post('/messages', [ConversationController::class, 'store']);
+    Route::delete('/messages/{id}', [ConversationController::class, 'destroy']);
+    
+    // Thêm route để tạo conversation mới
+    Route::post('/conversations', [ConversationController::class, 'createConversation']);
 });
