@@ -29,7 +29,20 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
-
+     <!-- Laravel Echo / Pusher Setup -->
+    <script>
+        // Import Echo from Vite
+        window.Pusher = window.Pusher || {};
+        
+        // Setup Echo when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.Echo !== 'undefined') {
+                console.log('Laravel Echo initialized successfully');
+            } else {
+                console.warn('Laravel Echo not available');
+            }
+        });
+    </script>
     <!-- Plugin CSS -->
     <link href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" rel="stylesheet" />
@@ -82,6 +95,16 @@
         @if (session('error'))
             toastr.error("{{ session('error') }}");
         @endif
+    </script>
+     <!-- Chat Configuration -->
+    <script>
+        window.currentUserId = {{ auth('admin')->check() ? auth('admin')->id() : (auth()->check() ? auth()->id() : 'null') }};
+        window.Laravel = {
+            user: {
+                id: {{ auth('admin')->check() ? auth('admin')->id() : (auth()->check() ? auth()->id() : 'null') }},
+                name: '{{ auth('admin')->check() ? auth('admin')->user()->name : (auth()->check() ? auth()->user()->name : '') }}'
+            }
+        };
     </script>
 
     <!-- Custom inline styles -->
@@ -615,6 +638,11 @@
                                 </div>
                             </li>
                         @endpermission
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="{{ route('admin.chat.index') }}">
+                                <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Chat</span>
+                            </a>
+                        </li>
                         @permission('review.view')
                             <li class="nav-item">
                                 <a class="nav-link menu-link" href="{{ route('admin.reviews.index') }}">
@@ -656,6 +684,8 @@
         <div class="main-content">
             <div class="page-content">
                 @hasSection('content')
+                 <div id="notification" class=" alert mx-3 invisible" >
+                    </div>
                     @yield('content')
                 @else
                     {{ $slot }}
