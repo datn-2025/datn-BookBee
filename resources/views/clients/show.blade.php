@@ -1401,105 +1401,7 @@
                                 </div>
                             @endif
 
-                            {{-- Tổng quan biến thể sản phẩm --}}
-                            @if($book->attributeValues->count())
-                                <div class="variant-overview bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 p-6 rounded-xl shadow-lg">
-                                    <div class="flex justify-between items-center mb-6">
-                                        <h3 class="text-lg font-bold text-black uppercase tracking-wider adidas-font flex items-center">
-                                            <i class="fas fa-cubes mr-3 text-blue-600 text-xl"></i>
-                                            Biến thể sản phẩm
-                                        </h3>
-                                        @php
-                                            $totalVariants = $book->attributeValues->count();
-                                        @endphp
-                                        <div class="text-sm text-gray-700 font-semibold">
-                                            <span class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-full shadow-md">
-                                                {{ $totalVariants }} biến thể
-                                            </span>
-                                        </div>
-                                    </div>
-                                    @php
-                                        $groupedVariants = $book->attributeValues->groupBy(function($item) {
-                                            return $item->attribute->name ?? 'Khác';
-                                        });
-                                    @endphp
-                                    <div class="space-y-6">
-                                        @foreach($groupedVariants as $attributeName => $variants)
-                                            <div class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300">
-                                                <div class="text-base font-bold text-gray-800 uppercase tracking-wide mb-4 pb-3 border-b border-gray-200 flex items-center">
-                                                    <i class="fas fa-tag text-blue-500 mr-3 text-lg"></i>
-                                                    {{ $attributeName }}
-                                                </div>
-                                                <div class="grid grid-cols-1 gap-4">
-                                                    @foreach($variants as $variant)
-                                                        @php
-                                                            $stock = $variant->pivot->stock ?? 0;
-                                                            $sku = $variant->pivot->sku ?? '';
-                                                            $extraPrice = $variant->pivot->extra_price ?? 0;
-                                                            $stockClass = $stock > 0 ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50';
-                                                        @endphp
-                                                        <div class="variant-item bg-gradient-to-br from-gray-50 to-white border-2 {{ $stockClass }} p-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105 cursor-pointer"
-                                                             data-variant-value="{{ $variant->value }}"
-                                                             data-attribute-name="{{ $attributeName }}">
-                                                            <div class="font-bold text-gray-900 text-sm mb-2 flex items-center">
-                                                                <i class="fas fa-circle text-blue-500 mr-2 text-xs"></i>
-                                                                {{ $variant->value }}
-                                                            </div>
-                                                            <div class="space-y-1">
-                                                                <div class="flex items-center justify-between">
-                                                                    <span class="text-xs font-medium text-gray-600 flex items-center">
-                                                                        <i class="fas fa-boxes mr-1 text-gray-500 text-xs"></i>
-                                                                        Số lượng:
-                                                                    </span>
-                                                                    <span class="font-bold text-sm {{ $stock > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                                                        {{ $stock }}
-                                                                    </span>
-                                                                </div>
-                                                                @if($sku)
-                                                                    <div class="flex items-center justify-between">
-                                                                        <span class="text-xs font-medium text-gray-600 flex items-center">
-                                                                            <i class="fas fa-barcode mr-1 text-gray-500 text-xs"></i>
-                                                                            SKU:
-                                                                        </span>
-                                                                        <span class="text-blue-600 font-mono text-xs font-semibold bg-blue-100 px-2 py-1 rounded">
-                                                                            {{ $sku }}
-                                                                        </span>
-                                                                    </div>
-                                                                @endif
-                                                                @if($extraPrice > 0)
-                                                                    <div class="flex items-center justify-between">
-                                                                        <span class="text-xs font-medium text-gray-600 flex items-center">
-                                                                            <i class="fas fa-plus-circle mr-1 text-green-500 text-xs"></i>
-                                                                            Phụ phí:
-                                                                        </span>
-                                                                        <span class="text-green-600 font-bold text-sm bg-green-100 px-2 py-1 rounded">
-                                                                            +{{ number_format($extraPrice) }}đ
-                                                                        </span>
-                                                                    </div>
-                                                                @endif
-                                                            </div>
-                                                            <!-- Status indicator -->
-                                                            <div class="mt-2 pt-2 border-t border-gray-200">
-                                                                @if($stock > 0)
-                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                                                        <i class="fas fa-check-circle mr-1 text-xs"></i>
-                                                                        Còn hàng
-                                                                    </span>
-                                                                @else
-                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                                                                        <i class="fas fa-times-circle mr-1 text-xs"></i>
-                                                                        Hết hàng
-                                                                    </span>
-                                                                @endif
-                                                            </div>
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
+                          
 
                             <!-- Enhanced Format Selection -->
                             @if ($book->formats->count())
@@ -1589,17 +1491,7 @@
                                                                 $variantSku = $bookAttrVal->sku ?? '';
                                                                 $extraPrice = $bookAttrVal->extra_price ?? 0;
                                                                 $displayText = $bookAttrVal->attributeValue->value ?? 'Không rõ';
-                                                                
-                                                                // Simple display with stock and SKU
-                                                                if ($variantStock > 0) {
-                                                                    $displayText .= " (Số lượng: {$variantStock})";
-                                                                } else {
-                                                                    $displayText .= " (Hết hàng)";
-                                                                }
-                                                                
-                                                                if ($variantSku) {
-                                                                    $displayText .= " - {$variantSku}";
-                                                                }
+                                                            
                                                             @endphp
                                                             <option value="{{ $bookAttrVal->attribute_value_id }}"
                                                                 data-price="{{ $extraPrice }}"
@@ -1616,16 +1508,42 @@
                                                 </div>
                                                 
                                                 {{-- Thông tin biến thể đã chọn --}}
-                                                <div id="variant_info_{{ $attrVal->id }}" class="mt-2 text-xs text-gray-600 hidden">
-                                                    <div class="bg-blue-50 border border-blue-200 p-3 rounded">
-                                                        <div class="grid grid-cols-2 gap-3">
-                                                            <div>
-                                                                <span class="font-semibold">SKU:</span> 
-                                                                <span id="selected_sku_{{ $attrVal->id }}" class="font-mono text-blue-600">-</span>
+                                                <div id="variant_info_{{ $attrVal->id }}" class="mt-3 hidden">
+                                                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 p-4 rounded-lg shadow-sm">
+                                                        <div class="flex items-center mb-2">
+                                                            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                                                            <span class="text-sm font-bold text-blue-800 uppercase tracking-wide">Thông tin đã chọn</span>
+                                                        </div>
+                                                        
+                                                        <!-- For Physical Books -->
+                                                        <div id="physical_variant_info_{{ $attrVal->id }}" class="space-y-2">
+                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
+                                                                <div class="flex items-center">
+                                                                    <i class="fas fa-barcode text-blue-500 mr-2 text-sm"></i>
+                                                                    <span class="text-sm font-medium text-gray-700">SKU:</span>
+                                                                </div>
+                                                                <span id="selected_sku_{{ $attrVal->id }}" class="font-mono text-blue-600 font-semibold bg-blue-100 px-2 py-1 rounded text-sm">-</span>
                                                             </div>
-                                                            <div>
-                                                                <span class="font-semibold">Số lượng:</span> 
-                                                                <span id="selected_stock_{{ $attrVal->id }}" class="font-semibold text-green-600">-</span>
+                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
+                                                                <div class="flex items-center">
+                                                                    <i class="fas fa-boxes text-green-500 mr-2 text-sm"></i>
+                                                                    <span class="text-sm font-medium text-gray-700">Số lượng:</span>
+                                                                </div>
+                                                                <span id="selected_stock_{{ $attrVal->id }}" class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">-</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- For Ebooks -->
+                                                        <div id="ebook_variant_info_{{ $attrVal->id }}" class="hidden">
+                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
+                                                                <div class="flex items-center">
+                                                                    <i class="fas fa-check-circle text-green-500 mr-2 text-sm"></i>
+                                                                    <span class="text-sm font-medium text-gray-700">Trạng thái:</span>
+                                                                </div>
+                                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                                    Còn hàng
+                                                                </span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2310,23 +2228,49 @@
                             });
                         }
                         
-                        // Update variant info display (simplified)
+                        // Update variant info display with ebook/physical book differentiation
                         const attributeId = select.id.replace('attribute_', '');
                         const skuElement = document.getElementById(`selected_sku_${attributeId}`);
                         const stockElement = document.getElementById(`selected_stock_${attributeId}`);
                         const infoElement = document.getElementById(`variant_info_${attributeId}`);
-                        
-                        if (skuElement) {
-                            const displaySku = attributeSku || 'N/A';
-                            skuElement.textContent = displaySku;
-                        }
-                        
-                        if (stockElement) {
-                            stockElement.textContent = `${attributeStock}`;
-                        }
+                        const physicalInfoElement = document.getElementById(`physical_variant_info_${attributeId}`);
+                        const ebookInfoElement = document.getElementById(`ebook_variant_info_${attributeId}`);
                         
                         if (infoElement) {
                             infoElement.classList.remove('hidden');
+                            
+                            // Show different info based on format type
+                            if (isEbook) {
+                                // For ebooks, hide physical info and show ebook info
+                                if (physicalInfoElement) {
+                                    physicalInfoElement.classList.add('hidden');
+                                }
+                                if (ebookInfoElement) {
+                                    ebookInfoElement.classList.remove('hidden');
+                                }
+                            } else {
+                                // For physical books, show physical info and hide ebook info
+                                if (physicalInfoElement) {
+                                    physicalInfoElement.classList.remove('hidden');
+                                }
+                                if (ebookInfoElement) {
+                                    ebookInfoElement.classList.add('hidden');
+                                }
+                                
+                                // Update SKU and stock for physical books
+                                if (skuElement) {
+                                    const displaySku = attributeSku || 'N/A';
+                                    skuElement.textContent = displaySku;
+                                }
+                                
+                                if (stockElement) {
+                                    stockElement.textContent = `${attributeStock}`;
+                                    // Update stock color based on availability
+                                    stockElement.className = attributeStock > 0 
+                                        ? 'font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm'
+                                        : 'font-bold text-red-600 bg-red-100 px-2 py-1 rounded text-sm';
+                                }
+                            }
                         }
                     }
                 });
