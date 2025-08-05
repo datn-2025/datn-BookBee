@@ -112,8 +112,8 @@ class AdminBookController extends Controller
         $brands = Brand::whereNull('deleted_at')->get();
         $authors = Author::whereNull('deleted_at')->get();
         $attributes = Attribute::with('values')->get();
-        $allBooks = Book::all();
-        return view('admin.books.create', compact('categories', 'brands', 'authors', 'attributes', 'allBooks'));
+        $books = Book::select('id', 'title')->get();
+        return view('admin.books.create', compact('categories', 'brands', 'authors', 'attributes', 'books'));
     }
 
     public function store(Request $request)
@@ -227,14 +227,14 @@ class AdminBookController extends Controller
         }
 
         // Lưu quà tặng nếu có
-        if ($request->filled('gift_name')) {
+        if ($request->filled('gift_name') && $request->filled('gift_book_id')) {
             $giftData = [
-                'book_id' => $book->id,
+                'book_id' => $request->input('gift_book_id'),
                 'gift_name' => $request->input('gift_name'),
                 'gift_description' => $request->input('gift_description'),
                 'quantity' => $request->input('quantity', 0),
-                'start_date' => $request->input('start_date'),
-                'end_date' => $request->input('end_date'),
+                'start_date' => $request->input('gift_start_date'),
+                'end_date' => $request->input('gift_end_date'),
             ];
             if ($request->hasFile('gift_image')) {
                 $giftData['gift_image'] = $request->file('gift_image')->store('gifts', 'public');
@@ -279,12 +279,13 @@ class AdminBookController extends Controller
             'publication_date' => 'required|date',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             // Gift validation
+            'gift_book_id' => 'nullable|uuid|exists:books,id',
             'gift_name' => 'nullable|string|max:255',
             'gift_description' => 'nullable|string',
             'gift_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'quantity' => 'nullable|integer|min:0',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'gift_start_date' => 'nullable|date',
+            'gift_end_date' => 'nullable|date|after_or_equal:gift_start_date',
         ];
 
         // Different rules for create vs update
@@ -481,6 +482,8 @@ class AdminBookController extends Controller
             ];
         }
 
+        $books = Book::select('id', 'title')->get();
+        
         return view('admin.books.edit', compact(
             'book',
             'categories',
@@ -489,7 +492,8 @@ class AdminBookController extends Controller
             'attributes',
             'physicalFormat',
             'ebookFormat',
-            'selectedAttributeValues'
+            'selectedAttributeValues',
+            'books'
         ));
     }
 
@@ -686,24 +690,23 @@ class AdminBookController extends Controller
         }
 
         // Cập nhật quà tặng
-        if ($request->has('gifts')) {
-            // Xóa quà tặng cũ
-            $book->gifts()->delete();
-            foreach ($request->gifts as $gift) {
-                $giftData = [
-                    'book_id' => $book->id,
-                    'gift_name' => $gift['gift_name'] ?? null,
-                    'gift_description' => $gift['gift_description'] ?? null,
-                    'gift_image' => null,
-                    'quantity' => $gift['quantity'] ?? null,
-                    'start_date' => $gift['start_date'] ?? null,
-                    'end_date' => $gift['end_date'] ?? null,
-                ];
-                if (isset($gift['gift_image']) && is_file($gift['gift_image'])) {
-                    $giftData['gift_image'] = $gift['gift_image']->store('gifts', 'public');
-                }
-                BookGift::create($giftData);
+        // Xóa quà tặng cũ
+        $book->gifts()->delete();
+        
+        // Tạo quà tặng mới nếu có
+        if ($request->filled('gift_name') && $request->filled('gift_book_id')) {
+            $giftData = [
+                'book_id' => $request->input('gift_book_id'),
+                'gift_name' => $request->input('gift_name'),
+                'gift_description' => $request->input('gift_description'),
+                'quantity' => $request->input('quantity', 0),
+                'start_date' => $request->input('gift_start_date'),
+                'end_date' => $request->input('gift_end_date'),
+            ];
+            if ($request->hasFile('gift_image')) {
+                $giftData['gift_image'] = $request->file('gift_image')->store('gifts', 'public');
             }
+            BookGift::create($giftData);
         }
 
         // Cập nhật danh sách tác giả

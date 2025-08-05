@@ -187,6 +187,23 @@
                             <div class="p-3 bg-light rounded border">
                                 <div class="row g-3">
                                     <div class="col-md-6">
+                                        <label class="form-label fw-medium">Chọn sách nhận quà tặng <span class="text-danger">*</span></label>
+                                        <select class="form-select @error('gift_book_id') is-invalid @enderror" 
+                                                name="gift_book_id">
+                                            <option value="">-- Chọn sách --</option>
+                                            @foreach($books ?? [] as $book)
+                                                <option value="{{ $book->id }}" 
+                                                    {{ old('gift_book_id') == $book->id ? 'selected' : '' }}>
+                                                    {{ $book->title }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('gift_book_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    
+                                    <div class="col-md-6">
                                         <label class="form-label fw-medium">Tên quà tặng <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control @error('gift_name') is-invalid @enderror" 
                                                name="gift_name" value="{{ old('gift_name') }}" 
@@ -215,23 +232,33 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-medium">Ngày bắt đầu</label>
-                                        <input type="date" class="form-control @error('start_date') is-invalid @enderror" 
-                                               name="start_date" value="{{ old('start_date') }}">
+                                    <div class="col-12">
+                                        <label class="form-label fw-medium">Thời gian khuyến mãi quà tặng</label>
+                                        <input type="text" class="form-control @error('gift_date_range') is-invalid @enderror" 
+                                               id="gift_date_range" name="gift_date_range" 
+                                               placeholder="Chọn khoảng thời gian khuyến mãi..." 
+                                               value="{{ old('gift_date_range') }}">
+                                        
+                                        <!-- Hidden inputs để lưu giá trị ngày -->
+                                        <input type="hidden" id="gift_start_date" name="start_date" 
+                                               value="{{ old('start_date') }}">
+                                        <input type="hidden" id="gift_end_date" name="end_date" 
+                                               value="{{ old('end_date') }}">
+                                        
+                                        @error('gift_date_range')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
                                         @error('start_date')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
-                                    </div>
-                                    
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-medium">Ngày kết thúc</label>
-                                        <input type="date" class="form-control @error('end_date') is-invalid @enderror" 
-                                               name="end_date" value="{{ old('end_date') }}">
                                         @error('end_date')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
+                                        
+                                        <div class="form-text">
+                                            <i class="ri-information-line me-1"></i>
+                                            Chọn khoảng thời gian áp dụng khuyến mãi quà tặng. Nhấp vào ô để chọn ngày bắt đầu và kết thúc.
+                                        </div>
                                     </div>
                                     
                                     <div class="col-12">
@@ -753,6 +780,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // Initialize gift date range picker
+    const giftDateRangePicker = document.getElementById('gift_date_range');
+    if (giftDateRangePicker) {
+        flatpickr(giftDateRangePicker, {
+            mode: 'range',
+            dateFormat: 'Y-m-d',
+            onChange: function(selectedDates, dateStr, instance) {
+                const startInput = document.getElementById('gift_start_date');
+                const endInput = document.getElementById('gift_end_date');
+                if (selectedDates.length === 2) {
+                    startInput.value = instance.formatDate(selectedDates[0], 'Y-m-d');
+                    endInput.value = instance.formatDate(selectedDates[1], 'Y-m-d');
+                } else {
+                    startInput.value = '';
+                    endInput.value = '';
+                }
+            }
+        });
+    }
+    
+    // Đảm bảo khi submit form luôn lấy lại giá trị nếu user không chọn lại ngày
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            const giftDateRange = document.getElementById('gift_date_range');
+            if (giftDateRange && giftDateRange.value && giftDateRange.value.includes(' to ')) {
+                const parts = giftDateRange.value.split(' to ');
+                document.getElementById('gift_start_date').value = parts[0].trim();
+                document.getElementById('gift_end_date').value = parts[1].trim();
+            }
+        });
+    }
 });
 
 // Initialize Select2
