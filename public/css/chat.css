@@ -1,0 +1,408 @@
+/* Chat CSS for BookBee */
+
+/* Chat conversation container */
+.chat-conversation {
+    overflow-y: scroll !important;
+    overflow-x: hidden !important;
+    scroll-behavior: smooth !important;
+    min-height: 450px !important;
+    max-height: 450px !important;
+    height: 450px !important;
+    padding: 1rem !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #c1c1c1 #f1f1f1 !important;
+    position: relative !important;
+    display: block !important;
+}
+
+/* Ensure scrollbar is always visible when needed */
+.chat-conversation::-webkit-scrollbar {
+    width: 8px !important;
+    display: block !important;
+}
+
+.chat-conversation::-webkit-scrollbar-track {
+    background: #f1f1f1 !important;
+    border-radius: 3px !important;
+}
+
+.chat-conversation::-webkit-scrollbar-thumb {
+    background: #c1c1c1 !important;
+    border-radius: 3px !important;
+}
+
+.chat-conversation::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8 !important;
+}
+
+/* Message container */
+#message-container {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100% !important;
+    padding-bottom: 1rem !important;
+}
+
+/* Chat conversation list */
+.chat-conversation-list {
+    flex: 1 !important;
+    overflow-y: visible !important;
+    min-height: auto !important;
+}
+
+/* Chat list items */
+.chat-list {
+    margin-bottom: 1rem !important;
+    animation: fadeInUp 0.3s ease-out;
+}
+
+/* Message animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Typing animation */
+.typing-animation {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.typing-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typing {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Drag and drop styles */
+.chat-conversation.drag-over {
+    border: 2px dashed #007bff !important;
+    background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+/* Message content styles */
+.message-image img {
+    transition: transform 0.2s;
+    max-width: 200px;
+    border-radius: 8px;
+}
+
+.message-image img:hover {
+    transform: scale(1.05);
+    cursor: pointer;
+}
+
+.message-file {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+}
+
+.message-file:hover {
+    background-color: #f8f9fa !important;
+}
+
+/* Chat input improvements */
+.chat-input {
+    resize: none !important;
+    min-height: 40px !important;
+    border-radius: 20px !important;
+    padding: 10px 15px !important;
+}
+
+.chat-input:focus {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+}
+
+/* Chat container fixed sizing */
+.chat-container {
+    min-height: 600px !important;
+    height: 600px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.chat-header {
+    flex-shrink: 0 !important;
+    min-height: 70px !important;
+    border-bottom: 1px solid #e9ecef !important;
+    padding: 15px !important;
+}
+
+.chat-body {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+    min-height: 450px !important;
+    max-height: 450px !important;
+    position: relative !important;
+    padding: 0 !important;
+}
+
+.chat-footer {
+    flex-shrink: 0 !important;
+    min-height: 80px !important;
+    border-top: 1px solid #e9ecef !important;
+    padding: 15px !important;
+    background-color: #f8f9fa !important;
+}
+
+/* Loading states */
+.btn[wire\:loading] {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* Status indicators */
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.25rem;
+}
+
+.status-indicator.online {
+    background-color: #28a745;
+}
+
+.status-indicator.offline {
+    background-color: #6c757d;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .chat-container {
+        min-height: 500px !important;
+        height: 500px !important;
+    }
+    
+    .chat-body {
+        min-height: 350px !important;
+    }
+}
+
+/* Empty state styling */
+.chat-empty-state {
+    min-height: 450px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Introduction screen specific styling */
+.chat-introduction {
+    min-height: 400px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+        .chat-wrapper {
+            height: 80vh;
+            /* chiều cao vừa phải thay vì 100vh */
+        }
+
+        /* Đảm bảo chat-content có layout đúng */
+        .chat-content {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+        }
+
+        .user-chat-topbar {
+            flex-shrink: 0 !important;
+        }
+
+        .chat-conversation-list hr {
+            border-color: #ccc;
+            opacity: 0.5;
+        }
+
+        .chat-list.right .conversation-list {
+            justify-content: flex-end;
+        }
+
+        .chat-list.left .conversation-list {
+            justify-content: flex-start;
+        }
+
+        .message {
+            max-width: 80%;
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+        }
+
+        .message.sent {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .message.received {
+            background-color: #f1f1f1;
+            color: #333;
+            margin-right: auto;
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .chat-container {
+            height: calc(100vh - 250px);
+            overflow-y: auto;
+        }
+
+        /* Chat conversation với height đơn giản */
+        .chat-conversation {
+            flex: 1 !important;
+            overflow-y: auto !important;
+            overflow-x: hidden;
+            padding: 1rem;
+            height: 60vh !important;
+            /* height cố định đơn giản */
+            max-height: 60vh !important;
+        }
+
+        /* Đảm bảo chat input không bị che */
+        .chat-input-section {
+            flex-shrink: 0 !important;
+            border-top: 1px solid #dee2e6 !important;
+            background: white !important;
+            position: sticky !important;
+            bottom: 0 !important;
+        }
+
+
+
+        /* Sidebar đơn giản */
+        .chat-leftsidebar {
+            height: 80vh;
+        }
+
+        .chat-room-list {
+            height: 60vh;
+            /* đơn giản hóa */
+            overflow-y: auto;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+
+        /* Active conversation styling */
+        .chat-user-list a.active {
+            background-color: #e3f2fd;
+            border-left: 3px solid #2196f3;
+        }
+
+        .chat-user-list a:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* Empty state styling */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Contact list styling */
+        .contact-item {
+            border-bottom: 1px solid #f1f1f1;
+            transition: background-color 0.2s ease;
+        }
+
+        .contact-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .contact-item:last-child {
+            border-bottom: none;
+        }
+
+        .start-conversation-btn {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .start-conversation-btn:hover {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        /* Search box styling trong contacts tab */
+        #contacts .search-box {
+            position: relative;
+        }
+
+        #contacts .search-box .search-icon {
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            color: #6c757d;
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        #contacts .search-box input {
+            padding-right: 40px;
+        }
+
+        /* Animation cho contact items */
+        .contact-item {
+            transition: all 0.2s ease;
+        }
+
+        .contact-item.hidden {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
