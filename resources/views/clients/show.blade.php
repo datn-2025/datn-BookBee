@@ -2459,7 +2459,7 @@
                         quantitySection.style.display = 'block';
                     }
                 }
-                // Update quantity input max value
+                // Update quantity input max value based on stock
                 const quantityInput = document.getElementById('quantity');
                 if (quantityInput) {
                     if (isEbook) {
@@ -2468,9 +2468,28 @@
                         quantityInput.min = 1;
                     } else if (stock > 0) {
                         quantityInput.max = stock;
-                        if (parseInt(quantityInput.value) > stock) {
-                            quantityInput.value = Math.min(parseInt(quantityInput.value), stock);
+                        // Adjust current value if it exceeds new max
+                        const currentValue = parseInt(quantityInput.value) || 1;
+                        if (currentValue > stock) {
+                            quantityInput.value = Math.min(currentValue, stock);
                         }
+                        
+                        // Update min value appropriately
+                        quantityInput.min = 1;
+                        
+                        // Log variant stock info for debugging
+                        if (selectedVariantInfo.length > 0) {
+                            console.log('Variant Stock Info:', {
+                                variants: selectedVariantInfo,
+                                lowestStock: stock,
+                                currentQuantity: quantityInput.value
+                            });
+                        }
+                    } else {
+                        // Out of stock
+                        quantityInput.max = 0;
+                        quantityInput.value = 0;
+                        quantityInput.min = 0;
                     }
                 }
 
@@ -2706,6 +2725,56 @@
 
                         if (formatSelect && formatSelect.selectedOptions[0]) {
                             stock = parseInt(formatSelect.selectedOptions[0].dataset.stock) || 0;
+                        }
+
+                        // Check variant stock if attributes are selected
+                        if (attributeValueIds.length > 0) {
+                            let minVariantStock = Infinity;
+                            let hasOutOfStockVariant = false;
+                            let outOfStockVariantSku = '';
+
+                            attributeSelects.forEach(select => {
+                                if (select.value && select.selectedOptions[0]) {
+                                    const variantStock = parseInt(select.selectedOptions[0].dataset.stock) || 0;
+                                    const variantSku = select.selectedOptions[0].dataset.sku || '';
+                                    
+                                    if (variantStock <= 0) {
+                                        hasOutOfStockVariant = true;
+                                        outOfStockVariantSku = variantSku;
+                                    }
+                                    
+                                    if (variantStock < minVariantStock && variantStock > 0) {
+                                        minVariantStock = variantStock;
+                                    }
+                                }
+                            });
+
+                            if (hasOutOfStockVariant) {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.error(`Biến thể đã hết hàng${outOfStockVariantSku ? ` (SKU: ${outOfStockVariantSku})` : ''}!`);
+                                } else {
+                                    alert(`Biến thể đã hết hàng${outOfStockVariantSku ? ` (SKU: ${outOfStockVariantSku})` : ''}!`);
+                                }
+                                addToCartBtn.disabled = false;
+                                addToCartBtn.textContent = originalText;
+                                return;
+                            }
+
+                            if (minVariantStock !== Infinity && quantity > minVariantStock) {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.error(`Số lượng vượt quá tồn kho biến thể! Tồn kho hiện tại: ${minVariantStock}`);
+                                } else {
+                                    alert(`Số lượng vượt quá tồn kho biến thể! Tồn kho hiện tại: ${minVariantStock}`);
+                                }
+                                addToCartBtn.disabled = false;
+                                addToCartBtn.textContent = originalText;
+                                return;
+                            }
+
+                            // Use variant stock if available
+                            if (minVariantStock !== Infinity) {
+                                stock = minVariantStock;
+                            }
                         }
 
                         // Priority 2: Only when status = 'Còn Hàng', check stock levels for physical books
