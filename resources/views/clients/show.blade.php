@@ -1403,16 +1403,17 @@
 
                             {{-- Tổng quan biến thể sản phẩm --}}
                             @if($book->attributeValues->count())
-                                <div class="variant-overview bg-gray-50 border border-gray-200 p-4 rounded">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <h3 class="text-sm font-bold text-black uppercase tracking-wider adidas-font">
-                                            <i class="fas fa-list-ul mr-2"></i>Biến thể sản phẩm
+                                <div class="variant-overview bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 p-6 rounded-xl shadow-lg">
+                                    <div class="flex justify-between items-center mb-6">
+                                        <h3 class="text-lg font-bold text-black uppercase tracking-wider adidas-font flex items-center">
+                                            <i class="fas fa-cubes mr-3 text-blue-600 text-xl"></i>
+                                            Biến thể sản phẩm
                                         </h3>
                                         @php
                                             $totalVariants = $book->attributeValues->count();
                                         @endphp
-                                        <div class="text-xs text-gray-600">
-                                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                        <div class="text-sm text-gray-700 font-semibold">
+                                            <span class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-full shadow-md">
                                                 {{ $totalVariants }} biến thể
                                             </span>
                                         </div>
@@ -1422,33 +1423,75 @@
                                             return $item->attribute->name ?? 'Khác';
                                         });
                                     @endphp
-                                    <div class="space-y-3">
+                                    <div class="space-y-6">
                                         @foreach($groupedVariants as $attributeName => $variants)
-                                            <div class="border-l-4 border-blue-500 pl-3 bg-white rounded-r-lg p-3 shadow-sm">
-                                                <div class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-2">
-                                                    <i class="fas fa-tag text-blue-500 mr-2"></i>
+                                            <div class="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300">
+                                                <div class="text-base font-bold text-gray-800 uppercase tracking-wide mb-4 pb-3 border-b border-gray-200 flex items-center">
+                                                    <i class="fas fa-tag text-blue-500 mr-3 text-lg"></i>
                                                     {{ $attributeName }}
                                                 </div>
-                                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                                <div class="grid grid-cols-1 gap-4">
                                                     @foreach($variants as $variant)
                                                         @php
                                                             $stock = $variant->pivot->stock ?? 0;
                                                             $sku = $variant->pivot->sku ?? '';
                                                             $extraPrice = $variant->pivot->extra_price ?? 0;
+                                                            $stockClass = $stock > 0 ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50';
                                                         @endphp
-                                                        <div class="bg-gray-50 p-2 rounded border variant-item"
+                                                        <div class="variant-item bg-gradient-to-br from-gray-50 to-white border-2 {{ $stockClass }} p-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105 cursor-pointer"
                                                              data-variant-value="{{ $variant->value }}"
                                                              data-attribute-name="{{ $attributeName }}">
-                                                            <div class="font-medium text-gray-800 text-sm">{{ $variant->value }}</div>
-                                                            <div class="flex justify-between items-center mt-1 text-xs">
-                                                                <span class="text-gray-600">Số lượng: {{ $stock }}</span>
+                                                            <div class="font-bold text-gray-900 text-sm mb-2 flex items-center">
+                                                                <i class="fas fa-circle text-blue-500 mr-2 text-xs"></i>
+                                                                {{ $variant->value }}
+                                                            </div>
+                                                            <div class="space-y-1">
+                                                                <div class="flex items-center justify-between">
+                                                                    <span class="text-xs font-medium text-gray-600 flex items-center">
+                                                                        <i class="fas fa-boxes mr-1 text-gray-500 text-xs"></i>
+                                                                        Số lượng:
+                                                                    </span>
+                                                                    <span class="font-bold text-sm {{ $stock > 0 ? 'text-green-600' : 'text-red-600' }}">
+                                                                        {{ $stock }}
+                                                                    </span>
+                                                                </div>
                                                                 @if($sku)
-                                                                    <span class="text-blue-600 font-mono">{{ $sku }}</span>
+                                                                    <div class="flex items-center justify-between">
+                                                                        <span class="text-xs font-medium text-gray-600 flex items-center">
+                                                                            <i class="fas fa-barcode mr-1 text-gray-500 text-xs"></i>
+                                                                            SKU:
+                                                                        </span>
+                                                                        <span class="text-blue-600 font-mono text-xs font-semibold bg-blue-100 px-2 py-1 rounded">
+                                                                            {{ $sku }}
+                                                                        </span>
+                                                                    </div>
+                                                                @endif
+                                                                @if($extraPrice > 0)
+                                                                    <div class="flex items-center justify-between">
+                                                                        <span class="text-xs font-medium text-gray-600 flex items-center">
+                                                                            <i class="fas fa-plus-circle mr-1 text-green-500 text-xs"></i>
+                                                                            Phụ phí:
+                                                                        </span>
+                                                                        <span class="text-green-600 font-bold text-sm bg-green-100 px-2 py-1 rounded">
+                                                                            +{{ number_format($extraPrice) }}đ
+                                                                        </span>
+                                                                    </div>
                                                                 @endif
                                                             </div>
-                                                            @if($extraPrice > 0)
-                                                                <div class="text-blue-600 text-xs mt-1">+{{ number_format($extraPrice) }}đ</div>
-                                                            @endif
+                                                            <!-- Status indicator -->
+                                                            <div class="mt-2 pt-2 border-t border-gray-200">
+                                                                @if($stock > 0)
+                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                                                        <i class="fas fa-check-circle mr-1 text-xs"></i>
+                                                                        Còn hàng
+                                                                    </span>
+                                                                @else
+                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                                                        <i class="fas fa-times-circle mr-1 text-xs"></i>
+                                                                        Hết hàng
+                                                                    </span>
+                                                                @endif
+                                                            </div>
                                                         </div>
                                                     @endforeach
                                                 </div>
