@@ -1485,31 +1485,33 @@
                                                 <div class="relative">
                                                     <select name="attributes[{{ $attrVal->id }}]" id="attribute_{{ $attrVal->id }}"
                                                         class="adidas-select w-full appearance-none bg-white">
-                                                        @foreach($filteredValues as $bookAttrVal)
-                                                            @php
-                                                                $variantStock = $bookAttrVal->stock ?? 0;
-                                                                $variantSku = $bookAttrVal->sku ?? '';
-                                                                $extraPrice = $bookAttrVal->extra_price ?? 0;
-                                                                $displayText = $bookAttrVal->attributeValue->value ?? 'Không rõ';
-                                                                
-                                                                // Build option text with price and stock info
-                                                                $optionText = $displayText;
-                                                                if ($extraPrice > 0) {
-                                                                    $optionText .= ' (+' . number_format($extraPrice, 0, ',', '.') . '₫)';
-                                                                }
-                                                                if ($variantStock <= 0) {
-                                                                    $optionText .= ' - Hết hàng';
-                                                                } else if ($variantStock <= 5) {
-                                                                    $optionText .= ' - Còn ' . $variantStock . ' cuốn';
-                                                                }
-                                                            @endphp
-                                                            <option value="{{ $bookAttrVal->attribute_value_id }}"
-                                                                data-price="{{ $extraPrice }}"
-                                                                data-stock="{{ $variantStock }}"
-                                                                data-sku="{{ $variantSku }}"
-                                                                {{ $variantStock == 0 ? 'disabled' : '' }}>
-                                                                {{ $optionText }}
-                                                            </option>
+                                                        @foreach($filteredValues as $bookAttrVal)                                            @php
+                                                $variantStock = $bookAttrVal->stock ?? 0;
+                                                $variantSku = $bookAttrVal->sku ?? '';
+                                                $extraPrice = $bookAttrVal->extra_price ?? 0;
+                                                $displayText = $bookAttrVal->attributeValue->value ?? 'Không rõ';
+                                                
+                                                // Build option text with price and stock info - logic will be dynamic via JavaScript
+                                                $optionText = $displayText;
+                                                
+                                                // Always show actual extra price in dropdown initially (JavaScript will handle ebook case)
+                                                if ($extraPrice > 0) {
+                                                    $optionText .= ' (+' . number_format($extraPrice, 0, ',', '.') . '₫)';
+                                                }
+                                                
+                                                // Add stock info
+                                                if ($variantStock <= 0) {
+                                                    $optionText .= ' - Hết hàng';
+                                                } else if ($variantStock <= 5) {
+                                                    $optionText .= ' - Còn ' . $variantStock . ' cuốn';
+                                                }
+                                            @endphp                                            <option value="{{ $bookAttrVal->attribute_value_id }}"
+                                                data-price="{{ $extraPrice }}"
+                                                data-stock="{{ $variantStock }}"
+                                                data-sku="{{ $variantSku }}"
+                                                {{ $variantStock == 0 ? 'disabled' : '' }}>
+                                                {{ $optionText }}
+                                            </option>
                                                         @endforeach
                                                     </select>
                                                     <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
@@ -1562,6 +1564,13 @@
                                                                     Còn hàng
                                                                 </span>
                                                             </div>
+                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
+                                                                <div class="flex items-center">
+                                                                    <i class="fas fa-coins text-green-500 mr-2 text-sm"></i>
+                                                                    <span class="text-sm font-medium text-gray-700">Phí cộng thêm:</span>
+                                                                </div>
+                                                                <span class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">Miễn phí</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1581,7 +1590,7 @@
                                             <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-100">
                                                 <div class="flex items-center">
                                                     <i class="fas fa-plus-circle text-yellow-500 mr-2 text-sm"></i>
-                                                    <span class="text-sm font-medium text-gray-700">Tổng phí cộng thêm:</span>
+                                                    <span class="text-sm font-medium text-gray-700" id="extraPriceLabel">Tổng phí cộng thêm:</span>
                                                 </div>
                                                 <span id="totalExtraPrice" class="font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm">0₫</span>
                                             </div>
@@ -2577,13 +2586,31 @@
                         
                         // Update total extra price
                         if (totalExtraPriceElement) {
-                            const formattedTotalExtra = totalExtraPrice > 0 
-                                ? new Intl.NumberFormat('vi-VN').format(totalExtraPrice) + '₫'
-                                : '0₫';
-                            totalExtraPriceElement.textContent = formattedTotalExtra;
-                            totalExtraPriceElement.className = totalExtraPrice > 0
-                                ? 'font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm'
-                                : 'font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm';
+                            let displayTotalExtra, displayTotalClass;
+                            const extraPriceLabelElement = document.getElementById('extraPriceLabel');
+                            
+                            if (isEbook) {
+                                // For ebooks, always show "Miễn phí" regardless of actual values
+                                displayTotalExtra = 'Miễn phí';
+                                displayTotalClass = 'font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm';
+                                if (extraPriceLabelElement) {
+                                    extraPriceLabelElement.textContent = 'Phí cộng thêm:';
+                                }
+                            } else {
+                                // For physical books, show actual total extra price
+                                displayTotalExtra = totalExtraPrice > 0 
+                                    ? new Intl.NumberFormat('vi-VN').format(totalExtraPrice) + '₫'
+                                    : 'Miễn phí';
+                                displayTotalClass = totalExtraPrice > 0
+                                    ? 'font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm'
+                                    : 'font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm';
+                                if (extraPriceLabelElement) {
+                                    extraPriceLabelElement.textContent = 'Tổng phí cộng thêm:';
+                                }
+                            }
+                            
+                            totalExtraPriceElement.textContent = displayTotalExtra;
+                            totalExtraPriceElement.className = displayTotalClass;
                         }
                         
                         // Update min stock (for physical books only)
@@ -2635,7 +2662,71 @@
                             groupTitle.textContent = 'Tuỳ chọn sản phẩm';
                         }
                     }
+                    
+                    // Update dropdown options display based on format
+                    updateAttributeOptionsDisplay(isEbook);
                 }
+            }
+            
+            // Function to update attribute dropdown options based on format
+            function updateAttributeOptionsDisplay(isEbook) {
+                const attributeSelects = document.querySelectorAll('[name^="attributes["]');
+                
+                attributeSelects.forEach(select => {
+                    const options = select.querySelectorAll('option');
+                    
+                    options.forEach(option => {
+                        if (option.value) { // Skip empty option
+                            const originalText = option.dataset.originalText || option.textContent;
+                            const extraPrice = parseFloat(option.dataset.price) || 0;
+                            const variantStock = parseInt(option.dataset.stock) || 0;
+                            
+                            // Store original text if not stored
+                            if (!option.dataset.originalText) {
+                                // Extract base text (everything before " (+")
+                                const baseText = originalText.split(' (+')[0].split(' - ')[0];
+                                option.dataset.originalText = baseText;
+                            }
+                            
+                            const baseText = option.dataset.originalText;
+                            let newText = baseText;
+                            
+                            if (isEbook) {
+                                // For ebooks: show (Miễn phí) for language attributes only
+                                const attributeItem = select.closest('.attribute-item');
+                                const isLanguageAttr = attributeItem && attributeItem.dataset.isLanguage === 'true';
+                                
+                                if (isLanguageAttr) {
+                                    newText += ' (Miễn phí)';
+                                }
+                                
+                                // Don't show stock info for ebooks
+                            } else {
+                                // For physical books: show actual extra price and stock info
+                                if (extraPrice > 0) {
+                                    newText += ' (+' + new Intl.NumberFormat('vi-VN').format(extraPrice) + '₫)';
+                                }
+                                
+                                // Add stock info
+                                if (variantStock <= 0) {
+                                    newText += ' - Hết hàng';
+                                } else if (variantStock <= 5) {
+                                    newText += ' - Còn ' + variantStock + ' cuốn';
+                                }
+                                
+                                // Update disabled state for physical books only
+                                option.disabled = variantStock === 0;
+                            }
+                            
+                            option.textContent = newText;
+                            
+                            // For ebooks, ensure options are not disabled
+                            if (isEbook) {
+                                option.disabled = false;
+                            }
+                        }
+                    });
+                });
             }
 
             // Initialize variant overview interactions
@@ -2685,13 +2776,34 @@
             $(document).ready(function () {
                 const formatSelect = document.getElementById('bookFormatSelect');
                 if (formatSelect) {
-                    formatSelect.addEventListener('change', updatePriceAndStock);
+                    formatSelect.addEventListener('change', function() {
+                        updatePriceAndStock();
+                        
+                        // Update dropdown options display based on new format
+                        const selectedOption = formatSelect.selectedOptions[0];
+                        if (selectedOption) {
+                            const selectedText = selectedOption.textContent.trim().toLowerCase();
+                            const isEbook = selectedText.includes('ebook');
+                            updateAttributeOptionsDisplay(isEbook);
+                        }
+                    });
                 }
 
                 const attributeSelects = document.querySelectorAll('[name^="attributes["]');
                 attributeSelects.forEach(select => {
                     select.addEventListener('change', updatePriceAndStock);
                 });
+
+                // Initialize price and stock on page load
+                updatePriceAndStock();
+
+                // Initialize attribute visibility and dropdown display on page load
+                const initialFormatSelect = document.getElementById('bookFormatSelect');
+                if (initialFormatSelect && initialFormatSelect.selectedOptions[0]) {
+                    const initialSelectedText = initialFormatSelect.selectedOptions[0].textContent.trim().toLowerCase();
+                    const initialIsEbook = initialSelectedText.includes('ebook');
+                    updateAttributeOptionsDisplay(initialIsEbook);
+                }
 
                 // Initialize variant overview interactions
                 initializeVariantOverview();
