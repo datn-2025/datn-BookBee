@@ -1491,14 +1491,24 @@
                                                                 $variantSku = $bookAttrVal->sku ?? '';
                                                                 $extraPrice = $bookAttrVal->extra_price ?? 0;
                                                                 $displayText = $bookAttrVal->attributeValue->value ?? 'Không rõ';
-                                                            
+                                                                
+                                                                // Build option text with price and stock info
+                                                                $optionText = $displayText;
+                                                                if ($extraPrice > 0) {
+                                                                    $optionText .= ' (+' . number_format($extraPrice, 0, ',', '.') . '₫)';
+                                                                }
+                                                                if ($variantStock <= 0) {
+                                                                    $optionText .= ' - Hết hàng';
+                                                                } else if ($variantStock <= 5) {
+                                                                    $optionText .= ' - Còn ' . $variantStock . ' cuốn';
+                                                                }
                                                             @endphp
                                                             <option value="{{ $bookAttrVal->attribute_value_id }}"
                                                                 data-price="{{ $extraPrice }}"
                                                                 data-stock="{{ $variantStock }}"
                                                                 data-sku="{{ $variantSku }}"
                                                                 {{ $variantStock == 0 ? 'disabled' : '' }}>
-                                                                {{ $displayText }}
+                                                                {{ $optionText }}
                                                             </option>
                                                         @endforeach
                                                     </select>
@@ -1531,6 +1541,13 @@
                                                                 </div>
                                                                 <span id="selected_stock_{{ $attrVal->id }}" class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">-</span>
                                                             </div>
+                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
+                                                                <div class="flex items-center">
+                                                                    <i class="fas fa-coins text-yellow-500 mr-2 text-sm"></i>
+                                                                    <span class="text-sm font-medium text-gray-700">Phí cộng thêm:</span>
+                                                                </div>
+                                                                <span id="selected_extra_price_{{ $attrVal->id }}" class="font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm">0₫</span>
+                                                            </div>
                                                         </div>
                                                         
                                                         <!-- For Ebooks -->
@@ -1550,6 +1567,34 @@
                                                 </div>
                                             </div>
                                         @endforeach
+                                    </div>
+                                    
+                                    {{-- Tổng kết phí cộng thêm và stock biến thể --}}
+                                    <div id="attributesSummary" class="mt-6 bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 p-4 rounded-lg shadow-sm hidden">
+                                        <div class="flex items-center mb-3">
+                                            <i class="fas fa-calculator text-gray-600 mr-2"></i>
+                                            <span class="text-sm font-bold text-gray-800 uppercase tracking-wide">Tổng kết lựa chọn</span>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <!-- Tổng phí cộng thêm -->
+                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-100">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-plus-circle text-yellow-500 mr-2 text-sm"></i>
+                                                    <span class="text-sm font-medium text-gray-700">Tổng phí cộng thêm:</span>
+                                                </div>
+                                                <span id="totalExtraPrice" class="font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm">0₫</span>
+                                            </div>
+                                            
+                                            <!-- Stock thấp nhất (cho sách vật lý) -->
+                                            <div id="minStockSummary" class="flex items-center justify-between p-2 bg-white rounded border border-gray-100">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-warehouse text-green-500 mr-2 text-sm"></i>
+                                                    <span class="text-sm font-medium text-gray-700">Tồn kho khả dụng:</span>
+                                                </div>
+                                                <span id="minStockValue" class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">-</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             @endif
@@ -2208,6 +2253,7 @@
                 const attributeSelects = document.querySelectorAll('[name^="attributes["]');
                 let totalVariantStock = stock; // Start with format stock
                 let lowestVariantStock = stock;
+                let totalExtraPrice = 0; // Track total extra price from variants
                 
                 attributeSelects.forEach(select => {
                     if (select.selectedOptions[0]) {
@@ -2216,7 +2262,11 @@
                         const attributeStock = parseInt(selectedOption.dataset.stock) || 0;
                         const attributeSku = selectedOption.dataset.sku || '';
                         
-                        finalPrice += extraPrice;
+                        // Only add extra price for physical books, ebooks variants are free
+                        if (!isEbook) {
+                            finalPrice += extraPrice;
+                            totalExtraPrice += extraPrice; // Add to total extra price for physical books
+                        }
                         
                         // For physical books, use the minimum stock among variants
                         if (!isEbook && attributeStock >= 0) {
@@ -2224,7 +2274,8 @@
                             selectedVariantInfo.push({
                                 selectId: select.id,
                                 stock: attributeStock,
-                                sku: attributeSku
+                                sku: attributeSku,
+                                extraPrice: extraPrice  // Add extra price to variant info
                             });
                         }
                         
@@ -2232,6 +2283,7 @@
                         const attributeId = select.id.replace('attribute_', '');
                         const skuElement = document.getElementById(`selected_sku_${attributeId}`);
                         const stockElement = document.getElementById(`selected_stock_${attributeId}`);
+                        const extraPriceElement = document.getElementById(`selected_extra_price_${attributeId}`);
                         const infoElement = document.getElementById(`variant_info_${attributeId}`);
                         const physicalInfoElement = document.getElementById(`physical_variant_info_${attributeId}`);
                         const ebookInfoElement = document.getElementById(`ebook_variant_info_${attributeId}`);
@@ -2269,6 +2321,25 @@
                                     stockElement.className = attributeStock > 0 
                                         ? 'font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm'
                                         : 'font-bold text-red-600 bg-red-100 px-2 py-1 rounded text-sm';
+                                }
+                                
+                                // Update extra price display
+                                if (extraPriceElement) {
+                                    // For ebooks, variants are always free regardless of database value
+                                    let displayPrice, displayClass;
+                                    if (isEbook) {
+                                        displayPrice = 'Miễn phí';
+                                        displayClass = 'font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm';
+                                    } else {
+                                        displayPrice = extraPrice > 0 
+                                            ? new Intl.NumberFormat('vi-VN').format(extraPrice) + '₫'
+                                            : 'Miễn phí';
+                                        displayClass = extraPrice > 0
+                                            ? 'font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm'
+                                            : 'font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm';
+                                    }
+                                    extraPriceElement.textContent = displayPrice;
+                                    extraPriceElement.className = displayClass;
                                 }
                             }
                         }
@@ -2492,6 +2563,51 @@
                         quantityInput.min = 0;
                     }
                 }
+                
+                // Update attributes summary
+                const attributesSummary = document.getElementById('attributesSummary');
+                const totalExtraPriceElement = document.getElementById('totalExtraPrice');
+                const minStockSummary = document.getElementById('minStockSummary');
+                const minStockValue = document.getElementById('minStockValue');
+                
+                // Show summary if any attributes are selected
+                if (attributeSelects.length > 0 && Array.from(attributeSelects).some(s => s.value)) {
+                    if (attributesSummary) {
+                        attributesSummary.classList.remove('hidden');
+                        
+                        // Update total extra price
+                        if (totalExtraPriceElement) {
+                            const formattedTotalExtra = totalExtraPrice > 0 
+                                ? new Intl.NumberFormat('vi-VN').format(totalExtraPrice) + '₫'
+                                : '0₫';
+                            totalExtraPriceElement.textContent = formattedTotalExtra;
+                            totalExtraPriceElement.className = totalExtraPrice > 0
+                                ? 'font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm'
+                                : 'font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm';
+                        }
+                        
+                        // Update min stock (for physical books only)
+                        if (!isEbook && selectedVariantInfo.length > 0) {
+                            if (minStockSummary) {
+                                minStockSummary.classList.remove('hidden');
+                            }
+                            if (minStockValue) {
+                                minStockValue.textContent = `${stock} cuốn`;
+                                minStockValue.className = stock > 0
+                                    ? 'font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm'
+                                    : 'font-bold text-red-600 bg-red-100 px-2 py-1 rounded text-sm';
+                            }
+                        } else {
+                            if (minStockSummary) {
+                                minStockSummary.classList.add('hidden');
+                            }
+                        }
+                    }
+                } else {
+                    if (attributesSummary) {
+                        attributesSummary.classList.add('hidden');
+                    }
+                }
 
                 // Show/hide attributes based on format type
                 const attributesGroup = document.getElementById('bookAttributesGroup');
@@ -2650,6 +2766,10 @@
                         return;
                     @endauth
 
+                    // Get button elements for loading state
+                    const addToCartBtn = document.getElementById('addToCartBtn');
+                    const originalText = addToCartBtn.textContent;
+
                                             // Get form data
                                             const bookId = '{{ $book->id }}';
                     const quantity = parseInt(document.getElementById('quantity').value) || 1;
@@ -2731,47 +2851,56 @@
                         if (attributeValueIds.length > 0) {
                             let minVariantStock = Infinity;
                             let hasOutOfStockVariant = false;
-                            let outOfStockVariantSku = '';
+                            let outOfStockVariantDetails = [];
+                            let validVariants = [];
 
                             attributeSelects.forEach(select => {
                                 if (select.value && select.selectedOptions[0]) {
                                     const variantStock = parseInt(select.selectedOptions[0].dataset.stock) || 0;
                                     const variantSku = select.selectedOptions[0].dataset.sku || '';
+                                    const variantName = select.selectedOptions[0].textContent.split(' - ')[0].trim();
+                                    
+                                    const variantInfo = {
+                                        name: variantName,
+                                        sku: variantSku,
+                                        stock: variantStock
+                                    };
                                     
                                     if (variantStock <= 0) {
                                         hasOutOfStockVariant = true;
-                                        outOfStockVariantSku = variantSku;
-                                    }
-                                    
-                                    if (variantStock < minVariantStock && variantStock > 0) {
-                                        minVariantStock = variantStock;
+                                        outOfStockVariantDetails.push(variantInfo);
+                                    } else {
+                                        validVariants.push(variantInfo);
+                                        if (variantStock < minVariantStock) {
+                                            minVariantStock = variantStock;
+                                        }
                                     }
                                 }
                             });
 
                             if (hasOutOfStockVariant) {
                                 if (typeof toastr !== 'undefined') {
-                                    toastr.error(`Biến thể đã hết hàng${outOfStockVariantSku ? ` (SKU: ${outOfStockVariantSku})` : ''}!`);
+                                    const outOfStockNames = outOfStockVariantDetails.map(v => v.name).join(', ');
+                                    const message = `Các biến thể sau đã hết hàng: ${outOfStockNames}. Vui lòng chọn biến thể khác!`;
+                                    toastr.error(message);
                                 } else {
-                                    alert(`Biến thể đã hết hàng${outOfStockVariantSku ? ` (SKU: ${outOfStockVariantSku})` : ''}!`);
+                                    alert('Có biến thể đã hết hàng. Vui lòng chọn biến thể khác!');
                                 }
-                                addToCartBtn.disabled = false;
-                                addToCartBtn.textContent = originalText;
                                 return;
                             }
 
                             if (minVariantStock !== Infinity && quantity > minVariantStock) {
+                                const limitingVariant = validVariants.find(v => v.stock === minVariantStock);
                                 if (typeof toastr !== 'undefined') {
-                                    toastr.error(`Số lượng vượt quá tồn kho biến thể! Tồn kho hiện tại: ${minVariantStock}`);
+                                    const message = `Số lượng vượt quá tồn kho! Biến thể "${limitingVariant?.name || 'Không xác định'}" chỉ còn ${minVariantStock} cuốn${limitingVariant?.sku ? ` (SKU: ${limitingVariant.sku})` : ''}.`;
+                                    toastr.error(message);
                                 } else {
-                                    alert(`Số lượng vượt quá tồn kho biến thể! Tồn kho hiện tại: ${minVariantStock}`);
+                                    alert(`Số lượng vượt quá tồn kho! Chỉ còn ${minVariantStock} cuốn.`);
                                 }
-                                addToCartBtn.disabled = false;
-                                addToCartBtn.textContent = originalText;
                                 return;
                             }
 
-                            // Use variant stock if available
+                            // Use minimum variant stock for final validation
                             if (minVariantStock !== Infinity) {
                                 stock = minVariantStock;
                             }
@@ -2802,8 +2931,6 @@
                     }
 
                     // Disable button and show loading
-                    const addToCartBtn = document.getElementById('addToCartBtn');
-                    const originalText = addToCartBtn.textContent;
                     addToCartBtn.disabled = true;
                     addToCartBtn.textContent = 'Đang thêm...';
 
