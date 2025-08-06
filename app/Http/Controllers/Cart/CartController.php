@@ -391,18 +391,73 @@ class CartController extends Controller
 
             // Kiểm tra tồn kho (chỉ với sách vật lý, không phải ebook)
             if (!$isEbook) {
-                if ($bookInfo->stock <= 0) {
-                    return response()->json([
-                        'error' => 'Sản phẩm đã hết hàng',
-                        'available_stock' => $bookInfo->stock
-                    ], 422);
+                // Kiểm tra tồn kho theo biến thể nếu có thuộc tính được chọn
+                if (!empty($validAttributeIds)) {
+                    // Kiểm tra tồn kho từng biến thể
+                    $variantStockInfo = DB::table('book_attribute_values')
+                        ->whereIn('attribute_value_id', $validAttributeIds)
+                        ->where('book_id', $bookId)
+                        ->select('attribute_value_id', 'stock', 'sku')
+                        ->get();
+
+                    if ($variantStockInfo->isEmpty()) {
+                        return response()->json([
+                            'error' => 'Không tìm thấy thông tin tồn kho cho biến thể đã chọn'
+                        ], 422);
+                    }
+
+                    // Tìm stock thấp nhất trong các biến thể được chọn
+                    $minVariantStock = $variantStockInfo->min('stock');
+                    $outOfStockVariants = $variantStockInfo->filter(function ($variant) {
+                        return $variant->stock <= 0;
+                    });
+
+                    if ($outOfStockVariants->isNotEmpty()) {
+                        $outOfStockSkus = $outOfStockVariants->pluck('sku')->filter()->implode(', ');
+                        return response()->json([
+                            'error' => 'Biến thể đã hết hàng: ' . ($outOfStockSkus ?: 'N/A'),
+                            'available_stock' => 0
+                        ], 422);
+                    }
+
+                    if ($quantity > $minVariantStock) {
+                        $lowStockVariant = $variantStockInfo->where('stock', $minVariantStock)->first();
+                        return response()->json([
+                            'error' => "Số lượng yêu cầu vượt quá tồn kho biến thể. Tồn kho hiện tại: {$minVariantStock}" .
+                                ($lowStockVariant->sku ? " (SKU: {$lowStockVariant->sku})" : ""),
+                            'available_stock' => $minVariantStock,
+                            'variant_sku' => $lowStockVariant->sku ?? null
+                        ], 422);
+                    }
+
+                    Log::info('Cart addToCart - Variant stock check passed:', [
+                        'book_id' => $bookId,
+                        'selected_variants' => $validAttributeIds,
+                        'min_stock' => $minVariantStock,
+                        'requested_quantity' => $quantity
+                    ]);
+                } else {
+                    // Không có biến thể, kiểm tra tồn kho sách thông thường
+                    if ($bookInfo->stock <= 0) {
+                        return response()->json([
+                            'error' => 'Sản phẩm đã hết hàng',
+                            'available_stock' => $bookInfo->stock
+                        ], 422);
+                    }
+                    if ($quantity > $bookInfo->stock) {
+                        return response()->json([
+                            'error' => "Số lượng yêu cầu vượt quá số lượng tồn kho. Tồn kho hiện tại: {$bookInfo->stock}",
+                            'available_stock' => $bookInfo->stock
+                        ], 422);
+                    }
                 }
-                if ($quantity > $bookInfo->stock) {
-                    return response()->json([
-                        'error' => "Số lượng yêu cầu vượt quá số lượng tồn kho. Tồn kho hiện tại: {$bookInfo->stock}",
-                        'available_stock' => $bookInfo->stock
-                    ], 422);
-                }
+            } else {
+                // EBOOK: Không kiểm tra stock cho variants, chỉ lưu thông tin ngôn ngữ
+                Log::info('Cart addToCart - Ebook variant handling:', [
+                    'book_id' => $bookId,
+                    'selected_variants' => $validAttributeIds,
+                    'note' => 'Ebooks do not require stock validation for variants (e.g., language options)'
+                ]);
             }
 
             // Tính giá cuối cùng sau khi áp dụng discount (nếu có)
@@ -412,6 +467,23 @@ class CartController extends Controller
                 $finalPrice = $bookInfo->price - $bookInfo->discount;
                 // Đảm bảo giá không âm
                 $finalPrice = max(0, $finalPrice);
+            }
+
+            // Tính thêm extra_price từ biến thể nếu có
+            if (!empty($validAttributeIds)) {
+                $attributeExtraPrice = DB::table('book_attribute_values')
+                    ->whereIn('attribute_value_id', $validAttributeIds)
+                    ->where('book_id', $bookId)
+                    ->sum('extra_price');
+
+                $finalPrice += $attributeExtraPrice;
+
+                Log::info('Cart addToCart - Added attribute extra price:', [
+                    'book_id' => $bookId,
+                    'attribute_ids' => $validAttributeIds,
+                    'extra_price' => $attributeExtraPrice,
+                    'final_price' => $finalPrice
+                ]);
             }
             // dd($finalPrice);
 
@@ -473,12 +545,37 @@ class CartController extends Controller
                 }
                 // Kiểm tra tổng số lượng sau khi thêm (chỉ với sách vật lý)
                 $newQuantity = $existingCart->quantity + $quantity;
-                if (!$isEbook && $newQuantity > $bookInfo->stock) {
-                    return response()->json([
-                        'error' => "Số lượng tổng cộng vượt quá tồn kho. Tồn kho hiện tại: {$bookInfo->stock}, số lượng trong giỏ: {$existingCart->quantity}",
-                        // 'available_stock' => $bookInfo->stock,
-                        // 'current_cart_quantity' => $existingCart->quantity
-                    ]);
+                if (!$isEbook) {
+                    // Kiểm tra theo biến thể nếu có
+                    if (!empty($validAttributeIds)) {
+                        $variantStockInfo = DB::table('book_attribute_values')
+                            ->whereIn('attribute_value_id', $validAttributeIds)
+                            ->where('book_id', $bookId)
+                            ->select('attribute_value_id', 'stock', 'sku')
+                            ->get();
+
+                        $minVariantStock = $variantStockInfo->min('stock');
+
+                        if ($newQuantity > $minVariantStock) {
+                            $lowStockVariant = $variantStockInfo->where('stock', $minVariantStock)->first();
+                            return response()->json([
+                                'error' => "Số lượng tổng cộng vượt quá tồn kho biến thể. Tồn kho hiện tại: {$minVariantStock}, số lượng trong giỏ: {$existingCart->quantity}" .
+                                    ($lowStockVariant->sku ? " (SKU: {$lowStockVariant->sku})" : ""),
+                                'available_stock' => $minVariantStock,
+                                'current_cart_quantity' => $existingCart->quantity,
+                                'variant_sku' => $lowStockVariant->sku ?? null
+                            ], 422);
+                        }
+                    } else {
+                        // Kiểm tra theo stock sách thông thường
+                        if ($newQuantity > $bookInfo->stock) {
+                            return response()->json([
+                                'error' => "Số lượng tổng cộng vượt quá tồn kho. Tồn kho hiện tại: {$bookInfo->stock}, số lượng trong giỏ: {$existingCart->quantity}",
+                                'available_stock' => $bookInfo->stock,
+                                'current_cart_quantity' => $existingCart->quantity
+                            ], 422);
+                        }
+                    }
                 }
                 // Cập nhật số lượng và giá (case giá có thể thay đổi)
                 DB::table('carts')
@@ -894,6 +991,12 @@ class CartController extends Controller
                 return response()->json(['error' => 'Bạn cần đăng nhập để cập nhật giỏ hàng.'], 401);
             }
 
+            // Debug logging
+            Log::info('UpdateCart request received:', [
+                'user_id' => Auth::id(),
+                'request_data' => $request->all()
+            ]);
+
             $isCombo = $request->boolean('is_combo', false);
             $quantity = (int)$request->quantity;
 
@@ -995,26 +1098,49 @@ class CartController extends Controller
             } else {
                 // Xử lý cập nhật số lượng sách đơn lẻ (logic hiện tại)
                 $bookId = $request->book_id;
-                // dd($bookId);
                 $bookFormatId = $request->book_format_id;
                 $attributeValueIds = $request->attribute_value_ids;
 
-                // Lấy cart item cụ thể với tất cả dữ liệu định danh
-                $cartItemQuery = Cart::where('user_id', Auth::id())
-                ->where('book_id', $bookId)
-                ->where('is_combo', 0)
-                ->when($bookFormatId, fn($q) => $q->where('book_format_id', $bookFormatId))
-                // ->when($attributeValueIds, fn($q) => $q->where('attribute_value_ids', $attributeValueIds))
-                ->first(); // ✅ chỉ lấy 1 bản ghi
-                // dd($cartItemQuery);
-                // dd($cartItemQuery->toSql());
-                if ($bookFormatId) {
-                    $cartItemQuery->where('book_format_id', $bookFormatId);
+                // Ưu tiên sử dụng cart_id nếu có (method đáng tin cậy nhất)
+                $cartId = $request->cart_id;
+
+                Log::info('Processing book update:', [
+                    'book_id' => $bookId,
+                    'book_format_id' => $bookFormatId,
+                    'cart_id' => $cartId,
+                    'quantity' => $quantity,
+                    'attribute_value_ids' => $attributeValueIds
+                ]);
+
+                if ($cartId) {
+                    // Sử dụng cart_id để tìm cart item trực tiếp
+                    $cartItem = Cart::where('user_id', Auth::id())
+                        ->where('id', $cartId)
+                        ->where('is_combo', 0)
+                        ->first();
+                } else {
+                    // Fallback: sử dụng thông tin book để tìm cart item
+                    $cartItemQuery = Cart::where('user_id', Auth::id())
+                        ->where('book_id', $bookId)
+                        ->where('is_combo', 0);
+
+                    if ($bookFormatId) {
+                        $cartItemQuery->where('book_format_id', $bookFormatId);
+                    }
+
+                    if ($attributeValueIds) {
+                        // Chuẩn hóa attribute_value_ids để so sánh
+                        if (is_string($attributeValueIds)) {
+                            $attributeValueIds = json_decode($attributeValueIds, true);
+                        }
+                        if (is_array($attributeValueIds)) {
+                            $attributeValueIds = json_encode($attributeValueIds);
+                        }
+                        $cartItemQuery->where('attribute_value_ids', $attributeValueIds);
+                    }
+
+                    $cartItem = $cartItemQuery->first();
                 }
-                if ($attributeValueIds) {
-                    $cartItemQuery->where('attribute_value_ids', $attributeValueIds);
-                }
-                $cartItem = $cartItemQuery;
                 // dd($cartItemQuery);
                 if (!$cartItem) {
                     return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
@@ -1077,13 +1203,31 @@ class CartController extends Controller
                 // Logic tách biệt cho ebook và sách vật lý
                 if ($isEbook) {
                     // EBOOK: Luôn giữ số lượng = 1, không cho phép thay đổi
-                    $updateQuery = DB::table('carts')
-                        ->where('user_id', Auth::id())
-                        ->where('book_id', $bookId)
-                        ->where('book_format_id', $cartItem->book_format_id);
+                    if ($cartId) {
+                        // Sử dụng cart_id để cập nhật trực tiếp
+                        $updateQuery = DB::table('carts')
+                            ->where('user_id', Auth::id())
+                            ->where('id', $cartId);
+                    } else {
+                        // Fallback: sử dụng thông tin book để cập nhật
+                        $updateQuery = DB::table('carts')
+                            ->where('user_id', Auth::id())
+                            ->where('book_id', $bookId)
+                            ->where('book_format_id', $cartItem->book_format_id);
 
-                    if ($cartItem->attribute_value_ids) {
-                        $updateQuery->whereJsonContains('attribute_value_ids', $cartItem->attribute_value_ids);
+                        if ($cartItem->attribute_value_ids) {
+                            // Xử lý attribute_value_ids an toàn cho ebook
+                            if (is_string($cartItem->attribute_value_ids)) {
+                                $attributeIds = json_decode($cartItem->attribute_value_ids, true);
+                            } else {
+                                $attributeIds = $cartItem->attribute_value_ids;
+                            }
+
+                            if (is_array($attributeIds) && !empty($attributeIds)) {
+                                // So sánh bằng JSON string
+                                $updateQuery->where('attribute_value_ids', json_encode($attributeIds));
+                            }
+                        }
                     }
 
                     $updateQuery->update([
@@ -1107,24 +1251,101 @@ class CartController extends Controller
                     ]);
                 } else {
                     // SÁCH VẬT LÝ: Kiểm tra tồn kho và cho phép thay đổi số lượng
-                    if ($quantity > $bookInfo->stock) {
-                        return response()->json([
-                            'error' => "Số lượng yêu cầu vượt quá số lượng tồn kho. Tồn kho hiện tại: {$bookInfo->stock}",
-                            'available_stock' => $bookInfo->stock,
-                            'is_ebook' => false
-                        ], 422);
+
+                    // Kiểm tra biến thể nếu có attribute_value_ids
+                    if ($cartItem->attribute_value_ids) {
+                        // Safe handling for attribute_value_ids - check if it's string or array
+                        if (is_string($cartItem->attribute_value_ids)) {
+                            $attributeIds = json_decode($cartItem->attribute_value_ids, true);
+                        } else {
+                            $attributeIds = $cartItem->attribute_value_ids; // Already an array
+                        }
+                        if (!empty($attributeIds)) {
+                            // Kiểm tra tồn kho từng biến thể (chỉ cho sách vật lý)
+                            $variantStockInfo = DB::table('book_attribute_values')
+                                ->whereIn('attribute_value_id', $attributeIds)
+                                ->where('book_id', $bookId)
+                                ->select('attribute_value_id', 'stock', 'sku')
+                                ->get();
+
+                            if ($variantStockInfo->isEmpty()) {
+                                return response()->json([
+                                    'error' => 'Không tìm thấy thông tin tồn kho cho biến thể đã chọn'
+                                ], 422);
+                            }
+
+                            // Tìm stock thấp nhất trong các biến thể được chọn
+                            $minVariantStock = $variantStockInfo->min('stock');
+                            $outOfStockVariants = $variantStockInfo->filter(function ($variant) {
+                                return $variant->stock <= 0;
+                            });
+
+                            if ($outOfStockVariants->isNotEmpty()) {
+                                $outOfStockSkus = $outOfStockVariants->pluck('sku')->filter()->implode(', ');
+                                return response()->json([
+                                    'error' => 'Biến thể đã hết hàng: ' . ($outOfStockSkus ?: 'N/A'),
+                                    'available_stock' => 0,
+                                    'is_ebook' => false
+                                ], 422);
+                            }
+
+                            if ($quantity > $minVariantStock) {
+                                $lowStockVariant = $variantStockInfo->where('stock', $minVariantStock)->first();
+                                return response()->json([
+                                    'error' => "Số lượng yêu cầu vượt quá tồn kho biến thể. Tồn kho hiện tại: {$minVariantStock}" .
+                                        ($lowStockVariant->sku ? " (SKU: {$lowStockVariant->sku})" : ""),
+                                    'available_stock' => $minVariantStock,
+                                    'variant_sku' => $lowStockVariant->sku ?? null,
+                                    'is_ebook' => false
+                                ], 422);
+                            }
+
+                            Log::info('Cart updateCart - Physical book variant stock check passed:', [
+                                'book_id' => $bookId,
+                                'selected_variants' => $attributeIds,
+                                'min_stock' => $minVariantStock,
+                                'requested_quantity' => $quantity,
+                                'is_ebook' => false
+                            ]);
+                        }
+                    } else {
+                        // Không có biến thể, kiểm tra tồn kho sách thông thường
+                        if ($quantity > $bookInfo->stock) {
+                            return response()->json([
+                                'error' => "Số lượng yêu cầu vượt quá số lượng tồn kho. Tồn kho hiện tại: {$bookInfo->stock}",
+                                'available_stock' => $bookInfo->stock,
+                                'is_ebook' => false
+                            ], 422);
+                        }
                     }
 
                     if ($quantity > 0) {
-                        // dd($quantity);
                         // Cập nhật số lượng cho sách vật lý
-                        $updateQuery = DB::table('carts')
-                            ->where('user_id', Auth::id())
-                            ->where('book_id', $bookId)
-                            ->where('book_format_id', $cartItem->book_format_id);
+                        if ($cartId) {
+                            // Sử dụng cart_id để cập nhật trực tiếp (method đáng tin cậy nhất)
+                            $updateQuery = DB::table('carts')
+                                ->where('user_id', Auth::id())
+                                ->where('id', $cartId);
+                        } else {
+                            // Fallback: sử dụng thông tin book để cập nhật
+                            $updateQuery = DB::table('carts')
+                                ->where('user_id', Auth::id())
+                                ->where('book_id', $bookId)
+                                ->where('book_format_id', $cartItem->book_format_id);
 
-                        if ($cartItem->attribute_value_ids) {
-                            $updateQuery->whereJsonContains('attribute_value_ids', $cartItem->attribute_value_ids);
+                            if ($cartItem->attribute_value_ids) {
+                                // Xử lý attribute_value_ids an toàn
+                                if (is_string($cartItem->attribute_value_ids)) {
+                                    $attributeIds = json_decode($cartItem->attribute_value_ids, true);
+                                } else {
+                                    $attributeIds = $cartItem->attribute_value_ids;
+                                }
+
+                                if (is_array($attributeIds) && !empty($attributeIds)) {
+                                    // So sánh bằng JSON string
+                                    $updateQuery->where('attribute_value_ids', json_encode($attributeIds));
+                                }
+                            }
                         }
                         // dd($quantity, $currentPrice);
                         $updateQuery->update([
@@ -1148,13 +1369,31 @@ class CartController extends Controller
                         ]);
                     } else {
                         // Xóa sản phẩm khi số lượng = 0
-                        $deleteQuery = DB::table('carts')
-                            ->where('user_id', Auth::id())
-                            ->where('book_id', $bookId)
-                            ->where('book_format_id', $cartItem->book_format_id);
+                        if ($cartId) {
+                            // Sử dụng cart_id để xóa trực tiếp
+                            $deleteQuery = DB::table('carts')
+                                ->where('user_id', Auth::id())
+                                ->where('id', $cartId);
+                        } else {
+                            // Fallback: sử dụng thông tin book để xóa
+                            $deleteQuery = DB::table('carts')
+                                ->where('user_id', Auth::id())
+                                ->where('book_id', $bookId)
+                                ->where('book_format_id', $cartItem->book_format_id);
 
-                        if ($cartItem->attribute_value_ids) {
-                            $deleteQuery->where('attribute_value_ids', $cartItem->attribute_value_ids);
+                            if ($cartItem->attribute_value_ids) {
+                                // Xử lý attribute_value_ids an toàn cho delete
+                                if (is_string($cartItem->attribute_value_ids)) {
+                                    $attributeIds = json_decode($cartItem->attribute_value_ids, true);
+                                } else {
+                                    $attributeIds = $cartItem->attribute_value_ids;
+                                }
+
+                                if (is_array($attributeIds) && !empty($attributeIds)) {
+                                    // So sánh bằng JSON string
+                                    $deleteQuery->where('attribute_value_ids', json_encode($attributeIds));
+                                }
+                            }
                         }
 
                         $deletedCount = $deleteQuery->delete();
