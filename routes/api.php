@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GhnController;
+use App\Http\Controllers\Api\ChatbotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,4 +29,11 @@ Route::prefix('ghn')->group(function () {
     Route::post('/services', [GhnController::class, 'getServices']);
     Route::post('/lead-time', [GhnController::class, 'getLeadTime']);
     Route::get('/tracking/{orderCode}', [GhnController::class, 'trackOrder'])->name('api.ghn.tracking');
+});
+
+// Chatbot API Routes
+Route::prefix('chatbot')->group(function () {
+    Route::post('/message', [ChatbotController::class, 'processMessage']);
+    Route::get('/categories', [ChatbotController::class, 'getCategories']);
+    Route::post('/books-by-category', [ChatbotController::class, 'getBooksByCategory']);
 });

@@ -187,10 +187,10 @@
                             <div class="p-3 bg-light rounded border">
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label fw-medium">Chọn sách nhận quà tặng <span class="text-danger">*</span></label>
+                                        <label class="form-label fw-medium">Chọn sách nhận quà tặng</label>
                                         <select class="form-select @error('gift_book_id') is-invalid @enderror" 
                                                 name="gift_book_id">
-                                            <option value="">-- Chọn sách --</option>
+                                            <option value="" selected>Sách hiện tại (đang tạo)</option>
                                             @foreach($books ?? [] as $book)
                                                 <option value="{{ $book->id }}" 
                                                     {{ old('gift_book_id') == $book->id ? 'selected' : '' }}>
@@ -201,6 +201,7 @@
                                         @error('gift_book_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
+                                        <div class="form-text">Để trống để tạo quà tặng cho sách hiện tại</div>
                                     </div>
                                     
                                     <div class="col-md-6">
@@ -240,18 +241,16 @@
                                                value="{{ old('gift_date_range') }}">
                                         
                                         <!-- Hidden inputs để lưu giá trị ngày -->
-                                        <input type="hidden" id="gift_start_date" name="start_date" 
-                                               value="{{ old('start_date') }}">
-                                        <input type="hidden" id="gift_end_date" name="end_date" 
-                                               value="{{ old('end_date') }}">
+                                        <input type="hidden" id="gift_start_date" name="gift_start_date" value="{{ old('gift_start_date') }}">
+                                        <input type="hidden" id="gift_end_date" name="gift_end_date" value="{{ old('gift_end_date') }}">
                                         
                                         @error('gift_date_range')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
-                                        @error('start_date')
+                                        @error('gift_start_date')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
-                                        @error('end_date')
+                                        @error('gift_end_date')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                         
