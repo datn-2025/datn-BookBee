@@ -334,7 +334,7 @@
                                         </div>
                                     </div>
 
-                                    {{-- Attributes - Chỉ hiển thị thuộc tính ngôn ngữ cho ebooks --}}
+                                    {{-- Attributes - Hiển thị đầy đủ thông tin biến thể bao gồm stock và SKU --}}
                                     @if($item->attribute_value_ids && $item->attribute_value_ids !== '[]')
                                         @php
                                             $attributeIds = json_decode($item->attribute_value_ids, true);
@@ -361,7 +361,9 @@
                                                 $attributes = $query->select(
                                                     'attributes.name as attr_name', 
                                                     'attribute_values.value as attr_value',
-                                                    'book_attribute_values.extra_price'
+                                                    'book_attribute_values.extra_price',
+                                                    'book_attribute_values.stock',
+                                                    'book_attribute_values.sku'
                                                 )->get();
                                                 
                                                 // Calculate total extra price from attributes
@@ -375,18 +377,62 @@
                                                     @if($isEbook)
                                                         Ngôn ngữ:
                                                     @else
-                                                        Thuộc tính:
+                                                        Thuộc tính sản phẩm:
                                                     @endif
                                                 </div>
-                                                <div class="flex flex-wrap gap-2">
+                                                <div class="space-y-2">
                                                     @foreach($attributes->unique(function($attr) { return $attr->attr_name . ':' . $attr->attr_value; }) as $attr)
-                                                        <span class="bg-white px-2 py-1 text-xs border border-gray-200 font-medium">
-                                                            @if($isEbook)
-                                                                {{ $attr->attr_value }}
-                                                            @else
-                                                                {{ $attr->attr_name }}: {{ $attr->attr_value }}
+                                                        <div class="flex items-center justify-between bg-white p-2 rounded border">
+                                                            <div class="flex items-center gap-2">
+                                                                <span class="text-sm font-medium text-gray-800">
+                                                                    @if($isEbook)
+                                                                        {{ $attr->attr_value }}
+                                                                    @else
+                                                                        {{ $attr->attr_name }}: <span class="font-bold">{{ $attr->attr_value }}</span>
+                                                                    @endif
+                                                                </span>
+                                                                @if($attr->extra_price > 0)
+                                                                    <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium">
+                                                                        +{{ number_format($attr->extra_price) }}đ
+                                                                    </span>
+                                                                @endif
+                                                            </div>
+                                                            
+                                                            {{-- Hiển thị stock và SKU cho sách vật lý --}}
+                                                            @if(!$isEbook)
+                                                                <div class="flex items-center gap-3 text-xs">
+                                                                    {{-- SKU --}}
+                                                                    @if($attr->sku)
+                                                                        <div class="flex items-center gap-1">
+                                                                            <i class="fas fa-barcode text-gray-500"></i>
+                                                                            <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded font-mono">
+                                                                                {{ $attr->sku }}
+                                                                            </span>
+                                                                        </div>
+                                                                    @endif
+                                                                    
+                                                                    {{-- Stock --}}
+                                                                    <div class="flex items-center gap-1">
+                                                                        <i class="fas fa-boxes text-gray-500"></i>
+                                                                        <span class="
+                                                                            @if($attr->stock > 10) 
+                                                                                bg-green-100 text-green-700 
+                                                                            @elseif($attr->stock > 0) 
+                                                                                bg-yellow-100 text-yellow-700 
+                                                                            @else 
+                                                                                bg-red-100 text-red-700 
+                                                                            @endif
+                                                                            px-2 py-1 rounded font-medium">
+                                                                            @if($attr->stock > 0)
+                                                                                {{ $attr->stock }} có sẵn
+                                                                            @else
+                                                                                Hết hàng
+                                                                            @endif
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
                                                             @endif
-                                                        </span>
+                                                        </div>
                                                     @endforeach
                                                 </div>
                                             </div>
