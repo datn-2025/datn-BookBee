@@ -2918,6 +2918,68 @@
                         }
                     });
 
+                    // Frontend validation for quantity - check before sending request
+                    if (!isEbook) {
+                        // Get current stock information from DOM
+                        let currentStock = 0;
+                        const formatSelect = document.getElementById('bookFormatSelect');
+                        
+                        if (formatSelect && formatSelect.selectedOptions[0]) {
+                            currentStock = parseInt(formatSelect.selectedOptions[0].dataset.stock) || 0;
+                            
+                            // If attributes are selected, get minimum variant stock
+                            if (attributeValueIds.length > 0) {
+                                let minVariantStock = Infinity;
+                                
+                                attributeSelects.forEach(select => {
+                                    if (select.value && select.selectedOptions[0]) {
+                                        const variantStock = parseInt(select.selectedOptions[0].dataset.stock) || 0;
+                                        if (variantStock < minVariantStock) {
+                                            minVariantStock = variantStock;
+                                        }
+                                    }
+                                });
+                                
+                                if (minVariantStock !== Infinity) {
+                                    currentStock = Math.min(currentStock, minVariantStock);
+                                }
+                            }
+                        }
+                        
+                        // Check quantity against current stock
+                        if (currentStock <= 0) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('Sản phẩm này hiện đã hết hàng!', 'Hết hàng', {
+                                    timeOut: 4000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
+                            } else {
+                                alert('Sản phẩm này hiện đã hết hàng!');
+                            }
+                            addToCartBtn.disabled = false;
+                            addToCartBtn.textContent = originalText;
+                            return;
+                        }
+                        
+                        if (quantity > currentStock) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(`Số lượng vượt quá tồn kho! Chỉ còn ${currentStock} cuốn khả dụng.`, 'Vượt quá tồn kho', {
+                                    timeOut: 5000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
+                            } else {
+                                alert(`Số lượng vượt quá tồn kho! Chỉ còn ${currentStock} cuốn.`);
+                            }
+                            addToCartBtn.disabled = false;
+                            addToCartBtn.textContent = originalText;
+                            return;
+                        }
+                    }
+
                     // Validate based on book status (for both ebooks and physical books)
                     const bookPriceElement = document.getElementById('bookPrice');
                     const bookStatus = bookPriceElement?.dataset.bookStatus || 'Còn Hàng';
@@ -2926,19 +2988,34 @@
                     if (bookStatus === 'Ngừng Kinh Doanh' || bookStatus === 'Sắp Ra Mắt' || bookStatus === 'Hết Hàng Tồn Kho') {
                         if (bookStatus === 'Ngừng Kinh Doanh') {
                             if (typeof toastr !== 'undefined') {
-                                toastr.error('Sản phẩm này hiện đã ngừng kinh doanh!');
+                                toastr.error('Sản phẩm này hiện đã ngừng kinh doanh!', 'Ngừng kinh doanh', {
+                                    timeOut: 5000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
                             } else {
                                 alert('Sản phẩm này hiện đã ngừng kinh doanh!');
                             }
-                        }else if (bookStatus === 'Sắp Ra Mắt') {
+                        } else if (bookStatus === 'Sắp Ra Mắt') {
                             if (typeof toastr !== 'undefined') {
-                                toastr.error('Sản phẩm này hiện chưa ra mắt!');
+                                toastr.error('Sản phẩm này hiện chưa ra mắt!', 'Sắp ra mắt', {
+                                    timeOut: 5000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
                             } else {
                                 alert('Sản phẩm này hiện chưa ra mắt!');
                             }
                         } else if (bookStatus === 'Hết Hàng Tồn Kho') {
                             if (typeof toastr !== 'undefined') {
-                                toastr.error('Sản phẩm này hiện hết hàng tồn kho!');
+                                toastr.error('Sản phẩm này hiện hết hàng tồn kho!', 'Hết hàng tồn kho', {
+                                    timeOut: 5000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
                             } else {
                                 alert('Sản phẩm này hiện hết hàng tồn kho!');
                             }
@@ -2951,15 +3028,52 @@
 
                     // Additional stock validation for physical books only
                     if (!isEbook) {
-                        // Get stock from format select instead of DOM element for reliability
+                        // Step 1: Get format stock from book_formats table
                         const formatSelect = document.getElementById('bookFormatSelect');
-                        let stock = 0;
+                        let formatStock = 0;
+                        let formatName = 'Không xác định';
 
                         if (formatSelect && formatSelect.selectedOptions[0]) {
-                            stock = parseInt(formatSelect.selectedOptions[0].dataset.stock) || 0;
+                            formatStock = parseInt(formatSelect.selectedOptions[0].dataset.stock) || 0;
+                            formatName = formatSelect.selectedOptions[0].textContent.trim();
                         }
 
-                        // Check variant stock if attributes are selected
+                        // Step 2: Check format stock first (book_formats.stock)
+                        if (bookStatus === 'Còn Hàng' && formatStock <= 0) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(`Định dạng "${formatName}" hiện đã hết hàng!`, 'Hết hàng định dạng', {
+                                    timeOut: 5000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
+                            } else {
+                                alert(`Định dạng "${formatName}" hiện đã hết hàng!`);
+                            }
+                            addToCartBtn.disabled = false;
+                            addToCartBtn.textContent = originalText;
+                            return;
+                        }
+
+                        if (quantity > formatStock) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(`Số lượng vượt quá tồn kho định dạng! "${formatName}" chỉ còn ${formatStock} cuốn.`, 'Vượt quá tồn kho định dạng', {
+                                    timeOut: 5000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
+                            } else {
+                                alert(`Số lượng vượt quá tồn kho định dạng! "${formatName}" chỉ còn ${formatStock} cuốn.`);
+                            }
+                            addToCartBtn.disabled = false;
+                            addToCartBtn.textContent = originalText;
+                            return;
+                        }
+
+                        // Step 3: Check variant stock if attributes are selected (book_attribute_values.stock)
+                        let finalStock = formatStock; // Start with format stock
+                        
                         if (attributeValueIds.length > 0) {
                             let minVariantStock = Infinity;
                             let hasOutOfStockVariant = false;
@@ -2990,51 +3104,75 @@
                                 }
                             });
 
+                            // Check if any variant is out of stock
                             if (hasOutOfStockVariant) {
                                 if (typeof toastr !== 'undefined') {
                                     const outOfStockNames = outOfStockVariantDetails.map(v => v.name).join(', ');
-                                    const message = `Các biến thể sau đã hết hàng: ${outOfStockNames}. Vui lòng chọn biến thể khác!`;
-                                    toastr.error(message);
+                                    toastr.error(`Các thuộc tính sau đã hết hàng: ${outOfStockNames}. Vui lòng chọn thuộc tính khác!`, 'Hết hàng thuộc tính', {
+                                        timeOut: 6000,
+                                        positionClass: 'toast-top-right',
+                                        closeButton: true,
+                                        progressBar: true
+                                    });
                                 } else {
-                                    alert('Có biến thể đã hết hàng. Vui lòng chọn biến thể khác!');
+                                    alert('Có thuộc tính đã hết hàng. Vui lòng chọn thuộc tính khác!');
                                 }
+                                addToCartBtn.disabled = false;
+                                addToCartBtn.textContent = originalText;
                                 return;
                             }
 
-                            if (minVariantStock !== Infinity && quantity > minVariantStock) {
-                                const limitingVariant = validVariants.find(v => v.stock === minVariantStock);
-                                if (typeof toastr !== 'undefined') {
-                                    const message = `Số lượng vượt quá tồn kho! Biến thể "${limitingVariant?.name || 'Không xác định'}" chỉ còn ${minVariantStock} cuốn${limitingVariant?.sku ? ` (SKU: ${limitingVariant.sku})` : ''}.`;
-                                    toastr.error(message);
-                                } else {
-                                    alert(`Số lượng vượt quá tồn kho! Chỉ còn ${minVariantStock} cuốn.`);
-                                }
-                                return;
-                            }
-
-                            // Use minimum variant stock for final validation
+                            // Use minimum between format stock and variant stock
                             if (minVariantStock !== Infinity) {
-                                stock = minVariantStock;
+                                finalStock = Math.min(formatStock, minVariantStock);
+                                
+                                // Check if quantity exceeds variant stock
+                                if (quantity > minVariantStock) {
+                                    const limitingVariant = validVariants.find(v => v.stock === minVariantStock);
+                                    if (typeof toastr !== 'undefined') {
+                                        toastr.error(`Số lượng vượt quá tồn kho thuộc tính! "${limitingVariant?.name || 'Không xác định'}" chỉ còn ${minVariantStock} cuốn${limitingVariant?.sku ? ` (SKU: ${limitingVariant.sku})` : ''}.`, 'Vượt quá tồn kho thuộc tính', {
+                                            timeOut: 6000,
+                                            positionClass: 'toast-top-right',
+                                            closeButton: true,
+                                            progressBar: true
+                                        });
+                                    } else {
+                                        alert(`Số lượng vượt quá tồn kho thuộc tính! Chỉ còn ${minVariantStock} cuốn.`);
+                                    }
+                                    addToCartBtn.disabled = false;
+                                    addToCartBtn.textContent = originalText;
+                                    return;
+                                }
                             }
                         }
 
-                        // Priority 2: Only when status = 'Còn Hàng', check stock levels for physical books
-                        if (bookStatus === 'Còn Hàng' && stock <= 0) {
+                        // Final validation with the lowest stock
+                        if (bookStatus === 'Còn Hàng' && finalStock <= 0) {
                             if (typeof toastr !== 'undefined') {
-                                toastr.error('Sản phẩm này hiện hết hàng!');
+                                toastr.error('Sản phẩm này hiện đã hết hàng!', 'Hết hàng', {
+                                    timeOut: 4000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
                             } else {
-                                alert('Sản phẩm này hiện hết hàng!');
+                                alert('Sản phẩm này hiện đã hết hàng!');
                             }
                             addToCartBtn.disabled = false;
                             addToCartBtn.textContent = originalText;
                             return;
                         }
 
-                        if (quantity > stock) {
+                        if (quantity > finalStock) {
                             if (typeof toastr !== 'undefined') {
-                                toastr.error('Số lượng vượt quá số lượng tồn kho!');
+                                toastr.error(`Số lượng vượt quá tồn kho! Chỉ còn ${finalStock} cuốn khả dụng.`, 'Vượt quá tồn kho', {
+                                    timeOut: 5000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
                             } else {
-                                alert('Số lượng vượt quá số lượng tồn kho!');
+                                alert(`Số lượng vượt quá tồn kho! Chỉ còn ${finalStock} cuốn.`);
                             }
                             addToCartBtn.disabled = false;
                             addToCartBtn.textContent = originalText;
@@ -3045,6 +3183,19 @@
                     // Disable button and show loading
                     addToCartBtn.disabled = true;
                     addToCartBtn.textContent = 'Đang thêm...';
+
+                    // Debug request data
+                    const requestData = {
+                        book_id: bookId,
+                        quantity: quantity,
+                        book_format_id: bookFormatId,
+                        attribute_value_ids: JSON.stringify(attributeValueIds),
+                        attributes: attributes
+                    };
+                    console.log('=== ADD TO CART REQUEST DEBUG ===');
+                    console.log('Request data:', requestData);
+                    console.log('Is ebook:', isEbook);
+                    console.log('Attributes selected:', attributeValueIds);
 
                     // Send request
                     fetch('{{ route("cart.add") }}', {
@@ -3062,9 +3213,9 @@
                         })
                     })
                         .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
+                            console.log('Response status:', response.status);
+                            console.log('Response headers:', response.headers);
+                            
                             const contentType = response.headers.get('content-type');
                             if (!contentType || !contentType.includes('application/json')) {
                                 return response.text().then(text => {
@@ -3072,12 +3223,68 @@
                                     throw new Error('Server returned non-JSON response');
                                 });
                             }
-                            return response.json();
+                            
+                            // Parse JSON for both success and error responses
+                            return response.json().then(data => {
+                                if (!response.ok) {
+                                    // For 422 and other HTTP errors, we want to handle the error data
+                                    console.error('HTTP Error:', response.status, response.statusText, data);
+                                    return { error: data.error || data.message || `HTTP ${response.status}: ${response.statusText}`, httpStatus: response.status };
+                                }
+                                return data;
+                            });
                         })
                         .then(data => {
-                            if (data.success) {
+                            console.log('Response data:', data); // Debug log
+                            
+                            // Check if this is an HTTP error response
+                            if (data.httpStatus && data.httpStatus !== 200) {
+                                // Handle HTTP error responses (like 422)
                                 if (typeof toastr !== 'undefined') {
-                                    toastr.success('Đã thêm sản phẩm vào giỏ hàng!');
+                                    // Enhanced error handling with detailed stock information
+                                    let errorTitle = 'Lỗi thêm vào giỏ hàng';
+                                    let timeOut = 5000;
+                                    
+                                    // Check for specific error types and add appropriate titles
+                                    if (data.error.includes('hết hàng')) {
+                                        errorTitle = 'Hết hàng';
+                                        timeOut = 4000;
+                                    } else if (data.error.includes('vượt quá tồn kho')) {
+                                        errorTitle = 'Vượt quá tồn kho';
+                                        timeOut = 6000;
+                                    } else if (data.error.includes('định dạng')) {
+                                        errorTitle = 'Lỗi định dạng sách';
+                                        timeOut = 5000;
+                                    } else if (data.error.includes('thuộc tính') || data.error.includes('biến thể')) {
+                                        errorTitle = 'Lỗi thuộc tính sách';
+                                        timeOut = 6000;
+                                    } else if (data.httpStatus === 422) {
+                                        errorTitle = 'Dữ liệu không hợp lệ';
+                                        timeOut = 6000;
+                                    }
+                                    
+                                    toastr.error(data.error, errorTitle, {
+                                        timeOut: timeOut,
+                                        positionClass: 'toast-top-right',
+                                        closeButton: true,
+                                        progressBar: true
+                                    });
+                                } else {
+                                    alert(data.error);
+                                }
+                                return; // Exit early for error responses
+                            }
+                            
+                            if (data.success) {
+                                console.log('Success case executed'); // Debug log
+                                if (typeof toastr !== 'undefined') {
+                                    const productType = isEbook ? 'sách điện tử' : 'sách vật lý';
+                                    toastr.success(`Đã thêm ${productType} vào giỏ hàng thành công!`, 'Thêm thành công', {
+                                        timeOut: 3000,
+                                        positionClass: 'toast-top-right',
+                                        closeButton: true,
+                                        progressBar: true
+                                    });
                                 } else {
                                     alert('Đã thêm sản phẩm vào giỏ hàng!');
                                 }
@@ -3113,7 +3320,31 @@
                                             });
                                         }
                                     } else {
-                                        toastr.error(data.error);
+                                        // Enhanced error handling with detailed stock information
+                                        let errorTitle = 'Lỗi thêm vào giỏ hàng';
+                                        let timeOut = 5000;
+                                        
+                                        // Check for specific error types and add appropriate titles
+                                        if (data.error.includes('hết hàng')) {
+                                            errorTitle = 'Hết hàng';
+                                            timeOut = 4000;
+                                        } else if (data.error.includes('vượt quá tồn kho')) {
+                                            errorTitle = 'Vượt quá tồn kho';
+                                            timeOut = 6000;
+                                        } else if (data.error.includes('định dạng')) {
+                                            errorTitle = 'Lỗi định dạng sách';
+                                            timeOut = 5000;
+                                        } else if (data.error.includes('thuộc tính') || data.error.includes('biến thể')) {
+                                            errorTitle = 'Lỗi thuộc tính sách';
+                                            timeOut = 6000;
+                                        }
+                                        
+                                        toastr.error(data.error, errorTitle, {
+                                            timeOut: timeOut,
+                                            positionClass: 'toast-top-right',
+                                            closeButton: true,
+                                            progressBar: true
+                                        });
                                     }
                                 } else {
                                     // Fallback alert if toastr is not available
@@ -3122,11 +3353,49 @@
                             }
                         })
                         .catch(error => {
-                            console.error('Error:', error);
+                            console.error('Fetch Error Details:');
+                            console.error('Error message:', error.message);
+                            console.error('Error type:', error.name);
+                            console.error('Full error:', error);
+                            
+                            let errorMessage = 'Có lỗi xảy ra khi thêm vào giỏ hàng';
+                            let errorTitle = 'Lỗi thêm vào giỏ hàng';
+                            
+                            // Chi tiết hóa thông báo lỗi
+                            if (error.message) {
+                                if (error.message.includes('HTTP error! status: 422')) {
+                                    errorMessage = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin!';
+                                    errorTitle = 'Dữ liệu không hợp lệ';
+                                } else if (error.message.includes('HTTP error! status: 500')) {
+                                    errorMessage = 'Lỗi server nội bộ. Vui lòng thử lại sau!';
+                                    errorTitle = 'Lỗi server';
+                                } else if (error.message.includes('HTTP error! status: 419')) {
+                                    errorMessage = 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang!';
+                                    errorTitle = 'Phiên hết hạn';
+                                } else if (error.message.includes('HTTP error')) {
+                                    errorMessage = 'Lỗi kết nối server. Vui lòng thử lại sau!';
+                                    errorTitle = 'Lỗi kết nối';
+                                } else if (error.message.includes('non-JSON response')) {
+                                    errorMessage = 'Server trả về dữ liệu không hợp lệ. Vui lòng thử lại!';
+                                    errorTitle = 'Lỗi dữ liệu';
+                                } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+                                    errorMessage = 'Lỗi mạng. Vui lòng kiểm tra kết nối internet và thử lại!';
+                                    errorTitle = 'Lỗi mạng';
+                                } else {
+                                    errorMessage = `Lỗi: ${error.message}`;
+                                    errorTitle = 'Lỗi không xác định';
+                                }
+                            }
+                            
                             if (typeof toastr !== 'undefined') {
-                                toastr.error(' có lỗi xảy ra khi thêm vào giỏ hàng');
+                                toastr.error(errorMessage, errorTitle, {
+                                    timeOut: 6000,
+                                    positionClass: 'toast-top-right',
+                                    closeButton: true,
+                                    progressBar: true
+                                });
                             } else {
-                                alert('có lỗi xảy ra khi thêm vào giỏ hàng');
+                                alert(errorMessage);
                             }
                         })
                         .finally(() => {
@@ -3276,15 +3545,30 @@
                     })
                     .catch(error => {
                         console.error('Error:', error);
+                        let errorMessage = 'Có lỗi xảy ra khi thêm sách liên quan vào giỏ hàng';
+                        
+                        // Chi tiết hóa thông báo lỗi
+                        if (error.message) {
+                            if (error.message.includes('HTTP error')) {
+                                errorMessage = 'Lỗi kết nối server. Vui lòng thử lại sau!';
+                            } else if (error.message.includes('non-JSON response')) {
+                                errorMessage = 'Server trả về dữ liệu không hợp lệ. Vui lòng thử lại!';
+                            } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+                                errorMessage = 'Lỗi mạng. Vui lòng kiểm tra kết nối internet và thử lại!';
+                            } else {
+                                errorMessage = `Lỗi: ${error.message}`;
+                            }
+                        }
+                        
                         if (typeof toastr !== 'undefined') {
-                            toastr.error('Có lỗi xảy ra khi thêm vào giỏ hàng', 'Lỗi mạng!', {
-                                timeOut: 5000,
+                            toastr.error(errorMessage, 'Lỗi thêm sách liên quan', {
+                                timeOut: 6000,
                                 positionClass: 'toast-top-right',
                                 closeButton: true,
                                 progressBar: true
                             });
                         } else {
-                            alert('Có lỗi xảy ra khi thêm vào giỏ hàng');
+                            alert(errorMessage);
                         }
                     })
                     .finally(() => {
