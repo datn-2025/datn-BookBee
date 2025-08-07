@@ -377,7 +377,25 @@ const CartProducts = {
 
         // Validate quantity
         const minValue = parseInt(input.min) || 1;
-        const maxValue = parseInt(input.max) || parseInt(cartItem.dataset.stock) || 999;
+        
+        // For variant stock validation, use the minimum stock available
+        let maxValue = parseInt(input.max) || parseInt(cartItem.dataset.stock) || 999;
+        
+        // If this item has attributes (variants), we need to consider variant stock
+        const attributeValueIds = cartItem.dataset.attributeValueIds;
+        const isEbook = cartItem.dataset.formatName && cartItem.dataset.formatName.toLowerCase().includes('ebook');
+        
+        // For physical books with variants, validate against variant stock
+        if (!isEbook && attributeValueIds && attributeValueIds !== '[]' && attributeValueIds !== 'null') {
+            // The max value should already be set correctly from the hierarchical stock validation
+            // but we double-check here
+            console.log('Validating variant stock for quantity update:', {
+                bookId: bookId,
+                attributeValueIds: attributeValueIds,
+                requestedQuantity: newQuantity,
+                maxAllowed: maxValue
+            });
+        }
 
         if (newQuantity < minValue) {
             input.value = oldQuantity;
@@ -390,7 +408,7 @@ const CartProducts = {
         if (newQuantity > maxValue) {
             input.value = oldQuantity;
             if (typeof toastr !== 'undefined') {
-                toastr.warning(`Số lượng tối đa là ${maxValue}`);
+                toastr.warning(`Số lượng tối đa là ${maxValue}. ${attributeValueIds && attributeValueIds !== '[]' ? 'Giới hạn bởi tồn kho biến thể.' : 'Giới hạn bởi tồn kho.'}`);
             }
             return;
         }
@@ -496,6 +514,7 @@ const CartProducts = {
 
     // Update item total display
     updateItemTotal(cartItem, quantity) {
+        // Sử dụng data-price đã bao gồm extra price từ variants
         const price = parseFloat(cartItem.dataset.price) || 0;
         const total = price * quantity;
         const itemTotalElement = cartItem.querySelector('.item-total');
@@ -503,6 +522,9 @@ const CartProducts = {
         if (itemTotalElement) {
             itemTotalElement.textContent = this.formatCurrency(total);
         }
+        
+        // Cập nhật data-price trong trường hợp cần thiết
+        cartItem.dataset.price = price;
     },
 
     // Update quantity button states
@@ -532,10 +554,15 @@ const CartProducts = {
         const cartItems = document.querySelectorAll('.cart-item');
 
         cartItems.forEach(item => {
-            const price = parseFloat(item.dataset.price) || 0;
-            const quantityInput = item.querySelector('.quantity-input');
-            const quantity = quantityInput ? (parseInt(quantityInput.value) || 0) : 0;
-            cartTotal += price * quantity;
+            // Chỉ tính các item có checkbox được chọn
+            const checkbox = item.querySelector('.select-cart-item');
+            if (checkbox && checkbox.checked) {
+                // Sử dụng data-price đã bao gồm extra price từ variants
+                const price = parseFloat(item.dataset.price) || 0;
+                const quantityInput = item.querySelector('.quantity-input');
+                const quantity = quantityInput ? (parseInt(quantityInput.value) || 0) : 0;
+                cartTotal += price * quantity;
+            }
         });
 
         // Update subtotal
@@ -555,7 +582,7 @@ const CartProducts = {
                 const discount = parseFloat(discountText) || 0;
                 finalTotal = cartTotal - discount;
             }
-            totalElement.textContent = this.formatCurrency(finalTotal);
+            totalElement.textContent = this.formatCurrency(Math.max(0, finalTotal));
         }
     },
 
@@ -573,6 +600,10 @@ const CartProducts = {
             if (checkbox) {
                 const cartId = checkbox.dataset.cartId;
                 const isSelected = checkbox.checked ? 1 : 0;
+                
+                // Disable checkbox temporarily
+                checkbox.disabled = true;
+                
                 $.ajax({
                     url: '/cart/update-selected',
                     method: 'POST',
@@ -582,11 +613,24 @@ const CartProducts = {
                         _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     success: (response) => {
-                        if (response.success && typeof toastr !== 'undefined') {
-                            toastr.success(response.success);
+                        if (response.success) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success(response.success);
+                            }
+                            
+                            // Cập nhật tổng tiền ngay lập tức mà không reload trang
+                            this.updateCartTotals();
+                            
+                            // Trigger cart total update in cart.js
+                            if (typeof window.updateCartTotal === 'function') {
+                                window.allowUpdateCartTotal = true;
+                                window.updateCartTotal();
+                                window.allowUpdateCartTotal = false;
+                            }
                         }
-                        // Reload totals (optional: reload page or recalc via JS)
-                        setTimeout(() => { window.location.reload(); }, 500);
+                        
+                        // Re-enable checkbox
+                        checkbox.disabled = false;
                     },
                     error: (xhr) => {
                         if (typeof toastr !== 'undefined') {
@@ -594,6 +638,7 @@ const CartProducts = {
                         }
                         // Revert checkbox state
                         checkbox.checked = !checkbox.checked;
+                        checkbox.disabled = false;
                     }
                 });
             }

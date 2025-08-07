@@ -137,6 +137,31 @@ class CartController extends Controller
                             ];
                         });
 
+                    // Calculate the correct stock considering variants
+                    $availableStock = $bookInfo->stock; // Start with format stock
+                    
+                    // If item has attributes, calculate minimum variant stock
+                    if (!empty($cartItem->attribute_value_ids) && $cartItem->attribute_value_ids !== '[]') {
+                        $attributeIds = json_decode($cartItem->attribute_value_ids, true);
+                        if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
+                            // Check if this is an ebook
+                            $isEbook = $bookInfo->format_name && stripos($bookInfo->format_name, 'ebook') !== false;
+                            
+                            if (!$isEbook) {
+                                // For physical books, get minimum variant stock
+                                $minVariantStock = DB::table('book_attribute_values')
+                                    ->whereIn('attribute_value_id', $attributeIds)
+                                    ->where('book_id', $cartItem->book_id)
+                                    ->min('stock');
+                                
+                                if ($minVariantStock !== null && $minVariantStock >= 0) {
+                                    // Use hierarchical stock: min(format_stock, min_variant_stock)
+                                    $availableStock = min($availableStock, $minVariantStock);
+                                }
+                            }
+                        }
+                    }
+
                     $item = (object) [
                         'id' => $cartItem->id,
                         'user_id' => $cartItem->user_id,
@@ -153,7 +178,7 @@ class CartController extends Controller
                         'image' => $bookInfo->cover_image,
                         'format_name' => $bookInfo->format_name,
                         'author_name' => $bookInfo->author_name,
-                        'stock' => $bookInfo->stock,
+                        'stock' => $availableStock, // Use calculated hierarchical stock
                         'gifts' => $gifts,
                         'is_selected' => isset($cartItem->is_selected) ? $cartItem->is_selected : 1
                     ];
@@ -167,7 +192,21 @@ class CartController extends Controller
         $total = 0;
         foreach ($cart as $item) {
             if (isset($item->is_selected) && $item->is_selected) {
-                $total += $item->price * $item->quantity;
+                $itemPrice = $item->price;
+                
+                // Thêm giá extra từ thuộc tính nếu có
+                if (!empty($item->attribute_value_ids) && $item->attribute_value_ids !== '[]') {
+                    $attributeIds = json_decode($item->attribute_value_ids, true);
+                    if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
+                        $extraPrice = DB::table('book_attribute_values')
+                            ->whereIn('attribute_value_id', $attributeIds)
+                            ->where('book_id', $item->book_id)
+                            ->sum('extra_price');
+                        $itemPrice += $extraPrice;
+                    }
+                }
+                
+                $total += $itemPrice * $item->quantity;
             }
         }
         // dd($total);

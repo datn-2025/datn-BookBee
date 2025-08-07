@@ -51,9 +51,11 @@ document.addEventListener('DOMContentLoaded', function() {
         let cartTotal = 0;
         const cartItems = document.querySelectorAll('.cart-item');
         const checkedItems = [];
+        
         cartItems.forEach(item => {
             const checkbox = item.querySelector('.select-cart-item');
             if (checkbox && checkbox.checked) {
+                // Sử dụng data-price đã bao gồm extra price từ variants
                 const price = parseFloat(item.dataset.price) || 0;
                 const quantityInput = item.querySelector('.quantity-input');
                 const quantity = quantityInput ? (parseInt(quantityInput.value) || 0) : 0;
@@ -83,14 +85,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const finalTotal = Math.max(0, cartTotal - discount);
             totalElement.textContent = formatCurrency(finalTotal);
         }
+        
+        console.log('Cart total updated:', {
+            checkedItems: checkedItems.length,
+            subtotal: cartTotal,
+            discount: discount,
+            total: Math.max(0, cartTotal - discount)
+        });
     }
+
+    // Make functions available globally for cart_products.js
+    window.updateCartTotal = updateCartTotal;
+    window.allowUpdateCartTotal = allowUpdateCartTotal;
 
     // Khi thay đổi checkbox, cập nhật tổng tiền
     $(document).on('change', '.select-cart-item', function() {
         const bookId = $(this).closest('.cart-item').data('book-id');
-        allowUpdateCartTotal = true;
+        window.allowUpdateCartTotal = true;
         updateCartTotal();
-        allowUpdateCartTotal = false;
+        window.allowUpdateCartTotal = false;
     });
 
     // Debounce function

@@ -268,12 +268,30 @@
                             </div>
                         </div>
                     @else
+                        @php
+                            // Calculate attribute extra price first
+                            $attributeExtraPrice = 0;
+                            $isEbook = isset($item->format_name) && (stripos($item->format_name, 'ebook') !== false);
+                            
+                            if($item->attribute_value_ids && $item->attribute_value_ids !== '[]') {
+                                $attributeIds = json_decode($item->attribute_value_ids, true);
+                                if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
+                                    $attributeExtraPrice = DB::table('book_attribute_values')
+                                        ->whereIn('attribute_value_id', $attributeIds)
+                                        ->where('book_id', $item->book_id)
+                                        ->sum('extra_price');
+                                }
+                            }
+                        @endphp
+                        
                         {{-- Individual Book Item --}}
                         <div class="cart-hover bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 p-6 cart-item" 
                              data-book-id="{{ $item->book_id }}" 
                              data-book-format-id="{{ $item->book_format_id }}"
                              data-attribute-value-ids="{{ $item->attribute_value_ids }}"
-                             data-price="{{ $item->price ?? 0 }}" 
+                             data-price="{{ $item->price + $attributeExtraPrice }}" 
+                             data-base-price="{{ $item->price }}"
+                             data-extra-price="{{ $attributeExtraPrice }}"
                              data-stock="{{ $item->stock ?? 0 }}"
                              data-format-name="{{ $item->format_name ?? '' }}"
                              data-is-combo="false">
@@ -299,9 +317,6 @@
                                         </div>
                                     @endif
                                     
-                                    @php
-                                        $isEbook = isset($item->format_name) && (stripos($item->format_name, 'ebook') !== false);
-                                    @endphp
                                     @if($isEbook)
                                         <div class="absolute -top-2 -left-2 bg-blue-600 text-white px-3 py-1 text-xs font-bold uppercase">
                                             <i class="fas fa-mobile-alt mr-1"></i>EBOOK
@@ -339,7 +354,7 @@
                                         @php
                                             $attributeIds = json_decode($item->attribute_value_ids, true);
                                             $attributes = collect();
-                                            $attributeExtraPrice = 0;
+                                            // Use the already calculated $attributeExtraPrice
                                             if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
                                                 $query = DB::table('attribute_values')
                                                     ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
@@ -365,9 +380,6 @@
                                                     'book_attribute_values.stock',
                                                     'book_attribute_values.sku'
                                                 )->get();
-                                                
-                                                // Calculate total extra price from attributes
-                                                $attributeExtraPrice = $attributes->sum('extra_price');
                                             }
                                         @endphp
                                         @if($attributes->count() > 0)
@@ -529,7 +541,7 @@
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Thành tiền</span>
                                             <div class="text-xl font-black text-black item-total">
                                                 @php
-                                                    $itemTotal = $finalPrice * $item->quantity;
+                                                    $itemTotal = ($item->price + $attributeExtraPrice) * $item->quantity;
                                                 @endphp
                                                 {{ number_format($itemTotal) }}đ
                                             </div>
