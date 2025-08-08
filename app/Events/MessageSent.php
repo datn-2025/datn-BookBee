@@ -8,11 +8,12 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class MessageSent
+class MessageSent implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -23,14 +24,17 @@ class MessageSent
      */
     public function __construct(Message $message)
     {
-        $this->message = $message->load(['sender.role']);
+        // Load relationships including reply message and its sender
+        $this->message = $message->load(['sender.role', 'replyToMessage.sender']);
         
         // Debug log để xác nhận event được tạo
         Log::info('MessageSent event created', [
             'message_id' => $this->message->id,
             'sender_id' => $this->message->sender_id,
             'conversation_id' => $this->message->conversation_id,
-            'content' => substr($this->message->content, 0, 50) . '...'
+            'content' => substr($this->message->content, 0, 50) . '...',
+            'reply_to_message_id' => $this->message->reply_to_message_id,
+            'has_reply_data' => $this->message->replyToMessage ? true : false
         ]);
     }
 
@@ -51,55 +55,15 @@ class MessageSent
             'conversation_id' => $this->message->conversation_id,
             'broadcast_driver' => config('broadcasting.default'),
             'pusher_key' => config('broadcasting.connections.pusher.key'),
-            'channels' => [
-                'conversations.' . $this->message->conversation_id,
-                'bookbee.' . $this->message->conversation_id,
-                'user.' . $this->message->conversation->customer_id, // Channel cho customer
-                'user.' . $this->message->conversation->admin_id,    // Channel cho admin
-                'bookbee.global'
-            ]
+            'customer_id' => $this->message->conversation->customer_id,
+            'admin_id' => $this->message->conversation->admin_id,
         ]);
-        
-        // Test với manual pusher trigger
-        try {
-            $config = config('broadcasting.connections.pusher');
-            $options = [
-                'cluster' => $config['options']['cluster'],
-                'encrypted' => true,
-                'host' => $config['options']['host'],
-                'port' => $config['options']['port'],
-                'scheme' => $config['options']['scheme'],
-            ];
-            
-            $pusher = new \Pusher\Pusher(
-                $config['key'],
-                $config['secret'],
-                $config['app_id'],
-                $options
-            );
-            
-            $data = [
-                'id' => $this->message->id,
-                'content' => $this->message->content,
-                'sender_id' => $this->message->sender_id,
-                'conversation_id' => $this->message->conversation_id,
-                'created_at' => $this->message->created_at->toDateTimeString()
-            ];
-            
-            $manualResult = $pusher->trigger('conversations.' . $this->message->conversation_id, 'MessageSent', $data);
-            Log::info('Manual pusher trigger result', ['result' => $manualResult]);
-            
-        } catch (\Exception $e) {
-            Log::error('Manual pusher trigger failed', ['error' => $e->getMessage()]);
-        }
         
         // Sử dụng public channel để đơn giản hóa
         return [
             new Channel('conversations.' . $this->message->conversation_id), // Public channel cho conversation
-            new Channel('bookbee.' . $this->message->conversation_id), // Channel cho admin panel
             new Channel('user.' . $this->message->conversation->customer_id), // Channel cho customer
             new Channel('user.' . $this->message->conversation->admin_id),    // Channel cho admin  
-            new Channel('bookbee.global') // Channel global cho tất cả conversation list updates
         ];
     }
     public function broadcastWith()
@@ -107,37 +71,51 @@ class MessageSent
         $data = [
             'id' => $this->message->id,
             'content' => $this->message->content,
+            'type' => $this->message->type ?? 'text',
+            'file_path' => $this->message->file_path,
             'sender_id' => $this->message->sender_id,
             'conversation_id' => $this->message->conversation_id,
             'created_at' => $this->message->created_at->toDateTimeString(),
             'sender' => [
                 'id' => $this->message->sender->id,
                 'name' => $this->message->sender->name,
-                'avatar' => $this->message->sender->avatar,
-                'role' => $this->message->sender->role ? [
-                    'id' => $this->message->sender->role->id,
-                    'name' => $this->message->sender->role->name,
-                ] : null,
+                'avatar' => $this->message->sender->avatar ?? null,
             ],
-            'reads' => $this->message->reads->map(function ($read) {
-                return [
-                    'user_id' => $read->user_id,
-                    'read_at' => $read->read_at->toDateTimeString(),
-                ];
-            })
+            // Thêm thông tin reply
+            'reply_to_message_id' => $this->message->reply_to_message_id,
+            'reply_to_message' => null,
+            'replyToMessage' => null
         ];
         
-        // Log data được broadcast
+        // Nếu có reply, load thông tin tin nhắn gốc
+        if ($this->message->reply_to_message_id) {
+            $originalMessage = $this->message->replyToMessage;
+            if ($originalMessage) {
+                $data['reply_to_message'] = [
+                    'id' => $originalMessage->id,
+                    'content' => $originalMessage->content,
+                    'sender_id' => $originalMessage->sender_id,
+                    'sender' => [
+                        'id' => $originalMessage->sender->id,
+                        'name' => $originalMessage->sender->name,
+                    ]
+                ];
+                // Đồng bộ cả 2 field để tương thích
+                $data['replyToMessage'] = $data['reply_to_message'];
+            }
+        }
+        
+        // Log data được broadcast với thông tin reply
         Log::info('Broadcasting data for MessageSent', [
             'channels' => [
                 'conversations.' . $this->message->conversation_id,
-                'bookbee.' . $this->message->conversation_id,
                 'user.' . $this->message->conversation->customer_id,
                 'user.' . $this->message->conversation->admin_id,
-                'bookbee.global'
             ],
             'event_name' => 'MessageSent',
-            'data' => $data
+            'data' => $data,
+            'has_reply' => !empty($data['reply_to_message_id']),
+            'reply_data' => $data['reply_to_message'] ?? null
         ]);
         
         return $data;
