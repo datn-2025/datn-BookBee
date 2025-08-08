@@ -444,6 +444,11 @@
                         btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i>';
                         
                         // Create conversation
+                        // Add timeout handling using AbortController
+                        const controller = new AbortController();
+                        const timeout = setTimeout(() => {
+                            controller.abort();
+                        }, 10000); // 10 seconds timeout
                         fetch('{{ route("admin.chat.create-conversation") }}', {
                             method: 'POST',
                             headers: {
