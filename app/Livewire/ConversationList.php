@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Conversation;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
@@ -39,16 +40,9 @@ class ConversationList extends Component
             }])
             ->orderByDesc('last_message_at')
             ->get();
-        
+            
         // Update refresh key để trigger re-render
         $this->refreshKey = time();
-        
-        // Log để debug
-        // Log::info('ConversationList loaded', [
-        //     'count' => $this->conversations->count(),
-        //     'refreshKey' => $this->refreshKey,
-        //     'currentUserId' => $currentUserId
-        // ]);
     }
 
     public function handleGlobalMessage($payload)
