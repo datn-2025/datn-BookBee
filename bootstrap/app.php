@@ -25,7 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminMiddleware::class,
             'guest:admin' => RedirectIfAdminAuthenticated::class,
             'checkpermission' => CheckPermission::class,
-             'broadcasting.auth' => BroadcastingMiddleware::class,
+            'broadcasting.auth' => BroadcastingMiddleware::class,
         ]);
         
         // Ensure ShareErrorsFromSession is included for web routes
