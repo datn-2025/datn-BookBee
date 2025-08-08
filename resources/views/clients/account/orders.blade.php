@@ -706,6 +706,9 @@
                                     </a>
                                 </div>
                                 
+                                <!-- Order Chat Button -->
+                                @include('components.order-chat-button', ['order' => $order])
+                                
                                 @if(!$order->isParentOrder() && \App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name))
                                     <form action="{{ route('account.orders.cancel', $order->id) }}" method="POST" class="inline">
                                         @csrf

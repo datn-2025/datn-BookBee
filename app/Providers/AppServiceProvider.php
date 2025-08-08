@@ -11,6 +11,8 @@ use App\Observers\BookFormatObserver;
 use App\Http\ViewComposers\CartComposer;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
+use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Sanctum\Sanctum;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -33,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
         Blade::if('permission', function ($permission) {
             return Auth::check() && Auth::user()->hasPermission($permission);
         });
+        // Register the PersonalAccessToken model for Sanctum
+        Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
         // Share cart count with navbar and other views that need it
         View::composer([
             'layouts.partials.navbar',
