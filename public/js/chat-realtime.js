@@ -19,7 +19,6 @@ class ChatRealtime {
         this.currentUserId = null;
         this.echoChannels = new Map();
 
-        console.log('💬 ChatRealtime: Initializing...');
         this.init();
     }
 
@@ -53,12 +52,30 @@ class ChatRealtime {
      * Khởi tạo các DOM elements
      */
     initializeElements() {
+        
         // Các elements chính
         this.messageContainer = document.getElementById('message-container');
         this.messageInput = document.querySelector('#messageInputField') || 
                            document.querySelector('[wire\\:model="message_content"]');
         this.fileUploadInput = document.querySelector('[wire\\:model="fileUpload"]');
         this.chatConversation = document.getElementById('chat-conversation');
+
+        // // Debug log elements found
+        // console.log('💬 ChatRealtime: Elements found:', {
+        //     messageContainer: !!this.messageContainer,
+        //     messageInput: !!this.messageInput,
+        //     messageInputId: this.messageInput ? this.messageInput.id : 'NOT_FOUND',
+        //     fileUploadInput: !!this.fileUploadInput,
+        //     chatConversation: !!this.chatConversation
+        // });
+
+        // Check for any existing wire:keydown.enter bindings
+        if (this.messageInput) {
+            const wireKeydown = this.messageInput.getAttribute('wire:keydown.enter');
+            if (wireKeydown) {
+                console.warn('💬 ChatRealtime: Found wire:keydown.enter binding:', wireKeydown);
+            }
+        }
 
         // Lấy conversation ID từ window hoặc DOM
         this.currentConversationId = window.currentConversationId || 
@@ -78,19 +95,11 @@ class ChatRealtime {
             console.error('💬 ChatRealtime: Laravel Echo not available');
             return;
         }
-
-        // console.log('💬 ChatRealtime: Echo is available, checking Pusher connection');
         
         // Debug Pusher connection như chat.js
         if (window.Echo.connector && window.Echo.connector.pusher) {
             const pusher = window.Echo.connector.pusher;
-            console.log('💬 ChatRealtime: Pusher state:', pusher.connection.state);
-            
-            // Add connection event listeners for debugging
-            // pusher.connection.bind('connected', () => {
-            //     console.log('💬 ChatRealtime: Pusher connected successfully');
-            // });
-            
+
             pusher.connection.bind('disconnected', () => {
                 console.log('💬 ChatRealtime: Pusher disconnected');
             });
@@ -130,19 +139,11 @@ class ChatRealtime {
 
         channels.forEach(channelName => {
             try {
-                // console.log(`💬 ChatRealtime: Setting up channel ${channelName}`);
                 const channel = window.Echo.channel(channelName);
                 
                 // IMPORTANT: Listen BEFORE subscription callbacks
                 channel.listen('MessageSent', (data) => {
-                    console.log('💬 ChatRealtime: Received MessageSent via Echo', {
-                        channel: channelName,
-                        messageId: data.id,
-                        senderId: data.sender_id,
-                        currentUserId: this.currentUserId,
-                        data: data
-                    });
-                    
+                                     
                     this.handleIncomingMessage(data);
                 });
 
@@ -167,20 +168,13 @@ class ChatRealtime {
                     const pusherChannel = pusher.subscribe(channelName);
                     
                     pusherChannel.bind('MessageSent', (data) => {
-                        // console.log('💬 ChatRealtime: Received MessageSent via direct Pusher', {
-                        //     channel: channelName,
-                        //     data: data
-                        // });
+                    
                         this.handleIncomingMessage(data);
                     });
 
-                    // pusherChannel.bind('pusher:subscription_succeeded', () => {
-                    //     console.log(`💬 ChatRealtime: Direct Pusher subscription successful for ${channelName}`);
-                    // });
                 }
 
                 this.echoChannels.set(channelName, channel);
-                // console.log(`💬 ChatRealtime: Channel ${channelName} setup completed`);
 
             } catch (error) {
                 console.error(`💬 ChatRealtime: Error subscribing to ${channelName}:`, error);
@@ -196,8 +190,7 @@ class ChatRealtime {
     setupGlobalChannels() {
         // Channel cho user status
         try {
-            // console.log('💬 ChatRealtime: Setting up user-status channel');
-            const userStatusChannel = window.Echo.channel('user-status');
+           const userStatusChannel = window.Echo.channel('user-status');
             
             userStatusChannel.listen('UserSessionChanged', (data) => {
                 console.log('💬 ChatRealtime: Received UserSessionChanged', data);
@@ -205,14 +198,12 @@ class ChatRealtime {
             });
             
             this.echoChannels.set('user-status', userStatusChannel);
-            console.log('💬 ChatRealtime: User-status channel setup completed');
         } catch (error) {
             console.error('💬 ChatRealtime: Error setting up user-status channel:', error);
         }
 
         // Channel global cho bookbee với backup Pusher binding
         try {
-            // console.log('💬 ChatRealtime: Setting up bookbee.global channel');
             const globalChannel = window.Echo.channel('bookbee.global');
             
             globalChannel.listen('MessageSent', (data) => {
@@ -226,8 +217,7 @@ class ChatRealtime {
                 const pusherGlobalChannel = pusher.subscribe('bookbee.global');
                 
                 pusherGlobalChannel.bind('MessageSent', (data) => {
-                    // console.log('💬 ChatRealtime: Received MessageSent on global channel via direct Pusher', data);
-                    this.handleGlobalMessageUpdate(data);
+                   this.handleGlobalMessageUpdate(data);
                 });
 
                 pusherGlobalChannel.bind('pusher:subscription_succeeded', () => {
@@ -236,8 +226,7 @@ class ChatRealtime {
             }
             
             this.echoChannels.set('bookbee.global', globalChannel);
-            // console.log('💬 ChatRealtime: Global channel setup completed');
-        } catch (error) {
+       } catch (error) {
             console.error('💬 ChatRealtime: Error setting up global channel:', error);
         }
     }
@@ -271,13 +260,7 @@ class ChatRealtime {
      * Xử lý tin nhắn đến
      */
     handleIncomingMessage(data) {
-        console.log('💬 ChatRealtime: Processing incoming message', {
-            messageId: data.id,
-            senderId: data.sender_id,
-            currentUserId: this.currentUserId,
-            conversationId: data.conversation_id,
-            content: data.content?.substring(0, 50) + '...'
-        });
+
 
         // Bỏ qua tin nhắn từ chính mình
         if (data.sender_id && data.sender_id == this.currentUserId) {
@@ -287,13 +270,11 @@ class ChatRealtime {
 
         // Bỏ qua nếu không phải conversation hiện tại
         if (data.conversation_id && data.conversation_id != this.currentConversationId) {
-            // console.log('💬 ChatRealtime: Message for different conversation, refreshing list only');
             // Chỉ refresh conversation list
             this.refreshConversationList();
             return;
         }
 
-        // console.log('💬 ChatRealtime: Processing message for current conversation');
 
         // Thông báo cho Livewire component để refresh (quan trọng!)
         if (window.Livewire) {
@@ -357,8 +338,6 @@ class ChatRealtime {
      * Xử lý thay đổi trạng thái user
      */
     handleUserStatusChange(data) {
-        // console.log('💬 ChatRealtime: User status changed', data);
-        
         // Show toast notification
         if (data.message && data.type) {
             this.showToast(data.message, data.type);
@@ -382,28 +361,43 @@ class ChatRealtime {
     bindEvents() {
         // Enter key để gửi tin nhắn
         if (this.messageInput) {
-            this.messageInput.addEventListener('keydown', (e) => {
+                   
+            // Remove existing event listeners để tránh duplicate
+            this.messageInput.removeEventListener('keydown', this.handleKeydownEvent);
+            
+            // Create bound method to avoid context issues
+            this.handleKeydownEvent = (e) => {
+                console.log('💬 ChatRealtime: Keydown event triggered:', e.key);
+                
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
+                    console.log('💬 ChatRealtime: Enter key detected, calling sendMessage');
                     this.sendMessage();
                 } else if (e.key === 'Enter' && e.shiftKey) {
                     // Cho phép xuống dòng với Shift+Enter
+                    console.log('💬 ChatRealtime: Shift+Enter detected, allowing new line');
                     return;
                 } else {
                     // Trigger typing indicator
                     this.handleTyping();
                 }
-            });
+            };
+            
+            this.messageInput.addEventListener('keydown', this.handleKeydownEvent);
 
             // Handle paste events (cho việc paste hình ảnh)
             this.messageInput.addEventListener('paste', (e) => {
+                console.log('💬 ChatRealtime: Paste event detected');
                 this.handlePaste(e);
             });
+        } else {
+            console.warn('💬 ChatRealtime: Message input not found for event binding');
         }
 
         // File upload events
         if (this.fileUploadInput) {
             this.fileUploadInput.addEventListener('change', (e) => {
+                console.log('💬 ChatRealtime: File input changed');
                 if (e.target.files.length > 0) {
                     this.handleFileUpload(e.target.files[0]);
                 }
@@ -456,28 +450,23 @@ class ChatRealtime {
 
         // Listen for Livewire events
         window.Livewire.on('scroll-to-bottom', () => {
-            // console.log('💬 ChatRealtime: Received scroll-to-bottom event');
             this.scrollToBottom();
         });
 
         window.Livewire.on('message-sent', () => {
-            // console.log('💬 ChatRealtime: Received message-sent event');
             this.handleMessageSent();
         });
 
         window.Livewire.on('conversation-changed', (data) => {
-            console.log('💬 ChatRealtime: Received conversation-changed event', data);
-            this.handleConversationChange(data[0]);
+           this.handleConversationChange(data[0]);
         });
 
         window.Livewire.on('file-uploaded', () => {
-            // console.log('💬 ChatRealtime: Received file-uploaded event');
             this.handleFileUploaded();
         });
 
         // Listen for Livewire updates và auto scroll như chat.js
         document.addEventListener('livewire:updated', () => {
-            // console.log('💬 ChatRealtime: Livewire updated, auto-scrolling');
             // Đợi một chút để DOM cập nhật xong
             setTimeout(() => {
                 this.scrollToBottom();
@@ -486,48 +475,69 @@ class ChatRealtime {
 
         // Listen for message updates specifically
         document.addEventListener('livewire:updated.message-container', () => {
-            // console.log('💬 ChatRealtime: Message container updated');
-            this.scrollToBottom();
+           this.scrollToBottom();
         });
 
-        // console.log('💬 ChatRealtime: Livewire listeners setup completed');
     }
 
     /**
-     * Gửi tin nhắn
+     * Gửi tin nhắn (hỗ trợ cả text và file) - Enhanced với debug logging
      */
     sendMessage() {
+        console.log('💬 ChatRealtime: sendMessage() called');
+        
         if (!this.messageInput) {
             console.error('💬 ChatRealtime: Message input not found');
             return;
         }
 
         const content = this.messageInput.value.trim();
-        if (!content) {
-            console.warn('💬 ChatRealtime: Empty message content');
+        const hasFile = this.fileUploadInput && this.fileUploadInput.files && this.fileUploadInput.files.length > 0;
+        
+        console.log('💬 ChatRealtime: Message details:', {
+            content: content,
+            contentLength: content.length,
+            hasFile: hasFile,
+            fileCount: hasFile ? this.fileUploadInput.files.length : 0
+        });
+        
+        // Phải có nội dung hoặc file mới được gửi
+        if (!content && !hasFile) {
+            console.warn('💬 ChatRealtime: No content or file to send');
             return;
         }
 
-        // console.log('💬 ChatRealtime: Sending message via Livewire', {
-        //     content: content,
-        //     inputElement: this.messageInput.id || 'no-id'
-        // });
-
-        // Clear input ngay lập tức để tránh gửi trùng như chat.js
+        console.log('💬 ChatRealtime: Proceeding to send message', { content, hasFile });
+ 
+        // Clear input ngay lập tức để tránh gửi trùng
         this.messageInput.value = '';
 
         // Gọi Livewire method
         if (window.Livewire) {
             try {
-                const component = window.Livewire.find(this.findChatRealtimeComponentId());
+                const componentId = this.findChatRealtimeComponentId();
+                console.log('💬 ChatRealtime: Found component ID:', componentId);
+                
+                const component = window.Livewire.find(componentId);
                 if (component) {
-                    // Set và call method
-                    component.set('message_content', content);
+                    console.log('💬 ChatRealtime: Component found, setting data and calling sendMessage');
+                    
+                    // Set content nếu có
+                    if (content) {
+                        component.set('message_content', content);
+                        console.log('💬 ChatRealtime: Set message_content:', content);
+                    }
+                    
+                    // Gọi sendMessage method - Livewire sẽ tự handle cả text và file
+                    console.log('💬 ChatRealtime: Calling component.call("sendMessage")');
                     component.call('sendMessage');
                 } else {
                     // Fallback: dispatch event
-                    window.Livewire.dispatch('sendMessage', { message_content: content });
-                    console.warn('💬 ChatRealtime: Used fallback dispatch method');
+                    console.log('💬 ChatRealtime: Using fallback dispatch method');
+                    window.Livewire.dispatch('sendMessage', { 
+                        message_content: content,
+                        hasFile: hasFile 
+                    });
                 }
             } catch (error) {
                 console.error('💬 ChatRealtime: Error sending message:', error);
@@ -581,12 +591,7 @@ class ChatRealtime {
      * Xử lý file upload
      */
     handleFileUpload(file) {
-        console.log('💬 ChatRealtime: Handling file upload', {
-            name: file.name,
-            type: file.type,
-            size: file.size
-        });
-
+ 
         // Validation
         const maxSize = 10 * 1024 * 1024; // 10MB
         if (file.size > maxSize) {
@@ -616,20 +621,10 @@ class ChatRealtime {
      */
     scrollToBottom() {
         if (this.chatConversation) {
-            // console.log('💬 ChatRealtime: Scrolling to bottom', {
-            //     scrollHeight: this.chatConversation.scrollHeight,
-            //     scrollTop: this.chatConversation.scrollTop,
-            //     clientHeight: this.chatConversation.clientHeight
-            // });
-
-            // Method từ chat.js - Direct assignment
+      // Method từ chat.js - Direct assignment
             this.chatConversation.scrollTop = this.chatConversation.scrollHeight;
             
-            // console.log('💬 ChatRealtime: Scroll completed', {
-            //     newScrollTop: this.chatConversation.scrollTop,
-            //     scrollHeight: this.chatConversation.scrollHeight
-            // });
-        } else {
+      } else {
             console.warn('💬 ChatRealtime: Chat conversation element not found for scrolling');
         }
     }
@@ -679,17 +674,6 @@ class ChatRealtime {
         }
     }
 
-    // /**
-    //  * Show toast notification
-    //  */
-    // showToast(message, type = 'info') {
-    //     if (window.toastr) {
-    //         toastr[type](message);
-    //     } else {
-    //         console.log(`💬 ChatRealtime: ${type.toUpperCase()}: ${message}`);
-    //     }
-    // }
-
     /**
      * Show message notification
      */
@@ -732,9 +716,7 @@ class ChatRealtime {
     /**
      * Handle conversation change
      */
-    handleConversationChange(conversationId) {
-        console.log('💬 ChatRealtime: Conversation changed to', conversationId);
-        
+    handleConversationChange(conversationId) {       
         // Update current conversation
         this.setupConversationChannel(conversationId);
         
@@ -774,8 +756,6 @@ class ChatRealtime {
             this.scrollToBottom();
         }, 100);
         
-        // Show feedback
-        // this.showToast('Tin nhắn đã được gửi', 'success');
     }
 
     /**
@@ -805,16 +785,13 @@ class ChatRealtime {
         for (let element of chatElements) {
             const wireId = element.getAttribute('wire:id');
             if (wireId) {
-                console.log('💬 ChatRealtime: Found Livewire component', wireId);
-                return wireId;
+                 return wireId;
             }
         }
 
         // Method 2: Tìm component qua Livewire.all()
         if (window.Livewire && window.Livewire.all) {
-            const components = window.Livewire.all();
-            // console.log('💬 ChatRealtime: Available Livewire components:', components.length);
-            
+            const components = window.Livewire.all();        
             for (let component of components) {
                 // Kiểm tra nếu component có method cần thiết
                 if (component.name && component.name.includes('ChatRealtime')) {
@@ -838,8 +815,7 @@ class ChatRealtime {
      * Switch to conversation
      */
     switchConversation(conversationId) {
-        // console.log('💬 ChatRealtime: Switching to conversation', conversationId);
-        
+      
         if (window.Livewire) {
             const component = window.Livewire.find(this.findChatRealtimeComponentId());
             if (component) {
@@ -892,10 +868,194 @@ class ChatRealtime {
     }
 
     /**
+     * Setup admin search functionality
+     */
+    setupAdminSearch() {
+        const searchInput = document.getElementById('searchMessage');
+        const clearButton = document.getElementById('admin-clear-search');
+        const resultsInfo = document.getElementById('admin-search-results-info');
+        const instructions = document.getElementById('admin-search-instructions');
+        const searchCount = document.getElementById('admin-search-count');
+        const searchDropdown = document.getElementById('admin-search-dropdown');
+        const searchToggle = document.getElementById('admin-search-toggle');
+        
+        if (!searchInput) {
+            console.warn('💬 ChatRealtime: Search input not found');
+            return;
+        }
+        
+       
+        let searchTimeout;
+        
+        // Prevent dropdown from closing when clicking inside
+        if (searchDropdown) {
+            searchDropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+        
+        // Prevent input field from closing dropdown
+        searchInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        
+        // Focus input when dropdown is shown
+        if (searchToggle) {
+            searchToggle.addEventListener('click', () => {
+                setTimeout(() => {
+                    searchInput.focus();
+                }, 100);
+            });
+        }
+        
+        // Handle Bootstrap dropdown events
+        if (searchDropdown) {
+            // Listen for Bootstrap dropdown show event
+            searchDropdown.addEventListener('shown.bs.dropdown', () => {
+                console.log('💬 ChatRealtime: Search dropdown shown');
+                searchInput.focus();
+            });
+            
+            // Prevent dropdown from hiding when clicking inside search area
+            searchDropdown.addEventListener('hide.bs.dropdown', (e) => {
+                // Only prevent if clicked inside search area
+                if (e.clickEvent && searchDropdown.contains(e.clickEvent.target)) {
+                    e.preventDefault();
+                    console.log('💬 ChatRealtime: Prevented dropdown close from inside click');
+                }
+            });
+        }
+        
+        // Search input handler with debounce
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            
+            // Show/hide clear button and instructions
+            if (query) {
+                clearButton?.classList.remove('d-none');
+                instructions?.classList.add('d-none');
+            } else {
+                clearButton?.classList.add('d-none');
+                instructions?.classList.remove('d-none');
+                resultsInfo?.classList.add('d-none');
+            }
+            
+            // Debounced search
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.performAdminSearch(query);
+            }, 300);
+        });
+        
+        // Enter key to search immediately
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(searchTimeout);
+                this.performAdminSearch(e.target.value.trim());
+            }
+        });
+        
+        // Clear search handler
+        clearButton?.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent dropdown close
+            searchInput.value = '';
+            clearButton.classList.add('d-none');
+            instructions?.classList.remove('d-none');
+            resultsInfo?.classList.add('d-none');
+            this.clearAdminSearchHighlights();
+            this.scrollToBottom();
+            searchInput.focus(); // Keep focus on input
+        });
+        
+    }
+
+    /**
+     * Perform admin search
+     */
+    performAdminSearch(query) {
+        const resultsInfo = document.getElementById('admin-search-results-info');
+        const searchCount = document.getElementById('admin-search-count');
+        
+        // Clear previous highlights
+        this.clearAdminSearchHighlights();
+        
+        if (!query) {
+            resultsInfo?.classList.add('d-none');
+            return;
+        }
+        
+        
+        // Search in message content
+        const chatContainer = document.getElementById('chat-conversation');
+        if (!chatContainer) {
+            console.warn('💬 ChatRealtime: Chat container not found for search');
+            return;
+        }
+        
+        const messageElements = chatContainer.querySelectorAll('.ctext-wrap-content');
+        let matchCout = 0;
+        let firstMatch = null;
+        
+        messageElements.forEach(messageEl => {
+            const textContent = messageEl.textContent.toLowerCase();
+            if (textContent.includes(query.toLowerCase())) {
+                messageEl.classList.add('admin-message-highlight');
+                matchCount++;
+                if (!firstMatch) {
+                    firstMatch = messageEl;
+                }
+            }
+        });
+        
+        // Update results info
+        if (searchCount) {
+            searchCount.textContent = matchCount;
+        }
+        resultsInfo?.classList.remove('d-none');
+        
+        // Scroll to first match
+        if (firstMatch) {
+            firstMatch.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+            
+            // Add extra highlight to first match
+            setTimeout(() => {
+                firstMatch.style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    firstMatch.style.transform = 'scale(1)';
+                }, 500);
+            }, 100);
+        }
+        
+    }
+
+    /**
+     * Clear admin search highlights
+     */
+    clearAdminSearchHighlights() {
+        document.querySelectorAll('.admin-message-highlight').forEach(el => {
+            el.classList.remove('admin-message-highlight');
+            el.style.transform = '';
+        });
+    }
+
+    /**
+     * Legacy search function for backward compatibility
+     */
+    searchMessages() {
+        const searchInput = document.getElementById('searchMessage');
+        if (searchInput) {
+            this.performAdminSearch(searchInput.value.trim());
+        }
+    }
+
+    /**
      * Cleanup when destroying
      */
     destroy() {
-        // console.log('💬 ChatRealtime: Cleaning up...');
         
         // Leave all channels
         this.echoChannels.forEach((channel, channelName) => {
@@ -917,11 +1077,41 @@ class ChatRealtime {
 
 // Global functions for backward compatibility
 window.handleEnterKey = function(event) {
+    
     if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
-        
+         
         if (window.chatRealtime) {
-            window.chatRealtime.sendMessage();
+             window.chatRealtime.sendMessage();
+        } else {
+             // Fallback cho trường hợp chatRealtime chưa khởi tạo
+            const messageInput = document.getElementById('messageInputField');
+            const fileInput = document.getElementById('fileUpload');
+            
+            if (messageInput) {
+                const content = messageInput.value.trim();
+                const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+                
+                if (content || hasFile) {
+                    // Gọi Livewire trực tiếp
+                    if (window.Livewire && window.Livewire.first) {
+                        try {
+                            const component = window.Livewire.first();
+                            if (component) {
+                                if (content) {
+                                    component.set('message_content', content);
+                                }
+                                component.call('sendMessage');
+                                messageInput.value = '';
+                            }
+                        } catch (error) {
+                            console.error('💬 Fallback handleEnterKey error:', error);
+                        }
+                    }
+                } else {
+                    console.log('💬 Global handleEnterKey: No content or file to send');
+                }
+            }
         }
     }
 };
@@ -932,36 +1122,77 @@ window.switchConversation = function(conversationId) {
     }
 };
 
+// Global search functions for backward compatibility
+window.setupAdminSearch = function() {
+    if (window.chatRealtime) {
+        window.chatRealtime.setupAdminSearch();
+    }
+};
+
+window.performAdminSearch = function(query) {
+    if (window.chatRealtime) {
+        window.chatRealtime.performAdminSearch(query);
+    }
+};
+
+window.clearAdminSearchHighlights = function() {
+    if (window.chatRealtime) {
+        window.chatRealtime.clearAdminSearchHighlights();
+    }
+};
+
+window.searchMessages = function() {
+    if (window.chatRealtime) {
+        window.chatRealtime.searchMessages();
+    }
+};
+
+// Global scrollToBottom for backward compatibility
+window.scrollToBottomChat = function() {
+    if (window.chatRealtime) {
+        window.chatRealtime.scrollToBottom();
+    }
+};
+
 // Initialize chat realtime when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
-        // console.log('💬 ChatRealtime: DOM ready, initializing...');
-        
+       
         // Debug: Check available elements
-        console.log('💬 ChatRealtime: Available elements check:', {
-            messageInputField: !!document.getElementById('messageInputField'),
-            wireModelInput: !!document.querySelector('[wire\\:model="message_content"]'),
-            chatConversation: !!document.getElementById('chat-conversation'),
-            messageContainer: !!document.getElementById('message-container'),
-            currentConversationId: window.currentConversationId,
-            livewireAvailable: !!window.Livewire,
-            echoAvailable: !!window.Echo
-        });
+        // console.log('💬 ChatRealtime: Available elements check:', {
+        //     messageInputField: !!document.getElementById('messageInputField'),
+        //     wireModelInput: !!document.querySelector('[wire\\:model="message_content"]'),
+        //     chatConversation: !!document.getElementById('chat-conversation'),
+        //     messageContainer: !!document.getElementById('message-container'),
+        //     searchMessage: !!document.getElementById('searchMessage'),
+        //     adminSearchToggle: !!document.getElementById('admin-search-toggle'),
+        //     adminSearchDropdown: !!document.getElementById('admin-search-dropdown'),
+        //     currentConversationId: window.currentConversationId,
+        //     livewireAvailable: !!window.Livewire,
+        //     echoAvailable: !!window.Echo
+        // });
         
         window.chatRealtime = new ChatRealtime();
+        
+        // Setup admin search after ChatRealtime initialization
+        if (window.chatRealtime) {
+            window.chatRealtime.setupAdminSearch();
+        }
     });
 } else {
-    // DOM already loaded
-    console.log('💬 ChatRealtime: DOM already loaded, initializing immediately...');
+    
     window.chatRealtime = new ChatRealtime();
+    
+    // Setup admin search after ChatRealtime initialization
+    if (window.chatRealtime) {
+        window.chatRealtime.setupAdminSearch();
+    }
 }
 
 // Also initialize when Livewire is loaded (if not already)
 document.addEventListener('livewire:initialized', function() {
-    // console.log('💬 ChatRealtime: Livewire initialized');
     if (!window.chatRealtime) {
-        console.log('💬 ChatRealtime: Creating instance after Livewire init');
-        window.chatRealtime = new ChatRealtime();
+            window.chatRealtime = new ChatRealtime();
     }
 });
 
