@@ -169,15 +169,21 @@ class CartController extends Controller
                     $discount = $bookInfo->format_discount ?? 0;
                     $finalPrice = max(0, $basePrice - $discount);
                     
-                    // Add extra price from attributes if any
+                    // Add extra price from attributes if any (only for physical books)
                     if (!empty($cartItem->attribute_value_ids) && $cartItem->attribute_value_ids !== '[]') {
                         $attributeIds = json_decode($cartItem->attribute_value_ids, true);
                         if ($attributeIds && is_array($attributeIds)) {
-                            $extraPrice = DB::table('book_attribute_values')
-                                ->whereIn('attribute_value_id', $attributeIds)
-                                ->where('book_id', $cartItem->book_id)
-                                ->sum('extra_price');
-                            $finalPrice += $extraPrice;
+                            // Check if this is an ebook
+                            $isEbook = $bookInfo->format_name && stripos($bookInfo->format_name, 'ebook') !== false;
+                            
+                            if (!$isEbook) {
+                                // Only add extra price for physical books
+                                $extraPrice = DB::table('book_attribute_values')
+                                    ->whereIn('attribute_value_id', $attributeIds)
+                                    ->where('book_id', $cartItem->book_id)
+                                    ->sum('extra_price');
+                                $finalPrice += $extraPrice;
+                            }
                         }
                     }
 
@@ -290,30 +296,14 @@ class CartController extends Controller
 
             if (!empty($attributeValueIds)) {
                 if ($isEbook) {
-                    // Đối với ebook: chỉ lấy thuộc tính ngôn ngữ
-                    $validAttributeIds = DB::table('attribute_values')
-                        ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
-                        ->whereIn('attribute_values.id', $attributeValueIds)
-                        ->where(function ($q) {
-                            $q->where('attributes.name', 'LIKE', '%Ngôn Ngữ%')
-                                ->orWhere('attributes.name', 'LIKE', '%language%')
-                                ->orWhere('attributes.name', 'LIKE', '%Language%');
-                        })
-                        ->pluck('attribute_values.id')
-                        ->toArray();
-
-                    // Kiểm tra xem có thuộc tính ngôn ngữ hợp lệ không
-                    if (empty($validAttributeIds)) {
-                        Log::warning('Ebook không có thuộc tính ngôn ngữ hợp lệ:', [
-                            'book_id' => $bookId,
-                            'requested_attributes' => $attributeValueIds,
-                            'format_id' => $bookFormatId
-                        ]);
-
-                        return response()->json([
-                            'error' => 'Vui lòng chọn ngôn ngữ cho sách điện tử'
-                        ], 422);
-                    }
+                    // Đối với ebook: không xử lý thuộc tính nào cả
+                    $validAttributeIds = [];
+                    
+                    Log::info('Cart addToCart - Ebook attributes ignored:', [
+                        'book_id' => $bookId,
+                        'requested_attributes' => $attributeValueIds,
+                        'format_id' => $bookFormatId
+                    ]);
                 } else {
                     // Đối với sách vật lý: giữ lại tất cả thuộc tính hợp lệ
                     $validAttributeIds = DB::table('attribute_values')
@@ -332,31 +322,11 @@ class CartController extends Controller
                     'original_count' => count($attributeValueIds)
                 ]);
             } else {
-                // Nếu không có thuộc tính nào được gửi lên
-                if ($isEbook) {
-                    // Kiểm tra xem sách này có yêu cầu thuộc tính ngôn ngữ không
-                    $hasLanguageAttributes = DB::table('book_attribute_values')
-                        ->join('attribute_values', 'book_attribute_values.attribute_value_id', '=', 'attribute_values.id')
-                        ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
-                        ->where('book_attribute_values.book_id', $bookId)
-                        ->where(function ($q) {
-                            $q->where('attributes.name', 'LIKE', '%Ngôn Ngữ%')
-                                ->orWhere('attributes.name', 'LIKE', '%language%')
-                                ->orWhere('attributes.name', 'LIKE', '%Language%');
-                        })
-                        ->exists();
-
-                    if ($hasLanguageAttributes) {
-                        return response()->json([
-                            'error' => 'Vui lòng chọn ngôn ngữ cho sách điện tử'
-                        ], 422);
-                    }
-                }
-
+                // Nếu không có thuộc tính nào được gửi lên - OK cho cả ebook và physical books
                 Log::info('Cart addToCart - No attributes provided:', [
                     'is_ebook' => $isEbook,
                     'book_format_id' => $bookFormatId,
-                    'note' => $isEbook ? 'Ebook without language requirement' : 'Physical book without attributes'
+                    'note' => $isEbook ? 'Ebook without any attributes' : 'Physical book without attributes'
                 ]);
             }
 
@@ -481,8 +451,8 @@ class CartController extends Controller
                 $finalPrice = max(0, $finalPrice);
             }
 
-            // Tính thêm extra_price từ biến thể nếu có
-            if (!empty($validAttributeIds)) {
+            // Tính thêm extra_price từ biến thể nếu có (chỉ cho sách vật lý)
+            if (!empty($validAttributeIds) && !$isEbook) {
                 $attributeExtraPrice = DB::table('book_attribute_values')
                     ->whereIn('attribute_value_id', $validAttributeIds)
                     ->where('book_id', $bookId)
@@ -490,11 +460,17 @@ class CartController extends Controller
 
                 $finalPrice += $attributeExtraPrice;
 
-                Log::info('Cart addToCart - Added attribute extra price:', [
+                Log::info('Cart addToCart - Added attribute extra price (physical book only):', [
                     'book_id' => $bookId,
                     'attribute_ids' => $validAttributeIds,
                     'extra_price' => $attributeExtraPrice,
                     'final_price' => $finalPrice
+                ]);
+            } elseif (!empty($validAttributeIds) && $isEbook) {
+                Log::info('Cart addToCart - Skipped attribute extra price for ebook:', [
+                    'book_id' => $bookId,
+                    'attribute_ids' => $validAttributeIds,
+                    'note' => 'Ebooks do not have extra price for variants'
                 ]);
             }
             // dd($finalPrice);
@@ -532,12 +508,17 @@ class CartController extends Controller
                 ], 422, ['Content-Type' => 'application/json']);
             }
 
-            // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa (bao gồm cả thuộc tính)
-            $existingCart = Cart::where('user_id', Auth::id())
+            // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
+            $existingCartQuery = Cart::where('user_id', Auth::id())
                 ->where('book_id', $bookId)
-                ->where('book_format_id', $bookFormatId)
-                ->whereJsonContains('attribute_value_ids', json_decode($attributeJson, true))
-                ->first();
+                ->where('book_format_id', $bookFormatId);
+            
+            // Chỉ kiểm tra attributes cho sách vật lý
+            if (!$isEbook) {
+                $existingCartQuery->whereJsonContains('attribute_value_ids', json_decode($attributeJson, true));
+            }
+            
+            $existingCart = $existingCartQuery->first();
             // dd($existingCart);   
             if ($existingCart) {
                 // Nếu là ebook: luôn giữ số lượng là 1
