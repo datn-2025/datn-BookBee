@@ -108,9 +108,11 @@ class CartController extends Controller
                         'books.cover_image',
                         DB::raw('COALESCE(book_formats.format_name, "Bản thường") as format_name'),
                         DB::raw('COALESCE(book_formats.stock, 0) as stock'),
+                        DB::raw('COALESCE(book_formats.price, 0) as format_price'),
+                        DB::raw('COALESCE(book_formats.discount, 0) as format_discount'),
                         DB::raw('COALESCE(GROUP_CONCAT(DISTINCT authors.name SEPARATOR ", "), "Chưa cập nhật") as author_name')
                     )
-                    ->groupBy('books.id', 'books.title', 'books.cover_image', 'book_formats.format_name', 'book_formats.stock')
+                    ->groupBy('books.id', 'books.title', 'books.cover_image', 'book_formats.format_name', 'book_formats.stock', 'book_formats.price', 'book_formats.discount')
                     ->first();
 
                 if ($bookInfo) {
@@ -162,6 +164,23 @@ class CartController extends Controller
                         }
                     }
 
+                    // Calculate the final price with discount
+                    $basePrice = $bookInfo->format_price ?? 0;
+                    $discount = $bookInfo->format_discount ?? 0;
+                    $finalPrice = max(0, $basePrice - $discount);
+                    
+                    // Add extra price from attributes if any
+                    if (!empty($cartItem->attribute_value_ids) && $cartItem->attribute_value_ids !== '[]') {
+                        $attributeIds = json_decode($cartItem->attribute_value_ids, true);
+                        if ($attributeIds && is_array($attributeIds)) {
+                            $extraPrice = DB::table('book_attribute_values')
+                                ->whereIn('attribute_value_id', $attributeIds)
+                                ->where('book_id', $cartItem->book_id)
+                                ->sum('extra_price');
+                            $finalPrice += $extraPrice;
+                        }
+                    }
+
                     $item = (object) [
                         'id' => $cartItem->id,
                         'user_id' => $cartItem->user_id,
@@ -171,7 +190,9 @@ class CartController extends Controller
                         'is_combo' => false,
                         'quantity' => $cartItem->quantity,
                         'attribute_value_ids' => $cartItem->attribute_value_ids,
-                        'price' => $cartItem->price,
+                        'price' => $finalPrice, // Use calculated discounted price
+                        'original_price' => $basePrice, // Store original price for display
+                        'discount' => $discount, // Store discount amount
                         'created_at' => $cartItem->created_at,
                         'updated_at' => $cartItem->updated_at,
                         'title' => $bookInfo->title,

@@ -1274,7 +1274,7 @@
                                         <span id="originalPrice"
                                             class="text-xl text-gray-500 line-through adidas-font">{{ number_format($defaultPrice, 0, ',', '.') }}₫</span>
                                         <span id="discountText"
-                                            class="bg-red-600 text-white px-3 py-1 text-sm font-bold adidas-font uppercase tracking-wider">-{{ number_format($discount, 0, ',', '.') }}₫</span>
+                                            class="bg-red-600 text-white px-3 py-1 text-sm font-bold adidas-font uppercase tracking-wider">-<span id="discountAmount">{{ number_format($discount, 0, ',', '.') }}</span>₫</span>
                                     @else
                                         <span id="originalPrice" class="text-xl text-gray-500 line-through adidas-font"
                                             style="display: none;"></span>
@@ -2360,13 +2360,20 @@
                     stock = lowestVariantStock;
                 }
 
-                // Calculate final price with discount
+                // Giá cuối cùng đã được tính sẵn từ server
                 const priceAfterDiscount = finalPrice - discount;
                 // Update price display
                 bookPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(priceAfterDiscount) + '₫';
                 const originalPriceElement = document.getElementById('originalPrice');
                 const discountTextElement = document.getElementById('discountText');
-                const discountPercentElement = document.getElementById('discountPercent');
+                const discountAmountElement = document.getElementById('discountAmount');
+                
+                console.log('Debug discount display:', {
+                    discount: discount,
+                    discountAmountElement: discountAmountElement,
+                    discountTextElement: discountTextElement
+                });
+                
                 if (discount > 0) {
                     if (originalPriceElement) {
                         originalPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(finalPrice) + '₫';
@@ -2375,8 +2382,12 @@
                     if (discountTextElement) {
                         discountTextElement.style.display = 'inline';
                     }
-                    if (discountPercentElement) {
-                        discountPercentElement.textContent = new Intl.NumberFormat('vi-VN').format(discount) + '₫';
+                    if (discountAmountElement) {
+                        const formattedDiscount = new Intl.NumberFormat('vi-VN').format(discount);
+                        console.log('Setting discount amount:', formattedDiscount);
+                        discountAmountElement.textContent = formattedDiscount;
+                    } else {
+                        console.log('discountAmountElement not found!');
                     }
                 } else {
                     if (originalPriceElement) {

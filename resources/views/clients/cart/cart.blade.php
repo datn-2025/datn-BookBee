@@ -283,7 +283,8 @@
                              data-book-format-id="{{ $item->book_format_id }}"
                              data-attribute-value-ids="{{ $item->attribute_value_ids }}"
                              data-price="{{ $item->price }}" 
-                             data-base-price="{{ $item->price }}"
+                             data-base-price="{{ $item->original_price ?? $item->price }}"
+                             data-discount="{{ $item->discount ?? 0 }}"
                              data-extra-price="0"
                              data-stock="{{ $item->stock ?? 0 }}"
                              data-format-name="{{ $item->format_name ?? '' }}"
@@ -471,6 +472,14 @@
                                             <div class="text-lg font-bold text-black">
                                                 {{ number_format($item->price) }}đ
                                             </div>
+                                            @if(isset($item->discount) && $item->discount > 0)
+                                                <div class="text-sm text-gray-500 line-through">
+                                                    {{ number_format($item->original_price) }}đ
+                                                </div>
+                                                <div class="text-xs text-red-600 font-bold">
+                                                    -{{ number_format($item->discount) }}đ
+                                                </div>
+                                            @endif
                                         </div>
                                         
                                         <!-- Quantity -->
