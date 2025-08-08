@@ -4,14 +4,18 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
+use App\Models\Message;
+use App\Models\MessageRead;
 use App\Models\User;
+use App\Events\MessageSent;
 use App\Services\AutoReplyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AdminChatrealtimeController extends Controller
 {
-     public function index()
+    public function index()
     {
         // Đánh dấu admin đang hoạt động
         AutoReplyService::markAdminAsActive(Auth::id());
@@ -160,4 +164,6 @@ class AdminChatrealtimeController extends Controller
             })
         ]);
     }
+
+
 }
