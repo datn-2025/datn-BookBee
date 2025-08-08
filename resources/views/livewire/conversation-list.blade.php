@@ -1,6 +1,6 @@
 <div wire:key="conversation-list">
     <ul class="list-unstyled chat-list chat-user-list" id="userList">
-        @if(count($conversations) > 0)
+        @if (count($conversations) > 0)
             @foreach ($conversations as $conversation)
                 <li wire:key="{{ $refreshKey }}-{{ $conversation->id }}">
                     <a href="{{ route('admin.chat.show', $conversation->id) }}"
@@ -21,14 +21,12 @@
                                 {{ $conversation->messages->first()?->content ?? 'Chưa có tin nhắn' }}
                             </p>
                             <small class="text-muted">
-                                @if ($conversation->customer->status === 'online')
-                                    <span class="text-success" style="font-size: 1.2em;">●</span> Online
-                                @elseif ($conversation->customer->last_seen)
-                                    <span class="badge bg-warning">
-                                        Hoạt động {{ \Carbon\Carbon::parse($conversation->customer->last_seen)->diffForHumans() }}
-                                    </span>
+                                @if ($conversation->customer->last_seen && $conversation->customer->last_seen->diffInMinutes(now()) <= 5)
+                                    <i class="bx bxs-circle text-success fs-10 me-1"></i>Online
+                                @elseif($conversation->customer->last_seen && $conversation->customer->last_seen->diffInMinutes(now()) <= 30)
+                                    <i class="bx bxs-circle text-warning fs-10 me-1"></i>Away
                                 @else
-                                    <span class="text-muted">Offline</span>
+                                    <i class="bx bxs-circle text-muted fs-10 me-1"></i>Offline
                                 @endif
                             </small>
                         </div>

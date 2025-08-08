@@ -1,320 +1,4 @@
 <div>
-    <style>
-        .message-image img {
-            transition: transform 0.2s;
-        }
-
-        .message-image img:hover {
-            transform: scale(1.05);
-        }
-
-        .message-file {
-            border: 1px solid #e0e0e0;
-            border -radius: 8px;      
-        }
-
-        .message-file:hover {
-            background-color: #f8f9fa !important;
-        }
-
-        /* Typing animation */
-        .typing-animation {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #6c757d;
-            animation: typing 1.4s infinite ease-in-out;
-        }
-
-        .typing-dot:nth-child(1) {
-            animation-delay: -0.32s;
-        }
-
-        .typing-dot:nth-child(2) {
-            animation-delay: -0.16s;
-        }
-
-        @keyframes typing {
-            0%, 80%, 100% {
-                transform: scale(0.8);
-                opacity: 0.5;
-            }
-            40% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        /* Chat introduction styles */
-        .chat-introduction {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem 1rem;
-            text-align: center;
-            color: white;
-            border-radius: 15px;
-            margin: 1rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .chat-introduction::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: shine 3s infinite;
-        }
-
-        .chat-introduction .celebration-icons {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            animation: bounce 2s infinite;
-            z-index: 2;
-            position: relative;
-        }
-
-        .chat-introduction .user-avatar {
-            width: 80px;
-            height: 80px;
-            border: 4px solid rgba(255,255,255,0.3);
-            margin: 0 auto 1rem;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-            z-index: 2;
-            position: relative;
-            transition: transform 0.3s ease;
-        }
-
-        .chat-introduction .user-avatar:hover {
-            transform: scale(1.1);
-        }
-
-        .chat-introduction .intro-text {
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-            opacity: 0.9;
-            z-index: 2;
-            position: relative;
-        }
-
-        .chat-introduction .start-chat-btn {
-            background: rgba(255,255,255,0.2);
-            border: 2px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 0.75rem 2rem;
-            border-radius: 25px;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            z-index: 2;
-            position: relative;
-        }
-
-        .chat-introduction .start-chat-btn:hover {
-            background: rgba(255,255,255,0.3);
-            border-color: rgba(255,255,255,0.5);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        .quick-sticker {
-            padding: 0.5rem;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            margin: 0 0.25rem;
-            transition: all 0.3s ease;
-            display: inline-block;
-        }
-
-        .quick-sticker:hover {
-            background: rgba(255,255,255,0.3);
-            transform: scale(1.2) rotate(10deg);
-        }
-
-        .quick-sticker:active {
-            transform: scale(1.5) rotate(0deg);
-        }
-
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-                transform: translateY(0);
-            }
-            40% {
-                transform: translateY(-10px);
-            }
-            60% {
-                transform: translateY(-5px);
-            }
-        }
-
-        @keyframes shine {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .chat-introduction {
-                margin: 0.5rem;
-                padding: 1.5rem 0.75rem;
-            }
-            
-            .chat-introduction .user-avatar {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .chat-introduction .intro-text {
-                font-size: 1rem;
-            }
-            
-            .chat-introduction .celebration-icons {
-                font-size: 1.2rem;
-            }
-        }
-
-        /* Message day separator */
-        .message-date-separator {
-            text-align: center;
-            margin: 1.5rem 0;
-            position: relative;
-        }
-
-        .message-date-separator::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: #e5e5e5;
-        }
-
-        .message-date-separator .date-badge {
-            background: #f8f9fa;
-            padding: 0.25rem 1rem;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            color: #6c757d;
-            position: relative;
-            display: inline-block;
-        }
-
-        /* Auto scroll */
-        .chat-conversation {
-            scroll-behavior: smooth;
-        }
-
-        /* Message transitions */
-        .chat-list {
-            animation: fadeInUp 0.3s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Loading state */
-        .btn[wire\:loading] {
-            pointer-events: none;
-        }
-
-        /* Admin Emoji Picker Styles */
-        #emoji-picker {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            border: 1px solid #e5e7eb;
-        }
-
-        #emoji-picker.hidden {
-            display: none !important;
-        }
-
-        #emoji-picker .grid button {
-            transition: all 0.2s ease;
-        }
-
-        #emoji-picker .grid button:hover {
-            background-color: #f3f4f6 !important;
-            transform: scale(1.1);
-        }
-
-        #emoji-picker .grid button:active {
-            transform: scale(0.95);
-        }
-
-        /* Responsive emoji picker */
-        @media (max-width: 768px) {
-            #emoji-picker {
-                width: 240px !important;
-                max-height: 160px !important;
-            }
-            
-            #emoji-picker .grid {
-                grid-template-columns: repeat(6, 1fr) !important;
-            }
-        }
-
-        /* Tắt thanh cuộn không cần thiết */
-        .chat-container {
-            overflow: hidden !important;
-        }
-
-        .chat-footer {
-            overflow: hidden !important;
-        }
-
-        .chat-footer form {
-            overflow: hidden !important;
-        }
-
-        .chat-footer .row {
-            overflow: hidden !important;
-        }
-
-        .chat-footer .col {
-            overflow: hidden !important;
-        }
-
-        .chat-footer input[type="text"] {
-            overflow: hidden !important;
-        }
-
-        /* Giữ lại thanh cuộn chính cho chat conversation */
-        #chat-conversation {
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-        }
-
-        /* Ẩn thanh cuộn cho các phần tử khác */
-        body {
-            overflow-x: hidden !important;
-        }
-
-        .offcanvas-body {
-            overflow-x: hidden !important;
-        }
-    </style>
-
     @if ($selectedConversation)
     <div class="chat-container">
         <!-- Chat Header -->
@@ -360,16 +44,38 @@
                                         <div class="dropdown">
                                             <button class="btn btn-ghost-secondary btn-icon material-shadow-none"
                                                 type="button" data-bs-toggle="dropdown" aria-haspopup="true"
-                                                aria-expanded="false">
+                                                aria-expanded="false" id="admin-search-toggle">
                                                 <i data-feather="search" class="icon-sm"></i>
                                             </button>
-                                            <div class="dropdown-menu p-0 dropdown-menu-end dropdown-menu-lg">
-                                                <div class="p-2">
-                                                    <div class="search-box">
-                                                        <input type="text" class="form-control bg-light border-light"
-                                                            placeholder="Search here..." onkeyup="searchMessages()"
-                                                            id="searchMessage">
-                                                        <i class="ri-search-2-line search-icon"></i>
+                                            <div class="dropdown-menu p-0 dropdown-menu-end dropdown-menu-lg" id="admin-search-dropdown">
+                                                <div class="p-3">
+                                                    <div class="search-box position-relative">
+                                                        <input type="text" class="form-control bg-light border-light pe-5"
+                                                            placeholder="Tìm kiếm tin nhắn..." 
+                                                            id="searchMessage"
+                                                            autocomplete="off">
+                                                        <i class="ri-search-2-line search-icon position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                                                        <button type="button" id="admin-clear-search" 
+                                                                class="btn btn-link btn-sm position-absolute top-50 end-0 translate-middle-y me-1 d-none" 
+                                                                style="z-index: 10;">
+                                                            <i class="ri-close-line text-muted"></i>
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <!-- Search results info -->
+                                                    <div id="admin-search-results-info" class="mt-2 d-none">
+                                                        <small class="text-muted">
+                                                            <i class="ri-search-line me-1"></i>
+                                                            <span id="admin-search-count">0</span> kết quả tìm thấy
+                                                        </small>
+                                                    </div>
+                                                    
+                                                    <!-- Search instructions -->
+                                                    <div id="admin-search-instructions" class="mt-2">
+                                                        <small class="text-muted">
+                                                            <i class="ri-information-line me-1"></i>
+                                                            Nhập từ khóa để tìm kiếm tin nhắn
+                                                        </small>
                                                     </div>
                                                 </div>
                                             </div>
@@ -383,27 +89,6 @@
                                             <i data-feather="info" class="icon-sm"></i>
                                         </button>
                                     </li>
-                                    <li class="list-inline-item m-0">
-                                        <div class="dropdown">
-                                            <button class="btn btn-ghost-secondary btn-icon material-shadow-none"
-                                                type="button" data-bs-toggle="dropdown" aria-haspopup="true"
-                                                aria-expanded="false">
-                                                <i data-feather="more-vertical" class="icon-sm"></i>
-                                            </button>
-                                            <div class="dropdown-menu dropdown-menu-end">
-                                                <a class="dropdown-item d-block d-lg-none user-profile-show"
-                                                    href="#"><i
-                                                        class="ri-user-2-fill align-bottom text-muted me-2"></i>View
-                                                    Profile</a>
-                                                <a class="dropdown-item" href="#"><i
-                                                        class="ri-inbox-archive-line align-bottom text-muted me-2"></i>Archive</a>
-                                                <a class="dropdown-item" href="#"><i
-                                                        class="ri-mic-off-line align-bottom text-muted me-2"></i>Muted</a>
-                                                <a class="dropdown-item" href="#"><i
-                                                        class="ri-delete-bin-5-line align-bottom text-muted me-2"></i>Delete</a>
-                                            </div>
-                                        </div>
-                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -413,7 +98,7 @@
         <div class="chat-body">
             <div class="chat-conversation" id="chat-conversation" style="background-color: #f8f9fa;">
                 <div id="elmLoader" class="text-center py-4"></div>
-            
+            {{-- khi tạo cuộc trò chuyện mới sẽ hiển thị phần này  --}}
             @if($this->isNewConversation())
                 <!-- Chat Introduction -->
                 <div class="chat-introduction">
@@ -492,7 +177,7 @@
                                     $bgColor = $isMine ? 'bg-primary text-white' : 'bg-light text-dark';
                                     $date = $message->created_at->format('Y-m-d');
                                 @endphp
-
+                                {{-- Hiển thị ngày nếu khác ngày trước đó --}}
                                 @if ($date !== $previousDate)
                                     <li class="my-4">
                                         <div class="d-flex align-items-center justify-content-center">
@@ -521,15 +206,36 @@
                                                     id="{{ $message->id }}"
                                                     style="border-radius: 10px; padding: 10px;">
 
+                                                    {{-- Hiển thị reply nếu có --}}
+                                                    @if ($message->replyToMessage)
+                                                        <div class="reply-reference mb-2 p-2 rounded" style="background-color: rgba(255,255,255,0.1); border-left: 3px solid {{ $isMine ? '#fff' : '#007bff' }};">
+                                                            <small class="text-muted d-block mb-1">
+                                                                <i class="ri-reply-line me-1"></i>
+                                                                Trả lời {{ $message->replyToMessage->sender->name }}
+                                                            </small>
+                                                            <div class="text-muted small" style="font-style: italic;">
+                                                                {{ Str::limit($message->replyToMessage->content, 50) }}
+                                                            </div>
+                                                        </div>
+                                                    @endif
+
                                                     {{-- Hiển thị theo loại tin nhắn --}}
                                                     @if ($message->type === 'image')
                                                         @if ($message->file_path)
-                                                            <div class="message-image"
-                                                                style="cursor:pointer; max-width:180px;"
-                                                                onclick="openImageModal('{{ asset('storage/' . $message->file_path) }}')">
+                                                            <div class="message-image mb-2"
+                                                                style="cursor:pointer; max-width:200px; position: relative;">
                                                                 <img src="{{ asset('storage/' . $message->file_path) }}"
-                                                                    alt="Image" class="img-fluid rounded"
-                                                                    style="max-width:100%; max-height:180px;" />
+                                                                    alt="Image" class="img-fluid rounded shadow-sm"
+                                                                    style="max-width:100%; max-height:200px; object-fit: cover; transition: transform 0.2s;"
+                                                                    onclick="openImageModal('{{ asset('storage/' . $message->file_path) }}', '{{ $message->content ?? 'Image' }}')"
+                                                                    onmouseover="this.style.transform='scale(1.02)'"
+                                                                    onmouseout="this.style.transform='scale(1)'">
+                                                                
+                                                                <!-- Zoom icon overlay -->
+                                                                <div class="position-absolute top-0 end-0 m-1 bg-dark bg-opacity-50 rounded-circle p-1" 
+                                                                     style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                                                    <i class="bx bx-expand-alt text-white" style="font-size: 12px;"></i>
+                                                                </div>
                                                             </div>
                                                         @endif
                                                         @if ($message->content)
@@ -538,22 +244,95 @@
                                                     @elseif($message->type === 'file')
                                                         {{-- Hiển thị file --}}
                                                         @if ($message->file_path)
-                                                            <div class="message-file p-2 mb-1">
-                                                                <a href="{{ asset('storage/' . $message->file_path) }}"
-                                                                    target="_blank">
-                                                                    📎 {{ basename($message->file_path) }}
-                                                                </a>
+                                                            <div class="message-file d-flex align-items-center p-2 mb-2 rounded border" 
+                                                                 style="background-color: rgba(255,255,255,0.1); max-width: 250px;">
+                                                                <div class="flex-shrink-0 me-2">
+                                                                    <i class="bx bx-file fs-3 text-primary"></i>
+                                                                </div>
+                                                                <div class="flex-grow-1 overflow-hidden">
+                                                                    <p class="mb-0 fw-medium text-truncate">{{ $message->content }}</p>
+                                                                    <small class="text-muted">Click to download</small>
+                                                                </div>
+                                                                <div class="flex-shrink-0 ms-2">
+                                                                    <a href="{{ asset('storage/' . $message->file_path) }}" 
+                                                                       target="_blank" 
+                                                                       class="btn btn-sm btn-outline-primary rounded-circle"
+                                                                       title="Download file">
+                                                                        <i class="bx bx-download"></i>
+                                                                    </a>
+                                                                </div>
                                                             </div>
                                                         @endif
-                                                        @if ($message->content)
+                                                        @if ($message->content && $message->content !== basename($message->file_path))
                                                             <p class="mb-0 ctext-content">{{ $message->content }}</p>
                                                         @endif
+                                                    @elseif($message->type === 'system_order_info')
+                                                        {{-- Tin nhắn thông tin đơn hàng với styling đặc biệt --}}
+                                                        <div class="order-info-message" style="background: linear-gradient(135deg, #81ecec 0%, #74b9ff 50%, #0984e3 100%); border-radius: 15px; padding: 20px; color: white; box-shadow: 0 8px 32px rgba(116, 185, 255, 0.25); border: 1px solid rgba(255, 255, 255, 0.1);">
+                                                            @php
+                                                                $lines = explode("\n", $message->content);
+                                                                $header = array_shift($lines); // Lấy dòng đầu tiên
+                                                            @endphp
+                                                            
+                                                            {{-- Header với icon --}}
+                                                            <div class="d-flex align-items-center mb-3">
+                                                                <div class="me-3" style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                                                                    <i class="bx bx-package" style="font-size: 24px; color: white;"></i>
+                                                                </div>
+                                                                <div>
+                                                                    <h6 class="mb-0 text-white fw-bold">{{ $header }}</h6>
+                                                                    <small style="color: rgba(255,255,255,0.85);">Yêu cầu hỗ trợ đơn hàng</small>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            {{-- Nội dung đơn hàng --}}
+                                                            <div class="order-details" style="background: rgba(255,255,255,0.15); border-radius: 12px; padding: 16px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px);">
+                                                                @foreach($lines as $line)
+                                                                    @if(trim($line))
+                                                                        @if(str_contains($line, '🛒'))
+                                                                            <div class="order-code mb-3">
+                                                                                <h6 class="text-white fw-bold mb-0" style="font-size: 18px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">{{ trim($line) }}</h6>
+                                                                            </div>
+                                                                        @elseif(str_contains($line, '📋'))
+                                                                            <div class="order-details-header mb-2">
+                                                                                <strong style="color: rgba(255,255,255,0.95); font-size: 14px;">{{ trim($line) }}</strong>
+                                                                            </div>
+                                                                        @elseif(str_contains($line, '•'))
+                                                                            <div class="order-detail-item d-flex align-items-center mb-2">
+                                                                                <span class="me-2" style="color: #ffeaa7; font-size: 10px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">●</span>
+                                                                                <span style="color: rgba(255,255,255,0.95); font-size: 13px;">{{ trim(str_replace('•', '', $line)) }}</span>
+                                                                            </div>
+                                                                        @elseif(str_contains($line, '🙏'))
+                                                                            <div class="order-help-request mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.25);">
+                                                                                <div class="d-flex align-items-center">
+                                                                                    <span style="font-size: 20px; margin-right: 8px;">🙏</span>
+                                                                                    <span style="color: rgba(255,255,255,0.95); font-weight: 500;">{{ trim(str_replace('🙏', '', $line)) }}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        @endif
+                                                                    @endif
+                                                                @endforeach
+                                                            </div>
+                                                            
+                                                            {{-- Footer với timestamp --}}
+                                                            <div class="mt-3 d-flex justify-content-between align-items-center">
+                                                                <small style="color: rgba(255,255,255,0.8);">
+                                                                    <i class="bx bx-time-five me-1"></i>
+                                                                    {{ $message->created_at->format('H:i - d/m/Y') }}
+                                                                </small>
+                                                                <div class="d-flex align-items-center">
+                                                                    <span class="badge" style="background: rgba(255,255,255,0.25); color: white; font-size: 11px; backdrop-filter: blur(10px);">
+                                                                        <i class="bx bx-support me-1"></i>Cần hỗ trợ
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     @else
                                                         {{-- Tin nhắn text thông thường --}}
                                                         <p class="mb-0 ctext-content">{{ $message->content }}</p>
                                                     @endif
                                                 </div>
-
+                                                {{-- Dropdown menu cho tin nhắn --}}
                                                 <div class="dropdown align-self-start message-box-drop">
                                                     <a class="dropdown-toggle" href="#" role="button"
                                                         data-bs-toggle="dropdown" aria-haspopup="true"
@@ -561,22 +340,14 @@
                                                         <i class="ri-more-2-fill"></i>
                                                     </a>
                                                     <div class="dropdown-menu">
-                                                        <a class="dropdown-item reply-message" href="#"><i
-                                                                class="ri-reply-line me-2 text-muted align-bottom"></i>Reply</a>
-                                                        <a class="dropdown-item" href="#"><i
-                                                                class="ri-share-line me-2 text-muted align-bottom"></i>Forward</a>
-                                                        <a class="dropdown-item copy-message" href="#"><i
-                                                                class="ri-file-copy-line me-2 text-muted align-bottom"></i>Copy</a>
-                                                        <a class="dropdown-item" href="#"><i
-                                                                class="ri-bookmark-line me-2 text-muted align-bottom"></i>Bookmark</a>
-                                                        @if ($message->type === 'file' || $message->type === 'image')
-                                                            <a class="dropdown-item"
-                                                                href="{{ asset('storage/' . $message->file_path) }}"
-                                                                download><i
-                                                                    class="ri-download-line me-2 text-muted align-bottom"></i>Download</a>
-                                                        @endif
-                                                        <a class="dropdown-item delete-item" href="#"><i
-                                                                class="ri-delete-bin-5-line me-2 text-muted align-bottom"></i>Delete</a>
+                                                        <a class="dropdown-item reply-message" href="#" 
+                                                           onclick="event.preventDefault(); replyToMessageAndSet('{{ $message->id }}', '{{ $message->sender->name }}', '{{ addslashes($message->content) }}');">
+                                                            <i class="ri-reply-line me-2 text-muted align-bottom"></i>Reply
+                                                        </a>
+                                                        <a class="dropdown-item delete-item" href="#" 
+                                                           onclick="deleteMessage('{{ $message->id }}')">
+                                                            <i class="ri-delete-bin-5-line me-2 text-muted align-bottom"></i>Delete
+                                                        </a>
                                                     </div>
                                                 </div>
                                             </div>
@@ -627,17 +398,30 @@
 
         <!-- Chat Footer -->
         <div class="chat-footer">
+            <!-- Reply Preview -->
+            <div id="reply-preview" class="reply-preview d-none" style="margin: 8px;">
+                <div class="reply-to" id="reply-to-name"></div>
+                <div class="reply-content" id="reply-content"></div>
+                <span class="close-reply" onclick="cancelReply()">&times;</span>
+            </div>
+            
             <!-- Giao diện form -->
             <form wire:submit.prevent="sendMessage">
                 <div class="row g-0 align-items-center">
                     <!-- Emoji -->
-                    <div class="col-auto pe-2">
+                    <div class="col-auto pe-2" style="position: relative;">
                         <button type="button" class="btn btn-light rounded-circle p-2" id="emoji-toggle">
                             <i class="bx bx-smile fs-4 text-primary"></i>
                         </button>
                         
                         <!-- Emoji Picker -->
-                        <div id="emoji-picker" class="position-absolute bg-white border rounded shadow-lg p-3 hidden" style="bottom: 60px; left: 0; width: 280px; max-height: 200px; overflow-y: auto; z-index: 1000;">
+                        <div id="emoji-picker" class="hidden" style="position: absolute; bottom: 50px; left: 0; width: 280px; max-height: 200px; overflow-y: auto; z-index: 99999; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); padding: 12px;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">Choose an emoji</small>
+                                <button type="button" class="btn btn-sm btn-link p-0" onclick="document.getElementById('emoji-picker').classList.add('hidden')">
+                                    <i class="bx bx-x"></i>
+                                </button>
+                            </div>
                             <div class="grid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px;">
                                 <!-- Emojis will be populated by JavaScript -->
                             </div>
@@ -677,7 +461,7 @@
 
                             <input type="text"
                                 class="form-control chat-input bg-white border-0 rounded-pill shadow-sm flex-grow-1"
-                                placeholder="Type your message..." 
+                                placeholder="{{ $fileUpload ? 'Nhấn Enter để gửi file...' : 'Type your message...' }}" 
                                 wire:model="message_content"
                                 autocomplete="off"
                                 id="messageInputField"
@@ -695,15 +479,6 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Upload file button khi có file -->
-                @if ($fileUpload)
-                    <div class="mt-2 text-center">
-                        <button type="button" wire:click="uploadFile" class="btn btn-sm btn-success">
-                            <i class="bx bx-upload"></i> Send File
-                        </button>
-                    </div>
-                @endif
             </form>
             
             <!-- reply preview -->
@@ -727,7 +502,7 @@
             </div>
         </div>
     </div>
-
+    {{-- Offcanvas for user profile --}}
     <div class="offcanvas offcanvas-end border-0" tabindex="-1" id="userProfileCanvasExample" aria-modal="true"
         role="dialog" style="width: 400px;">
         <div class="offcanvas-body profile-offcanvas p-0">
@@ -848,7 +623,110 @@
     <script>
         // Setup biến cho chat-realtime.js
         window.currentConversationId = '{{ $selectedConversation->id ?? null }}';
-        console.log('💬 Chat realtime Blade loaded, conversation ID:', window.currentConversationId);
+        
+        // Custom CSS cho order info messages
+        const orderInfoStyles = `
+            <style>
+                .order-info-message {
+                    position: relative;
+                    overflow: hidden;
+                    animation: orderMessageSlideIn 0.5s ease-out;
+                    transform-origin: left center;
+                }
+                
+                .order-info-message::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+                    animation: shimmer 2s infinite;
+                }
+                
+                @keyframes orderMessageSlideIn {
+                    from {
+                        opacity: 0;
+                        transform: translateX(-20px) scale(0.95);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(0) scale(1);
+                    }
+                }
+                
+                @keyframes shimmer {
+                    from {
+                        left: -100%;
+                    }
+                    to {
+                        left: 100%;
+                    }
+                }
+                
+                .order-info-message:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 12px 40px rgba(116, 185, 255, 0.4) !important;
+                    transition: all 0.3s ease;
+                }
+                
+                .order-detail-item {
+                    transition: all 0.2s ease;
+                }
+                
+                .order-detail-item:hover {
+                    transform: translateX(5px);
+                    background: rgba(255,255,255,0.1);
+                    border-radius: 6px;
+                    padding: 4px 8px;
+                    margin: 2px 0;
+                }
+                
+                .order-details {
+                    backdrop-filter: blur(10px);
+                    -webkit-backdrop-filter: blur(10px);
+                }
+                
+                /* Pulse animation cho badge cần hỗ trợ */
+                @keyframes pulse {
+                    0% {
+                        box-shadow: 0 0 0 0 rgba(116, 185, 255, 0.4);
+                    }
+                    70% {
+                        box-shadow: 0 0 0 10px rgba(116, 185, 255, 0);
+                    }
+                    100% {
+                        box-shadow: 0 0 0 0 rgba(116, 185, 255, 0);
+                    }
+                }
+                
+                .order-info-message .badge {
+                    animation: pulse 2s infinite;
+                    background: rgba(116, 185, 255, 0.3) !important;
+                }
+                
+                /* Responsive cho mobile */
+                @media (max-width: 768px) {
+                    .order-info-message {
+                        padding: 15px !important;
+                        margin: 10px !important;
+                    }
+                    
+                    .order-info-message h6 {
+                        font-size: 16px !important;
+                    }
+                }
+            </style>
+        `;
+        
+        // Inject CSS vào head
+        if (!document.querySelector('#order-info-styles')) {
+            const styleElement = document.createElement('div');
+            styleElement.id = 'order-info-styles';
+            styleElement.innerHTML = orderInfoStyles;
+            document.head.appendChild(styleElement);
+        }
         
         // Emoji list for admin chat
         const adminEmojis = [
@@ -868,77 +746,46 @@
             '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️'
         ];
         
-        // Initialize admin emoji picker
-        function initAdminEmojiPicker() {
-            const emojiPicker = document.getElementById('emoji-picker');
-            const emojiGrid = emojiPicker.querySelector('.grid');
-            
-            if (!emojiGrid) return;
-            
-            emojiGrid.innerHTML = '';
-            
-            adminEmojis.forEach(emoji => {
-                const emojiBtn = document.createElement('button');
-                emojiBtn.type = 'button';
-                emojiBtn.textContent = emoji;
-                emojiBtn.className = 'btn btn-sm btn-outline-light hover:bg-gray-100 p-1 rounded cursor-pointer';
-                emojiBtn.style.cssText = 'border: none; font-size: 1.2rem; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;';
-                
-                emojiBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    insertEmojiToAdminInput(emoji);
-                    emojiPicker.classList.add('hidden');
+        // Global auto-scroll function - Improved
+        function scrollToBottom() {
+            const chatContainer = document.getElementById('chat-conversation');
+            if (chatContainer) {
+                // Scroll với smooth behavior
+                chatContainer.scrollTo({
+                    top: chatContainer.scrollHeight,
+                    behavior: 'smooth'
                 });
-                
-                emojiGrid.appendChild(emojiBtn);
-            });
-        }
-        
-        // Insert emoji to admin input field
-        function insertEmojiToAdminInput(emoji) {
-            const messageInput = document.getElementById('messageInputField');
-            if (messageInput) {
-                const currentValue = messageInput.value || '';
-                const newValue = currentValue + emoji;
-                messageInput.value = newValue;
-                
-                // Trigger Livewire update
-                if (window.Livewire && @this) {
-                    @this.set('message_content', newValue);
-                }
-                
-                messageInput.focus();
             }
         }
         
-        // Setup admin emoji toggle
-        function setupAdminEmojiToggle() {
-            const emojiToggle = document.getElementById('emoji-toggle');
-            const emojiPicker = document.getElementById('emoji-picker');
-            
-            if (!emojiToggle || !emojiPicker) return;
-            
-            emojiToggle.addEventListener('click', (e) => {
-                e.preventDefault();
-                emojiPicker.classList.toggle('hidden');
-            });
-            
-            // Close emoji picker when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!emojiToggle.contains(e.target) && !emojiPicker.contains(e.target)) {
-                    emojiPicker.classList.add('hidden');
-                }
-            });
+        // Force scroll without smooth behavior (for immediate actions)
+        function forceScrollToBottom() {
+            const chatContainer = document.getElementById('chat-conversation');
+            if (chatContainer) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;            }
         }
         
-        // Handle Enter key for sending messages
+        // Handle Enter key for sending messages (Enhanced for file support)
         function handleEnterKey(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
+                event.preventDefault();              
                 
-                // Trigger Livewire sendMessage method
-                if (window.Livewire && @this) {
-                    @this.call('sendMessage');
+                // Check if there's a file or message content
+                const messageContent = document.getElementById('messageInputField')?.value.trim();
+                const fileInput = document.getElementById('fileUpload');
+                const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+                
+                // Send if there's content or file
+                if (messageContent || hasFile) {
+                    
+                    if (window.Livewire && @this) {
+                        @this.call('sendMessage').then(() => {
+                            // Force scroll after sending
+                            setTimeout(forceScrollToBottom, 100);
+                        });
+                    }
+                } else {
+                    console.log('❌ No content or file to send');
                 }
             }
         }
@@ -946,110 +793,438 @@
         // Send quick message (sticker/emoji)
         function sendQuickMessage(content) {
             if (window.Livewire && @this) {
-                // Set the message content
                 @this.set('message_content', content);
-                // Send the message
-                @this.call('sendMessage');
+                @this.call('sendMessage').then(() => {
+                    setTimeout(forceScrollToBottom, 100);
+                });
             }
         }
         
-        // Scroll to bottom function - Optimized
-        function scrollToBottom() {
-            const chatContainer = document.getElementById('chat-conversation');
-            if (chatContainer) {
-                // Simple and reliable scroll
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-        }
-        
-        // Test scroll function
-        function testScroll() {
-            const chatContainer = document.getElementById('chat-conversation');
-            if (chatContainer) {
-                // console.log('✅ Chat container found');
-                // console.log('📏 ScrollHeight:', chatContainer.scrollHeight);
-                // console.log('📏 ClientHeight:', chatContainer.clientHeight);
-                // console.log('📍 ScrollTop:', chatContainer.scrollTop);
-                // console.log('🔄 Can scroll:', chatContainer.scrollHeight > chatContainer.clientHeight);
-                
-                // Test scroll capability
-                const maxScroll = chatContainer.scrollHeight - chatContainer.clientHeight;
-                // console.log('🎯 Max scroll position:', maxScroll);
-            } else {
-                console.log('❌ Chat container not found');
-            }
-        }
-        
-        // Force scroll function
-        function forceScrollEnable() {
-            const chatContainer = document.getElementById('chat-conversation');
-            if (chatContainer) {
-                // Force CSS properties via JavaScript
-                chatContainer.style.overflowY = 'scroll';
-                chatContainer.style.height = '450px';
-                chatContainer.style.maxHeight = '450px';
-                chatContainer.style.minHeight = '450px';
-                chatContainer.style.display = 'block';
-                chatContainer.style.position = 'relative';
-                
-                // console.log('🔧 Force scroll applied');
-                // console.log('📏 Final height:', chatContainer.offsetHeight);
-                // console.log('📏 Scroll height:', chatContainer.scrollHeight);
-                // console.log('💡 Should scroll:', chatContainer.scrollHeight > chatContainer.offsetHeight);
-                
-                return chatContainer.scrollHeight > chatContainer.offsetHeight;
-            }
-            return false;
-        }
-        
-        // Auto scroll to bottom when new messages arrive
-        document.addEventListener('DOMContentLoaded', function() {
-            // console.log('🚀 Chat scroll setup initialized');
+        // Reply to message function
+        function replyToMessage(messageId, senderName, content) {
+            const replyPreview = document.getElementById('reply-preview');
+            const replyToName = document.getElementById('reply-to-name');
+            const replyContent = document.getElementById('reply-content');
             
-            // Initialize admin emoji picker
-            initAdminEmojiPicker();
-            setupAdminEmojiToggle();
+            if (replyPreview && replyToName && replyContent) {
+                replyToName.textContent = `Trả lời ${senderName}`;
+                replyContent.textContent = content.length > 50 ? content.substring(0, 50) + '...' : content;
+                
+                replyPreview.classList.remove('d-none');
+                replyPreview.classList.add('show');
+                replyPreview.style.display = 'block';
+                               
+                // Focus input
+                const messageInput = document.getElementById('messageInputField');
+                if (messageInput) {
+                    messageInput.focus();
+                }
+            }
+        }
+        
+        // Combined function to handle both UI and Livewire
+        function replyToMessageAndSet(messageId, senderName, content) {
+            // Store reply data in localStorage
+            const replyData = {
+                messageId: messageId,
+                senderName: senderName,
+                content: content,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('chatReplyData', JSON.stringify(replyData));
             
-            // Test scroll after page load
+            // Show UI immediately
+            replyToMessage(messageId, senderName, content);
+            
+            // Set Livewire data
+            if (window.Livewire && @this) {
+                try {
+                    @this.call('setReplyTo', messageId);
+                } catch (error) {
+                    console.error('❌ Livewire setReplyTo error:', error);
+                }
+            }
+        }
+        
+        // Cancel reply function
+        function cancelReply() {
+            localStorage.removeItem('chatReplyData');
+            
+            const replyPreview = document.getElementById('reply-preview');
+            if (replyPreview) {
+                replyPreview.classList.add('d-none');
+                replyPreview.classList.remove('show');
+                replyPreview.style.display = 'none';
+            }
+            
+            if (window.Livewire && @this) {
+                @this.call('cancelReply');
+            }
+        }
+        
+        // Delete message function
+        function deleteMessage(messageId) {
+            if (confirm('Bạn có chắc chắn muốn xóa tin nhắn này?')) {
+                try {
+                    @this.deleteMessage(messageId);
+                } catch (error) {
+                    console.error('❌ Livewire deleteMessage error:', error);
+                }
+            }
+        }
+        
+        // Open image modal for preview
+        function openImageModal(imageSrc, title = 'Image Preview') {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const modalTitle = document.getElementById('imageModalLabel');
+            
+            if (modal && modalImage && modalTitle) {
+                modalImage.src = imageSrc;
+                modalTitle.textContent = title;
+                
+                const bootstrapModal = new bootstrap.Modal(modal);
+                bootstrapModal.show();
+            }
+        }
+        
+        // Alternative function name for compatibility
+        function showImageModal(imageSrc, title = 'Image Preview') {
+            openImageModal(imageSrc, title);
+        }
+        
+        // Restore reply preview from localStorage
+        function restoreReplyPreview() {
+            const storedReply = localStorage.getItem('chatReplyData');
+            if (storedReply) {
+                try {
+                    const replyData = JSON.parse(storedReply);
+                    if (Date.now() - replyData.timestamp < 30 * 60 * 1000) {
+                        replyToMessage(replyData.messageId, replyData.senderName, replyData.content);
+                    } else {
+                        localStorage.removeItem('chatReplyData');
+                    }
+                } catch (error) {
+                    localStorage.removeItem('chatReplyData');
+                }
+            }
+        }
+        
+        // Emoji Picker functionality
+        let emojiPickerInitialized = false;
+        
+        // Enhanced initializeEmojiPicker with better DOM handling
+        function initializeEmojiPicker() {
+            
+            if (emojiPickerInitialized) {
+                 return;
+            }
+            
+            const emojiToggle = document.getElementById('emoji-toggle');
+            const emojiPicker = document.getElementById('emoji-picker');
+            const emojiGrid = emojiPicker?.querySelector('.grid');
+            const messageInput = document.getElementById('messageInputField');
+            
+            if (!emojiToggle || !emojiPicker || !emojiGrid) {
+                console.log('❌ Emoji picker elements not found');
+                return;
+            }
+            
+            // Clear any existing onclick handlers
+            emojiToggle.onclick = null;
+            emojiToggle.removeAttribute('onclick');
+            
+            // Populate emoji grid if empty
+            if (emojiGrid.children.length === 0) {
+                adminEmojis.forEach(emoji => {
+                    // Use SPAN instead of BUTTON to avoid any input-like behavior
+                    const emojiSpan = document.createElement('span');
+                    emojiSpan.className = 'emoji-btn';
+                    emojiSpan.textContent = emoji;
+                    emojiSpan.setAttribute('title', emoji);
+                    emojiSpan.setAttribute('role', 'button');
+                    emojiSpan.setAttribute('tabindex', '0');
+                    
+                    // Complete prevention attributes
+                    emojiSpan.setAttribute('data-emoji', emoji);
+                    emojiSpan.setAttribute('unselectable', 'on');
+                    emojiSpan.setAttribute('onselectstart', 'return false;');
+                    emojiSpan.setAttribute('ondragstart', 'return false;');
+                    
+                    // CSS styles for emoji-like button appearance
+                    emojiSpan.style.cssText = `
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 30px;
+                        height: 30px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        background-color: transparent;
+                        border: 1px solid transparent;
+                        font-size: 1.2rem;
+                        line-height: 1;
+                        user-select: none;
+                        -webkit-user-select: none;
+                        -moz-user-select: none;
+                        -ms-user-select: none;
+                        -webkit-touch-callout: none;
+                        -webkit-tap-highlight-color: transparent;
+                        pointer-events: auto;
+                    `;
+                    
+                    // SIMPLE CLICK HANDLER - No complex event prevention
+                    emojiSpan.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        if (messageInput) {
+                            const currentValue = messageInput.value || '';
+                            const cursorPos = messageInput.selectionStart || currentValue.length;
+                            const newValue = currentValue.slice(0, cursorPos) + emoji + currentValue.slice(cursorPos);
+                            
+                            messageInput.value = newValue;
+                            messageInput.focus();
+                            
+                            setTimeout(() => {
+                                messageInput.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
+                            }, 10);
+                            
+                            if (window.Livewire && @this) {
+                                @this.set('message_content', newValue);
+                            }
+                        }
+                        
+                        emojiPicker.classList.add('hidden');
+                    };
+                    
+                    // Hover effects
+                    emojiSpan.onmouseenter = function() {
+                        this.style.backgroundColor = '#f3f4f6';
+                        this.style.transform = 'scale(1.1)';
+                        this.style.borderColor = '#e5e7eb';
+                    };
+                    
+                    emojiSpan.onmouseleave = function() {
+                        this.style.backgroundColor = 'transparent';
+                        this.style.transform = 'scale(1)';
+                        this.style.borderColor = 'transparent';
+                    };
+                    
+                    // Active effect
+                    emojiSpan.onmousedown = function() {
+                        this.style.transform = 'scale(0.95)';
+                        this.style.backgroundColor = '#e5e7eb';
+                    };
+                    
+                    emojiSpan.onmouseup = function() {
+                        this.style.transform = 'scale(1.1)';
+                        this.style.backgroundColor = '#f3f4f6';
+                    };
+                    
+                    emojiGrid.appendChild(emojiSpan);
+                });
+            }
+            
+            // Create new toggle handler using proper event attachment
+            const toggleHandler = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const isHidden = emojiPicker.classList.contains('hidden');
+                
+                if (isHidden) {
+                    emojiPicker.classList.remove('hidden');
+                    emojiPicker.style.display = 'block';
+                    emojiPicker.style.visibility = 'visible';
+                    emojiPicker.style.opacity = '1';
+                } else {
+                    emojiPicker.classList.add('hidden');
+                    emojiPicker.style.display = 'none';
+               }
+            };
+            
+            // Attach event listener properly
+            emojiToggle.addEventListener('click', toggleHandler, true);
+            
+            // Store reference to handler for cleanup
+            emojiToggle._emojiToggleHandler = toggleHandler;
+            
+            // Close on outside click
+            if (!window.emojiPickerOutsideClickAdded) {
+                document.addEventListener('click', function(e) {
+                    const currentEmojiToggle = document.getElementById('emoji-toggle');
+                    const currentEmojiPicker = document.getElementById('emoji-picker');
+                    
+                    if (currentEmojiToggle && currentEmojiPicker && 
+                        !currentEmojiToggle.contains(e.target) && !currentEmojiPicker.contains(e.target)) {
+                        if (!currentEmojiPicker.classList.contains('hidden')) {
+                            currentEmojiPicker.classList.add('hidden');
+                        }
+                    }
+                }, true);
+                window.emojiPickerOutsideClickAdded = true;
+            }
+            
+            emojiPickerInitialized = true;
+        }
+        
+        // Enhanced reset function with proper cleanup
+        function resetEmojiPicker() {
+            emojiPickerInitialized = false;
+            
+            // Clean up existing handlers
+            const emojiToggle = document.getElementById('emoji-toggle');
+            if (emojiToggle) {
+                // Remove existing event listener if exists
+                if (emojiToggle._emojiToggleHandler) {
+                    emojiToggle.removeEventListener('click', emojiToggle._emojiToggleHandler, true);
+                    delete emojiToggle._emojiToggleHandler;
+                }
+                emojiToggle.onclick = null;
+                emojiToggle.removeAttribute('onclick');
+            }
+            
+            // Re-initialize after cleanup
             setTimeout(() => {
-                forceScrollEnable();
-                testScroll();
-                scrollToBottom();
+                initializeEmojiPicker();
+            }, 50);
+        }
+        
+        // DOM Observer to watch for changes and re-initialize emoji picker
+        let domObserver = null;
+        
+        function setupDOMObserver() {
+            if (domObserver) {
+                domObserver.disconnect();
+            }
+            
+            const targetNode = document.querySelector('.chat-footer');
+            if (!targetNode) return;
+            
+            domObserver = new MutationObserver(function(mutations) {
+                let needsReinit = false;
+                
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList' || mutation.type === 'subtree') {
+                        // Check if emoji picker elements still exist and have proper handlers
+                        const emojiToggle = document.getElementById('emoji-toggle');
+                        const emojiPicker = document.getElementById('emoji-picker');
+                        
+                        if (emojiToggle && emojiPicker) {
+                            // Check if onclick handler is missing (sign of DOM update)
+                            if (!emojiToggle.onclick || typeof emojiToggle.onclick !== 'function') {
+                                needsReinit = true;
+                            }
+                        }
+                    }
+                });
+                
+                if (needsReinit) {
+                    console.log('🔄 DOM changed, re-initializing emoji picker...');
+                    setTimeout(() => {
+                        emojiPickerInitialized = false;
+                        initializeEmojiPicker();
+                    }, 100);
+                }
+            });
+            
+            domObserver.observe(targetNode, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['class', 'style']
+            });
+        }
+        
+        // Enhanced reset function
+        function resetEmojiPicker() {
+             emojiPickerInitialized = false;
+            window.emojiPickerOutsideClickAdded = false;
+            
+            // Clear any existing handlers
+            const emojiToggle = document.getElementById('emoji-toggle');
+            if (emojiToggle) {
+                emojiToggle.onclick = null;
+                emojiToggle.removeAttribute('onclick');
+            }
+            
+            // Re-initialize
+            setTimeout(() => {
+                initializeEmojiPicker();
+            }, 50);
+        }
+        
+        // Main initialization - SINGLE DOMContentLoaded listener
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Initialize emoji picker
+            initializeEmojiPicker();
+            
+            // Setup DOM observer
+            setupDOMObserver();
+            
+            // Restore reply preview
+            restoreReplyPreview();
+            
+            // Auto scroll on page load
+            setTimeout(() => {
+                forceScrollToBottom();
             }, 500);
             
-            // Listen for Livewire updates
+            // Setup Livewire listeners
             if (window.Livewire) {
+                // Auto scroll after message sent
                 window.Livewire.on('messageProcessed', function() {
-                    setTimeout(scrollToBottom, 100);
-                });
-            }
-            
-            // Simple scroll monitoring
-            const chatContainer = document.getElementById('chat-conversation');
-            if (chatContainer) {
-                // Log scroll events for debugging
-                chatContainer.addEventListener('scroll', function() {
-                    const scrollPercent = (this.scrollTop / (this.scrollHeight - this.clientHeight) * 100).toFixed(1);
-                    // console.log(`📍 Scroll: ${scrollPercent}%`);
+                    localStorage.removeItem('chatReplyData');
+                    setTimeout(forceScrollToBottom, 200);
                 });
                 
-                // Ensure scrolling works
-                // console.log('✅ Scroll events attached');
+                // Auto scroll after messages updated + FORCE emoji picker reset
+                window.Livewire.hook('component.updated', (component) => {
+                     
+                    // ALWAYS reset emoji picker after Livewire update
+                    setTimeout(() => {
+                        resetEmojiPicker();
+                    }, 100);
+                    
+                    // Auto scroll after DOM update
+                    setTimeout(scrollToBottom, 300);
+                });
+                
+                // Handle reply preview events
+                window.Livewire.on('showReplyPreview', function(event) {
+                    const data = Array.isArray(event) ? event[0] : event;
+                    if (data?.messageId && data?.senderName && data?.content) {
+                        replyToMessage(data.messageId, data.senderName, data.content);
+                    }
+                });
+                
+                window.Livewire.on('hideReplyPreview', function() {
+                    localStorage.removeItem('chatReplyData');
+                    const replyPreview = document.getElementById('reply-preview');
+                    if (replyPreview) {
+                        replyPreview.classList.add('d-none');
+                        replyPreview.style.display = 'none';
+                    }
+                });
+                
+                // Handle alerts
+                window.Livewire.on('showAlert', function(data) {
+                    if (data.type === 'success') {
+                        toastr.success(data.message);
+                    } else if (data.type === 'error') {
+                        toastr.error(data.message);
+                    }
+                });
             }
         });
         
-        // Add some animation effects
+        // Handle quick sticker animations
         document.addEventListener('DOMContentLoaded', function() {
-            // Animate celebration icons
-            const celebrationIcons = document.querySelector('.celebration-icons');
-            if (celebrationIcons) {
-                celebrationIcons.style.animation = 'bounce 2s infinite';
-            }
-            
-            // Add hover effects to quick stickers
             document.querySelectorAll('.quick-sticker').forEach(sticker => {
                 sticker.addEventListener('click', function() {
-                    // Add click animation
                     this.style.transform = 'scale(1.5)';
                     setTimeout(() => {
                         this.style.transform = 'scale(1)';
@@ -1057,6 +1232,19 @@
                 });
             });
         });
+        
+        // Make functions globally available
+        window.scrollToBottom = scrollToBottom;
+        window.forceScrollToBottom = forceScrollToBottom;
+        window.sendQuickMessage = sendQuickMessage;
+        window.replyToMessageAndSet = replyToMessageAndSet;
+        window.cancelReply = cancelReply;
+        window.deleteMessage = deleteMessage;
+        window.openImageModal = openImageModal;
+        window.showImageModal = showImageModal;
+        window.resetEmojiPicker = resetEmojiPicker;
+        
+        console.log('✅ Chat Realtime Scripts Loaded');
     </script>
 
 </div>
