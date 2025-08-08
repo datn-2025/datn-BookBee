@@ -58,10 +58,11 @@ class RevenueReport extends Component
 
     public function loadData()
     {
-        $query = Order::query();
-        
+        $query = Order::query()
+            ->whereDate('created_at', '<=', now());
+
         $query->whereHas('orderStatus', fn($q) =>
-            $q->where('name', 'Thành công'))
+        $q->where('name', 'Thành công'))
             ->whereHas('paymentStatus', fn($q) =>
             $q->where('name', 'Đã Thanh Toán'));
 
@@ -144,7 +145,8 @@ class RevenueReport extends Component
                 $map = $orders->keyBy('month');
                 $year = now()->year;
 
-                for ($i = 1; $i <= 12; $i++) {
+                $currentMonth = now()->month;
+                for ($i = 1; $i <= $currentMonth; $i++) {
                     $this->chartLabels[] = "$year/" . str_pad($i, 2, '0', STR_PAD_LEFT);
                     $this->chartData[] = isset($map[$i]) ? (float)$map[$i]->revenue : 0;
                 }
