@@ -762,7 +762,8 @@
         function forceScrollToBottom() {
             const chatContainer = document.getElementById('chat-conversation');
             if (chatContainer) {
-                chatContainer.scrollTop = chatContainer.scrollHeight;            }
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
         }
         
         // Handle Enter key for sending messages (Enhanced for file support)
