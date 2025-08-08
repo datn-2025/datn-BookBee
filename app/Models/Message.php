@@ -19,6 +19,7 @@ class Message extends Model
         'type',
         'file_path',
         'is_auto_reply',
+        'reply_to_message_id',
     ];
 
     protected $casts = [
@@ -41,6 +42,18 @@ class Message extends Model
     public function reads()
     {
         return $this->hasMany(MessageRead::class);
+    }
+
+    // Tin nhắn được reply
+    public function replyToMessage()
+    {
+        return $this->belongsTo(Message::class, 'reply_to_message_id');
+    }
+
+    // Các tin nhắn reply tin nhắn này
+    public function replies()
+    {
+        return $this->hasMany(Message::class, 'reply_to_message_id');
     }
 
     /**

@@ -15,6 +15,7 @@ class Conversation extends Model
     protected $fillable = [
         'customer_id',
         'admin_id',
+        'order_id',
         'last_message_at',
     ];
     // Người dùng là khách hàng
@@ -33,6 +34,12 @@ class Conversation extends Model
     public function messages()
     {
         return $this->hasMany(Message::class);
+    }
+
+    // Đơn hàng liên quan
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'order_id');
     }
     
     protected static function boot()
