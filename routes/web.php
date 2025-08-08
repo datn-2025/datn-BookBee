@@ -40,6 +40,7 @@ use App\Http\Controllers\Wishlists\WishlistController;
 use App\Livewire\BalanceChart;
 use App\Livewire\RevenueReport;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\OrderChatTestController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 
@@ -531,3 +532,4 @@ Route::prefix('api/ghn')->name('ghn.')->group(function() {
 Route::get('/test-ghn', function() {
     return view('test-ghn');
 });
+
