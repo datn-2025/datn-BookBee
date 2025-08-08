@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ConversationController extends Controller
 {
@@ -23,7 +25,7 @@ class ConversationController extends Controller
             'customer:id,name,email,avatar',
             'admin:id,name,email,avatar',
             'messages' => function ($query) {
-                $query->with('sender:id,name,email,avatar')
+                $query->with(['sender:id,name,email,avatar', 'replyToMessage.sender:id,name,email,avatar'])
                       ->orderBy('created_at', 'asc');
             }
         ]);
@@ -55,7 +57,8 @@ class ConversationController extends Controller
             'content' => 'nullable|string',
             'type' => 'nullable|string|in:text,image,file',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // Max 5MB
-            'file_path' => 'nullable|string'
+            'file_path' => 'nullable|string',
+            'reply_to_message_id' => 'nullable|exists:messages,id'
         ]);
 
         // Validate that either content or image is provided
@@ -100,7 +103,14 @@ class ConversationController extends Controller
                 'sender_id' => $request->sender_id, // Use sender_id from request
                 'content' => $request->content ?? ($messageType === 'image' ? 'Đã gửi một hình ảnh' : ''),
                 'type' => $messageType,
-                'file_path' => $filePath ?? $request->file_path
+                'file_path' => $filePath ?? $request->file_path,
+                'reply_to_message_id' => $request->reply_to_message_id
+            ]);
+
+            Log::info('Creating message with reply_to_message_id:', [
+                'reply_to_message_id' => $request->reply_to_message_id,
+                'content' => $request->content,
+                'sender_id' => $request->sender_id
             ]);
 
             $conversation->messages()->save($message);
@@ -128,12 +138,26 @@ class ConversationController extends Controller
             $autoReplyService->checkAndSendAutoReply($conversation, $message);
 
             DB::commit();
+            
+            // Load đầy đủ relationships cho message trước khi return
+            $message->load(['sender', 'replyToMessage.sender']);
+            
+            Log::info('Message created successfully with relationships:', [
+                'message_id' => $message->id,
+                'reply_to_message_id' => $message->reply_to_message_id,
+                'reply_to_message' => $message->replyToMessage ? [
+                    'id' => $message->replyToMessage->id,
+                    'content' => $message->replyToMessage->content,
+                    'sender_name' => $message->replyToMessage->sender->name ?? 'Unknown'
+                ] : null
+            ]);
+            
             // Trả về dữ liệu cho frontend
             return response()->json([
                 'message' => 'Gửi tin nhắn thành công',
                 'conversation' => $conversation->load(['customer', 'admin']),
                 'conversation_id' => $conversation->id,
-                'new_message' => $message->load(['sender.role'])
+                'new_message' => $message
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -202,20 +226,68 @@ class ConversationController extends Controller
     {
         try {
             $message = Message::findOrFail($id);
-
-            // Nếu có file đính kèm thì xóa file (nếu cần)
-            if ($message->file_path && Storage::exists($message->file_path)) {
-                Storage::delete($message->file_path);
+            
+            // Lấy user hiện tại
+            $currentUser = Auth::user();
+            if (!$currentUser) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn cần đăng nhập để thực hiện hành động này'
+                ], 401);
             }
 
+            // Kiểm tra quyền xóa - chỉ người gửi mới được xóa
+            if ($message->sender_id !== $currentUser->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn không có quyền xóa tin nhắn này'
+                ], 403);
+            }
+
+            // Kiểm tra thời gian - chỉ có thể xóa trong 2 phút
+            $createdAt = Carbon::parse($message->created_at);
+            $now = Carbon::now();
+            $diffInMinutes = $createdAt->diffInMinutes($now);
+
+            if ($diffInMinutes > 2) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Chỉ có thể xóa tin nhắn trong vòng 2 phút sau khi gửi'
+                ], 403);
+            }
+
+            // Xóa file đính kèm nếu có
+            if ($message->file_path && Storage::disk('public')->exists($message->file_path)) {
+                Storage::disk('public')->delete($message->file_path);
+                Log::info('Deleted file: ' . $message->file_path);
+            }
+
+            // Xóa tin nhắn
             $message->delete();
 
+            Log::info('Message deleted successfully', [
+                'message_id' => $id,
+                'deleted_by' => $currentUser->id
+            ]);
+
             return response()->json([
+                'success' => true,
                 'message' => 'Xóa tin nhắn thành công'
             ], 200);
 
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy tin nhắn'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error deleting message: ' . $e->getMessage(), [
+                'message_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
                 'message' => 'Không thể xóa tin nhắn',
                 'error' => $e->getMessage()
             ], 500);
