@@ -9,6 +9,10 @@
     <title>{{ get_setting() ? get_setting()->name_website : 'BookBee' }} - @yield('title')</title>
     <link rel="shortcut icon" href="{{ asset('storage/' . (get_setting() ? get_setting()->favicon : 'default_favicon.ico')) }}" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Disable hover effects -->
+    <link href="{{ asset('css/disable-hover-effects.css') }}" rel="stylesheet" />
+    <!-- Nuclear option - disable all effects -->
+    <link href="{{ asset('css/disable-all-effects.css') }}" rel="stylesheet" />
    
 
     <!-- Bootstrap CSS -->
