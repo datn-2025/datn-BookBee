@@ -48,7 +48,9 @@ class BalanceChart extends Component
 
     public function loadData()
     {
-        $query = Payment::query()->whereNotNull('paid_at');
+        $query = Payment::query()
+        ->whereNotNull('paid_at')
+        ->whereDate('paid_at', '<=', now());
 
         if ($this->timeRange === 'all' && $this->fromDate && $this->toDate) {
             $transactions = $query
