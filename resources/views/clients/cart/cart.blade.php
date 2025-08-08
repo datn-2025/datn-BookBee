@@ -120,6 +120,12 @@
                                 <i class="fas fa-book"></i> Chỉ sách vật lý
                             </span>
                         @endif
+                        <div class="mt-1">
+                            <span class="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                <i class="fas fa-sync-alt"></i>
+                                Giá được tự động cập nhật theo thời gian thực
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div class="flex gap-3">

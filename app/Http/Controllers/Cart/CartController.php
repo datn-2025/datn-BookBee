@@ -1851,6 +1851,113 @@ class CartController extends Controller
     }
 
     /**
+     * Làm mới giá cart từ database để đồng bộ với giá hiện tại
+     */
+    public function refreshCartPrices(Request $request)
+    {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Bạn cần đăng nhập'], 401);
+            }
+
+            $user = Auth::user();
+            $updatedCount = 0;
+            $errors = [];
+
+            // Lấy tất cả cart items của user
+            $cartItems = DB::table('carts')
+                ->where('user_id', $user->id)
+                ->get();
+
+            foreach ($cartItems as $cartItem) {
+                if ($cartItem->is_combo) {
+                    // Xử lý combo
+                    $combo = DB::table('collections')
+                        ->where('id', $cartItem->collection_id)
+                        ->whereNull('deleted_at')
+                        ->first();
+
+                    if ($combo && $combo->combo_price > 0) {
+                        if ($cartItem->price != $combo->combo_price) {
+                            DB::table('carts')
+                                ->where('id', $cartItem->id)
+                                ->update([
+                                    'price' => $combo->combo_price,
+                                    'updated_at' => now()
+                                ]);
+                            $updatedCount++;
+                        }
+                    }
+                } else {
+                    // Xử lý sách đơn lẻ
+                    $bookFormat = DB::table('book_formats')
+                        ->where('id', $cartItem->book_format_id)
+                        ->first();
+
+                    if ($bookFormat) {
+                        $finalPrice = $bookFormat->price;
+
+                        // Thêm extra price từ biến thể nếu có
+                        if ($cartItem->attribute_value_ids && $cartItem->attribute_value_ids !== '[]') {
+                            $attributeIds = json_decode($cartItem->attribute_value_ids, true);
+                            if ($attributeIds && is_array($attributeIds)) {
+                                $extraPrice = DB::table('book_attribute_values')
+                                    ->whereIn('attribute_value_id', $attributeIds)
+                                    ->where('book_id', $cartItem->book_id)
+                                    ->sum('extra_price');
+                                $finalPrice += $extraPrice;
+                            }
+                        }
+
+                        if ($cartItem->price != $finalPrice) {
+                            DB::table('carts')
+                                ->where('id', $cartItem->id)
+                                ->update([
+                                    'price' => $finalPrice,
+                                    'updated_at' => now()
+                                ]);
+                            $updatedCount++;
+                        }
+                    } else {
+                        $errors[] = "Không tìm thấy định dạng sách cho cart item ID: {$cartItem->id}";
+                    }
+                }
+            }
+
+            // Tính lại tổng giỏ hàng
+            $newTotal = 0;
+            $refreshedCartItems = DB::table('carts')
+                ->where('user_id', $user->id)
+                ->where('is_selected', true)
+                ->get();
+
+            foreach ($refreshedCartItems as $item) {
+                $newTotal += $item->price * $item->quantity;
+            }
+
+            $message = $updatedCount > 0 
+                ? "Đã cập nhật giá cho {$updatedCount} sản phẩm trong giỏ hàng"
+                : "Giá tất cả sản phẩm trong giỏ hàng đã được cập nhật";
+
+            return response()->json([
+                'success' => $message,
+                'updated_count' => $updatedCount,
+                'new_total' => $newTotal,
+                'errors' => $errors
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in refreshCartPrices:', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json(['error' => 'Có lỗi xảy ra khi làm mới giá giỏ hàng'], 500);
+        }
+    }
+
+    /**
      * Kiểm tra tồn kho theo thứ tự phân cấp
      * 
      * @param string $bookId
