@@ -7,7 +7,7 @@
 @endpush
 
 @section('content')
-    {{-- <style>
+    <style>
         .chat-wrapper {
             height: 80vh;
             /* chiều cao vừa phải thay vì 100vh */
@@ -112,6 +112,15 @@
             background-color: #f5f5f5;
         }
 
+        /* Loại bỏ gạch chân cho links trong conversation list */
+        .chat-user-list a {
+            text-decoration: none !important;
+        }
+
+        .chat-user-list a:hover {
+            text-decoration: none !important;
+        }
+
         /* Empty state styling */
         .empty-state {
             display: flex;
@@ -181,7 +190,7 @@
             opacity: 0;
             transform: translateX(-10px);
         }
-    </style> --}}
+    </style>
     <div class="page-content">
         <div class="container-fluid">
             <div class="chat-wrapper d-lg-flex gap-1">
@@ -284,7 +293,7 @@
                                                         <img src="{{ $user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random&color=fff&size=200' }}" 
                                                              alt="{{ $user->name }}" 
                                                              class="rounded-circle avatar-xs">
-                                                        @if($user->isOnline())
+                                                        @if($user->last_seen && $user->last_seen->diffInMinutes(now()) <= 5)
                                                             <span class="position-absolute bottom-0 end-0 badge border-2 border-white rounded-circle bg-success p-1">
                                                                 <span class="visually-hidden">Online</span>
                                                             </span>
@@ -295,12 +304,15 @@
                                                     <h5 class="text-truncate fs-14 mb-0">{{ $user->name }}</h5>
                                                     <p class="text-truncate text-muted fs-13 mb-0">{{ $user->email }}</p>
                                                     <p class="text-truncate text-muted fs-12 mb-0">
-                                                        @if($user->isOnline())
+                                                        @if($user->last_seen && $user->last_seen->diffInMinutes(now()) <= 5)
                                                             <i class="bx bxs-circle text-success fs-10 me-1"></i>Online
-                                                        @elseif($user->isActiveWithin(60))
-                                                            <i class="bx bxs-circle text-warning fs-10 me-1"></i>Away
+                                                        @elseif($user->last_seen && $user->last_seen->diffInMinutes(now()) <= 30)
+                                                            <i class="bx bxs-circle text-warning fs-10 me-1"></i>Away ({{ $user->last_seen->diffForHumans() }})
                                                         @else
                                                             <i class="bx bxs-circle text-muted fs-10 me-1"></i>Offline
+                                                            @if($user->last_seen)
+                                                                ({{ $user->last_seen->diffForHumans() }})
+                                                            @endif
                                                         @endif
                                                     </p>
                                                 </div>
