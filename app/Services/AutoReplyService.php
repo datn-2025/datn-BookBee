@@ -15,8 +15,16 @@ class AutoReplyService
      */
     public function checkAndSendAutoReply(Conversation $conversation, Message $customerMessage)
     {
+        Log::info('AutoReply: Starting check', [
+            'conversation_id' => $conversation->id,
+            'customer_message_id' => $customerMessage->id,
+            'customer_message_sender_id' => $customerMessage->sender_id,
+            'admin_id' => $conversation->admin_id
+        ]);
+
         // Chỉ gửi tự động khi tin nhắn từ customer
         if ($customerMessage->sender_id === $conversation->admin_id) {
+            Log::info('AutoReply: Message from admin, skipping auto-reply');
             return false;
         }
 
@@ -26,6 +34,13 @@ class AutoReplyService
             Log::warning('Admin not found for conversation', ['conversation_id' => $conversation->id]);
             return false;
         }
+
+        Log::info('AutoReply: Admin found', [
+            'admin_id' => $admin->id,
+            'admin_last_seen' => $admin->last_seen,
+            'now' => now(),
+            'is_active_within_15' => $admin->isActiveWithin(15)
+        ]);
 
         // Kiểm tra admin có đang hoạt động không (trong 15 phút gần đây)
         if ($admin->isActiveWithin(15)) {
@@ -39,9 +54,16 @@ class AutoReplyService
         // Kiểm tra xem đã gửi tin nhắn tự động chưa (tránh spam)
         $recentAutoReply = Message::where('conversation_id', $conversation->id)
             ->where('sender_id', $admin->id)
-            ->where('content', 'LIKE', '%Cảm ơn bạn đã nhắn%')
+            ->where('is_auto_reply', true)
             ->where('created_at', '>=', now()->subHours(2)) // Chỉ kiểm tra trong 2 giờ gần đây
             ->exists();
+
+        Log::info('AutoReply: Checking recent auto-reply', [
+            'conversation_id' => $conversation->id,
+            'admin_id' => $admin->id,
+            'recent_auto_reply_exists' => $recentAutoReply,
+            'check_time_from' => now()->subHours(2)
+        ]);
 
         if ($recentAutoReply) {
             Log::info('Auto-reply already sent recently', [
@@ -50,6 +72,11 @@ class AutoReplyService
             ]);
             return false;
         }
+
+        Log::info('AutoReply: All checks passed, sending auto-reply', [
+            'conversation_id' => $conversation->id,
+            'admin_id' => $admin->id
+        ]);
 
         // Tạo tin nhắn tự động
         return $this->sendAutoReplyMessage($conversation, $admin);
@@ -131,7 +158,6 @@ class AutoReplyService
             $admin = User::find($adminId);
             if ($admin) {
                 $admin->update(['last_seen' => now()]);
-                Log::debug('Admin activity updated', ['admin_id' => $adminId]);
             }
         } catch (\Exception $e) {
             Log::warning('Failed to update admin activity', [
