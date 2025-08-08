@@ -26,7 +26,7 @@
                                                         @elseif ($selectedConversation->customer->last_seen)
                                                             <span class="badge bg-warning">
                                                                 Hoạt động
-                                                                {{ \Carbon\Carbon::parse($selectedConversation->customer->last_seen)->diffForHumans() }}
+                                                                {{ \Carbon\Carbon::parse($selectedConversation->customer->last_seen)->setTimezone('Asia/Ho_Chi_Minh')->diffForHumans() }}
                                                             </span>
                                                         @else
                                                             <span class="badge bg-secondary">Offline</span>
@@ -127,7 +127,7 @@
                             @endif
                             <p class="small mb-0 opacity-75">
                                 <i class="bx bx-calendar me-1"></i>
-                                Khách hàng từ: {{ $selectedConversation->customer->created_at->format('d/m/Y') }}
+                                Khách hàng từ: {{ $selectedConversation->customer->created_at->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y') }}
                             </p>
                         </div>
                         <p class="small mb-0 opacity-75">
@@ -160,7 +160,7 @@
                 <!-- Date separator for new conversation -->
                 <div class="message-date-separator mt-4">
                     <span class="date-badge">
-                        {{ now()->format('d/m/Y') }} - Cuộc trò chuyện bắt đầu
+                        {{ now()->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y') }} - Cuộc trò chuyện bắt đầu
                     </span>
                 </div>
             @endif
@@ -175,7 +175,7 @@
                                     $isAdmin = $message->sender && method_exists($message->sender, 'isAdmin') ? $message->sender->isAdmin() : false;
                                     $side = $isMine ? 'right' : 'left';
                                     $bgColor = $isMine ? 'bg-primary text-white' : 'bg-light text-dark';
-                                    $date = $message->created_at->format('Y-m-d');
+                                    $date = $message->created_at->setTimezone('Asia/Ho_Chi_Minh')->format('Y-m-d');
                                 @endphp
                                 {{-- Hiển thị ngày nếu khác ngày trước đó --}}
                                 @if ($date !== $previousDate)
@@ -183,7 +183,7 @@
                                         <div class="d-flex align-items-center justify-content-center">
                                             <hr class="flex-grow-1 border-top border-light mx-2" />
                                             <span class="badge bg-light text-dark shadow-sm px-3 py-1">
-                                                {{ \Carbon\Carbon::parse($date)->isToday() ? 'Today' : (\Carbon\Carbon::parse($date)->isYesterday() ? 'Yesterday' : \Carbon\Carbon::parse($date)->translatedFormat('d F Y')) }}
+                                                {{ \Carbon\Carbon::parse($date)->setTimezone('Asia/Ho_Chi_Minh')->isToday() ? 'Today' : (\Carbon\Carbon::parse($date)->setTimezone('Asia/Ho_Chi_Minh')->isYesterday() ? 'Yesterday' : \Carbon\Carbon::parse($date)->setTimezone('Asia/Ho_Chi_Minh')->translatedFormat('d F Y')) }}
                                             </span>
                                             <hr class="flex-grow-1 border-top border-light mx-2" />
                                         </div>
@@ -318,7 +318,7 @@
                                                             <div class="mt-3 d-flex justify-content-between align-items-center">
                                                                 <small style="color: rgba(255,255,255,0.8);">
                                                                     <i class="bx bx-time-five me-1"></i>
-                                                                    {{ $message->created_at->format('H:i - d/m/Y') }}
+                                                                    {{ $message->created_at->setTimezone('Asia/Ho_Chi_Minh')->format('H:i - d/m/Y') }}
                                                                 </small>
                                                                 <div class="d-flex align-items-center">
                                                                     <span class="badge" style="background: rgba(255,255,255,0.25); color: white; font-size: 11px; backdrop-filter: blur(10px);">
@@ -354,7 +354,7 @@
                                             <div class="conversation-name">
                                                 <span class="d-none name">{{ $message->sender->name }}</span>
                                                 <small
-                                                    class="text-muted time">{{ $message->created_at->format('h:i A') }}</small>
+                                                    class="text-muted time">{{ $message->created_at->setTimezone('Asia/Ho_Chi_Minh')->format('h:i A') }}</small>
 
                                                 @if ($isMine)
                                                     @if ($message->reads->where('user_id', '!=', $currentUserId)->count() > 0)
@@ -538,7 +538,7 @@
                             @elseif ($selectedConversation->customer->last_seen)
                                 <span class="badge bg-warning">
                                     Hoạt động
-                                    {{ \Carbon\Carbon::parse($selectedConversation->customer->last_seen)->diffForHumans() }}
+                                    {{ \Carbon\Carbon::parse($selectedConversation->customer->last_seen)->setTimezone('Asia/Ho_Chi_Minh')->diffForHumans() }}
                                 </span>
                             @else
                                 <span class="badge bg-secondary">Offline</span>
