@@ -7,6 +7,7 @@ use App\Http\Controllers\OrderChatController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GhnController;
+use App\Http\Controllers\Api\ChatbotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,6 +35,7 @@ Route::prefix('ghn')->group(function () {
     Route::get('/tracking/{orderCode}', [GhnController::class, 'trackOrder'])->name('api.ghn.tracking');
 });
 
+
 Route::post('/login', [AuthController::class, 'login']);
 
 // Route public để tìm admin theo email (không cần auth)
@@ -54,4 +56,10 @@ Route::middleware(['auth:sanctum,web'])->group(function () {
     Route::get('/orders/{orderId}/can-chat', [OrderChatController::class, 'canChat']);
     Route::post('/orders/{orderId}/start-chat', [OrderChatController::class, 'startChat']);
     Route::get('/orders/{orderId}/messages', [OrderChatController::class, 'getMessages']);
+});
+// Chatbot API Routes
+Route::prefix('chatbot')->group(function () {
+    Route::post('/message', [ChatbotController::class, 'processMessage']);
+    Route::get('/categories', [ChatbotController::class, 'getCategories']);
+    Route::post('/books-by-category', [ChatbotController::class, 'getBooksByCategory']);
 });

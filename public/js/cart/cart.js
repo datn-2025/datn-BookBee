@@ -51,9 +51,11 @@ document.addEventListener('DOMContentLoaded', function() {
         let cartTotal = 0;
         const cartItems = document.querySelectorAll('.cart-item');
         const checkedItems = [];
+        
         cartItems.forEach(item => {
             const checkbox = item.querySelector('.select-cart-item');
             if (checkbox && checkbox.checked) {
+                // Sử dụng data-price đã bao gồm extra price từ variants
                 const price = parseFloat(item.dataset.price) || 0;
                 const quantityInput = item.querySelector('.quantity-input');
                 const quantity = quantityInput ? (parseInt(quantityInput.value) || 0) : 0;
@@ -83,14 +85,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const finalTotal = Math.max(0, cartTotal - discount);
             totalElement.textContent = formatCurrency(finalTotal);
         }
+        
+        console.log('Cart total updated:', {
+            checkedItems: checkedItems.length,
+            subtotal: cartTotal,
+            discount: discount,
+            total: Math.max(0, cartTotal - discount)
+        });
     }
+
+    // Make functions available globally for cart_products.js
+    window.updateCartTotal = updateCartTotal;
+    window.allowUpdateCartTotal = allowUpdateCartTotal;
 
     // Khi thay đổi checkbox, cập nhật tổng tiền
     $(document).on('change', '.select-cart-item', function() {
         const bookId = $(this).closest('.cart-item').data('book-id');
-        allowUpdateCartTotal = true;
+        window.allowUpdateCartTotal = true;
         updateCartTotal();
-        allowUpdateCartTotal = false;
+        window.allowUpdateCartTotal = false;
     });
 
     // Debounce function
@@ -504,6 +517,107 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Cập nhật tổng giỏ hàng khi trang load
     updateCartTotal();
+
+    // Tự động làm mới giá cart khi tải trang
+    function autoRefreshCartPrices() {
+        // Chỉ làm mới nếu có sản phẩm trong cart
+        const cartItems = document.querySelectorAll('.cart-item');
+        if (cartItems.length === 0) {
+            return;
+        }
+
+        // Gọi API làm mới giá
+        $.ajax({
+            url: '/cart/refresh-prices',
+            method: 'POST',
+            data: {
+                _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            success: function(response) {
+                if (response.success && response.updated_count > 0) {
+                    // Hiển thị thông báo và reload trang để cập nhật UI
+                    toastr.info(response.success + '. Trang sẽ được làm mới để cập nhật giá.');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                }
+                // Nếu không có gì thay đổi thì không làm gì
+            },
+            error: function(xhr) {
+                console.warn('Không thể làm mới giá cart:', xhr.responseJSON?.error || 'Lỗi không xác định');
+                // Không hiển thị lỗi cho user vì đây là tính năng tự động
+            }
+        });
+    }
+
+    // Thêm nút làm mới giá thủ công
+    function addRefreshPricesButton() {
+        const cartItems = document.querySelectorAll('.cart-item');
+        if (cartItems.length === 0) {
+            return;
+        }
+
+        // Tìm vị trí thích hợp để thêm nút (ví dụ: sau nút "Xóa tất cả")
+        const clearCartBtn = document.getElementById('clear-cart-btn');
+        if (clearCartBtn && clearCartBtn.parentElement) {
+            const refreshBtn = document.createElement('button');
+            refreshBtn.id = 'refresh-prices-btn';
+            refreshBtn.className = 'bg-blue-600 border-2 border-blue-600 text-white px-6 py-3 font-bold text-sm uppercase tracking-wide hover:bg-white hover:text-blue-600 transition-all duration-300 flex items-center gap-2';
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> CẬP NHẬT GIÁ';
+            refreshBtn.title = 'Làm mới giá sản phẩm trong giỏ hàng';
+            
+            // Thêm nút vào cùng container với nút clear cart
+            clearCartBtn.parentElement.appendChild(refreshBtn);
+            
+            // Gắn sự kiện click
+            refreshBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                manualRefreshCartPrices(refreshBtn);
+            });
+        }
+    }
+
+    // Làm mới giá thủ công
+    function manualRefreshCartPrices(button) {
+        // Hiển thị loading state
+        const originalHTML = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ĐANG CẬP NHẬT...';
+
+        $.ajax({
+            url: '/cart/refresh-prices',
+            method: 'POST',
+            data: {
+                _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.success);
+                    if (response.updated_count > 0) {
+                        // Reload trang để cập nhật UI
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    }
+                }
+            },
+            error: function(xhr) {
+                const errorMsg = xhr.responseJSON?.error || 'Có lỗi xảy ra khi cập nhật giá';
+                toastr.error(errorMsg);
+            },
+            complete: function() {
+                // Restore button state
+                button.disabled = false;
+                button.innerHTML = originalHTML;
+            }
+        });
+    }
+
+    // Gọi các function sau khi DOM ready
+    setTimeout(() => {
+        autoRefreshCartPrices();
+        addRefreshPricesButton();
+    }, 1000); // Delay để đảm bảo các module khác đã load
 
     // Xóa tất cả sản phẩm trong giỏ hàng - Đã chuyển sang cart_products.js
     // Bỏ qua phần này để tránh xung đột

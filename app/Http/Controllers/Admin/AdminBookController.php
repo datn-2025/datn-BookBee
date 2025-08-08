@@ -227,9 +227,12 @@ class AdminBookController extends Controller
         }
 
         // Lưu quà tặng nếu có
-        if ($request->filled('gift_name') && $request->filled('gift_book_id')) {
+        if ($request->filled('gift_name')) {
+            // Nếu có chọn sách khác thì dùng gift_book_id, không thì dùng sách hiện tại
+            $bookId = $request->filled('gift_book_id') ? $request->input('gift_book_id') : $book->id;
+            
             $giftData = [
-                'book_id' => $request->input('gift_book_id'),
+                'book_id' => $bookId,
                 'gift_name' => $request->input('gift_name'),
                 'gift_description' => $request->input('gift_description'),
                 'quantity' => $request->input('quantity', 0),
@@ -484,6 +487,9 @@ class AdminBookController extends Controller
 
         $books = Book::select('id', 'title')->get();
         
+        // Lấy quà tặng hiện tại của sách (nếu có)
+        $currentGift = $book->gifts->first();
+        
         return view('admin.books.edit', compact(
             'book',
             'categories',
@@ -493,7 +499,8 @@ class AdminBookController extends Controller
             'physicalFormat',
             'ebookFormat',
             'selectedAttributeValues',
-            'books'
+            'books',
+            'currentGift'
         ));
     }
 
@@ -694,20 +701,23 @@ class AdminBookController extends Controller
         $book->gifts()->delete();
         
         // Tạo quà tặng mới nếu có
-        if ($request->filled('gift_name') && $request->filled('gift_book_id')) {
-            $giftData = [
-                'book_id' => $request->input('gift_book_id'),
-                'gift_name' => $request->input('gift_name'),
-                'gift_description' => $request->input('gift_description'),
-                'quantity' => $request->input('quantity', 0),
-                'start_date' => $request->input('gift_start_date'),
-                'end_date' => $request->input('gift_end_date'),
-            ];
-            if ($request->hasFile('gift_image')) {
-                $giftData['gift_image'] = $request->file('gift_image')->store('gifts', 'public');
-            }
-            BookGift::create($giftData);
-        }
+         if ($request->filled('gift_name')) {
+             // Nếu có chọn sách khác thì dùng gift_book_id, không thì dùng sách hiện tại
+             $bookId = $request->filled('gift_book_id') ? $request->input('gift_book_id') : $book->id;
+             
+             $giftData = [
+                 'book_id' => $bookId,
+                 'gift_name' => $request->input('gift_name'),
+                 'gift_description' => $request->input('gift_description'),
+                 'quantity' => $request->input('quantity', 0),
+                 'start_date' => $request->input('gift_start_date'),
+                 'end_date' => $request->input('gift_end_date'),
+             ];
+             if ($request->hasFile('gift_image')) {
+                 $giftData['gift_image'] = $request->file('gift_image')->store('gifts', 'public');
+             }
+             BookGift::create($giftData);
+         }
 
         // Cập nhật danh sách tác giả
         $book->authors()->sync($request->input('author_ids', []));

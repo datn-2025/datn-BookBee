@@ -87,6 +87,7 @@ Route::prefix('cart')->group(function () {
     Route::post('/update', [CartController::class, 'updateCart'])->name('cart.update');
     Route::post('/remove', [CartController::class, 'removeFromCart'])->name('cart.remove');
     Route::post('/clear', [CartController::class, 'clearCart'])->name('cart.clear');
+    Route::post('/refresh-prices', [CartController::class, 'refreshCartPrices'])->name('cart.refresh-prices');
     Route::post('/add-wishlist', [CartController::class, 'addAllWishlistToCart'])->name('cart.add-wishlist');
     // Route::post('/apply-voucher', [CartController::class, 'applyVoucher'])->name('cart.apply-voucher');
     Route::post('/remove-voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
@@ -228,6 +229,8 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::get('/', [AdminDashboard::class, 'index'])->name('dashboard');
     Route::get('/revenue-report', RevenueReport::class)->name('revenue-report')->middleware('checkpermission:dashboard.revenue-report');
     Route::get('/balance-chart', BalanceChart::class)->name('balance-chart')->middleware('checkpermission:dashboard.balance-chart');
+
+
 
     // Contacts
     Route::prefix('contacts')->name('contacts.')->middleware('checkpermission:contact.view')->group(function () {
