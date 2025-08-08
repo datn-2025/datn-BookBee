@@ -227,10 +227,7 @@
                                         <div>
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Đơn giá</span>
                                             <div class="text-lg font-bold text-black">
-                                                @php
-                                                    $finalPrice = ($item->price ?? 0) + ($attributeExtraPrice ?? 0);
-                                                @endphp
-                                                {{ number_format($finalPrice) }}đ
+                                                {{ number_format($item->price) }}đ
                                             </div>
                                         </div>
                                         
@@ -264,7 +261,7 @@
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Thành tiền</span>
                                             <div class="text-xl font-black text-black item-total">
                                                 @php
-                                                    $itemTotal = $finalPrice * $item->quantity;
+                                                    $itemTotal = $item->price * $item->quantity;
                                                 @endphp
                                                 {{ number_format($itemTotal) }}đ
                                             </div>
@@ -275,19 +272,9 @@
                         </div>
                     @else
                         @php
-                            // Calculate attribute extra price first
-                            $attributeExtraPrice = 0;
+                            // Price is already calculated with attribute extra price in the database/controller
+                            // No need to add extra_price again as it causes duplicate pricing
                             $isEbook = isset($item->format_name) && (stripos($item->format_name, 'ebook') !== false);
-                            
-                            if($item->attribute_value_ids && $item->attribute_value_ids !== '[]') {
-                                $attributeIds = json_decode($item->attribute_value_ids, true);
-                                if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
-                                    $attributeExtraPrice = DB::table('book_attribute_values')
-                                        ->whereIn('attribute_value_id', $attributeIds)
-                                        ->where('book_id', $item->book_id)
-                                        ->sum('extra_price');
-                                }
-                            }
                         @endphp
                         
                         {{-- Individual Book Item --}}
@@ -295,9 +282,9 @@
                              data-book-id="{{ $item->book_id }}" 
                              data-book-format-id="{{ $item->book_format_id }}"
                              data-attribute-value-ids="{{ $item->attribute_value_ids }}"
-                             data-price="{{ $item->price + $attributeExtraPrice }}" 
+                             data-price="{{ $item->price }}" 
                              data-base-price="{{ $item->price }}"
-                             data-extra-price="{{ $attributeExtraPrice }}"
+                             data-extra-price="0"
                              data-stock="{{ $item->stock ?? 0 }}"
                              data-format-name="{{ $item->format_name ?? '' }}"
                              data-is-combo="false">
@@ -482,10 +469,7 @@
                                         <div>
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Đơn giá</span>
                                             <div class="text-lg font-bold text-black">
-                                                @php
-                                                    $finalPrice = ($item->price ?? 0) + ($attributeExtraPrice ?? 0);
-                                                @endphp
-                                                {{ number_format($finalPrice) }}đ
+                                                {{ number_format($item->price) }}đ
                                             </div>
                                         </div>
                                         
@@ -547,7 +531,7 @@
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Thành tiền</span>
                                             <div class="text-xl font-black text-black item-total">
                                                 @php
-                                                    $itemTotal = ($item->price + $attributeExtraPrice) * $item->quantity;
+                                                    $itemTotal = $item->price * $item->quantity;
                                                 @endphp
                                                 {{ number_format($itemTotal) }}đ
                                             </div>

@@ -192,20 +192,8 @@ class CartController extends Controller
         $total = 0;
         foreach ($cart as $item) {
             if (isset($item->is_selected) && $item->is_selected) {
+                // Price already includes extra_price from attributes, no need to add again
                 $itemPrice = $item->price;
-                
-                // Thêm giá extra từ thuộc tính nếu có
-                if (!empty($item->attribute_value_ids) && $item->attribute_value_ids !== '[]') {
-                    $attributeIds = json_decode($item->attribute_value_ids, true);
-                    if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
-                        $extraPrice = DB::table('book_attribute_values')
-                            ->whereIn('attribute_value_id', $attributeIds)
-                            ->where('book_id', $item->book_id)
-                            ->sum('extra_price');
-                        $itemPrice += $extraPrice;
-                    }
-                }
-                
                 $total += $itemPrice * $item->quantity;
             }
         }
