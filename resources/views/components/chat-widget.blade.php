@@ -1,15 +1,15 @@
 <!-- Chat Widget -->
 <!-- Nút mở chat -->
-<button id="chat-toggle" class="fixed bottom-5 right-5 z-50 transition-transform hover:scale-110 focus:outline-none">
+<button id="chat-toggle" class="fixed bottom-5 right-5 z-[60] transition-transform hover:scale-110 focus:outline-none">
     <div class="relative">
-        <img src="{{ asset('images/bookbeee.jpg') }}" alt="Chat Bee"
+        <img src="{{ asset('storage/logo/bookbeee.jpg') }}" alt="Chat Bee"
             class="w-16 h-16 rounded-full object-cover shadow-lg border-2 border-black">
         <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
     </div>
 </button>
 
 <!-- Hộp chat -->
-<div id="chat-box" class="hidden fixed bottom-24 right-5 w-[380px] z-50">
+<div id="chat-box" class="hidden fixed bottom-24 right-5 w-[380px] z-[60]">
     <div class="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
         <!-- Header -->
         <div class="bg-black text-white px-4 py-3">
@@ -271,6 +271,30 @@ function performChatSearch(query) {
 .order-info-message .text-blue-500 {
     color: #3b82f6;
     font-weight: 500;
+}
+
+/* Ensure chat widget stays on top */
+#chat-toggle {
+    z-index: 60 !important;
+}
+
+#chat-box {
+    z-index: 60 !important;
+}
+
+/* Better positioning on mobile */
+@media (max-width: 640px) {
+    #chat-toggle {
+        bottom: 20px !important;
+        right: 20px !important;
+    }
+    
+    #chat-box {
+        bottom: 90px !important;
+        right: 10px !important;
+        left: 10px !important;
+        width: auto !important;
+    }
 }
 </style>
 

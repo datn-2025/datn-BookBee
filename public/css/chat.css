@@ -9,15 +9,16 @@
     overflow-y: auto !important;
     overflow-x: hidden !important;
     scroll-behavior: smooth !important;
-    min-height: 450px !important;
-    max-height: 450px !important;
-    height: 450px !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
     padding: 1rem !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: thin !important;
     scrollbar-color: #c1c1c1 #f1f1f1 !important;
     position: relative !important;
     display: block !important;
+    flex: 1 !important;
 }
 
 /* Ensure scrollbar is always visible when needed */
@@ -151,8 +152,8 @@
 
 /* Chat container fixed sizing */
 .chat-container {
-    min-height: 600px !important;
-    height: 600px !important;
+    min-height: 800px !important;
+    height: 800px !important;
     display: flex !important;
     flex-direction: column !important;
     position: relative !important;
@@ -170,9 +171,8 @@
     flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
-    overflow: visible !important;
-    min-height: 450px !important;
-    max-height: 450px !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
     position: relative !important;
     padding: 0 !important;
 }
@@ -183,6 +183,8 @@
     border-top: 1px solid #e9ecef !important;
     padding: 15px !important;
     background-color: #f8f9fa !important;
+    position: relative !important;
+    z-index: 10 !important;
 }
 
 /* Loading states */
@@ -211,18 +213,27 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .chat-container {
-        min-height: 500px !important;
-        height: 500px !important;
+        min-height: 700px !important;
+        height: 700px !important;
     }
     
     .chat-body {
-        min-height: 350px !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    .chat-conversation {
+        height: 100% !important;
+        min-height: 0 !important;
+        flex: 1 !important;
     }
 }
 
 /* Empty state styling */
 .chat-empty-state {
-    min-height: 450px !important;
+    height: 100% !important;
+    min-height: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -230,11 +241,13 @@
 
 /* Introduction screen specific styling */
 .chat-introduction {
-    min-height: 400px !important;
+    min-height: 0 !important;
+    height: auto !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
+    padding: 2rem 1rem !important;
 }
 
 /* ============================================ */
@@ -673,7 +686,7 @@ body #emoji-picker:not(.hidden) {
 }
 
 .chat-container {
-    overflow: visible !important;
+    overflow: hidden !important;
 }
 
 /* Ensure emoji picker parent has proper position */
@@ -685,8 +698,8 @@ body #emoji-picker:not(.hidden) {
 /* Ensure no parent container clips the emoji picker */
 .chat-footer,
 .chat-footer *,
-.chat-container,
-.chat-container * {
+.chat-footer .row,
+.chat-footer form {
     overflow: visible !important;
 }
 

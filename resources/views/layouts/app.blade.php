@@ -230,9 +230,10 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    {{-- Chat Widget --}}
-
-    @include('components.chat-widget')
+    {{-- Chat Widget - Chỉ hiển thị khi đăng nhập --}}
+    @auth
+        @include('components.chat-widget')
+    @endauth
 
     @include('components.chatbot-widget')
 
