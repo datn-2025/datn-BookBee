@@ -355,10 +355,7 @@
 
                     <!-- Book Cover -->
                     <div class="aspect-[3/4] overflow-hidden bg-gray-50">
-                      @php
-                        $imagePath = public_path('images/' . $book->cover_image);
-                      @endphp
-                      <img src="{{ file_exists($imagePath) ? asset('images/' . $book->cover_image) : asset('images/product-item1.png') }}" 
+                      <img src="{{ $book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg') }}" 
                            alt="{{ $book->title }}"
                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                     </div>
@@ -530,10 +527,7 @@
                       @endif
 
                       <div class="w-32 h-40 overflow-hidden bg-gray-50">
-                        @php
-                          $imagePath = public_path('images/' . $book->cover_image);
-                        @endphp
-                        <img src="{{ file_exists($imagePath) ? asset('images/' . $book->cover_image) : asset('images/product-item1.png') }}" 
+                        <img src="{{ $book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg') }}" 
                              alt="{{ $book->title }}"
                              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                       </div>
