@@ -190,6 +190,16 @@ Route::middleware('auth')->group(function () {
     });
     
     // Preorder routes
+    Route::prefix('preorders')->name('preorders.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PreorderController::class, 'index'])->name('index');
+        Route::get('/create/{book}', [\App\Http\Controllers\PreorderController::class, 'create'])->name('create');
+        Route::post('/store', [\App\Http\Controllers\PreorderController::class, 'store'])->name('store');
+        Route::get('/{preorder}', [\App\Http\Controllers\PreorderController::class, 'show'])->name('show');
+        Route::patch('/cancel/{preorder}', [\App\Http\Controllers\PreorderController::class, 'cancel'])->name('cancel');
+        Route::get('/book-info/{book}', [\App\Http\Controllers\PreorderController::class, 'getBookInfo'])->name('book-info');
+    });
+
+    // Fallback route cho compatibility
     Route::post('/preorder', [\App\Http\Controllers\OrderController::class, 'storePreorder'])->name('preorder.store');
 });
 
@@ -324,6 +334,20 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::post('/{review}/response', [AdminReviewController::class, 'storeResponse'])->name('response.store')->middleware('checkpermission:review.response');
         Route::patch('/{review}/update-status', [AdminReviewController::class, 'updateStatus'])->name('update-status')->middleware('checkpermission:review.update-status');
         Route::get('/{review}/response', [AdminReviewController::class, 'showResponseForm'])->name('response')->middleware('checkpermission:review.response');
+    });
+
+    // Preorders
+    Route::prefix('preorders')->name('preorders.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AdminPreorderController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\AdminPreorderController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\AdminPreorderController::class, 'store'])->name('store');
+        Route::get('/export', [\App\Http\Controllers\Admin\AdminPreorderController::class, 'export'])->name('export');
+        Route::get('/{preorder}', [\App\Http\Controllers\Admin\AdminPreorderController::class, 'show'])->name('show');
+        Route::patch('/{preorder}/status', [\App\Http\Controllers\Admin\AdminPreorderController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{preorder}/approve', [\App\Http\Controllers\Admin\AdminPreorderController::class, 'approvePreorder'])->name('approve');
+        Route::post('/{preorder}/convert-to-order', [\App\Http\Controllers\Admin\AdminPreorderController::class, 'convertToOrder'])->name('convert-to-order');
+        Route::delete('/{preorder}', [\App\Http\Controllers\Admin\AdminPreorderController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-update-status', [\App\Http\Controllers\Admin\AdminPreorderController::class, 'bulkUpdateStatus'])->name('bulk-update-status');
     });
 
     // Users

@@ -224,7 +224,7 @@
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="flex-shrink-0 me-2">
-                                                    @if ($order->user->avatar)
+                                                    @if ($order->user ? $order->user->avatar : '')
                                                     <img src="{{ asset('storage/' . $order->user->avatar) }} " alt=""
                                                         class="avatar-xs rounded-circle">
                                                     @else

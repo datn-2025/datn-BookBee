@@ -87,7 +87,7 @@ class OrderController extends Controller
             'Đã Hủy' => Order::whereHas('orderStatus', function ($q) {
                 $q->where('name', 'Đã Hủy');
             })->count(),
-        ];
+        ];  
 
         return view('admin.orders.index', compact('orders', 'orderCounts', 'orderStatuses', 'paymentStatuses'));
     }

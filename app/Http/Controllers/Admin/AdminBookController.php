@@ -152,7 +152,13 @@ class AdminBookController extends Controller
             'status',
             'isbn',
             'publication_date',
-            'page_count'
+            'page_count',
+            'release_date',
+            'pre_order',
+            'pre_order_price',
+            'stock_preorder_limit',
+            'preorder_count',
+            'preorder_description'
         ]);
 
         $slug = Str::slug($data['title']);
@@ -281,6 +287,15 @@ class AdminBookController extends Controller
             'brand_id' => 'required|uuid|exists:brands,id',
             'publication_date' => 'required|date',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            
+            // Preorder validation
+            'pre_order' => 'boolean',
+            'release_date' => 'required_if:pre_order,true|nullable|date|after:today',
+            'pre_order_price' => 'nullable|numeric|min:0',
+            'stock_preorder_limit' => 'required_if:pre_order,true|nullable|integer|min:1',
+            'preorder_count' => 'nullable|integer|min:0',
+            'preorder_description' => 'nullable|string|max:1000',
+            
             // Gift validation
             'gift_book_id' => 'nullable|uuid|exists:books,id',
             'gift_name' => 'nullable|string|max:255',

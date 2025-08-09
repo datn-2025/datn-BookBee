@@ -1495,11 +1495,50 @@
                                 </div>
                                 <!-- Enhanced Add to Cart Button -->
                                 <div class="space-y-4">
-                                    <button id="addToCartBtn"
-                                        class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
-                                        <i class="fas fa-shopping-bag mr-3"></i>
-                                        <span>THÊM VÀO GIỎ HÀNG</span>
-                                    </button>
+                                    @if(isset($book) && $book->canPreorder())
+                                        <!-- Preorder Button -->
+                                        <div class="preorder-section bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 p-4 rounded-lg mb-4">
+                                            <div class="flex items-center gap-3 mb-3">
+                                                <div class="bg-blue-600 text-white px-2 py-1 text-xs font-bold uppercase rounded">
+                                                    ĐẶT TRƯỚC
+                                                </div>
+                                                <span class="text-blue-900 font-bold text-sm">
+                                                    Ra mắt: {{ $book->release_date ? $book->release_date->format('d/m/Y') : 'TBD' }}
+                                                </span>
+                                            </div>
+                                            @php
+                                                $preorderPrice = $book->getPreorderPrice();
+                                                $originalPrice = $book->formats->first()->price ?? 0;
+                                            @endphp
+                                            @if($preorderPrice && $preorderPrice < $originalPrice)
+                                                <div class="mb-3">
+                                                    <div class="flex items-center gap-2 mb-1">
+                                                        <span class="text-xl font-bold text-blue-600">
+                                                            {{ number_format($preorderPrice, 0, ',', '.') }}₫
+                                                        </span>
+                                                        <span class="text-sm text-gray-500 line-through">
+                                                            {{ number_format($originalPrice, 0, ',', '.') }}₫
+                                                        </span>
+                                                    </div>
+                                                    <div class="bg-red-100 text-red-600 px-2 py-1 text-xs font-bold rounded inline-block">
+                                                        TIẾT KIỆM {{ number_format($originalPrice - $preorderPrice, 0, ',', '.') }}₫
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            <button onclick="window.location.href='{{ route('preorders.create', $book) }}'"
+                                                    class="w-full h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
+                                                <i class="ri-bookmark-line mr-3 text-xl"></i>
+                                                <span>ĐẶT TRƯỚC NGAY</span>
+                                            </button>
+                                        </div>
+                                    @else
+                                        <!-- Regular Add to Cart Button -->
+                                        <button id="addToCartBtn"
+                                            class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
+                                            <i class="fas fa-shopping-bag mr-3"></i>
+                                            <span>THÊM VÀO GIỎ HÀNG</span>
+                                        </button>
+                                    @endif
 
                                     <!-- Wishlist Button -->
                                     <button

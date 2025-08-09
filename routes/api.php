@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GhnController;
 use App\Http\Controllers\Api\ChatbotController;
+use App\Http\Controllers\Api\LocationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,12 +21,17 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Location API Routes
+Route::get('/districts/{provinceId}', [LocationController::class, 'getDistricts']);
+Route::get('/wards/{districtId}', [LocationController::class, 'getWards']);
+
 // GHN API Routes
 Route::prefix('ghn')->group(function () {
-    Route::post('/provinces', [GhnController::class, 'getProvinces']);
+    Route::get('/provinces', [GhnController::class, 'getProvinces']);
     Route::post('/districts', [GhnController::class, 'getDistricts']);
     Route::post('/wards', [GhnController::class, 'getWards']);
-    Route::post('/shipping-fee', [GhnController::class, 'calculateShippingFee']);
+    Route::post('/calculate-fee', [GhnController::class, 'calculateShippingFee']);
+    Route::post('/shipping-fee', [GhnController::class, 'calculateShippingFee']); // Alias for backward compatibility
     Route::post('/services', [GhnController::class, 'getServices']);
     Route::post('/lead-time', [GhnController::class, 'getLeadTime']);
     Route::get('/tracking/{orderCode}', [GhnController::class, 'trackOrder'])->name('api.ghn.tracking');

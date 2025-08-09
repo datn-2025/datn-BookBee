@@ -139,6 +139,76 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+                            
+                            <!-- Preorder Section -->
+                            <div class="col-12">
+                                <div class="card bg-light border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">
+                                            <i class="ri-bookmark-line me-2"></i>Cấu hình đặt trước sách
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Allow Preorder -->
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="pre_order" 
+                                                   name="pre_order" value="1" {{ old('pre_order') ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-medium" for="pre_order">
+                                                Cho phép đặt trước sách
+                                            </label>
+                                            <div class="form-text">
+                                                Kích hoạt để khách hàng có thể đặt trước sách này trước ngày ra mắt
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="preorder_section" style="display: none;">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="release_date" class="form-label fw-medium">Ngày ra mắt <span class="text-danger">*</span></label>
+                                                    <input type="date" class="form-control @error('release_date') is-invalid @enderror" 
+                                                           id="release_date" name="release_date" value="{{ old('release_date') }}">
+                                                    @error('release_date')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="stock_preorder_limit" class="form-label fw-medium">Số lượng cho phép đặt trước <span class="text-danger">*</span></label>
+                                                    <input type="number" class="form-control @error('stock_preorder_limit') is-invalid @enderror" 
+                                                           id="stock_preorder_limit" name="stock_preorder_limit" value="{{ old('stock_preorder_limit') }}" 
+                                                           placeholder="Ví dụ: 100" min="1" step="1">
+                                                    @error('stock_preorder_limit')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="pre_order_price" class="form-label fw-medium">Giá ưu đãi đặt trước</label>
+                                                    <input type="number" class="form-control @error('pre_order_price') is-invalid @enderror" 
+                                                           id="pre_order_price" name="pre_order_price" value="{{ old('pre_order_price') }}" 
+                                                           placeholder="Ví dụ: 150000" min="0" step="1000">
+                                                    @error('pre_order_price')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="preorder_count" class="form-label fw-medium">Số lượng đã đặt trước</label>
+                                                    <input type="number" class="form-control" 
+                                                           id="preorder_count" name="preorder_count" value="0" 
+                                                           placeholder="0" readonly>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label for="preorder_description" class="form-label fw-medium">Mô tả ưu đãi đặt trước</label>
+                                                    <textarea class="form-control @error('preorder_description') is-invalid @enderror" 
+                                                              id="preorder_description" name="preorder_description" rows="3" 
+                                                              placeholder="Mô tả về ưu đãi hoặc thông tin đặc biệt cho khách đặt trước (ví dụ: Tặng kèm bookmark, giảm 20%, giao hàng miễn phí...)">{{ old('preorder_description') }}</textarea>
+                                                    @error('preorder_description')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -861,6 +931,51 @@ $(document).ready(function() {
             }
         }
     });
+
+    // Preorder section toggle
+    const preOrderCheckbox = document.getElementById('pre_order');
+    const preorderSection = document.getElementById('preorder_section');
+    const releaseDateInput = document.getElementById('release_date');
+    const stockPreorderLimitInput = document.getElementById('stock_preorder_limit');
+    
+    if (preOrderCheckbox && preorderSection) {
+        // Initial state
+        togglePreorderSection();
+        
+        preOrderCheckbox.addEventListener('change', togglePreorderSection);
+        
+        function togglePreorderSection() {
+            if (preOrderCheckbox.checked) {
+                preorderSection.style.display = 'block';
+                releaseDateInput.required = true;
+                stockPreorderLimitInput.required = true;
+                
+                // Set minimum date to tomorrow
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const minDate = tomorrow.toISOString().split('T')[0];
+                releaseDateInput.min = minDate;
+                
+                // Set default release date if empty
+                if (!releaseDateInput.value) {
+                    const defaultReleaseDate = new Date();
+                    defaultReleaseDate.setMonth(defaultReleaseDate.getMonth() + 1); // 1 month from now
+                    releaseDateInput.value = defaultReleaseDate.toISOString().split('T')[0];
+                }
+                
+                // Set default stock limit if empty
+                if (!stockPreorderLimitInput.value) {
+                    stockPreorderLimitInput.value = 100;
+                }
+            } else {
+                preorderSection.style.display = 'none';
+                releaseDateInput.required = false;
+                stockPreorderLimitInput.required = false;
+                releaseDateInput.value = '';
+                stockPreorderLimitInput.value = '';
+            }
+        }
+    }
 });
 </script>
 @endpush
