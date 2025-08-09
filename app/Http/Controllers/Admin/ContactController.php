@@ -28,7 +28,7 @@ class ContactController extends Controller
             });
         }
 
-        $contacts = $query->orderBy('created_at', 'desc')->paginate(15);
+        $contacts = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
         return view('admin.contacts.index', compact('contacts'));
     }
 

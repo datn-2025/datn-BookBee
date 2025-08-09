@@ -12,6 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('book_attribute_values', function (Blueprint $table) {
+            // Thêm cột extra_price trước
+            $table->decimal('extra_price', 12, 2)->default(0)->after('attribute_value_id');
+            
             // Thêm cột stock để quản lý số lượng tồn kho theo biến thể
             $table->integer('stock')->default(0)->after('extra_price');
             
@@ -34,7 +37,7 @@ return new class extends Migration
         Schema::table('book_attribute_values', function (Blueprint $table) {
             $table->dropIndex(['sku']);
             $table->dropIndex(['stock']);
-            $table->dropColumn(['stock', 'sku']);
+            $table->dropColumn(['extra_price', 'stock', 'sku']);
         });
     }
 };

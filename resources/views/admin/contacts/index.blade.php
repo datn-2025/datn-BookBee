@@ -81,7 +81,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($contacts as $index => $contact)
+                                    @forelse($contacts as $index => $contact)
                                         <tr>
                                             <td class="text-center">{{ $contacts->firstItem() + $index }}</td>
                                             <td class="fw-semibold">{{ $contact->name }}</td>
@@ -201,13 +201,58 @@
                                             </div>
                                         </div>
                                         @endpermission
-                                    @endforeach
+                                        @empty
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted">
+                                                Không có liên hệ nào.
+                                            </td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
                         <!-- Phân trang -->
                         <div class="d-flex justify-content-end mt-4">
-                            {{ $contacts->links() }}
+                            <nav>
+                                @if ($contacts->hasPages())
+                                    <ul class="pagination mb-0">
+                                        {{-- Previous Page Link --}}
+                                        @if ($contacts->onFirstPage())
+                                            <li class="page-item disabled">
+                                                <span class="page-link">Prev</span>
+                                            </li>
+                                        @else
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ $contacts->previousPageUrl() }}" rel="prev">Prev</a>
+                                            </li>
+                                        @endif
+
+                                        {{-- Pagination Elements --}}
+                                        @foreach ($contacts->getUrlRange(1, $contacts->lastPage()) as $page => $url)
+                                            @if ($page == $contacts->currentPage())
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ $page }}</span>
+                                                </li>
+                                            @else
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ $url }}">{{ $page }}</a>
+                                                </li>
+                                            @endif
+                                        @endforeach
+
+                                        {{-- Next Page Link --}}
+                                        @if ($contacts->hasMorePages())
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ $contacts->nextPageUrl() }}" rel="next">Next</a>
+                                            </li>
+                                        @else
+                                            <li class="page-item disabled">
+                                                <span class="page-link">Next</span>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                @endif
+                            </nav>
                         </div>
                     </div>
                 </div>

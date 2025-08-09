@@ -3,6 +3,7 @@
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\Admin\AdminBookController;
 use App\Http\Controllers\Admin\AdminCategoryController;
+use App\Http\Controllers\Admin\AdminChatrealtimeController;
 use App\Http\Controllers\Admin\AdminDashboard;
 use App\Http\Controllers\Admin\AdminInvoiceController;
 use App\Http\Controllers\Admin\AdminPaymentMethodController;
@@ -39,6 +40,7 @@ use App\Http\Controllers\Wishlists\WishlistController;
 use App\Livewire\BalanceChart;
 use App\Livewire\RevenueReport;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\OrderChatTestController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 
@@ -85,6 +87,7 @@ Route::prefix('cart')->group(function () {
     Route::post('/update', [CartController::class, 'updateCart'])->name('cart.update');
     Route::post('/remove', [CartController::class, 'removeFromCart'])->name('cart.remove');
     Route::post('/clear', [CartController::class, 'clearCart'])->name('cart.clear');
+    Route::post('/refresh-prices', [CartController::class, 'refreshCartPrices'])->name('cart.refresh-prices');
     Route::post('/add-wishlist', [CartController::class, 'addAllWishlistToCart'])->name('cart.add-wishlist');
     // Route::post('/apply-voucher', [CartController::class, 'applyVoucher'])->name('cart.apply-voucher');
     Route::post('/remove-voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
@@ -227,6 +230,8 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::get('/revenue-report', RevenueReport::class)->name('revenue-report')->middleware('checkpermission:dashboard.revenue-report');
     Route::get('/balance-chart', BalanceChart::class)->name('balance-chart')->middleware('checkpermission:dashboard.balance-chart');
 
+
+
     // Contacts
     Route::prefix('contacts')->name('contacts.')->middleware('checkpermission:contact.view')->group(function () {
         Route::get('/', [AdminContactController::class, 'index'])->name('index')->middleware('checkpermission:contact.view');
@@ -279,6 +284,14 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/withdraw-history', [WalletController::class, 'withdrawHistory'])->name('withdrawHistory')->middleware('checkpermission:wallet.withdraw-history');
         Route::post('/approve/{id}', [WalletController::class, 'approveTransaction'])->name('approveTransaction')->middleware('checkpermission:wallet.approve');
         Route::post('/reject/{id}', [WalletController::class, 'rejectTransaction'])->name('rejectTransaction')->middleware('checkpermission:wallet.reject');
+    });
+    // chat real-time
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [AdminChatrealtimeController::class, 'index'])->name('index');
+        Route::get('/{id}', [AdminChatrealtimeController::class, 'show'])->name('show');
+        Route::post('/send', [AdminChatRealTimeController::class, 'send'])->name('send');
+        Route::post('/create-conversation', [AdminChatrealtimeController::class, 'createConversation'])->name('create-conversation');
+        Route::get('/users/active', [AdminChatrealtimeController::class, 'getActiveUsers'])->name('users.active');
     });
 
     // Categories
@@ -522,3 +535,4 @@ Route::prefix('api/ghn')->name('ghn.')->group(function() {
 Route::get('/test-ghn', function() {
     return view('test-ghn');
 });
+

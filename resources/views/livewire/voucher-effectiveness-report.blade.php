@@ -1,14 +1,14 @@
 <div>
     <h4>Báo cáo hiệu quả voucher (chương trình khuyến mãi)</h4>
-    <div class="row align-items-end mb-3 justify-content-end">
-        <div class="col-md-9 d-flex justify-content-end gap-2 flex-wrap">
+    <div class="row align-items-end mb-3">
+        <div class="col-md-12 d-flex justify-content-end gap-2 flex-wrap">
             <div>
                 <label>Từ ngày:</label>
-                <input type="date" wire:model="fromDate" class="voucher-input form-control" value="{{ $fromDate }}" />
+                <input type="date" wire:model.defer="fromDate" class="form-control" wire:key="from-date-{{ $fromDate ?? 'empty' }}" />
             </div>
             <div>
                 <label>Đến ngày:</label>
-                <input type="date" wire:model="toDate" class="voucher-input form-control" value="{{ $toDate }}" />
+                <input type="date" wire:model.defer="toDate" class="form-control" wire:key="to-date-{{ $toDate ?? 'empty' }}" />
             </div>
             <div class="d-flex gap-2 align-items-end">
                 <button wire:click="applyCustomFilter" class="btn btn-primary">Áp dụng</button>
