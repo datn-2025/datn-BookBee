@@ -716,12 +716,6 @@
                                 <i class="fas fa-shopping-bag mr-3"></i>
                                 <span>THÊM VÀO GIỎ HÀNG</span>
                             </button>
-                            <!-- Wishlist Button -->
-                            <button type="button"
-                                class="wishlist-btn w-full h-14 border-2 border-black text-black font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center mt-3 adidas-font">
-                                <i class="far fa-heart mr-3"></i>
-                                <span>YÊU THÍCH</span>
-                            </button>
                             <!-- Enhanced Share Section -->
                             <div class="share-section pt-8 border-t border-gray-200 mt-8">
                                 <h3 class="text-sm font-bold text-black uppercase tracking-wider mb-6">Chia sẻ sản phẩm</h3>
@@ -1638,7 +1632,7 @@
                                     </button>
 
                                     <!-- Wishlist Button -->
-                                    <button
+                                    <button id="wishlistBtn" data-book-id="{{ $book->id }}"
                                         class="wishlist-btn w-full h-14 border-2 border-black text-black font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
                                         <i class="far fa-heart mr-3"></i>
                                         <span>YÊU THÍCH</span>
@@ -3895,6 +3889,62 @@
                             submitBtn.disabled = false;
                             submitBtn.innerHTML = originalText;
                         });
+                });
+            }
+
+            // Wishlist functionality for book page
+            const wishlistBtn = document.getElementById('wishlistBtn');
+            if (wishlistBtn) {
+                wishlistBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    @guest
+                        showToastr('warning', 'Bạn cần đăng nhập để thêm sản phẩm vào danh sách yêu thích', 'Chưa đăng nhập!', { timeOut: 3000 });
+                        setTimeout(() => {
+                            window.location.href = '{{ route("login") }}';
+                        }, 1500);
+                        return;
+                    @endguest
+
+                    if (this.disabled) return;
+
+                    const button = this;
+                    const bookId = button.dataset.bookId;
+                    const originalHTML = button.innerHTML;
+
+                    // Visual feedback
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-3"></i><span>ĐANG THÊM...</span>';
+
+                    fetch('{{ route("wishlist.add") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        },
+                        body: JSON.stringify({ book_id: bookId })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            button.classList.remove('border-black', 'text-black');
+                            button.classList.add('bg-red-500', 'text-white', 'border-red-500');
+                            button.innerHTML = '<i class="fas fa-heart mr-3"></i><span>ĐÃ YÊU THÍCH</span>';
+                            showToastr('success', 'Đã thêm vào danh sách yêu thích!', 'Thành công', { timeOut: 3000 });
+                            button.disabled = false;
+                        } else {
+                            button.innerHTML = originalHTML;
+                            button.disabled = false;
+                            showToastr('warning', data.message || 'Lỗi khi thêm vào danh sách yêu thích!', 'Thông báo', { timeOut: 4000 });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Wishlist error:', error);
+                        button.innerHTML = originalHTML;
+                        button.disabled = false;
+                        showToastr('error', 'Lỗi kết nối! Vui lòng thử lại.', 'Lỗi mạng', { timeOut: 5000 });
+                    });
                 });
             }
 
