@@ -2948,9 +2948,8 @@
                 } else {
                     if (attributesSummary) {
                         attributesSummary.classList.add('hidden');
-                    }
-                }
-
+                    }                }
+                
                 // Show/hide attributes based on format type
                 const attributesGroup = document.getElementById('bookAttributesGroup');
                 if (attributesGroup) {
@@ -2980,6 +2979,19 @@
                         
                         // Update dropdown options display for physical books
                         updateAttributeOptionsDisplay(isEbook);
+                    }
+                }
+
+                // Show/hide Add to Cart button based on product status
+                const addToCartBtn = document.getElementById('addToCartBtn');
+                const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
+                
+                if (addToCartBtn) {
+                    // Hide button for discontinued, coming soon, or out of stock products
+                    if (bookStatus === 'Ngừng Kinh Doanh' || bookStatus === 'Sắp Ra Mắt' || bookStatus === 'Hết Hàng Tồn Kho') {
+                        addToCartBtn.style.display = 'none';
+                    } else {
+                        addToCartBtn.style.display = 'block';
                     }
                 }
             }
