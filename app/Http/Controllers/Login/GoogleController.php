@@ -29,7 +29,6 @@ class GoogleController extends Controller
 
             $user = Socialite::driver('google')->user();
             $finduser = User::where('google_id', $user->id)->first();
-
             if($finduser){
                 Auth::login($finduser);
                 	Toastr()->success('Đăng nhập thành công!');
@@ -42,7 +41,8 @@ class GoogleController extends Controller
                         'name' => $user->name,
                         'google_id'=> $user->id,
                         'password' => encrypt('123456dummy'),
-                        'role_id' => $role ? $role->getKey() : null,
+                        'role_id' => $role->id ?? null,
+                        'status' => "Hoạt Động",
                     ]
                 );
                 Auth::login($newUser);
