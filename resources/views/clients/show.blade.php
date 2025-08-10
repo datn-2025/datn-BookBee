@@ -1573,7 +1573,7 @@
                                     </div>
                                     
                                     {{-- Tổng kết phí cộng thêm và stock biến thể --}}
-                                    <div id="attributesSummary" class="mt-6 bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 p-4 rounded-lg shadow-sm hidden">
+                                    {{-- <div id="attributesSummary" class="mt-6 bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 p-4 rounded-lg shadow-sm hidden">
                                         <div class="flex items-center mb-3">
                                             <i class="fas fa-calculator text-gray-600 mr-2"></i>
                                             <span class="text-sm font-bold text-gray-800 uppercase tracking-wide">Tổng kết lựa chọn</span>
@@ -1598,7 +1598,7 @@
                                                 <span id="minStockValue" class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">-</span>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div> --}}
                                 </div>
                             @endif
                             <!-- Enhanced Quantity & Add to Cart Section -->
@@ -2771,12 +2771,6 @@
                 const discountTextElement = document.getElementById('discountText');
                 const discountAmountElement = document.getElementById('discountAmount');
                 
-                console.log('Debug discount display:', {
-                    discount: discount,
-                    discountAmountElement: discountAmountElement,
-                    discountTextElement: discountTextElement
-                });
-                
                 if (discount > 0) {
                     if (originalPriceElement) {
                         originalPriceElement.textContent = formatPrice(finalPrice);
@@ -2787,10 +2781,7 @@
                     }
                     if (discountAmountElement) {
                         const formattedDiscount = new Intl.NumberFormat('vi-VN').format(discount);
-                        console.log('Setting discount amount:', formattedDiscount);
                         discountAmountElement.textContent = formattedDiscount;
-                    } else {
-                        console.log('discountAmountElement not found!');
                     }
                 } else {
                     if (originalPriceElement) {
@@ -2885,11 +2876,6 @@
                         
                         // Log variant stock info for debugging
                         if (selectedVariantInfo.length > 0) {
-                            console.log('Variant Stock Info:', {
-                                variants: selectedVariantInfo,
-                                lowestStock: stock,
-                                currentQuantity: quantityInput.value
-                            });
                         }
                     } else {
                         // Out of stock
@@ -2962,7 +2948,8 @@
                             // For ebooks, hide all attributes/variants
                             item.style.display = 'none';
                         } else {
-                            // For physical books, show all attributes
+                            // For physical books, initially show all attributes
+                            // updateAttributeOptionsDisplay will handle hiding based on stock
                             item.style.display = 'block';
                         }
                     });
@@ -2980,6 +2967,7 @@
                         }
                         
                         // Update dropdown options display for physical books
+                        // This will handle hiding attributes with no available variants
                         updateAttributeOptionsDisplay(isEbook);
                     }
                 }
@@ -3004,9 +2992,11 @@
                 if (isEbook) return;
                 
                 const attributeSelects = document.querySelectorAll('[name^="attributes["]');
+                let hiddenAttributesCount = 0;
                 
                 attributeSelects.forEach(select => {
                     const options = select.querySelectorAll('option');
+                    let hasAvailableOptions = false;
                     
                     options.forEach(option => {
                         if (option.value) { // Skip empty option
@@ -3039,10 +3029,58 @@
                             // Update disabled state for physical books only
                             option.disabled = variantStock === 0;
                             
+                            // Check if this option is available (has stock)
+                            if (variantStock > 0) {
+                                hasAvailableOptions = true;
+                            }
+                            
                             option.textContent = newText;
                         }
                     });
+                    
+                    // Hide/show the entire attribute group based on availability
+                    const attributeItem = select.closest('.attribute-item');
+                    if (attributeItem) {
+                        const attributeName = select.name || 'Unknown';
+                        const label = attributeItem.querySelector('label');
+                        const displayName = label ? label.textContent.trim() : attributeName;
+                        
+                        if (hasAvailableOptions) {
+                            attributeItem.style.display = 'block';
+                        } else {
+                            attributeItem.style.display = 'none';
+                            hiddenAttributesCount++;
+                            // Reset select value if hiding this attribute
+                            if (select.value) {
+                                select.value = '';
+                                // Trigger change event to update price calculations
+                                select.dispatchEvent(new Event('change'));
+                            }
+                        }
+                    }
                 });
+                
+                // Check if any attribute groups are visible and hide the entire attributes section if none
+                const attributesGroup = document.getElementById('bookAttributesGroup');
+                if (attributesGroup) {
+                    const allAttributeItems = attributesGroup.querySelectorAll('.attribute-item');
+                    const totalAttributes = allAttributeItems.length;
+                    
+                    // Count actually visible items (not hidden by display:none)
+                    let visibleCount = 0;
+                    allAttributeItems.forEach(item => {
+                        const computedStyle = window.getComputedStyle(item);
+                        if (computedStyle.display !== 'none') {
+                            visibleCount++;
+                        }
+                    });
+                    
+                    if (visibleCount === 0) {
+                        attributesGroup.style.display = 'none';
+                    } else {
+                        attributesGroup.style.display = 'block';
+                    }
+                }
             }
 
             // Initialize variant overview interactions
@@ -3079,7 +3117,6 @@
                                         }, 150);
                                         
                                         // Show simple feedback
-                                        console.log(`Selected variant: ${variantValue} (${attributeName})`);
                                     }
                                 });
                             }
@@ -3101,7 +3138,10 @@
                             const selectedText = selectedOption.textContent.trim().toLowerCase();
                             const isEbook = selectedText.includes('ebook');
                             if (!isEbook) {
-                                updateAttributeOptionsDisplay(isEbook);
+                                // Force re-check of attribute visibility based on stock
+                                setTimeout(() => {
+                                    updateAttributeOptionsDisplay(isEbook);
+                                }, 50);
                             }
                         }
                     });
@@ -3109,7 +3149,21 @@
 
                 const attributeSelects = document.querySelectorAll('[name^="attributes["]');
                 attributeSelects.forEach(select => {
-                    select.addEventListener('change', updatePriceAndStock);
+                    select.addEventListener('change', function() {
+                        updatePriceAndStock();
+                        
+                        // Re-check attribute visibility after any attribute change
+                        const formatSelect = document.getElementById('bookFormatSelect');
+                        if (formatSelect && formatSelect.selectedOptions[0]) {
+                            const selectedText = formatSelect.selectedOptions[0].textContent.trim().toLowerCase();
+                            const isEbook = selectedText.includes('ebook');
+                            if (!isEbook) {
+                                setTimeout(() => {
+                                    updateAttributeOptionsDisplay(isEbook);
+                                }, 50);
+                            }
+                        }
+                    });
                 });
 
                 // Initialize price and stock on page load
@@ -3121,7 +3175,10 @@
                     const initialSelectedText = initialFormatSelect.selectedOptions[0].textContent.trim().toLowerCase();
                     const initialIsEbook = initialSelectedText.includes('ebook');
                     if (!initialIsEbook) {
-                        updateAttributeOptionsDisplay(initialIsEbook);
+                        // Force check attribute visibility on page load
+                        setTimeout(() => {
+                            updateAttributeOptionsDisplay(initialIsEbook);
+                        }, 100);
                     }
                 }
 
@@ -3149,10 +3206,20 @@
                 // Initialize price and stock on page load
                 updatePriceAndStock();
 
-                // Initialize attribute visibility on page load
+                // Initialize attribute visibility on page load - Double check after DOM fully loaded
                 setTimeout(() => {
                     updatePriceAndStock(); // Gọi lại để đảm bảo thuộc tính được ẩn/hiện đúng
-                }, 100);
+                    
+                    // Final check for attribute visibility
+                    const finalFormatSelect = document.getElementById('bookFormatSelect');
+                    if (finalFormatSelect && finalFormatSelect.selectedOptions[0]) {
+                        const finalSelectedText = finalFormatSelect.selectedOptions[0].textContent.trim().toLowerCase();
+                        const finalIsEbook = finalSelectedText.includes('ebook');
+                        if (!finalIsEbook) {
+                            updateAttributeOptionsDisplay(finalIsEbook);
+                        }
+                    }
+                }, 200);
             });
 
             // Add to cart function - optimized
@@ -3376,11 +3443,6 @@
                         requestData.attributes = attributes;
                     }
                     
-                    console.log('=== ADD TO CART REQUEST DEBUG ===');
-                    console.log('Request data:', requestData);
-                    console.log('Is ebook:', isEbook);
-                    console.log('Attributes selected:', attributeValueIds);
-
                     // Send request
                     fetch('{{ route("cart.add") }}', {
                         method: 'POST',
@@ -3391,13 +3453,9 @@
                         body: JSON.stringify(requestData)
                     })
                         .then(response => {
-                            console.log('Response status:', response.status);
-                            console.log('Response headers:', response.headers);
-                            
                             const contentType = response.headers.get('content-type');
                             if (!contentType || !contentType.includes('application/json')) {
                                 return response.text().then(text => {
-                                    console.log('Non-JSON response:', text);
                                     throw new Error('Server returned non-JSON response');
                                 });
                             }
@@ -3413,8 +3471,6 @@
                             });
                         })
                         .then(data => {
-                            console.log('Response data:', data); // Debug log
-                            
                             // Check if this is an HTTP error response
                             if (data.httpStatus && data.httpStatus !== 200) {
                                 // Handle HTTP error responses (like 422)
@@ -3506,7 +3562,6 @@
                         const contentType = response.headers.get('content-type');
                         if (!contentType || !contentType.includes('application/json')) {
                             return response.text().then(text => {
-                                console.log('Non-JSON response:', text);
                                 throw new Error('Server returned non-JSON response');
                             });
                         }
@@ -3682,7 +3737,6 @@
                         zoomLevel.textContent = Math.round(scale * 100) + '%';
 
                     }).catch(function (error) {
-                        console.log('PDF.js failed, falling back to iframe:', error);
                         fallbackToIframe(url);
                     });
                 } else {
@@ -3784,17 +3838,9 @@
                     const submitBtn = comboForm.querySelector('button[type="submit"]');
                     const originalText = submitBtn.innerHTML;
 
-                    // Debug form data
-                    console.log('=== COMBO FORM DEBUG ===');
-                    console.log('Form action:', comboForm.action);
-                    console.log('Form method:', comboForm.method);
-                    console.log('Form data as string:', urlParams.toString());
-
                     // Check CSRF token
                     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
                     const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
-                    console.log('CSRF token available:', !!csrfToken);
-                    console.log('CSRF token (first 10 chars):', csrfToken ? csrfToken.substring(0, 10) + '...' : 'N/A');
 
                     if (!csrfToken) {
                         if (typeof toastr !== 'undefined') {
@@ -3821,33 +3867,19 @@
                         }
                     })
                         .then(response => {
-                            console.log('=== RESPONSE DEBUG ===');
-                            console.log('Status:', response.status);
-                            console.log('Status text:', response.statusText);
-                            console.log('Headers:');
-                            response.headers.forEach((value, key) => {
-                                console.log(`${key}: ${value}`);
-                            });
-
                             // Check if response is OK
                             if (!response.ok) {
                                 // For non-200 responses, get the text to see what's wrong
                                 return response.text().then(text => {
-                                    console.log('Error response body (first 500 chars):', text.substring(0, 500));
                                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                                 });
                             }
 
                             // Check content type
                             const contentType = response.headers.get('content-type');
-                            console.log('Content-Type:', contentType);
 
                             if (!contentType || !contentType.includes('application/json')) {
                                 return response.text().then(text => {
-                                    console.log('=== NON-JSON RESPONSE ===');
-                                    console.log('Response length:', text.length);
-                                    console.log('First 1000 chars:', text.substring(0, 1000));
-
                                     // Try to extract Laravel error information
                                     if (text.includes('validation') || text.includes('ValidationException')) {
                                         throw new Error('Validation Error: Dữ liệu gửi lên không hợp lệ');
