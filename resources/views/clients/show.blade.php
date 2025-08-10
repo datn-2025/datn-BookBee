@@ -2515,7 +2515,8 @@
                 }
             }
 
-            // Helper function to setup quantity controls
+            // Helper function to setup quantity controls - COMMENTED OUT TO USE QUANTITY.JS VERSION
+            /* COMMENTED OUT - USING QUANTITY.JS VERSION INSTEAD
             function setupQuantityControls(decrementId, incrementId, inputId, maxStock = null) {
                 const decrementBtn = document.getElementById(decrementId);
                 const incrementBtn = document.getElementById(incrementId);
@@ -2563,6 +2564,7 @@
                     }
                 });
             }
+            */ // END COMMENTED SETUP QUANTITY CONTROLS
 
             // Helper function to update star display
             function updateStarDisplay(stars, rating) {
@@ -3138,9 +3140,11 @@
                 createDescriptionToggle('showMoreBtn', 'bookDescription');
                 createDescriptionToggle('showMoreComboBtn', 'comboDescription');
 
-                // Setup quantity controls using helper function
+                // Setup quantity controls using helper function - COMMENTED OUT TO USE QUANTITY.JS
+                /* COMMENTED OUT - USING QUANTITY.JS VERSION INSTEAD
                 setupQuantityControls('decrementBtn', 'incrementBtn', 'quantity');
                 setupQuantityControls('comboDecrementBtn', 'comboIncrementBtn', 'comboQuantity');
+                */ // END COMMENTED SETUP CALLS
 
                 // Initialize price and stock on page load
                 updatePriceAndStock();
