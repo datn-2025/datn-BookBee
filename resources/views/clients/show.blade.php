@@ -3948,6 +3948,19 @@
                             button.classList.add('bg-red-500', 'text-white', 'border-red-500');
                             button.innerHTML = '<i class="fas fa-heart mr-3"></i><span>ĐÃ YÊU THÍCH</span>';
                             showToastr('success', 'Đã thêm vào danh sách yêu thích!', 'Thành công', { timeOut: 3000 });
+                            
+                            // Dispatch wishlist update event
+                            if (typeof data.wishlist_count !== 'undefined') {
+                                document.dispatchEvent(new CustomEvent('wishlistItemAdded', {
+                                    detail: { count: data.wishlist_count }
+                                }));
+                            } else {
+                                // Fallback: refresh wishlist count from server
+                                if (window.WishlistCountManager && typeof window.WishlistCountManager.refreshFromServer === 'function') {
+                                    window.WishlistCountManager.refreshFromServer();
+                                }
+                            }
+                            
                             button.disabled = false;
                         } else {
                             button.innerHTML = originalHTML;

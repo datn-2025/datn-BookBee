@@ -96,6 +96,7 @@ Route::prefix('cart')->group(function () {
 
 // danh sach yeu thich
 Route::get('/wishlist', [WishlistController::class, 'getWishlist'])->name('wishlist.index');
+Route::get('/wishlist/count', [WishlistController::class, 'getWishlistCount'])->name('wishlist.count');
 Route::post('/wishlist/add', [WishlistController::class, 'add'])->name('wishlist.add');
 Route::post('/wishlist/delete', [WishlistController::class, 'delete'])->name('wishlist.delete');
 Route::post('/wishlist/delete-all', [WishlistController::class, 'deleteAll'])->name('wishlist.delete-all');

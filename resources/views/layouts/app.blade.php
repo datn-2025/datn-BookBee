@@ -42,6 +42,9 @@
     
     <!-- Cart Count Manager -->
     <script src="{{ asset('js/cart-count-manager.js') }}"></script>
+    
+    <!-- Wishlist Count Manager -->
+    <script src="{{ asset('js/wishlist-count-manager.js') }}"></script>
 
     <!-- Prevent FOUC Script -->
     <script>
