@@ -499,6 +499,80 @@
             }
         }
 
+        /* Enhanced Variant Information Styling */
+        .product-detail-page .variant-info-card {
+            border-radius: 0;
+            overflow: hidden;
+            background: #fff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .product-detail-page .variant-info-card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .product-detail-page .variant-info-header {
+            background: #000 !important;
+            border-bottom: 2px solid #333;
+        }
+
+        .product-detail-page .variant-info-item {
+            border-radius: 0;
+            border: 2px solid #e5e7eb;
+            background: #f9fafb;
+            transition: all 0.2s ease;
+        }
+
+        .product-detail-page .variant-info-item:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .product-detail-page .icon-container {
+            border-radius: 2px;
+            transition: all 0.2s ease;
+        }
+
+        .product-detail-page .variant-info-item:hover .icon-container {
+            transform: scale(1.05);
+        }
+
+        .product-detail-page .variant-info-value {
+            border-radius: 0;
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        .product-detail-page .variant-info-badge {
+            border-radius: 0;
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        /* Responsive adjustments for variant info */
+        @media (max-width: 768px) {
+            .product-detail-page .variant-info-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .product-detail-page .variant-info-item > div:first-child {
+                width: 100%;
+            }
+
+            .product-detail-page .variant-info-value,
+            .product-detail-page .variant-info-badge {
+                align-self: flex-end;
+            }
+
+            .product-detail-page .icon-container {
+                width: 1.75rem;
+                height: 1.75rem;
+            }
+        }
+
         .product-detail-page .slide-up {
             animation: slideUp 0.6s ease-out;
         }
@@ -1512,62 +1586,62 @@
                                                         <i class="fas fa-chevron-down text-black"></i>
                                                     </div>
                                                 </div>
-                                                
-                                                {{-- Thông tin biến thể đã chọn --}}
-                                                <div id="variant_info_{{ $attrVal->id }}" class="mt-3 hidden">
-                                                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 p-4 rounded-lg shadow-sm">
-                                                        <div class="flex items-center mb-2">
-                                                            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                                                            <span class="text-sm font-bold text-blue-800 uppercase tracking-wide">Thông tin đã chọn</span>
-                                                        </div>
-                                                        
-                                                        <!-- For Physical Books -->
-                                                        <div id="physical_variant_info_{{ $attrVal->id }}" class="space-y-2">
-                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
-                                                                <div class="flex items-center">
-                                                                    <i class="fas fa-barcode text-blue-500 mr-2 text-sm"></i>
-                                                                    <span class="text-sm font-medium text-gray-700">SKU:</span>
-                                                                </div>
-                                                                <span id="selected_sku_{{ $attrVal->id }}" class="font-mono text-blue-600 font-semibold bg-blue-100 px-2 py-1 rounded text-sm">-</span>
-                                                            </div>
-                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
-                                                                <div class="flex items-center">
-                                                                    <i class="fas fa-boxes text-green-500 mr-2 text-sm"></i>
-                                                                    <span class="text-sm font-medium text-gray-700">Số lượng:</span>
-                                                                </div>
-                                                                <span id="selected_stock_{{ $attrVal->id }}" class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">-</span>
-                                                            </div>
-                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
-                                                                <div class="flex items-center">
-                                                                    <i class="fas fa-coins text-yellow-500 mr-2 text-sm"></i>
-                                                                    <span class="text-sm font-medium text-gray-700">Phí cộng thêm:</span>
-                                                                </div>
-                                                                <span id="selected_extra_price_{{ $attrVal->id }}" class="font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm">0₫</span>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <!-- For Ebooks -->
-                                                        <div id="ebook_variant_info_{{ $attrVal->id }}" class="hidden">
-                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
-                                                                <div class="flex items-center">
-                                                                    <i class="fas fa-check-circle text-green-500 mr-2 text-sm"></i>
-                                                                    <span class="text-sm font-medium text-gray-700">Trạng thái:</span>
-                                                                </div>
-                                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                                                    <i class="fas fa-check-circle mr-1"></i>
-                                                                    Còn hàng
-                                                                </span>
-                                                            </div>
-                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
-                                                                <div class="flex items-center">
-                                                                    <i class="fas fa-coins text-green-500 mr-2 text-sm"></i>
-                                                                    <span class="text-sm font-medium text-gray-700">Phí cộng thêm:</span>
-                                                                </div>
-                                                                <span class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">Miễn phí</span>
-                                                            </div>
-                                                        </div>
+                                                                 {{-- Thông tin biến thể đã chọn --}}
+                                <div id="variant_info_{{ $attrVal->id }}" class="mt-4 hidden">
+                                    <div class="variant-info-card bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 shadow-sm">
+                                        <div class="variant-info-header bg-black text-white px-4 py-3 flex items-center">
+                                            <i class="fas fa-info-circle mr-2 text-sm"></i>
+                                            <span class="text-sm font-bold uppercase tracking-wider adidas-font">Thông tin đã chọn</span>
+                                        </div>
+                                        
+                                        <!-- For Physical Books -->
+                                        <div id="physical_variant_info_{{ $attrVal->id }}" class="p-4 space-y-3">
+                                            <div class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                                                <div class="flex items-center">
+                                                    <div class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
+                                                        <i class="fas fa-boxes text-xs"></i>
                                                     </div>
+                                                    <span class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Số lượng:</span>
                                                 </div>
+                                                <span id="selected_stock_{{ $attrVal->id }}" class="variant-info-value font-bold text-green-700 bg-white px-3 py-1 border border-green-300 text-sm">-</span>
+                                            </div>
+                                            <div class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                                                <div class="flex items-center">
+                                                    <div class="icon-container w-8 h-8 bg-yellow-500 text-white rounded-sm flex items-center justify-center mr-3">
+                                                        <i class="fas fa-coins text-xs"></i>
+                                                    </div>
+                                                    <span class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Phí cộng thêm:</span>
+                                                </div>
+                                                <span id="selected_extra_price_{{ $attrVal->id }}" class="variant-info-value font-bold text-yellow-700 bg-white px-3 py-1 border border-yellow-300 text-sm">0₫</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- For Ebooks -->
+                                        <div id="ebook_variant_info_{{ $attrVal->id }}" class="p-4 space-y-3 hidden">
+                                            <div class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                                                <div class="flex items-center">
+                                                    <div class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
+                                                        <i class="fas fa-check-circle text-xs"></i>
+                                                    </div>
+                                                    <span class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Trạng thái:</span>
+                                                </div>
+                                                <div class="variant-info-badge inline-flex items-center px-3 py-1 bg-green-100 text-green-800 border border-green-300 text-xs font-bold uppercase tracking-wide adidas-font">
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                    Còn hàng
+                                                </div>
+                                            </div>
+                                            <div class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                                                <div class="flex items-center">
+                                                    <div class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
+                                                        <i class="fas fa-coins text-xs"></i>
+                                                    </div>
+                                                    <span class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Phí cộng thêm:</span>
+                                                </div>
+                                                <span class="variant-info-value font-bold text-green-700 bg-white px-3 py-1 border border-green-300 text-sm">Miễn phí</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                             </div>
                                         @endforeach
                                     </div>
