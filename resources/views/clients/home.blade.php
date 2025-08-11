@@ -93,7 +93,7 @@
             </div>
         </div>
     </section>
-    <section class="bg-white py-20 md:py-24 relative overflow-hidden" data-aos="fade-up">
+    <section class="bg-white py-20 md:py-24 relative overflow-hidden">
         <!-- Enhanced Background Elements -->
         <div class="absolute inset-0 pointer-events-none">
             <div class="absolute top-0 right-0 w-64 h-1 bg-black opacity-20 animate-pulse"></div>
@@ -107,17 +107,15 @@
 
         <div class="relative z-10 max-w-screen-xl mx-auto px-6">
             {{-- Enhanced Features Section --}}
-            <div class="text-center mb-16" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-16">
                 <div class="flex items-center justify-center gap-4 mb-4">
                     <div class="w-12 h-0.5 bg-black transform origin-left scale-x-0 animate-slide-in"></div>
-                    <span class="text-xs font-bold uppercase tracking-[0.3em] text-gray-600 opacity-0 animate-fade-in-up"
-                        style="animation-delay: 0.3s;">
+                    <span class="text-xs font-bold uppercase tracking-[0.3em] text-gray-600">
                         WHY CHOOSE BOOKBEE
                     </span>
                     <div class="w-12 h-0.5 bg-black transform origin-right scale-x-0 animate-slide-in-right"></div>
                 </div>
-                <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-black opacity-0 animate-fade-in-up"
-                    style="animation-delay: 0.5s;">
+                <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-black">
                     IMPOSSIBLE IS NOTHING
                 </h2>
             </div>
@@ -125,8 +123,7 @@
             <!-- Enhanced Features Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <!-- Feature 1: Free Shipping -->
-                <div class="group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2"
-                    data-aos="fade-up" data-aos-delay="200">
+                <div class="feature-card group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
                     <!-- Enhanced geometric background -->
                     <div
                         class="absolute top-0 right-0 w-16 h-16 bg-red-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-red-100 group-hover:scale-110 transition-all duration-500">
@@ -170,8 +167,7 @@
                 </div>
 
                 <!-- Feature 2: Quality -->
-                <div class="group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2"
-                    data-aos="fade-up" data-aos-delay="300">
+                <div class="feature-card group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
                     <div
                         class="absolute top-0 right-0 w-16 h-16 bg-yellow-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-yellow-100 group-hover:scale-110 transition-all duration-500">
                     </div>
@@ -208,8 +204,7 @@
                 </div>
 
                 <!-- Feature 3: Daily Offers -->
-                <div class="group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2"
-                    data-aos="fade-up" data-aos-delay="400">
+                <div class="feature-card group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
                     <div
                         class="absolute top-0 right-0 w-16 h-16 bg-pink-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-pink-100 group-hover:scale-110 transition-all duration-500">
                     </div>
@@ -246,8 +241,7 @@
                 </div>
 
                 <!-- Feature 4: Secure Payment -->
-                <div class="group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2"
-                    data-aos="fade-up" data-aos-delay="500">
+                <div class="feature-card group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
                     <div
                         class="absolute top-0 right-0 w-16 h-16 bg-blue-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-blue-100 group-hover:scale-110 transition-all duration-500">
                     </div>
@@ -286,7 +280,7 @@
 
             <!-- Enhanced Stats Section -->
             @if(isset($statistics) && $statistics['has_real_data'])
-            <div class="mt-20 pt-16 border-t border-gray-200" data-aos="fade-up" data-aos-delay="600">
+            <div class="stats-section mt-20 pt-16 border-t border-gray-200">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                     <div class="space-y-2 group cursor-pointer">
                         <div class="text-3xl md:text-4xl font-black text-black counter-animate group-hover:text-red-500 transition-colors duration-300"
@@ -348,7 +342,7 @@
             </div>
             @elseif(isset($statistics))
             <!-- Stats Section when no real data available -->
-            <div class="mt-20 pt-16 border-t border-gray-200" data-aos="fade-up" data-aos-delay="600">
+            <div class="mt-20 pt-16 border-t border-gray-200">
                 <div class="text-center mb-8">
                     <div class="flex items-center justify-center gap-4 mb-4">
                         <div class="w-12 h-0.5 bg-black opacity-20"></div>
@@ -387,8 +381,10 @@
             <!-- Category Tabs -->
             <div class="flex gap-0 mb-12 overflow-x-auto">
                 @foreach ($categories as $index => $category)
-                    <button class="tab-button flex-shrink-0 {{ $index === 0 ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200' }} px-8 py-4 font-bold text-sm uppercase tracking-wider transition-colors"
-                            data-tab="tab-{{ $category->id }}">
+                    <button type="button" 
+                            class="tab-button flex-shrink-0 px-8 py-4 font-bold text-sm uppercase tracking-wider transition-all duration-300 cursor-pointer select-none {{ $index === 0 ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200' }}"
+                            data-tab="tab-tab-{{ $category->id }}"
+                            style="pointer-events: auto; user-select: none; -webkit-tap-highlight-color: transparent;">
                         {{ $category->name }}
                     </button>
                 @endforeach
@@ -876,112 +872,56 @@
 @endsection
 
 @push('scripts')
-    <script>
-        // XEM THÊM / THU GỌN functionality for books
-        document.addEventListener('DOMContentLoaded', function() {
-            const showMoreBtn = document.getElementById('showMoreBooks');
-            const showLessBtn = document.getElementById('showLessBooks');
-            const bookItems = document.querySelectorAll('.book-item');
-            
-            // Sale books expand/collapse functionality
-            const showMoreSaleBtn = document.getElementById('showMoreSaleBooks');
-            const showLessSaleBtn = document.getElementById('showLessSaleBooks');
-            const saleBookItems = document.querySelectorAll('.sale-book-item');
-            
-            if (showMoreBtn) {
-                showMoreBtn.addEventListener('click', function() {
-                    // Show all hidden books
-                    bookItems.forEach(function(item, index) {
-                        if (index >= 8) {
-                            item.classList.remove('hidden');
-                        }
-                    });
-                    
-                    // Toggle buttons
-                    showMoreBtn.classList.add('hidden');
-                    showLessBtn.classList.remove('hidden');
-                    
-                    // Smooth scroll to show the newly revealed books
-                    setTimeout(function() {
-                        if (bookItems[8]) {
-                            bookItems[8].scrollIntoView({ 
-                                behavior: 'smooth', 
-                                block: 'nearest' 
-                            });
-                        }
-                    }, 100);
-                });
+    <style>
+        /* Enhanced tab styling for better interaction */
+        .tab-button {
+            position: relative;
+            border: none;
+            outline: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform, box-shadow;
+        }
+        
+        .tab-button:active {
+            transform: translateY(1px);
+        }
+        
+        .tab-button:focus {
+            outline: 2px solid rgba(0, 0, 0, 0.1);
+            outline-offset: 2px;
+        }
+        
+        .tab-content {
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+        }
+        
+        .tab-content.hidden {
+            display: none !important;
+        }
+        
+        .tab-content.block {
+            display: block !important;
+        }
+        
+        /* Prevent text selection on buttons */
+        .tab-button {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Ripple effect animation */
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
             }
-            
-            if (showLessBtn) {
-                showLessBtn.addEventListener('click', function() {
-                    // Hide books after index 7 (keep first 8 books)
-                    bookItems.forEach(function(item, index) {
-                        if (index >= 8) {
-                            item.classList.add('hidden');
-                        }
-                    });
-                    
-                    // Toggle buttons
-                    showLessBtn.classList.add('hidden');
-                    showMoreBtn.classList.remove('hidden');
-                    
-                    // Smooth scroll back to the section
-                    document.getElementById('allBooksGrid').scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'start' 
-                    });
-                });
-            }
-            
-            // Sale books expand functionality
-            if (showMoreSaleBtn) {
-                showMoreSaleBtn.addEventListener('click', function() {
-                    // Show all hidden sale books
-                    saleBookItems.forEach(function(item, index) {
-                        if (index >= 8) {
-                            item.classList.remove('hidden');
-                        }
-                    });
-                    
-                    // Toggle buttons
-                    showMoreSaleBtn.classList.add('hidden');
-                    showLessSaleBtn.classList.remove('hidden');
-                    
-                    // Smooth scroll to show the newly revealed books
-                    setTimeout(function() {
-                        if (saleBookItems[8]) {
-                            saleBookItems[8].scrollIntoView({ 
-                                behavior: 'smooth', 
-                                block: 'nearest' 
-                            });
-                        }
-                    }, 100);
-                });
-            }
-            
-            // Sale books collapse functionality
-            if (showLessSaleBtn) {
-                showLessSaleBtn.addEventListener('click', function() {
-                    // Hide books after index 7 (keep first 8 books)
-                    saleBookItems.forEach(function(item, index) {
-                        if (index >= 8) {
-                            item.classList.add('hidden');
-                        }
-                    });
-                    
-                    // Toggle buttons
-                    showLessSaleBtn.classList.add('hidden');
-                    showMoreSaleBtn.classList.remove('hidden');
-                    
-                    // Smooth scroll back to the section
-                    document.getElementById('saleBooksGrid').scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'start' 
-                    });
-                });
-            }
-        });
-    </script>
+        }
+    </style>
+
     <script src="{{ asset('js/home.js') }}"></script>
 @endpush
