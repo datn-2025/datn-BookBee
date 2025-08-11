@@ -4,9 +4,11 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/home.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=AdihausDIN:wght@400;700&family=TitilliumWeb:wght@300;400;600;700&display=swap" rel="stylesheet">
 @endpush
 
 @section('content')
+<div class="bookbee-home-page">
     <section class="w-full bg-white py-32 md:py-40 relative overflow-hidden">
         <!-- Background Elements - Minimal Adidas Style -->
         <div class="absolute inset-0 pointer-events-none">
@@ -30,7 +32,7 @@
                 </div>
 
                 <!-- Tiêu đề chính - Typography đậm đà -->
-                <h2 class="text-5xl md:text-7xl font-black uppercase leading-[0.9] tracking-tight text-black">
+                <h2 class="hero-title text-5xl md:text-7xl font-black uppercase leading-[0.9] tracking-tight text-black">
                     <span class="block">TRI THỨC</span>
                     <span class="block text-amber-600">KHÔNG</span>
                     <span class="block">GIỚI HẠN</span>
@@ -38,7 +40,7 @@
 
                 <!-- Phụ đề -->
                 <div class="space-y-4">
-                    <p class="text-xl md:text-2xl font-medium text-gray-700 max-w-lg">
+                    <p class="body-text text-xl md:text-2xl font-medium text-gray-700 max-w-lg">
                         Bộ sưu tập sách đặc biệt với tri thức không giới hạn dành cho mọi lứa tuổi
                     </p>
 
@@ -55,7 +57,7 @@
                 <!-- Nút hành động - Kiểu vuông -->
                 <div class="pt-4">
                     <a href="#"
-                        class="group bg-amber-600 text-white px-10 py-4 font-bold text-sm uppercase tracking-[0.1em] hover:bg-amber-700 transition-all duration-300 flex items-center gap-3 w-max">
+                        class="group bg-amber-600 text-white px-10 py-4 font-bold text-sm uppercase tracking-[0.1em] hover:bg-amber-700 transition-all duration-300 flex items-center gap-3 w-max button-text">
                         <i class="fas fa-search text-white"></i>
                         <span>KHÁM PHÁ NGAY</span>
                         <div class="w-4 h-0.5 bg-white transform group-hover:w-8 transition-all duration-300"></div>
@@ -119,7 +121,7 @@
                     </span>
                     <div class="w-12 h-0.5 bg-slate-600 transform origin-right scale-x-0 animate-slide-in-right"></div>
                 </div>
-                <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-black">
+                <h2 class="section-title text-3xl md:text-4xl font-black uppercase tracking-tight text-black">
                     UY TÍN - CHẤT LƯỢNG - TẬN TÂM
                 </h2>
             </div>
@@ -152,7 +154,7 @@
 
                         <!-- Enhanced Content -->
                         <h3
-                            class="text-lg font-bold uppercase tracking-wide text-black mb-2 group-hover:text-slate-600 transition-colors duration-300">
+                            class="feature-title text-lg font-bold uppercase tracking-wide text-black mb-2 group-hover:text-slate-600 transition-colors duration-300">
                             GIAO HÀNG MIỄN PHÍ
                         </h3>
                         <div
@@ -190,7 +192,7 @@
                         </div>
 
                         <h3
-                            class="text-lg font-bold uppercase tracking-wide text-black mb-2 group-hover:text-blue-600 transition-colors duration-300">
+                            class="feature-title text-lg font-bold uppercase tracking-wide text-black mb-2 group-hover:text-blue-600 transition-colors duration-300">
                             CAM KẾT CHẤT LƯỢNG
                         </h3>
                         <div
@@ -227,7 +229,7 @@
                         </div>
 
                         <h3
-                            class="text-lg font-bold uppercase tracking-wide text-black mb-2 group-hover:text-amber-600 transition-colors duration-300">
+                            class="feature-title text-lg font-bold uppercase tracking-wide text-black mb-2 group-hover:text-amber-600 transition-colors duration-300">
                             ƯU ĐÃI MỖI NGÀY
                         </h3>
                         <div
@@ -264,7 +266,7 @@
                         </div>
 
                         <h3
-                            class="text-lg font-bold uppercase tracking-wide text-black mb-2 group-hover:text-slate-600 transition-colors duration-300">
+                            class="feature-title text-lg font-bold uppercase tracking-wide text-black mb-2 group-hover:text-slate-600 transition-colors duration-300">
                             THANH TOÁN AN TOÀN
                         </h3>
                         <div
@@ -377,7 +379,7 @@
                 <div class="flex items-center gap-4">
                     <div class="w-1 h-12 bg-amber-600"></div>
                     <div>
-                        <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-black">DANH MỤC SÁCH</h2>
+                        <h2 class="section-title text-3xl md:text-4xl font-black uppercase tracking-tight text-black">DANH MỤC SÁCH</h2>
                         <div class="w-16 h-0.5 bg-amber-600 mt-2"></div>
                     </div>
                 </div>
@@ -441,7 +443,7 @@
                                 
                                 <!-- Content -->
                                 <div class="p-4 space-y-2">
-                                    <h3 class="font-bold text-black text-sm uppercase tracking-wide group-hover:opacity-70 transition-opacity">
+                                    <h3 class="book-title font-bold text-black text-sm uppercase tracking-wide group-hover:opacity-70 transition-opacity">
                                         {{ Str::limit($book->title, 40) }}
                                     </h3>
                                     <p class="text-xs text-gray-500 uppercase tracking-wider">
@@ -475,7 +477,7 @@
                 <div class="flex items-center gap-4">
                     <div class="w-1 h-12 bg-slate-600"></div>
                     <div>
-                        <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-black">TẤT CẢ SÁCH</h2>
+                        <h2 class="section-title text-3xl md:text-4xl font-black uppercase tracking-tight text-black">TẤT CẢ SÁCH</h2>
                         <div class="w-16 h-0.5 bg-slate-600 mt-2"></div>
                     </div>
                 </div>
@@ -524,7 +526,7 @@
                         
                         <!-- Content -->
                         <div class="p-4 space-y-2">
-                            <h3 class="font-bold text-black text-sm uppercase tracking-wide group-hover:opacity-70 transition-opacity">
+                            <h3 class="book-title font-bold text-black text-sm uppercase tracking-wide group-hover:opacity-70 transition-opacity">
                                 {{ Str::limit($book->title, 40) }}
                             </h3>
                             <p class="text-xs text-gray-500 uppercase tracking-wider">
@@ -572,7 +574,7 @@
                 <div class="flex items-center gap-4">
                     <div class="w-1 h-12 bg-amber-600"></div>
                     <div>
-                        <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-black">SÁCH BÁN CHẠY</h2>
+                        <h2 class="section-title text-3xl md:text-4xl font-black uppercase tracking-tight text-black">SÁCH BÁN CHẠY</h2>
                         <div class="w-16 h-0.5 bg-amber-600 mt-2"></div>
                     </div>
                 </div>
@@ -596,7 +598,7 @@
                                 <i class="fas fa-fire mr-1"></i>
                                 BÁN CHẠY
                             </span>
-                            <h3 class="text-xl font-bold uppercase tracking-tight">{{ Str::limit($featuredBooks->first()->title, 40) }}</h3>
+                            <h3 class="book-title text-xl font-bold uppercase tracking-tight">{{ Str::limit($featuredBooks->first()->title, 40) }}</h3>
                             <div class="flex items-center justify-between">
                                 @php
                                     $format = $featuredBooks->first()->formats->first();
@@ -618,7 +620,7 @@
                 <!-- Latest Books -->
                 <div class="bg-white border-2 border-gray-200 p-6 h-[600px] flex flex-col">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-bold uppercase tracking-wide">
+                        <h3 class="feature-title text-lg font-bold uppercase tracking-wide">
                             <i class="fas fa-star text-yellow-500 mr-2"></i>
                             MỚI NHẤT
                         </h3>
@@ -646,7 +648,7 @@
                 <!-- Best Reviewed -->
                 <div class="bg-white border-2 border-gray-200 p-6 h-[600px] flex flex-col">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-bold uppercase tracking-wide">
+                        <h3 class="feature-title text-lg font-bold uppercase tracking-wide">
                             <i class="fas fa-medal text-amber-500 mr-2"></i>
                             ĐÁNH GIÁ CAO
                         </h3>
@@ -691,7 +693,7 @@
                         <div class="flex items-center gap-4">
                             <div class="w-1 h-12 bg-red-600"></div>
                             <div>
-                                <h3 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-red-600">GIẢM GIÁ ĐẶC BIỆT</h3>
+                                <h3 class="section-title text-3xl md:text-4xl font-black uppercase tracking-tight text-red-600">GIẢM GIÁ ĐẶC BIỆT</h3>
                                 <div class="w-16 h-0.5 bg-red-600 mt-2"></div>
                             </div>
                         </div>
@@ -792,7 +794,7 @@
                 <div class="flex items-center gap-4">
                     <div class="w-1 h-12 bg-purple-600"></div>
                     <div>
-                        <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-black">COMBO SÁCH</h2>
+                        <h2 class="section-title text-3xl md:text-4xl font-black uppercase tracking-tight text-black">COMBO SÁCH</h2>
                         <div class="w-16 h-0.5 bg-purple-600 mt-2"></div>
                     </div>
                 </div>
@@ -844,7 +846,7 @@
                 <div class="flex items-center gap-4">
                     <div class="w-1 h-12 bg-indigo-600"></div>
                     <div>
-                        <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-black">TIN TỨC</h2>
+                        <h2 class="section-title text-3xl md:text-4xl font-black uppercase tracking-tight text-black">TIN TỨC</h2>
                         <div class="w-16 h-0.5 bg-indigo-600 mt-2"></div>
                     </div>
                 </div>
@@ -901,13 +903,13 @@
             <!-- Newsletter Subscription -->
             <div class="mt-16 bg-black text-white p-8">
                 <div class="text-center max-w-2xl mx-auto">
-                    <h3 class="text-2xl font-bold uppercase tracking-wide mb-4">ĐĂNG KÝ NHẬN TIN</h3>
-                    <p class="text-white/80 mb-8">Nhận thông tin mới nhất về sách và ưu đãi đặc biệt</p>
+                    <h3 class="section-title text-2xl font-bold uppercase tracking-wide mb-4">ĐĂNG KÝ NHẬN TIN</h3>
+                    <p class="body-text text-white/80 mb-8">Nhận thông tin mới nhất về sách và ưu đãi đặc biệt</p>
                     <form class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
                         <input type="email" placeholder="Email của bạn"
                             class="flex-1 px-6 py-4 bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:border-white/40">
                         <button type="submit"
-                            class="bg-indigo-600 text-white px-8 py-4 font-bold text-sm uppercase tracking-wider hover:bg-indigo-700 transition-colors">
+                            class="button-text bg-indigo-600 text-white px-8 py-4 font-bold text-sm uppercase tracking-wider hover:bg-indigo-700 transition-colors">
                             <i class="fas fa-envelope mr-2"></i>
                             ĐĂNG KÝ
                         </button>
@@ -916,10 +918,68 @@
             </div>
         </div>
     </section>
+</div>
 @endsection
 
 @push('scripts')
     <style>
+        /* BookBee Home Page - Font Styling */
+        .bookbee-home-page {
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+        }
+
+        .bookbee-home-page h1,
+        .bookbee-home-page h2,
+        .bookbee-home-page h3,
+        .bookbee-home-page h4,
+        .bookbee-home-page h5,
+        .bookbee-home-page h6 {
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+            font-weight: 700;
+        }
+
+        .bookbee-home-page .hero-title {
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .bookbee-home-page .section-title {
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .bookbee-home-page .book-title {
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .bookbee-home-page .feature-title {
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+        }
+
+        .bookbee-home-page .button-text {
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+        }
+
+        .bookbee-home-page .body-text {
+            font-family: 'TitilliumWeb', sans-serif;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+        .bookbee-home-page .subtitle-text {
+            font-family: 'TitilliumWeb', sans-serif;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+        }
+
         /* Enhanced tab styling for better interaction */
         .tab-button {
             position: relative;
@@ -930,6 +990,8 @@
             appearance: none;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             will-change: transform, box-shadow;
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+            font-weight: 600;
         }
         
         .tab-button:active {
