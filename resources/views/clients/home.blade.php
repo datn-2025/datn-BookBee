@@ -392,7 +392,7 @@
 
             <!-- Content Tabs -->
             @foreach ($categories as $index => $category)
-                <div id="tab-tab-{{ $category->id }}" class="tab-content {{ $index === 0 ? 'block' : 'hidden' }}">
+                <div id="tab-{{ $category->id }}" class="tab-content {{ $index === 0 ? 'block' : 'hidden' }}">
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         @foreach ($category->books as $book)
                             @php
@@ -400,6 +400,11 @@
                                 $price = $format->price ?? 0;
                                 $discount = $format->discount ?? 0;
                                 $finalPrice = $discount > 0 ? $price - $discount : $price;
+                                
+                                // Check if book has ebook format
+                                $hasEbook = $book->formats->contains(function($format) {
+                                    return stripos($format->format_name, 'ebook') !== false;
+                                });
                             @endphp
                             <div onclick="window.location='{{ route('books.show', ['slug' => $book->slug]) }}'"
                                  class="group bg-white border-2 border-gray-100 hover:border-black transition-all duration-300 cursor-pointer">
@@ -413,6 +418,12 @@
                                     @if ($discount > 0)
                                         <div class="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 text-xs font-bold uppercase">
                                             -{{ number_format($discount) }} đ
+                                        </div>
+                                    @endif
+
+                                    @if ($hasEbook)
+                                        <div class="absolute top-3 right-3 bg-blue-600 text-white px-2 py-1 text-xs font-bold uppercase">
+                                            EBOOK
                                         </div>
                                     @endif
                                 </div>
