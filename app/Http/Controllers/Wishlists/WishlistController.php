@@ -55,7 +55,13 @@ class WishlistController extends Controller
         'updated_at' => now(),
       ]);
 
-      return response()->json(['success' => true]);
+      // Get updated wishlist count
+      $wishlistCount = DB::table('wishlists')->where('user_id', $user->id)->count();
+
+      return response()->json([
+        'success' => true,
+        'wishlist_count' => (int) $wishlistCount
+      ]);
     } catch (\Exception $e) {
       Log::error('Lỗi khi thêm wishlist: ' . $e->getMessage());
       return response()->json([
@@ -121,6 +127,28 @@ class WishlistController extends Controller
     }
   }
 
+  /**
+   * Get wishlist item count for AJAX requests
+   */
+  public function getWishlistCount()
+  {
+    try {
+      if (!Auth::check()) {
+        return response()->json(['count' => 0]);
+      }
+
+      $user = Auth::user();
+      $count = DB::table('wishlists')
+        ->where('user_id', $user->id)
+        ->count();
+
+      return response()->json(['count' => (int) $count]);
+    } catch (\Exception $e) {
+      Log::error('Lỗi khi lấy số lượng wishlist: ' . $e->getMessage());
+      return response()->json(['count' => 0]);
+    }
+  }
+
 
   public function delete(Request $request)
   {
@@ -148,7 +176,13 @@ class WishlistController extends Controller
         ->delete();
 
       if ($deleted) {
-        return response()->json(['success' => true]);
+        // Get updated wishlist count
+        $wishlistCount = DB::table('wishlists')->where('user_id', $user->id)->count();
+        
+        return response()->json([
+          'success' => true,
+          'wishlist_count' => (int) $wishlistCount
+        ]);
       } else {
         return response()->json([
           'success' => false,
@@ -188,7 +222,8 @@ class WishlistController extends Controller
 
       return response()->json([
         'success' => $deleted > 0,
-        'message' => $deleted > 0 ? 'Đã xóa tất cả' : 'Không có sách nào để xóa'
+        'message' => $deleted > 0 ? 'Đã xóa tất cả' : 'Không có sách nào để xóa',
+        'wishlist_count' => 0 // After deleting all, count is always 0
       ]);
     } catch (\Exception $e) {
       Log::error('Lỗi khi xóa tất cả wishlist: ' . $e->getMessage());

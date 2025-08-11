@@ -576,7 +576,7 @@ class CartController extends Controller
                     ]);
 
                 // Get updated cart count
-                $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                $cartCount = DB::table('carts')->where('user_id', Auth::id())->count();
 
                 return response()->json([
                     'success' => 'Đã thêm ' . $quantity . ' sản phẩm "' . $bookInfo->title . '" vào giỏ hàng',
@@ -604,7 +604,7 @@ class CartController extends Controller
                     ]);
 
                     // Get updated cart count
-                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->count();
 
                     return response()->json([
                         'success' => 'Đã thêm sản phẩm "' . $bookInfo->title . '" vào giỏ hàng',
@@ -856,7 +856,7 @@ class CartController extends Controller
                     Log::info('Cart update result:', ['affected_rows' => $updateResult]);
 
                     // Get updated cart count
-                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->count();
 
                     Log::info('Cart count calculated:', ['cart_count' => $cartCount]);
 
@@ -930,7 +930,7 @@ class CartController extends Controller
                 Log::info('Insert result:', ['success' => $result]);
 
                 // Get updated cart count
-                $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                $cartCount = DB::table('carts')->where('user_id', Auth::id())->count();
 
                 Log::info('Cart count after insert:', ['cart_count' => $cartCount]);
 
@@ -1067,7 +1067,7 @@ class CartController extends Controller
                         ]);
 
                     // Lấy số lượng cart đã cập nhật
-                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->count();
 
                     return response()->json([
                         'success' => 'Đã cập nhật số lượng combo',
@@ -1087,7 +1087,7 @@ class CartController extends Controller
                         ->delete();
 
                     if ($deletedCount > 0) {
-                        $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                        $cartCount = DB::table('carts')->where('user_id', Auth::id())->count();
                         return response()->json([
                             'success' => 'Đã xóa combo khỏi giỏ hàng',
                             'cart_count' => (int) $cartCount
@@ -1238,7 +1238,7 @@ class CartController extends Controller
                     ]);
 
                     // Lấy số lượng cart đã cập nhật
-                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->count();
 
                     return response()->json([
                         'success' => 'Sách điện tử luôn có số lượng cố định là 1',
@@ -1327,7 +1327,7 @@ class CartController extends Controller
                             'updated_at' => now()
                         ]);
                         // Lấy số lượng cart đã cập nhật
-                        $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                        $cartCount = DB::table('carts')->where('user_id', Auth::id())->count();
                         // dd($cartCount);
 
                         return response()->json([
@@ -1372,7 +1372,7 @@ class CartController extends Controller
                         $deletedCount = $deleteQuery->delete();
 
                         if ($deletedCount > 0) {
-                            $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                            $cartCount = DB::table('carts')->where('user_id', Auth::id())->count();
                             return response()->json([
                                 'success' => 'Đã xóa sản phẩm khỏi giỏ hàng',
                                 'cart_count' => (int) $cartCount
@@ -1419,7 +1419,7 @@ class CartController extends Controller
                     ->delete();
 
                 if ($deletedCount > 0) {
-                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->sum('quantity');
+                    $cartCount = DB::table('carts')->where('user_id', Auth::id())->count();
                     Log::info('Combo removed successfully:', [
                         'deleted_count' => $deletedCount,
                         'remaining_cart_count' => $cartCount
@@ -1812,12 +1812,12 @@ class CartController extends Controller
 
         $user = Auth::user();
 
-        // Tính tổng tất cả số lượng trong giỏ hàng cho user này
-        $totalCount = DB::table('carts')
+        // Đếm số loại sản phẩm khác nhau trong giỏ hàng (không phải tổng số lượng)
+        $distinctCount = DB::table('carts')
             ->where('user_id', $user->id)
-            ->sum('quantity');
+            ->count();
 
-        return response()->json(['count' => (int) $totalCount]);
+        return response()->json(['count' => (int) $distinctCount]);
     }
 
     /**
