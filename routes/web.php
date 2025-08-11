@@ -505,7 +505,7 @@ Route::prefix('ebook-refund')->name('ebook-refund.')->middleware('auth')->group(
 });
 
 // AI Summary routes
-Route::prefix('ai-summary')->name('ai-summary.')->group(function () {
+Route::prefix('ai-summary')->name('ai-summary.')->middleware(['web'])->group(function () {
     // Book AI Summary routes
     Route::post('/generate/{book}', [App\Http\Controllers\AISummaryController::class, 'generateSummary'])->name('generate');
     Route::get('/get/{book}', [App\Http\Controllers\AISummaryController::class, 'getSummary'])->name('get');
