@@ -444,7 +444,6 @@ const CartProducts = {
             requestData.is_combo = false;
         }
 
-        console.log('Sending update request:', requestData);
 
         // Send AJAX request
         $.ajax({
