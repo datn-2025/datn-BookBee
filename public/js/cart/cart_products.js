@@ -377,13 +377,6 @@ const CartProducts = {
         const collectionId = cartItem.dataset.collectionId || input.dataset.collectionId;
         const oldQuantity = parseInt(input.dataset.lastValue) || 1;
 
-        console.log('UpdateQuantity Debug:', {
-            cartId: cartId,
-            isCombo: isCombo,
-            bookId: bookId,
-            collectionId: collectionId,
-            newQuantity: newQuantity
-        });
 
         // Validate quantity
         const minValue = parseInt(input.min) || 1;
