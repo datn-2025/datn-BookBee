@@ -8,6 +8,7 @@ use App\Models\OrderStatus;
 use App\Models\PaymentStatus;
 use App\Models\Voucher;
 use App\Models\OrderItemAttributeValue;
+use App\Models\BookAttributeValue;
 use App\Models\Address;
 use App\Models\User;
 use App\Models\PaymentMethod;
@@ -516,6 +517,9 @@ class OrderService
 
         // Cập nhật tồn kho từ book_format (không phải từ book)
         $cartItem->bookFormat->decrement('stock', $cartItem->quantity);
+        
+        // ✨ THÊM MỚI: Trừ stock thuộc tính sản phẩm
+        $this->decreaseAttributeStock($cartItem);
 
         Log::info('Created book order item:', [
             'order_item_id' => $orderItem->id,
@@ -524,6 +528,53 @@ class OrderService
         ]);
 
         return $orderItem;
+    }
+
+    /**
+     * Trừ stock thuộc tính sản phẩm
+     */
+    private function decreaseAttributeStock($cartItem)
+    {
+        $attributeValueIds = $cartItem->attribute_value_ids ?? [];
+        
+        if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
+            foreach ($attributeValueIds as $attributeValueId) {
+                if ($attributeValueId) {
+                    $bookAttributeValue = BookAttributeValue::where('book_id', $cartItem->book_id)
+                        ->where('attribute_value_id', $attributeValueId)
+                        ->first();
+                    
+                    if ($bookAttributeValue) {
+                        // Kiểm tra stock đủ trước khi trừ
+                        if ($bookAttributeValue->stock >= $cartItem->quantity) {
+                            $bookAttributeValue->decrement('stock', $cartItem->quantity);
+                            
+                            Log::info('Decreased attribute stock:', [
+                                'book_id' => $cartItem->book_id,
+                                'attribute_value_id' => $attributeValueId,
+                                'quantity_decreased' => $cartItem->quantity,
+                                'remaining_stock' => $bookAttributeValue->fresh()->stock
+                            ]);
+                        } else {
+                            Log::warning('Insufficient attribute stock:', [
+                                'book_id' => $cartItem->book_id,
+                                'attribute_value_id' => $attributeValueId,
+                                'available_stock' => $bookAttributeValue->stock,
+                                'requested_quantity' => $cartItem->quantity
+                            ]);
+                            
+                            // Có thể throw exception hoặc xử lý theo business logic
+                            throw new \Exception("Không đủ tồn kho cho thuộc tính sản phẩm (ID: {$attributeValueId})");
+                        }
+                    } else {
+                        Log::warning('BookAttributeValue not found:', [
+                            'book_id' => $cartItem->book_id,
+                            'attribute_value_id' => $attributeValueId
+                        ]);
+                    }
+                }
+            }
+        }
     }
 
     /**

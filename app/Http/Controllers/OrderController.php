@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\OrderCancellation; // Added for order cancellation
 use App\Models\OrderItemAttributeValue; // Added for order item attributes
+use App\Models\BookAttributeValue;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
@@ -591,6 +592,9 @@ class OrderController extends Controller
                     Log::info("Cộng lại tồn kho cho book_format_id {$item->bookFormat->id}, số lượng: {$item->quantity}");
                     $item->bookFormat->increment('stock', $item->quantity);
                 }
+                
+                // ✨ THÊM MỚI: Cộng lại stock thuộc tính sản phẩm
+                $this->increaseAttributeStock($item);
             });
 
 
@@ -970,6 +974,27 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error generating QR code: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Cộng lại stock thuộc tính sản phẩm khi hủy đơn hàng
+     */
+    private function increaseAttributeStock($orderItem)
+    {
+        // Lấy thuộc tính từ OrderItemAttributeValue
+        $orderItemAttributes = $orderItem->orderItemAttributeValues;
+        
+        if ($orderItemAttributes && $orderItemAttributes->count() > 0) {
+            foreach ($orderItemAttributes as $orderItemAttribute) {
+                $bookAttributeValue = BookAttributeValue::where('book_id', $orderItem->book_id)
+                    ->where('attribute_value_id', $orderItemAttribute->attribute_value_id)
+                    ->first();
+                
+                if ($bookAttributeValue) {
+                    $bookAttributeValue->increment('stock', $orderItem->quantity);
+                }
+            }
         }
     }
 }

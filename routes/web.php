@@ -176,6 +176,7 @@ Route::middleware('auth')->group(function () {
             Route::put('/{id}', [OrderClientController::class, 'update'])->name('update');
             Route::put('/{id}/cancel', [OrderClientController::class, 'cancel'])->name('cancel');
             Route::delete('/{id}', [OrderClientController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/confirm-received', [OrderClientController::class, 'confirmReceived'])->name('confirm-received');
 
             // Refund routes
             Route::get('/{order}/refund', [RefundController::class, 'create'])->name('refund.create');
