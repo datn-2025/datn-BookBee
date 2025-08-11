@@ -66,6 +66,29 @@
                     </div>
                 </div>
 
+                @if($refund->images && count($refund->images) > 0)
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Hình ảnh minh chứng:</label>
+                        <div class="row g-3">
+                            @foreach($refund->images as $image)
+                            <div class="col-md-3 col-sm-4 col-6">
+                                <div class="position-relative">
+                                    <img src="{{ asset('storage/' . $image) }}" 
+                                         alt="Hình minh chứng" 
+                                         class="img-fluid rounded border cursor-pointer hover-zoom"
+                                         style="aspect-ratio: 1; object-fit: cover; transition: transform 0.3s ease;"
+                                         onclick="openImageModal('{{ asset('storage/' . $image) }}')">
+                                    <div class="position-absolute top-50 start-50 translate-middle opacity-0 hover-icon" 
+                                         style="pointer-events: none; transition: opacity 0.3s ease;">
+                                        <i class="fas fa-search-plus text-white fs-4"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 @if($refund->bank_name || $refund->account_number || $refund->account_holder)
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Thông tin tài khoản nhận hoàn tiền:</label>
@@ -271,5 +294,61 @@ $(document).ready(function() {
         }
     });
 });
+
+// Image modal functions
+function openImageModal(imageSrc) {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    modalImage.src = imageSrc;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside the image
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('imageModal');
+    if (e.target === modal) {
+        closeImageModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImageModal();
+    }
+});
+
+// Hover effects for images
+document.addEventListener('DOMContentLoaded', function() {
+    const images = document.querySelectorAll('.hover-zoom');
+    images.forEach(img => {
+        img.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+            this.nextElementSibling.style.opacity = '1';
+        });
+        img.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+            this.nextElementSibling.style.opacity = '0';
+        });
+    });
+});
 </script>
+
+<!-- Image Modal -->
+<div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+    <div style="position: relative; max-width: 90%; max-height: 90%;">
+        <button onclick="closeImageModal()" style="position: absolute; top: -40px; right: 0; background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 5px;">
+            <i class="fas fa-times"></i>
+        </button>
+        <img id="modalImage" src="" alt="Hình ảnh phóng to" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">
+    </div>
+</div>
+
 @endpush

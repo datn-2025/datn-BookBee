@@ -895,17 +895,80 @@
                                     </div>
 
                                     <!-- Comment -->
-                                    <div class="relative">
-                                        <div
-                                            class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-400 to-black">
+                                        <div class="relative">
+                                            <div
+                                                class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-400 to-black">
+                                            </div>
+                                            <div class="pl-6">
+                                                <p class="text-gray-800 leading-relaxed font-medium review-comment">{{ $review->comment }}</p>
+                                            </div>
                                         </div>
-                                        <div class="pl-6">
-                                            <p class="text-gray-800 leading-relaxed font-medium">{{ $review->comment }}</p>
-                                        </div>
-                                    </div>
 
-                                    <!-- Product Info & Format -->
-                                    <div class="mt-4 p-3 bg-gray-50 border-l-4 border-black">
+                                        <!-- Review Images -->
+                                        @if($review->images && count($review->images) > 0)
+                                            <div class="mt-4">
+                                                <div class="text-xs text-gray-600 mb-2 uppercase tracking-wider font-semibold">
+                                                    ẢNH ĐÁNH GIÁ
+                                                </div>
+                                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                    @foreach($review->images as $imagePath)
+                                                        <div class="relative group cursor-pointer review-image" onclick="showReviewImageModal('{{ asset('storage/' . $imagePath) }}')">
+                                                            <img src="{{ asset('storage/' . $imagePath) }}" 
+                                                                 alt="Review Image" 
+                                                                 class="w-full h-20 object-cover border border-gray-300 group-hover:border-black transition-colors duration-200">
+                                                            <div class="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-90 transition-all duration-200 flex items-center justify-center">
+                                                                <i class="fas fa-expand-alt text-black opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-lg"></i>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                        <!-- Admin Response -->
+                                        @if($review->admin_response)
+                                            <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-r-lg admin-response">
+                                                <div class="flex items-center space-x-2 mb-2">
+                                                    <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center">
+                                                        <i class="fas fa-reply text-xs"></i>
+                                                    </div>
+                                                    <span class="text-xs text-blue-700 uppercase tracking-wider font-bold">
+                                                        PHẢN HỒI TỪ BOOKBEE
+                                                    </span>
+                                                </div>
+                                                <div class="pl-8">
+                                                    <p class="text-gray-700 leading-relaxed font-medium italic">{{ $review->admin_response }}</p>
+                                                    <div class="mt-2 text-xs text-gray-500">
+                                                        <i class="fas fa-clock mr-1"></i>
+                                                        {{ $review->updated_at->format('d/m/Y H:i') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                        <!-- Admin Response -->
+                                        @if($review->admin_response)
+                                            <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-r-lg admin-response">
+                                                <div class="flex items-center space-x-2 mb-2">
+                                                    <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center">
+                                                        <i class="fas fa-reply text-xs"></i>
+                                                    </div>
+                                                    <span class="text-xs text-blue-700 uppercase tracking-wider font-bold">
+                                                        PHẢN HỒI TỪ BOOKBEE
+                                                    </span>
+                                                </div>
+                                                <div class="pl-8">
+                                                    <p class="text-gray-700 leading-relaxed font-medium italic">{{ $review->admin_response }}</p>
+                                                    <div class="mt-2 text-xs text-gray-500">
+                                                        <i class="fas fa-clock mr-1"></i>
+                                                        {{ $review->updated_at->format('d/m/Y H:i') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                        <!-- Product Info & Format -->
+                                    <div class="mt-4 p-3 bg-gray-50 border-l-4 border-black product-info">
                                         <div class="flex items-center justify-between">
                                             <div class="flex items-center space-x-3">
                                                 <span class="text-xs text-gray-600 uppercase tracking-wider font-semibold">
@@ -920,7 +983,7 @@
 
                                     <!-- Bottom Accent -->
                                     <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-                                        <div class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider">
+                                        <div class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider verified-badge">
                                             <i class="fas fa-check-circle w-3"></i>
                                             <span>Đánh giá đã xác thực</span>
                                         </div>
@@ -1792,7 +1855,7 @@
                                                 <div class="bg-black text-white px-3 py-1 text-sm font-bold uppercase tracking-wider">
                                                     {{ $review->rating }}/5
                                                 </div>
-                                                <div class="flex text-yellow-400 text-lg">
+                                                <div class="flex text-yellow-400 text-lg star-rating">
                                                     @for ($i = 0; $i < $review->rating; $i++)
                                                         ★
                                                     @endfor
@@ -1807,12 +1870,33 @@
                                                 class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-400 to-black">
                                             </div>
                                             <div class="pl-6">
-                                                <p class="text-gray-800 leading-relaxed font-medium">{{ $review->comment }}</p>
+                                                <p class="text-gray-800 leading-relaxed font-medium review-comment">{{ $review->comment }}</p>
                                             </div>
                                         </div>
 
+                                        <!-- Review Images -->
+                                        @if($review->images && count($review->images) > 0)
+                                            <div class="mt-4">
+                                                <div class="text-xs text-gray-600 mb-2 uppercase tracking-wider font-semibold">
+                                                    ẢNH ĐÁNH GIÁ
+                                                </div>
+                                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                    @foreach($review->images as $imagePath)
+                                                        <div class="relative group cursor-pointer review-image" onclick="showReviewImageModal('{{ asset('storage/' . $imagePath) }}')">
+                                                            <img src="{{ asset('storage/' . $imagePath) }}" 
+                                                                 alt="Review Image" 
+                                                                 class="w-full h-20 object-cover border border-gray-300 group-hover:border-black transition-colors duration-200">
+                                                            <div class="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-90 transition-all duration-200 flex items-center justify-center">
+                                                                <i class="fas fa-expand-alt text-black opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-lg"></i>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
+
                                         <!-- Product Info & Format -->
-                                        <div class="mt-4 p-3 bg-gray-50 border-l-4 border-black">
+                                        <div class="mt-4 p-3 bg-gray-50 border-l-4 border-black product-info">
                                             <div class="flex items-center justify-between">
                                                 <div class="flex items-center space-x-3">
                                                     <span class="text-xs text-gray-600 uppercase tracking-wider font-semibold">
@@ -1836,7 +1920,7 @@
 
                                         <!-- Bottom Accent -->
                                         <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-                                            <div class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider">
+                                            <div class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider verified-badge">
                                                 <i class="fas fa-check-circle w-3"></i>
                                                 <span>Đánh giá đã xác thực</span>
                                             </div>
@@ -3899,5 +3983,218 @@
             }
 
         </script>
+
+        <!-- Review Image Modal -->
+        <div id="reviewImageModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+            <div class="relative max-w-4xl max-h-full p-4">
+                <button onclick="closeReviewImageModal()" class="absolute top-2 right-2 text-white hover:text-gray-300 text-2xl z-10">
+                    <i class="fas fa-times"></i>
+                </button>
+                <img id="reviewModalImage" src="" alt="Review Image" class="max-w-full max-h-full object-contain">
+            </div>
+        </div>
+
+        <script>
+            function showReviewImageModal(imageSrc) {
+                const modal = document.getElementById('reviewImageModal');
+                const modalImage = document.getElementById('reviewModalImage');
+                modalImage.src = imageSrc;
+                modal.classList.remove('hidden');
+            }
+
+            function closeReviewImageModal() {
+                const modal = document.getElementById('reviewImageModal');
+                modal.classList.add('hidden');
+            }
+
+            // Close modal when clicking outside the image
+            document.getElementById('reviewImageModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeReviewImageModal();
+                }
+            });
+
+            // Close modal with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeReviewImageModal();
+                }
+            });
+        </script>
+    @endpush
+
+    @push('styles')
+    <style>
+        /* Enhanced Review Styles */
+        .review-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 12px;
+            overflow: hidden;
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        }
+        
+        .review-card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: translateY(-4px) scale(1.02);
+        }
+        
+        .review-card .bg-black {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            position: relative;
+        }
+        
+        .review-card .bg-black::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* Admin Response Animation */
+        .admin-response {
+            animation: slideInFromLeft 0.6s ease-out;
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #dbeafe 100%);
+            border-left: 4px solid #3b82f6;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+        }
+        
+        @keyframes slideInFromLeft {
+            0% {
+                transform: translateX(-30px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Star Rating Enhancement */
+        .star-rating {
+            filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.3));
+            animation: starGlow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes starGlow {
+            0% { filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.3)); }
+            100% { filter: drop-shadow(0 4px 8px rgba(251, 191, 36, 0.5)); }
+        }
+        
+        /* Image Gallery Enhancement */
+        .review-image {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .review-image::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .review-image:hover {
+            transform: scale(1.08) rotate(1deg);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .review-image:hover::before {
+            opacity: 1;
+            animation: imageShimmer 0.6s ease-out;
+        }
+        
+        @keyframes imageShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* Enhanced Typography */
+        .review-comment {
+            line-height: 1.8;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+        
+        .review-comment::before {
+            content: '"';
+            position: absolute;
+            left: -20px;
+            top: -10px;
+            font-size: 3rem;
+            color: #e5e7eb;
+            font-family: serif;
+        }
+        
+        /* Product Info Enhancement */
+        .product-info {
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-left: 4px solid #111827;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .product-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #111827 0%, #6b7280 50%, #111827 100%);
+        }
+        
+        /* Responsive Improvements */
+        @media (max-width: 768px) {
+            .review-card {
+                margin-bottom: 1.5rem;
+                border-radius: 8px;
+            }
+            
+            .review-card .p-6 {
+                padding: 1.25rem;
+            }
+            
+            .review-card:hover {
+                transform: translateY(-2px) scale(1.01);
+            }
+        }
+        
+        /* Loading Animation for Images */
+        .review-image img {
+            transition: opacity 0.3s ease;
+        }
+        
+        .review-image img:not([src]) {
+            opacity: 0;
+        }
+        
+        /* Enhanced Verified Badge */
+        .verified-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+    </style>
     @endpush
 @endsection

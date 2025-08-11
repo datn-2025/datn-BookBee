@@ -14,6 +14,51 @@
                     </div>
 
                     <div class="card-body">
+                        {{-- Thông báo --}}
+                        @if (session('success'))
+                            <div class="alert alert-success">{{ session('success') }}</div>
+                        @endif
+                        @if (session('error'))
+                            <div class="alert alert-danger">{{ session('error') }}</div>
+                        @endif
+
+                        {{-- Nội dung đánh giá và ảnh --}}
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Nội dung đánh giá</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <strong>Bình luận:</strong>
+                                    <p class="mt-2">{{ $review->comment ?: 'Không có bình luận' }}</p>
+                                </div>
+                                @if($review->images && count($review->images) > 0)
+                                    <div class="mb-3">
+                                        <strong>Ảnh đánh giá:</strong>
+                                        <div class="row mt-2">
+                                            @foreach($review->images as $imagePath)
+                                                <div class="col-md-3 col-sm-4 col-6 mb-3">
+                                                    <div class="position-relative">
+                                                        <img src="{{ asset('storage/' . $imagePath) }}" 
+                                                             alt="Review Image" 
+                                                             class="img-fluid rounded shadow-sm" 
+                                                             style="width: 100%; height: 150px; object-fit: cover; cursor: pointer;"
+                                                             onclick="showImageModal('{{ asset('storage/' . $imagePath) }}')"
+                                                             title="Click để xem phóng to">
+                                                        <div class="position-absolute top-0 end-0 m-1">
+                                                            <span class="badge bg-dark bg-opacity-75">
+                                                                <i class="fas fa-expand-alt"></i>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
                         {{-- Thông tin đánh giá khách hàng --}}
                         <div class="card mb-4">
                             <div class="card-header bg-light">
@@ -75,10 +120,10 @@
                                                 ? $review->order->orderItems->where('collection_id', $review->collection_id)->first()
                                                 : $review->order->orderItems->where('book_id', $review->book_id)->first();
                                         @endphp
-                                        @if($orderItem)
+                                        @if($orderItem && $orderItem->bookFormat)
                                             <p><strong>Định dạng:</strong> 
-                                                <span class="badge {{ strtolower($orderItem->format) === 'ebook' ? 'bg-info' : 'bg-secondary' }} text-white">
-                                                    {{ $orderItem->format }}
+                                                <span class="badge {{ strtolower($orderItem->bookFormat->format_name) === 'ebook' ? 'bg-info' : 'bg-secondary' }} text-white">
+                                                    {{ $orderItem->bookFormat->format_name }}
                                                 </span>
                                             </p>
                                         @endif
@@ -308,6 +353,35 @@
                 btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Đang xử lý...`;
             }
             return true;
+        }
+
+        // Modal hiển thị ảnh phóng to
+        function showImageModal(imageSrc) {
+            // Tạo modal nếu chưa có
+            let modal = document.getElementById('imageModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'imageModal';
+                modal.className = 'modal fade';
+                modal.innerHTML = `
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Ảnh đánh giá</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img id="modalImage" src="" class="img-fluid" alt="Review Image">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            // Cập nhật src và hiển thị modal
+            document.getElementById('modalImage').src = imageSrc;
+            new bootstrap.Modal(modal).show();
         }
     </script>
 @endpush
