@@ -19,8 +19,12 @@ class RevenueByAuthorPublisherReport extends Component
         $this->authorRevenue = $authors->map(function ($author) {
             $revenue = 0;
             foreach ($author->books as $book) {
+                $authorCount = $book->authors()->count();
+                if ($authorCount === 0) {
+                    $authorCount = 1; // tránh chia cho 0 nếu dữ liệu lỗi
+                }
                 foreach ($book->orderItems as $item) {
-                    $revenue += $item->price * $item->quantity;
+                    $revenue += ($item->price * $item->quantity) / $authorCount;
                 }
             }
             return [
