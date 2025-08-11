@@ -1004,21 +1004,44 @@ class CartController extends Controller
             if ($isCombo) {
                 // Xử lý cập nhật số lượng combo
                 $collectionId = $request->collection_id;
+                $cartId = $request->cart_id;
 
-                if (!$collectionId) {
+                if (!$collectionId && !$cartId) {
                     return response()->json(['error' => 'Thiếu thông tin combo để cập nhật.'], 400);
                 }
 
-                // Lấy thông tin cart item combo
-                $cartItem = DB::table('carts')
-                    ->where('user_id', Auth::id())
-                    ->where('collection_id', $collectionId)
-                    ->where('is_combo', true)
-                    ->first();
+                // Lấy thông tin cart item combo - ưu tiên cart_id
+                if ($cartId) {
+                    $cartItem = DB::table('carts')
+                        ->where('user_id', Auth::id())
+                        ->where('id', $cartId)
+                        ->where('is_combo', true)
+                        ->first();
+                        
+                    Log::info('Found combo cart item by cart_id:', [
+                        'cart_id' => $cartId,
+                        'found' => $cartItem ? 'yes' : 'no'
+                    ]);
+                } else {
+                    // Fallback sử dụng collection_id
+                    $cartItem = DB::table('carts')
+                        ->where('user_id', Auth::id())
+                        ->where('collection_id', $collectionId)
+                        ->where('is_combo', true)
+                        ->first();
+                        
+                    Log::info('Found combo cart item by collection_id:', [
+                        'collection_id' => $collectionId,
+                        'found' => $cartItem ? 'yes' : 'no'
+                    ]);
+                }
 
                 if (!$cartItem) {
                     return response()->json(['error' => 'Không tìm thấy combo trong giỏ hàng'], 404);
                 }
+
+                // Lấy collection_id từ cart item
+                $collectionId = $cartItem->collection_id;
 
                 // Lấy thông tin combo với kiểm tra ngày hiệu lực
                 $combo = DB::table('collections')
@@ -1055,16 +1078,28 @@ class CartController extends Controller
                         }
                     }
 
-                    // Update combo quantity
-                    DB::table('carts')
-                        ->where('user_id', Auth::id())
-                        ->where('collection_id', $collectionId)
-                        ->where('is_combo', true)
-                        ->update([
-                            'quantity' => $quantity,
-                            'price' => $combo->combo_price,
-                            'updated_at' => now()
-                        ]);
+                    // Update combo quantity - ưu tiên sử dụng cart_id
+                    if ($cartId) {
+                        $updateResult = DB::table('carts')
+                            ->where('user_id', Auth::id())
+                            ->where('id', $cartId)
+                            ->update([
+                                'quantity' => $quantity,
+                                'price' => $combo->combo_price,
+                                'updated_at' => now()
+                            ]);
+                    } else {
+                        // Fallback sử dụng collection_id
+                        $updateResult = DB::table('carts')
+                            ->where('user_id', Auth::id())
+                            ->where('collection_id', $collectionId)
+                            ->where('is_combo', true)
+                            ->update([
+                                'quantity' => $quantity,
+                                'price' => $combo->combo_price,
+                                'updated_at' => now()
+                            ]);
+                    }
 
                     // Lấy số lượng cart đã cập nhật
                     $cartCount = DB::table('carts')->where('user_id', Auth::id())->count();
@@ -1114,11 +1149,16 @@ class CartController extends Controller
                 ]);
 
                 if ($cartId) {
-                    // Sử dụng cart_id để tìm cart item trực tiếp
+                    // Sử dụng cart_id để tìm cart item trực tiếp - đây là method đáng tin cậy nhất
                     $cartItem = Cart::where('user_id', Auth::id())
                         ->where('id', $cartId)
                         ->where('is_combo', 0)
                         ->first();
+                        
+                    Log::info('Found cart item by cart_id:', [
+                        'cart_id' => $cartId,
+                        'found' => $cartItem ? 'yes' : 'no'
+                    ]);
                 } else {
                     // Fallback: sử dụng thông tin book để tìm cart item
                     $cartItemQuery = Cart::where('user_id', Auth::id())
@@ -1141,11 +1181,27 @@ class CartController extends Controller
                     }
 
                     $cartItem = $cartItemQuery->first();
+                    
+                    Log::info('Found cart item by book info:', [
+                        'book_id' => $bookId,
+                        'book_format_id' => $bookFormatId,
+                        'found' => $cartItem ? 'yes' : 'no'
+                    ]);
                 }
-                // dd($cartItemQuery);
                 if (!$cartItem) {
+                    Log::error('Cart item not found:', [
+                        'cart_id' => $cartId,
+                        'book_id' => $bookId,
+                        'book_format_id' => $bookFormatId,
+                        'user_id' => Auth::id()
+                    ]);
                     return response()->json(['error' => 'Không tìm thấy sản phẩm trong giỏ hàng'], 404);
                 }
+                
+                // Lấy thông tin sách từ cart item
+                $bookId = $cartItem->book_id;
+                $bookFormatId = $cartItem->book_format_id;
+                
                 // Kiểm tra tồn kho và thông tin sách với format cụ thể
                 $bookInfo = DB::table('books')
                     ->leftJoin('book_formats', function ($join) use ($bookFormatId) {
