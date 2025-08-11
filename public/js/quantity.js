@@ -97,26 +97,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (discountText && discountAmount) {
-            console.log('Debug discount in quantity.js:', {
-                discount: discount,
-                discountAmount: discountAmount,
-                discountText: discountText
-            });
-            
             if (discount > 0) {
                 discountText.style.display = 'inline';
                 // Hiển thị discount như số tiền VNĐ với định dạng
                 const formattedDiscount = discount.toLocaleString('vi-VN', { minimumFractionDigits: 0 });
-                console.log('Setting discount amount in quantity.js:', formattedDiscount);
                 discountAmount.textContent = formattedDiscount;
             } else {
                 discountText.style.display = 'none';
             }
-        } else {
-            console.log('Discount elements not found in quantity.js:', {
-                discountText: discountText,
-                discountAmount: discountAmount
-            });
         }
 
         // Badge logic giống combo
@@ -230,14 +218,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     incrementBtn?.addEventListener('click', () => {
-        const max = parseInt(quantityInput.max);
+        if (!quantityInput) return;
+        const max = parseInt(quantityInput.max) || 999;
         let val = parseInt(quantityInput.value) || 1;
-        if (val < max) quantityInput.value = val + 1;
+        if (val < max) {
+            quantityInput.value = val + 1;
+            quantityInput.dispatchEvent(new Event('input'));
+            quantityInput.dispatchEvent(new Event('change'));
+        }
     });
 
     decrementBtn?.addEventListener('click', () => {
+        if (!quantityInput) return
         let val = parseInt(quantityInput.value) || 1;
-        if (val > 1) quantityInput.value = val - 1;
+        if (val > 1) {
+            quantityInput.value = val - 1;
+            quantityInput.dispatchEvent(new Event('input'));
+            quantityInput.dispatchEvent(new Event('change'));
+        }
     });
 
     quantityInput?.addEventListener('input', () => {

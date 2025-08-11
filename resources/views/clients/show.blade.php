@@ -499,6 +499,80 @@
             }
         }
 
+        /* Enhanced Variant Information Styling */
+        .product-detail-page .variant-info-card {
+            border-radius: 0;
+            overflow: hidden;
+            background: #fff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .product-detail-page .variant-info-card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .product-detail-page .variant-info-header {
+            background: #000 !important;
+            border-bottom: 2px solid #333;
+        }
+
+        .product-detail-page .variant-info-item {
+            border-radius: 0;
+            border: 2px solid #e5e7eb;
+            background: #f9fafb;
+            transition: all 0.2s ease;
+        }
+
+        .product-detail-page .variant-info-item:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .product-detail-page .icon-container {
+            border-radius: 2px;
+            transition: all 0.2s ease;
+        }
+
+        .product-detail-page .variant-info-item:hover .icon-container {
+            transform: scale(1.05);
+        }
+
+        .product-detail-page .variant-info-value {
+            border-radius: 0;
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        .product-detail-page .variant-info-badge {
+            border-radius: 0;
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        /* Responsive adjustments for variant info */
+        @media (max-width: 768px) {
+            .product-detail-page .variant-info-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .product-detail-page .variant-info-item > div:first-child {
+                width: 100%;
+            }
+
+            .product-detail-page .variant-info-value,
+            .product-detail-page .variant-info-badge {
+                align-self: flex-end;
+            }
+
+            .product-detail-page .icon-container {
+                width: 1.75rem;
+                height: 1.75rem;
+            }
+        }
+
         .product-detail-page .slide-up {
             animation: slideUp 0.6s ease-out;
         }
@@ -1575,68 +1649,68 @@
                                                         <i class="fas fa-chevron-down text-black"></i>
                                                     </div>
                                                 </div>
-                                                
-                                                {{-- Thông tin biến thể đã chọn --}}
-                                                <div id="variant_info_{{ $attrVal->id }}" class="mt-3 hidden">
-                                                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 p-4 rounded-lg shadow-sm">
-                                                        <div class="flex items-center mb-2">
-                                                            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                                                            <span class="text-sm font-bold text-blue-800 uppercase tracking-wide">Thông tin đã chọn</span>
-                                                        </div>
-                                                        
-                                                        <!-- For Physical Books -->
-                                                        <div id="physical_variant_info_{{ $attrVal->id }}" class="space-y-2">
-                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
-                                                                <div class="flex items-center">
-                                                                    <i class="fas fa-barcode text-blue-500 mr-2 text-sm"></i>
-                                                                    <span class="text-sm font-medium text-gray-700">SKU:</span>
-                                                                </div>
-                                                                <span id="selected_sku_{{ $attrVal->id }}" class="font-mono text-blue-600 font-semibold bg-blue-100 px-2 py-1 rounded text-sm">-</span>
-                                                            </div>
-                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
-                                                                <div class="flex items-center">
-                                                                    <i class="fas fa-boxes text-green-500 mr-2 text-sm"></i>
-                                                                    <span class="text-sm font-medium text-gray-700">Số lượng:</span>
-                                                                </div>
-                                                                <span id="selected_stock_{{ $attrVal->id }}" class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">-</span>
-                                                            </div>
-                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
-                                                                <div class="flex items-center">
-                                                                    <i class="fas fa-coins text-yellow-500 mr-2 text-sm"></i>
-                                                                    <span class="text-sm font-medium text-gray-700">Phí cộng thêm:</span>
-                                                                </div>
-                                                                <span id="selected_extra_price_{{ $attrVal->id }}" class="font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm">0₫</span>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <!-- For Ebooks -->
-                                                        <div id="ebook_variant_info_{{ $attrVal->id }}" class="hidden">
-                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
-                                                                <div class="flex items-center">
-                                                                    <i class="fas fa-check-circle text-green-500 mr-2 text-sm"></i>
-                                                                    <span class="text-sm font-medium text-gray-700">Trạng thái:</span>
-                                                                </div>
-                                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                                                    <i class="fas fa-check-circle mr-1"></i>
-                                                                    Còn hàng
-                                                                </span>
-                                                            </div>
-                                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
-                                                                <div class="flex items-center">
-                                                                    <i class="fas fa-coins text-green-500 mr-2 text-sm"></i>
-                                                                    <span class="text-sm font-medium text-gray-700">Phí cộng thêm:</span>
-                                                                </div>
-                                                                <span class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">Miễn phí</span>
-                                                            </div>
-                                                        </div>
+                                                                 {{-- Thông tin biến thể đã chọn --}}
+                                <div id="variant_info_{{ $attrVal->id }}" class="mt-4 hidden">
+                                    <div class="variant-info-card bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 shadow-sm">
+                                        <div class="variant-info-header bg-black text-white px-4 py-3 flex items-center">
+                                            <i class="fas fa-info-circle mr-2 text-sm"></i>
+                                            <span class="text-sm font-bold uppercase tracking-wider adidas-font">Thông tin đã chọn</span>
+                                        </div>
+                                        
+                                        <!-- For Physical Books -->
+                                        <div id="physical_variant_info_{{ $attrVal->id }}" class="p-4 space-y-3">
+                                            <div class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                                                <div class="flex items-center">
+                                                    <div class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
+                                                        <i class="fas fa-boxes text-xs"></i>
                                                     </div>
+                                                    <span class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Số lượng:</span>
                                                 </div>
+                                                <span id="selected_stock_{{ $attrVal->id }}" class="variant-info-value font-bold text-green-700 bg-white px-3 py-1 border border-green-300 text-sm">-</span>
+                                            </div>
+                                            <div class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                                                <div class="flex items-center">
+                                                    <div class="icon-container w-8 h-8 bg-yellow-500 text-white rounded-sm flex items-center justify-center mr-3">
+                                                        <i class="fas fa-coins text-xs"></i>
+                                                    </div>
+                                                    <span class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Phí cộng thêm:</span>
+                                                </div>
+                                                <span id="selected_extra_price_{{ $attrVal->id }}" class="variant-info-value font-bold text-yellow-700 bg-white px-3 py-1 border border-yellow-300 text-sm">0₫</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- For Ebooks -->
+                                        <div id="ebook_variant_info_{{ $attrVal->id }}" class="p-4 space-y-3 hidden">
+                                            <div class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                                                <div class="flex items-center">
+                                                    <div class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
+                                                        <i class="fas fa-check-circle text-xs"></i>
+                                                    </div>
+                                                    <span class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Trạng thái:</span>
+                                                </div>
+                                                <div class="variant-info-badge inline-flex items-center px-3 py-1 bg-green-100 text-green-800 border border-green-300 text-xs font-bold uppercase tracking-wide adidas-font">
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                    Còn hàng
+                                                </div>
+                                            </div>
+                                            <div class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                                                <div class="flex items-center">
+                                                    <div class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
+                                                        <i class="fas fa-coins text-xs"></i>
+                                                    </div>
+                                                    <span class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Phí cộng thêm:</span>
+                                                </div>
+                                                <span class="variant-info-value font-bold text-green-700 bg-white px-3 py-1 border border-green-300 text-sm">Miễn phí</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                             </div>
                                         @endforeach
                                     </div>
                                     
                                     {{-- Tổng kết phí cộng thêm và stock biến thể --}}
-                                    <div id="attributesSummary" class="mt-6 bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 p-4 rounded-lg shadow-sm hidden">
+                                    {{-- <div id="attributesSummary" class="mt-6 bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 p-4 rounded-lg shadow-sm hidden">
                                         <div class="flex items-center mb-3">
                                             <i class="fas fa-calculator text-gray-600 mr-2"></i>
                                             <span class="text-sm font-bold text-gray-800 uppercase tracking-wide">Tổng kết lựa chọn</span>
@@ -1661,7 +1735,7 @@
                                                 <span id="minStockValue" class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">-</span>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div> --}}
                                 </div>
                             @endif
                             <!-- Enhanced Quantity & Add to Cart Section -->
@@ -2855,12 +2929,6 @@
                 const discountTextElement = document.getElementById('discountText');
                 const discountAmountElement = document.getElementById('discountAmount');
                 
-                console.log('Debug discount display:', {
-                    discount: discount,
-                    discountAmountElement: discountAmountElement,
-                    discountTextElement: discountTextElement
-                });
-                
                 if (discount > 0) {
                     if (originalPriceElement) {
                         originalPriceElement.textContent = formatPrice(finalPrice);
@@ -2871,10 +2939,7 @@
                     }
                     if (discountAmountElement) {
                         const formattedDiscount = new Intl.NumberFormat('vi-VN').format(discount);
-                        console.log('Setting discount amount:', formattedDiscount);
                         discountAmountElement.textContent = formattedDiscount;
-                    } else {
-                        console.log('discountAmountElement not found!');
                     }
                 } else {
                     if (originalPriceElement) {
@@ -2900,7 +2965,7 @@
                     if (stockQuantityDisplay) {
                         stockQuantityDisplay.style.display = 'none';
                     }
-                    // Hide quantity section for ebooks
+                    // Always hide quantity section for ebooks (regardless of status)
                     const quantitySection = document.querySelector('.quantity-section');
                     if (quantitySection) {
                         quantitySection.style.display = 'none';
@@ -2969,11 +3034,6 @@
                         
                         // Log variant stock info for debugging
                         if (selectedVariantInfo.length > 0) {
-                            console.log('Variant Stock Info:', {
-                                variants: selectedVariantInfo,
-                                lowestStock: stock,
-                                currentQuantity: quantityInput.value
-                            });
                         }
                     } else {
                         // Out of stock
@@ -3046,7 +3106,8 @@
                             // For ebooks, hide all attributes/variants
                             item.style.display = 'none';
                         } else {
-                            // For physical books, show all attributes
+                            // For physical books, initially show all attributes
+                            // updateAttributeOptionsDisplay will handle hiding based on stock
                             item.style.display = 'block';
                         }
                     });
@@ -3064,12 +3125,14 @@
                         }
                         
                         // Update dropdown options display for physical books
+                        // This will handle hiding attributes with no available variants
                         updateAttributeOptionsDisplay(isEbook);
                     }
                 }
 
-                // Show/hide Add to Cart button based on product status
+                // Show/hide Add to Cart button and quantity controls based on product status
                 const addToCartBtn = document.getElementById('addToCartBtn');
+                const quantitySection = document.querySelector('.quantity-section');
                 const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
                 
                 if (addToCartBtn) {
@@ -3080,6 +3143,26 @@
                         addToCartBtn.style.display = 'block';
                     }
                 }
+                
+                // Show/hide quantity controls based on product status and stock
+                if (quantitySection) {
+                    const shouldHideQuantityControls = 
+                        bookStatus === 'Ngừng Kinh Doanh' || 
+                        bookStatus === 'Sắp Ra Mắt' || 
+                        bookStatus === 'Hết Hàng Tồn Kho' ||
+                        (bookStatus === 'Còn Hàng' && stock <= 0 && !isEbook);
+                        
+                    if (shouldHideQuantityControls) {
+                        quantitySection.style.display = 'none';
+                    } else if (!isEbook) {
+                        // Only show for physical books that are available
+                        quantitySection.style.display = 'block';
+                    }
+                    // For ebooks, quantity section is already handled in the ebook section above
+                }
+                
+                // Update preview section visibility after stock/status changes
+                updatePreviewSectionVisibility();
             }
             
             // Function to update attribute dropdown options based on format (only for physical books)
@@ -3088,9 +3171,11 @@
                 if (isEbook) return;
                 
                 const attributeSelects = document.querySelectorAll('[name^="attributes["]');
+                let hiddenAttributesCount = 0;
                 
                 attributeSelects.forEach(select => {
                     const options = select.querySelectorAll('option');
+                    let hasAvailableOptions = false;
                     
                     options.forEach(option => {
                         if (option.value) { // Skip empty option
@@ -3123,10 +3208,58 @@
                             // Update disabled state for physical books only
                             option.disabled = variantStock === 0;
                             
+                            // Check if this option is available (has stock)
+                            if (variantStock > 0) {
+                                hasAvailableOptions = true;
+                            }
+                            
                             option.textContent = newText;
                         }
                     });
+                    
+                    // Hide/show the entire attribute group based on availability
+                    const attributeItem = select.closest('.attribute-item');
+                    if (attributeItem) {
+                        const attributeName = select.name || 'Unknown';
+                        const label = attributeItem.querySelector('label');
+                        const displayName = label ? label.textContent.trim() : attributeName;
+                        
+                        if (hasAvailableOptions) {
+                            attributeItem.style.display = 'block';
+                        } else {
+                            attributeItem.style.display = 'none';
+                            hiddenAttributesCount++;
+                            // Reset select value if hiding this attribute
+                            if (select.value) {
+                                select.value = '';
+                                // Trigger change event to update price calculations
+                                select.dispatchEvent(new Event('change'));
+                            }
+                        }
+                    }
                 });
+                
+                // Check if any attribute groups are visible and hide the entire attributes section if none
+                const attributesGroup = document.getElementById('bookAttributesGroup');
+                if (attributesGroup) {
+                    const allAttributeItems = attributesGroup.querySelectorAll('.attribute-item');
+                    const totalAttributes = allAttributeItems.length;
+                    
+                    // Count actually visible items (not hidden by display:none)
+                    let visibleCount = 0;
+                    allAttributeItems.forEach(item => {
+                        const computedStyle = window.getComputedStyle(item);
+                        if (computedStyle.display !== 'none') {
+                            visibleCount++;
+                        }
+                    });
+                    
+                    if (visibleCount === 0) {
+                        attributesGroup.style.display = 'none';
+                    } else {
+                        attributesGroup.style.display = 'block';
+                    }
+                }
             }
 
             // Initialize variant overview interactions
@@ -3163,7 +3296,6 @@
                                         }, 150);
                                         
                                         // Show simple feedback
-                                        console.log(`Selected variant: ${variantValue} (${attributeName})`);
                                     }
                                 });
                             }
@@ -3185,7 +3317,10 @@
                             const selectedText = selectedOption.textContent.trim().toLowerCase();
                             const isEbook = selectedText.includes('ebook');
                             if (!isEbook) {
-                                updateAttributeOptionsDisplay(isEbook);
+                                // Force re-check of attribute visibility based on stock
+                                setTimeout(() => {
+                                    updateAttributeOptionsDisplay(isEbook);
+                                }, 50);
                             }
                         }
                     });
@@ -3193,7 +3328,21 @@
 
                 const attributeSelects = document.querySelectorAll('[name^="attributes["]');
                 attributeSelects.forEach(select => {
-                    select.addEventListener('change', updatePriceAndStock);
+                    select.addEventListener('change', function() {
+                        updatePriceAndStock();
+                        
+                        // Re-check attribute visibility after any attribute change
+                        const formatSelect = document.getElementById('bookFormatSelect');
+                        if (formatSelect && formatSelect.selectedOptions[0]) {
+                            const selectedText = formatSelect.selectedOptions[0].textContent.trim().toLowerCase();
+                            const isEbook = selectedText.includes('ebook');
+                            if (!isEbook) {
+                                setTimeout(() => {
+                                    updateAttributeOptionsDisplay(isEbook);
+                                }, 50);
+                            }
+                        }
+                    });
                 });
 
                 // Initialize price and stock on page load
@@ -3205,7 +3354,10 @@
                     const initialSelectedText = initialFormatSelect.selectedOptions[0].textContent.trim().toLowerCase();
                     const initialIsEbook = initialSelectedText.includes('ebook');
                     if (!initialIsEbook) {
-                        updateAttributeOptionsDisplay(initialIsEbook);
+                        // Force check attribute visibility on page load
+                        setTimeout(() => {
+                            updateAttributeOptionsDisplay(initialIsEbook);
+                        }, 100);
                     }
                 }
 
@@ -3233,10 +3385,20 @@
                 // Initialize price and stock on page load
                 updatePriceAndStock();
 
-                // Initialize attribute visibility on page load
+                // Initialize attribute visibility on page load - Double check after DOM fully loaded
                 setTimeout(() => {
                     updatePriceAndStock(); // Gọi lại để đảm bảo thuộc tính được ẩn/hiện đúng
-                }, 100);
+                    
+                    // Final check for attribute visibility
+                    const finalFormatSelect = document.getElementById('bookFormatSelect');
+                    if (finalFormatSelect && finalFormatSelect.selectedOptions[0]) {
+                        const finalSelectedText = finalFormatSelect.selectedOptions[0].textContent.trim().toLowerCase();
+                        const finalIsEbook = finalSelectedText.includes('ebook');
+                        if (!finalIsEbook) {
+                            updateAttributeOptionsDisplay(finalIsEbook);
+                        }
+                    }
+                }, 200);
             });
 
             // Add to cart function - optimized
@@ -3460,11 +3622,6 @@
                         requestData.attributes = attributes;
                     }
                     
-                    console.log('=== ADD TO CART REQUEST DEBUG ===');
-                    console.log('Request data:', requestData);
-                    console.log('Is ebook:', isEbook);
-                    console.log('Attributes selected:', attributeValueIds);
-
                     // Send request
                     fetch('{{ route("cart.add") }}', {
                         method: 'POST',
@@ -3475,13 +3632,9 @@
                         body: JSON.stringify(requestData)
                     })
                         .then(response => {
-                            console.log('Response status:', response.status);
-                            console.log('Response headers:', response.headers);
-                            
                             const contentType = response.headers.get('content-type');
                             if (!contentType || !contentType.includes('application/json')) {
                                 return response.text().then(text => {
-                                    console.log('Non-JSON response:', text);
                                     throw new Error('Server returned non-JSON response');
                                 });
                             }
@@ -3497,8 +3650,6 @@
                             });
                         })
                         .then(data => {
-                            console.log('Response data:', data); // Debug log
-                            
                             // Check if this is an HTTP error response
                             if (data.httpStatus && data.httpStatus !== 200) {
                                 // Handle HTTP error responses (like 422)
@@ -3590,7 +3741,6 @@
                         const contentType = response.headers.get('content-type');
                         if (!contentType || !contentType.includes('application/json')) {
                             return response.text().then(text => {
-                                console.log('Non-JSON response:', text);
                                 throw new Error('Server returned non-JSON response');
                             });
                         }
@@ -3640,20 +3790,52 @@
                     });
             }
 
+            // Helper function to check and update preview section visibility
+            function updatePreviewSectionVisibility() {
+                const bookFormatSelectElement = document.getElementById('bookFormatSelect');
+                const previewSection = document.getElementById('previewSection');
+                
+                if (!bookFormatSelectElement || !previewSection) return;
+                
+                const selectedOption = bookFormatSelectElement.options[bookFormatSelectElement.selectedIndex];
+                if (!selectedOption) return;
+                
+                const formatName = selectedOption.text.toLowerCase();
+                
+                // Kiểm tra xem có phải ebook không
+                if (formatName.includes('ebook')) {
+                    // Kiểm tra trạng thái sản phẩm và stock để quyết định hiển thị nút đọc thử
+                    const bookPriceElement = document.getElementById('bookPrice');
+                    const bookStatus = bookPriceElement?.dataset.bookStatus || 'Còn Hàng';
+                    const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+                    
+                    // Ẩn nút đọc thử nếu sản phẩm có trạng thái không khả dụng
+                    const isUnavailable = 
+                        bookStatus === 'Ngừng Kinh Doanh' || 
+                        bookStatus === 'Sắp Ra Mắt' || 
+                        bookStatus === 'Hết Hàng Tồn Kho' ||
+                        stock === -1 || // Sắp ra mắt  
+                        stock === -2;   // Ngừng kinh doanh
+                        
+                    if (isUnavailable) {
+                        previewSection.classList.add('hidden');
+                    } else {
+                        previewSection.classList.remove('hidden');
+                    }
+                } else {
+                    previewSection.classList.add('hidden');
+                }
+            }
+
             // Xử lý hiển thị nút đọc thử cho ebook
             const bookFormatSelectElement = document.getElementById('bookFormatSelect');
             if (bookFormatSelectElement) {
                 bookFormatSelectElement.addEventListener('change', function () {
-                    const selectedOption = this.options[this.selectedIndex];
-                    const formatName = selectedOption.text.toLowerCase();
-                    const previewSection = document.getElementById('previewSection');
-
-                    if (formatName.includes('ebook')) {
-                        previewSection.classList.remove('hidden');
-                    } else {
-                        previewSection.classList.add('hidden');
-                    }
+                    updatePreviewSectionVisibility();
                 });
+                
+                // Kiểm tra trạng thái nút đọc thử khi trang load lần đầu
+                updatePreviewSectionVisibility();
             }
 
             // Enhanced PDF Preview Modal with Modern Features
@@ -3766,7 +3948,6 @@
                         zoomLevel.textContent = Math.round(scale * 100) + '%';
 
                     }).catch(function (error) {
-                        console.log('PDF.js failed, falling back to iframe:', error);
                         fallbackToIframe(url);
                     });
                 } else {
@@ -3868,17 +4049,9 @@
                     const submitBtn = comboForm.querySelector('button[type="submit"]');
                     const originalText = submitBtn.innerHTML;
 
-                    // Debug form data
-                    console.log('=== COMBO FORM DEBUG ===');
-                    console.log('Form action:', comboForm.action);
-                    console.log('Form method:', comboForm.method);
-                    console.log('Form data as string:', urlParams.toString());
-
                     // Check CSRF token
                     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
                     const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
-                    console.log('CSRF token available:', !!csrfToken);
-                    console.log('CSRF token (first 10 chars):', csrfToken ? csrfToken.substring(0, 10) + '...' : 'N/A');
 
                     if (!csrfToken) {
                         if (typeof toastr !== 'undefined') {
@@ -3905,33 +4078,19 @@
                         }
                     })
                         .then(response => {
-                            console.log('=== RESPONSE DEBUG ===');
-                            console.log('Status:', response.status);
-                            console.log('Status text:', response.statusText);
-                            console.log('Headers:');
-                            response.headers.forEach((value, key) => {
-                                console.log(`${key}: ${value}`);
-                            });
-
                             // Check if response is OK
                             if (!response.ok) {
                                 // For non-200 responses, get the text to see what's wrong
                                 return response.text().then(text => {
-                                    console.log('Error response body (first 500 chars):', text.substring(0, 500));
                                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                                 });
                             }
 
                             // Check content type
                             const contentType = response.headers.get('content-type');
-                            console.log('Content-Type:', contentType);
 
                             if (!contentType || !contentType.includes('application/json')) {
                                 return response.text().then(text => {
-                                    console.log('=== NON-JSON RESPONSE ===');
-                                    console.log('Response length:', text.length);
-                                    console.log('First 1000 chars:', text.substring(0, 1000));
-
                                     // Try to extract Laravel error information
                                     if (text.includes('validation') || text.includes('ValidationException')) {
                                         throw new Error('Validation Error: Dữ liệu gửi lên không hợp lệ');
@@ -4062,7 +4221,6 @@
             }
 
         </script>
-
         <!-- Review Image Modal -->
         <div id="reviewImageModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
             <div class="relative max-w-4xl max-h-full p-4">
@@ -4275,5 +4433,10 @@
             50% { opacity: 0.8; }
         }
     </style>
+    @endpush
+
+    @push('scripts')
+        {{-- Include quantity controls for product page --}}
+        <script src="{{ asset('js/quantity.js') }}"></script>
     @endpush
 @endsection
