@@ -166,8 +166,10 @@ document.addEventListener('DOMContentLoaded', function () {
             stockQuantityDisplay.style.display = 'none';
         }
 
-        // Ẩn input số lượng nếu là ebook
+        // Ẩn input số lượng nếu là ebook hoặc kiểm tra trạng thái không khả dụng cho ebook
         if (isEbook) {
+            const isUnavailable = stock === -1 || stock === -2; // Sắp ra mắt (-1) hoặc Ngừng kinh doanh (-2)
+            
             if (quantityGroup) quantityGroup.style.display = 'none';
             quantityInput.value = 1;
             quantityInput.disabled = true;
@@ -179,11 +181,11 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             productQuantityDisplay.textContent = 'Không giới hạn';
-            stockDisplay.textContent = 'Có thể mua';
-            stockDisplay.className = 'font-bold px-3 py-1.5 rounded text-white bg-blue-500';
-            addToCartBtn.disabled = false;
-            addToCartBtn.classList.remove('bg-gray-300');
-            addToCartBtn.classList.add('bg-black');
+            stockDisplay.textContent = isUnavailable ? (stock === -1 ? 'Sắp ra mắt' : 'Ngừng kinh doanh') : 'Có thể mua';
+            stockDisplay.className = `font-bold px-3 py-1.5 rounded text-white ${isUnavailable ? 'bg-gray-500' : 'bg-blue-500'}`;
+            addToCartBtn.disabled = isUnavailable;
+            addToCartBtn.classList.toggle('bg-gray-300', isUnavailable);
+            addToCartBtn.classList.toggle('bg-black', !isUnavailable);
             incrementBtn.disabled = true;
             decrementBtn.disabled = true;
         } else {
@@ -202,11 +204,25 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const outOfStock = stock <= 0;
-            addToCartBtn.disabled = outOfStock;
-            addToCartBtn.classList.toggle('bg-gray-300', outOfStock);
-            addToCartBtn.classList.toggle('bg-black', !outOfStock);
-            incrementBtn.disabled = outOfStock;
-            decrementBtn.disabled = outOfStock;
+            const isUnavailable = stock === -1 || stock === -2; // Sắp ra mắt (-1) hoặc Ngừng kinh doanh (-2)
+            
+            addToCartBtn.disabled = outOfStock || isUnavailable;
+            addToCartBtn.classList.toggle('bg-gray-300', outOfStock || isUnavailable);
+            addToCartBtn.classList.toggle('bg-black', !outOfStock && !isUnavailable);
+            
+            // Ẩn/hiện nút cộng trừ số lượng dựa trên trạng thái
+            const shouldDisableQuantityControls = outOfStock || isUnavailable;
+            incrementBtn.disabled = shouldDisableQuantityControls;
+            decrementBtn.disabled = shouldDisableQuantityControls;
+            
+            // Ẩn hoàn toàn quantityGroup nếu sản phẩm không khả dụng
+            if (quantityGroup) {
+                if (shouldDisableQuantityControls) {
+                    quantityGroup.style.display = 'none';
+                } else {
+                    quantityGroup.style.display = 'flex';
+                }
+            }
 
             stockDisplay.textContent = outOfStock ? 'Hết hàng' : 'Còn hàng';
             stockDisplay.className = `font-bold px-3 py-1.5 rounded text-white ${outOfStock ? 'bg-gray-900' : 'bg-green-500'}`;

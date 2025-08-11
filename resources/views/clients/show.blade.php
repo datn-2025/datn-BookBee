@@ -2881,7 +2881,7 @@
                     if (stockQuantityDisplay) {
                         stockQuantityDisplay.style.display = 'none';
                     }
-                    // Hide quantity section for ebooks
+                    // Always hide quantity section for ebooks (regardless of status)
                     const quantitySection = document.querySelector('.quantity-section');
                     if (quantitySection) {
                         quantitySection.style.display = 'none';
@@ -3046,8 +3046,9 @@
                     }
                 }
 
-                // Show/hide Add to Cart button based on product status
+                // Show/hide Add to Cart button and quantity controls based on product status
                 const addToCartBtn = document.getElementById('addToCartBtn');
+                const quantitySection = document.querySelector('.quantity-section');
                 const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
                 
                 if (addToCartBtn) {
@@ -3058,6 +3059,26 @@
                         addToCartBtn.style.display = 'block';
                     }
                 }
+                
+                // Show/hide quantity controls based on product status and stock
+                if (quantitySection) {
+                    const shouldHideQuantityControls = 
+                        bookStatus === 'Ngừng Kinh Doanh' || 
+                        bookStatus === 'Sắp Ra Mắt' || 
+                        bookStatus === 'Hết Hàng Tồn Kho' ||
+                        (bookStatus === 'Còn Hàng' && stock <= 0 && !isEbook);
+                        
+                    if (shouldHideQuantityControls) {
+                        quantitySection.style.display = 'none';
+                    } else if (!isEbook) {
+                        // Only show for physical books that are available
+                        quantitySection.style.display = 'block';
+                    }
+                    // For ebooks, quantity section is already handled in the ebook section above
+                }
+                
+                // Update preview section visibility after stock/status changes
+                updatePreviewSectionVisibility();
             }
             
             // Function to update attribute dropdown options based on format (only for physical books)
@@ -3685,20 +3706,52 @@
                     });
             }
 
+            // Helper function to check and update preview section visibility
+            function updatePreviewSectionVisibility() {
+                const bookFormatSelectElement = document.getElementById('bookFormatSelect');
+                const previewSection = document.getElementById('previewSection');
+                
+                if (!bookFormatSelectElement || !previewSection) return;
+                
+                const selectedOption = bookFormatSelectElement.options[bookFormatSelectElement.selectedIndex];
+                if (!selectedOption) return;
+                
+                const formatName = selectedOption.text.toLowerCase();
+                
+                // Kiểm tra xem có phải ebook không
+                if (formatName.includes('ebook')) {
+                    // Kiểm tra trạng thái sản phẩm và stock để quyết định hiển thị nút đọc thử
+                    const bookPriceElement = document.getElementById('bookPrice');
+                    const bookStatus = bookPriceElement?.dataset.bookStatus || 'Còn Hàng';
+                    const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+                    
+                    // Ẩn nút đọc thử nếu sản phẩm có trạng thái không khả dụng
+                    const isUnavailable = 
+                        bookStatus === 'Ngừng Kinh Doanh' || 
+                        bookStatus === 'Sắp Ra Mắt' || 
+                        bookStatus === 'Hết Hàng Tồn Kho' ||
+                        stock === -1 || // Sắp ra mắt  
+                        stock === -2;   // Ngừng kinh doanh
+                        
+                    if (isUnavailable) {
+                        previewSection.classList.add('hidden');
+                    } else {
+                        previewSection.classList.remove('hidden');
+                    }
+                } else {
+                    previewSection.classList.add('hidden');
+                }
+            }
+
             // Xử lý hiển thị nút đọc thử cho ebook
             const bookFormatSelectElement = document.getElementById('bookFormatSelect');
             if (bookFormatSelectElement) {
                 bookFormatSelectElement.addEventListener('change', function () {
-                    const selectedOption = this.options[this.selectedIndex];
-                    const formatName = selectedOption.text.toLowerCase();
-                    const previewSection = document.getElementById('previewSection');
-
-                    if (formatName.includes('ebook')) {
-                        previewSection.classList.remove('hidden');
-                    } else {
-                        previewSection.classList.add('hidden');
-                    }
+                    updatePreviewSectionVisibility();
                 });
+                
+                // Kiểm tra trạng thái nút đọc thử khi trang load lần đầu
+                updatePreviewSectionVisibility();
             }
 
             // Enhanced PDF Preview Modal with Modern Features
