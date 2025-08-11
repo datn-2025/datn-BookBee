@@ -383,7 +383,7 @@
                 @foreach ($categories as $index => $category)
                     <button type="button" 
                             class="tab-button flex-shrink-0 px-8 py-4 font-bold text-sm uppercase tracking-wider transition-all duration-300 cursor-pointer select-none {{ $index === 0 ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200' }}"
-                            data-tab="tab-tab-{{ $category->id }}"
+                            data-tab="tab-{{ $category->id }}"
                             style="pointer-events: auto; user-select: none; -webkit-tap-highlight-color: transparent;">
                         {{ $category->name }}
                     </button>
