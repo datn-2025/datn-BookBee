@@ -4434,6 +4434,9 @@
         }
     </style>
     @endpush
-@endsection
+
+    @push('scripts')
         {{-- Include quantity controls for product page --}}
         <script src="{{ asset('js/quantity.js') }}"></script>
+    @endpush
+@endsection
