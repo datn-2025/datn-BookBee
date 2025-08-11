@@ -145,6 +145,7 @@
                     @if($item->is_combo)
                         {{-- Combo Item --}}
                         <div class="cart-hover bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 p-6 cart-item combo-item" 
+                             data-cart-id="{{ $item->id }}"
                              data-collection-id="{{ $item->collection_id }}" 
                              data-price="{{ $item->price ?? 0 }}"
                              data-is-combo="true">
@@ -272,6 +273,7 @@
                                                        class="w-16 h-10 text-center border-t-2 border-b-2 border-black text-black font-bold quantity-input" 
                                                        value="{{ $item->quantity ?? 1 }}" 
                                                        min="1"
+                                                       data-cart-id="{{ $item->id }}"
                                                        data-collection-id="{{ $item->collection_id }}"
                                                        data-last-value="{{ $item->quantity ?? 1 }}"
                                                        data-is-combo="true">
@@ -306,6 +308,7 @@
                         
                         {{-- Individual Book Item --}}
                         <div class="cart-hover bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 p-6 cart-item" 
+                             data-cart-id="{{ $item->id }}"
                              data-book-id="{{ $item->book_id }}" 
                              data-book-format-id="{{ $item->book_format_id }}"
                              data-attribute-value-ids="{{ $item->attribute_value_ids }}"
@@ -538,6 +541,7 @@
                                                            value="1" 
                                                            min="1" 
                                                            max="1" 
+                                                           data-cart-id="{{ $item->id }}"
                                                            data-book-id="{{ $item->book_id }}"
                                                            data-last-value="1"
                                                            data-is-ebook="true"
@@ -559,6 +563,7 @@
                                                            value="{{ $item->quantity }}" 
                                                            min="1" 
                                                            max="{{ $item->stock ?? 1 }}" 
+                                                           data-cart-id="{{ $item->id }}"
                                                            data-book-id="{{ $item->book_id }}" 
                                                            data-last-value="{{ $item->quantity }}"
                                                            data-is-combo="false">

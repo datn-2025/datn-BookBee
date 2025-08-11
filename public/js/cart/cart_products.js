@@ -370,10 +370,20 @@ const CartProducts = {
         const cartItem = input.closest('.cart-item');
         if (!cartItem) return;
 
-        const isCombo = input.dataset.isCombo === 'true';
+        const isCombo = input.dataset.isCombo === 'true' || cartItem.dataset.isCombo === 'true';
+        // Ưu tiên lấy cart_id từ cart item, sau đó từ input
+        const cartId = cartItem.dataset.cartId || input.dataset.cartId;
         const bookId = cartItem.dataset.bookId || input.dataset.bookId;
         const collectionId = cartItem.dataset.collectionId || input.dataset.collectionId;
         const oldQuantity = parseInt(input.dataset.lastValue) || 1;
+
+        console.log('UpdateQuantity Debug:', {
+            cartId: cartId,
+            isCombo: isCombo,
+            bookId: bookId,
+            collectionId: collectionId,
+            newQuantity: newQuantity
+        });
 
         // Validate quantity
         const minValue = parseInt(input.min) || 1;
@@ -390,6 +400,7 @@ const CartProducts = {
             // The max value should already be set correctly from the hierarchical stock validation
             // but we double-check here
             console.log('Validating variant stock for quantity update:', {
+                cartId: cartId,
                 bookId: bookId,
                 attributeValueIds: attributeValueIds,
                 requestedQuantity: newQuantity,
@@ -424,15 +435,23 @@ const CartProducts = {
             _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         };
 
+        // Thêm cart_id nếu có - đây là cách đáng tin cậy nhất
+        if (cartId) {
+            requestData.cart_id = cartId;
+        }
+
         if (isCombo) {
             requestData.collection_id = collectionId;
             requestData.is_combo = true;
         } else {
+            // Fallback data cho trường hợp không có cart_id
             requestData.book_id = bookId;
             requestData.book_format_id = cartItem.dataset.bookFormatId || null;
             requestData.attribute_value_ids = cartItem.dataset.attributeValueIds || null;
             requestData.is_combo = false;
         }
+
+        console.log('Sending update request:', requestData);
 
         // Send AJAX request
         $.ajax({
