@@ -67,7 +67,7 @@
         }
 
         .product-detail-page .status-coming-soon {
-            color: #ff6900;
+            color: #d97706;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -88,7 +88,7 @@
         }
 
         .product-detail-page .status-in-stock {
-            color: #27ae60;
+            color: #d97706;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -124,7 +124,7 @@
 
         /* Enhanced Ebook Status Styling */
         .product-detail-page .ebook-badge {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
             color: white;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
@@ -171,20 +171,21 @@
 
         /* Enhanced Buttons */
         .product-detail-page .adidas-btn {
-            background: #000;
+            background: #d97706;
             color: #fff;
             text-transform: uppercase;
             font-weight: 700;
             letter-spacing: 1px;
             transition: all 0.3s ease;
-            border: 2px solid #000;
+            border: 2px solid #d97706;
         }
 
         .product-detail-page .adidas-btn:hover {
-            background: #fff;
-            color: #000;
+            background: #b45309;
+            color: #fff;
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 25px rgba(217, 119, 6, 0.3);
+            border-color: #b45309;
         }
 
         .product-detail-page .adidas-btn-enhanced {
@@ -192,14 +193,14 @@
             border-radius: 0;
             position: relative;
             overflow: hidden;
-            background: #000;
+            background: #d97706;
             color: #fff;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
             letter-spacing: 2px;
             font-weight: 600;
             text-transform: uppercase;
-            border: 2px solid #000;
+            border: 2px solid #d97706;
         }
 
         .product-detail-page .adidas-btn-enhanced::before {
@@ -214,11 +215,11 @@
         }
 
         .product-detail-page .adidas-btn-enhanced:hover {
-            background: #333 !important;
+            background: #b45309 !important;
             color: #fff !important;
-            border-color: #333;
+            border-color: #b45309;
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 25px rgba(217, 119, 6, 0.4);
         }
 
         .product-detail-page .adidas-btn-enhanced:hover::before {
@@ -239,16 +240,16 @@
             position: relative;
             overflow: hidden;
             background: #fff;
-            color: #000;
-            border: 2px solid #000;
+            color: #d97706;
+            border: 2px solid #d97706;
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
         .product-detail-page .wishlist-btn:hover {
-            background: #000 !important;
+            background: #d97706 !important;
             color: #fff !important;
-            border-color: #000;
+            border-color: #d97706;
         }
 
         .product-detail-page .wishlist-btn:hover i {
@@ -271,9 +272,9 @@
         }
 
         .product-detail-page .adidas-select:focus {
-            border-color: #000;
+            border-color: #d97706;
             outline: none;
-            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
         }
 
         .product-detail-page .adidas-input {
@@ -286,9 +287,9 @@
         }
 
         .product-detail-page .adidas-input:focus {
-            border-color: #000;
+            border-color: #d97706;
             outline: none;
-            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
         }
 
         /* Enhanced Quantity Controls */
@@ -309,9 +310,9 @@
         }
 
         .product-detail-page .quantity-btn-enhanced:hover {
-            background: #000;
+            background: #d97706;
             color: #fff;
-            border-color: #000;
+            border-color: #d97706;
             transform: translateY(-1px);
         }
 
@@ -331,9 +332,9 @@
 
         .product-detail-page .quantity-input-enhanced:focus {
             outline: none;
-            border-color: #000;
-            border-left: 2px solid #000;
-            border-right: 2px solid #000;
+            border-color: #d97706;
+            border-left: 2px solid #d97706;
+            border-right: 2px solid #d97706;
         }
 
         /* Enhanced Share Buttons */
@@ -343,7 +344,7 @@
         }
 
         .product-detail-page .share-btn:hover {
-            background: #000;
+            background: #d97706;
             color: #fff;
             transform: translateY(-2px);
         }
@@ -358,9 +359,9 @@
 
         .product-detail-page .share-btn-enhanced:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            background: #000;
-            border-color: #000;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.15);
+            background: #d97706;
+            border-color: #d97706;
         }
 
         .product-detail-page .share-btn-enhanced:hover i {
@@ -381,19 +382,19 @@
         }
 
         .product-detail-page .breadcrumb-item.active {
-            color: #000;
+            color: #d97706;
         }
 
         /* Enhanced Sections */
         .product-detail-page .section-title {
-            border-left: 4px solid #000;
+            border-left: 4px solid #d97706;
             text-transform: uppercase;
             font-weight: 700;
             letter-spacing: 1px;
         }
 
         .product-detail-page .review-card {
-            border-left: 3px solid #000;
+            border-left: 3px solid #d97706;
             transition: all 0.3s ease;
         }
 
@@ -409,36 +410,36 @@
 
         .product-detail-page .related-product-card:hover {
             transform: translateY(-10px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            border-color: #000;
+            box-shadow: 0 15px 35px rgba(217, 119, 6, 0.1);
+            border-color: #d97706;
         }
 
         /* Price Section Enhancement */
         .product-detail-page .price-section {
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
             padding: 2rem;
-            border: 1px solid #e9ecef;
+            border: 1px solid #fbbf24;
         }
 
         /* Stock Status Enhancement */
         .product-detail-page .stock-status {
             padding: 1rem;
-            background: #f8f9fa;
-            border-left: 4px solid #28a745;
+            background: #fffbeb;
+            border-left: 4px solid #d97706;
         }
 
         /* Attribute Group Enhancement */
         .product-detail-page .attribute-group {
-            background: #f8f9fa;
+            background: #fffbeb;
             padding: 1.5rem;
-            border: 1px solid #e9ecef;
+            border: 1px solid #fbbf24;
         }
 
         /* Purchase Section Enhancement */
         .product-detail-page .purchase-section {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
             padding: 2rem;
-            border: 2px solid #e9ecef;
+            border: 2px solid #fbbf24;
         }
 
         /* Responsive Enhancements */
@@ -513,8 +514,8 @@
         }
 
         .product-detail-page .variant-info-header {
-            background: #000 !important;
-            border-bottom: 2px solid #333;
+            background: #d97706 !important;
+            border-bottom: 2px solid #b45309;
         }
 
         .product-detail-page .variant-info-item {
