@@ -1941,17 +1941,30 @@ class CartController extends Controller
                         ->first();
 
                     if ($bookFormat) {
+                        // Tính giá cuối cùng sau khi áp dụng discount (nếu có)
                         $finalPrice = $bookFormat->price;
+                        if (isset($bookFormat->discount) && $bookFormat->discount > 0) {
+                            // Discount là số tiền VNĐ trực tiếp, không phải phần trăm
+                            $finalPrice = $bookFormat->price - $bookFormat->discount;
+                            // Đảm bảo giá không âm
+                            $finalPrice = max(0, $finalPrice);
+                        }
 
-                        // Thêm extra price từ biến thể nếu có
+                        // Thêm extra price từ biến thể nếu có (chỉ cho sách vật lý)
                         if ($cartItem->attribute_value_ids && $cartItem->attribute_value_ids !== '[]') {
                             $attributeIds = json_decode($cartItem->attribute_value_ids, true);
                             if ($attributeIds && is_array($attributeIds)) {
-                                $extraPrice = DB::table('book_attribute_values')
-                                    ->whereIn('attribute_value_id', $attributeIds)
-                                    ->where('book_id', $cartItem->book_id)
-                                    ->sum('extra_price');
-                                $finalPrice += $extraPrice;
+                                // Kiểm tra xem có phải ebook không
+                                $isEbook = $bookFormat->format_name && stripos($bookFormat->format_name, 'ebook') !== false;
+                                
+                                if (!$isEbook) {
+                                    // Chỉ thêm extra price cho sách vật lý
+                                    $extraPrice = DB::table('book_attribute_values')
+                                        ->whereIn('attribute_value_id', $attributeIds)
+                                        ->where('book_id', $cartItem->book_id)
+                                        ->sum('extra_price');
+                                    $finalPrice += $extraPrice;
+                                }
                             }
                         }
 

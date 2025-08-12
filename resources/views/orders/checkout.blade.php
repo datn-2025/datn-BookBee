@@ -592,24 +592,8 @@
                     <div class="space-y-3 mb-6">
                         @foreach($cartItems as $item)
                         @php
-                            // Calculate attribute extra price for this item
-                            $attributeExtraPrice = 0;
-                            if (!empty($item->attribute_value_ids) && $item->attribute_value_ids !== '[]' && !$item->is_combo) {
-                                // Handle both array and JSON string formats
-                                if (is_array($item->attribute_value_ids)) {
-                                    $attributeIds = $item->attribute_value_ids;
-                                } else {
-                                    $attributeIds = json_decode($item->attribute_value_ids, true);
-                                }
-                                
-                                if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
-                                    $attributeExtraPrice = DB::table('book_attribute_values')
-                                        ->whereIn('attribute_value_id', $attributeIds)
-                                        ->where('book_id', $item->book_id)
-                                        ->sum('extra_price');
-                                }
-                            }
-                            $finalPrice = ($item->price ?? 0) + $attributeExtraPrice;
+                            // Sử dụng trực tiếp giá từ cart item (đã bao gồm discount và extra price)
+                            $finalPrice = $item->price ?? 0;
                         @endphp
                         <div class="group flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-black transition-all duration-300">
                             @if(isset($item->is_combo) && $item->is_combo)
