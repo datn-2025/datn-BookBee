@@ -148,35 +148,49 @@ class AISummaryController extends Controller
      */
     public function chatWithAI(Request $request, $bookId): JsonResponse
     {
-        $request->validate([
-            'message' => [
-                'required',
-                'string',
-                'min:3',
-                'max:300',
-                function ($attribute, $value, $fail) {
-                    // Kiểm tra UTF-8 hợp lệ
-                    if (!mb_check_encoding($value, 'UTF-8')) {
-                        $fail('Tin nhắn chứa ký tự không hợp lệ.');
-                    }
-                    
-                    // Kiểm tra không chỉ chứa whitespace
-                    if (trim($value) === '') {
-                        $fail('Tin nhắn không được để trống.');
-                    }
-                }
-            ]
-        ]);
-
         try {
-            $book = Book::with(['authors', 'category', 'summary'])->findOrFail($bookId);
+            // Validation với custom messages
+            $request->validate([
+                'message' => [
+                    'required',
+                    'string',
+                    'min:3',
+                    'max:300',
+                    function ($attribute, $value, $fail) {
+                        // Kiểm tra UTF-8 hợp lệ
+                        if (!mb_check_encoding($value, 'UTF-8')) {
+                            $fail('Tin nhắn chứa ký tự không hợp lệ.');
+                        }
+                        
+                        // Kiểm tra không chỉ chứa whitespace
+                        if (trim($value) === '') {
+                            $fail('Tin nhắn không được để trống.');
+                        }
+                    }
+                ]
+            ], [
+                'message.required' => 'Vui lòng nhập tin nhắn.',
+                'message.string' => 'Tin nhắn phải là chuỗi ký tự.',
+                'message.min' => 'Tin nhắn phải có ít nhất 3 ký tự.',
+                'message.max' => 'Tin nhắn không được vượt quá 300 ký tự.'
+            ]);
+
+            // Kiểm tra sách tồn tại
+            $book = Book::with(['authors', 'category', 'summary'])->find($bookId);
+            if (!$book) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy sách.'
+                ], 404);
+            }
+
             $userMessage = trim($request->input('message'));
 
             // Làm sạch UTF-8 encoding cho user message
             $userMessage = mb_convert_encoding($userMessage, 'UTF-8', 'UTF-8');
 
             // Kiểm tra rate limiting đơn giản (có thể cải thiện với Redis)
-            $sessionKey = 'chat_' . $bookId . '_' . session()->getId();
+            $sessionKey = 'chat_' . $bookId . '_' . (session()->getId() ?: 'guest_' . $request->ip());
             $lastChatTime = session()->get($sessionKey . '_last_time', 0);
             $chatCount = session()->get($sessionKey . '_count', 0);
             
@@ -216,8 +230,19 @@ class AISummaryController extends Controller
                 ]);
             }
 
-            // Gọi AI service
-            $aiResponse = $this->aiSummaryService->chatAboutBook($book, $userMessage);
+            // Gọi AI service với try-catch riêng
+            try {
+                $aiResponse = $this->aiSummaryService->chatAboutBook($book, $userMessage);
+            } catch (\Exception $aiError) {
+                Log::error('AI Service Error', [
+                    'book_id' => $bookId,
+                    'user_message' => $userMessage,
+                    'ai_error' => $aiError->getMessage()
+                ]);
+
+                // Fallback response nếu AI service lỗi
+                $aiResponse = "Xin lỗi, hiện tại tôi không thể trả lời câu hỏi của bạn về cuốn sách '{$book->title}'. Hệ thống AI đang gặp vấn đề. Vui lòng thử lại sau ít phút.";
+            }
 
             // Cập nhật session tracking
             session()->put($sessionKey . '_last_time', $now);
@@ -230,6 +255,14 @@ class AISummaryController extends Controller
                 'remaining_messages' => max(0, 10 - ($chatCount + 1))
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Xử lý validation errors
+            return response()->json([
+                'success' => false,
+                'message' => 'Dữ liệu không hợp lệ.',
+                'errors' => $e->errors()
+            ], 422);
+
         } catch (\Exception $e) {
             // Log chi tiết lỗi để debug
             Log::error('Chat with AI Controller Error', [
@@ -238,12 +271,13 @@ class AISummaryController extends Controller
                 'error_message' => $e->getMessage(),
                 'error_trace' => $e->getTraceAsString(),
                 'user_agent' => $request->userAgent(),
-                'ip' => $request->ip()
+                'ip' => $request->ip(),
+                'session_id' => session()->getId()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Lỗi khi chat với AI. Vui lòng thử lại sau.'
+                'message' => 'Lỗi hệ thống. Vui lòng thử lại sau.'
             ], 500);
         }
     }

@@ -329,6 +329,19 @@ class AdidasAISummaryManager {
         
         if (!chatMessages || !input || !message.trim()) return;
 
+        // Validate message length
+        if (message.length < 3) {
+            this.addChatMessage('Câu hỏi quá ngắn, vui lòng nhập ít nhất 3 ký tự.', 'error');
+            this.showNotification('Tin nhắn quá ngắn', 'error');
+            return;
+        }
+
+        if (message.length > 300) {
+            this.addChatMessage('Câu hỏi quá dài, vui lòng nhập tối đa 300 ký tự.', 'error');
+            this.showNotification('Tin nhắn quá dài', 'error');
+            return;
+        }
+
         // Clear the empty state if it exists
         const emptyState = chatMessages.querySelector('.text-center.py-8');
         if (emptyState) {
@@ -366,6 +379,43 @@ class AdidasAISummaryManager {
             console.log('Response status:', response.status);
             console.log('Response ok:', response.ok);
             
+            // Handle different HTTP status codes
+            if (response.status === 422) {
+                const result = await response.json();
+                console.log('Validation error:', result);
+                
+                let errorMessage = 'Tin nhắn không hợp lệ.';
+                if (result.errors && result.errors.message) {
+                    errorMessage = result.errors.message[0];
+                } else if (result.message) {
+                    errorMessage = result.message;
+                }
+                
+                this.addChatMessage(errorMessage, 'ai');
+                this.showNotification('Validation error', 'error');
+                return;
+            }
+
+            if (response.status === 429) {
+                const result = await response.json();
+                this.addChatMessage(result.message || 'Bạn đã gửi quá nhiều tin nhắn. Vui lòng đợi một chút.', 'ai');
+                this.showNotification('Rate limit exceeded', 'warning');
+                return;
+            }
+
+            if (response.status === 404) {
+                const result = await response.json();
+                this.addChatMessage(result.message || 'Không tìm thấy sách.', 'ai');
+                this.showNotification('Sách không tồn tại', 'error');
+                return;
+            }
+
+            if (response.status === 500) {
+                this.addChatMessage('Lỗi hệ thống. Vui lòng thử lại sau.', 'ai');
+                this.showNotification('Lỗi server', 'error');
+                return;
+            }
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
@@ -375,8 +425,13 @@ class AdidasAISummaryManager {
             
             if (result.success) {
                 this.addChatMessage(result.response, 'ai');
+                
+                // Show remaining messages if available
+                if (result.remaining_messages !== undefined && result.remaining_messages <= 3) {
+                    this.showNotification(`Còn ${result.remaining_messages} tin nhắn trong phút này`, 'warning');
+                }
             } else {
-                this.addChatMessage('Xin lỗi, đã có lỗi xảy ra khi xử lý tin nhắn của bạn.', 'ai');
+                this.addChatMessage(result.message || 'Xin lỗi, đã có lỗi xảy ra khi xử lý tin nhắn của bạn.', 'ai');
                 this.showNotification(result.message || 'Lỗi khi gửi tin nhắn', 'error');
             }
         } catch (error) {
@@ -391,6 +446,9 @@ class AdidasAISummaryManager {
             if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
                 this.addChatMessage('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.', 'ai');
                 this.showNotification('Lỗi kết nối mạng', 'error');
+            } else if (error.name === 'SyntaxError') {
+                this.addChatMessage('Lỗi dữ liệu từ server. Vui lòng thử lại.', 'ai');
+                this.showNotification('Lỗi dữ liệu', 'error');
             } else if (error.message.includes('HTTP')) {
                 this.addChatMessage(`Lỗi server: ${error.message}`, 'ai');
                 this.showNotification('Lỗi server', 'error');
