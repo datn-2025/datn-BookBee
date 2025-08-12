@@ -16,23 +16,36 @@ class BookTypeLineChart extends Component
         // Lấy id trạng thái "Thành công"
         $successStatus = \App\Models\OrderStatus::where('name', 'Thành công')->value('id');
 
-        // Lấy tất cả order_items thuộc các đơn hàng trạng thái Thành công, join đủ để lấy book_id, format, created_at
+        // Tạo mảng các tháng từ tháng 1 đến tháng hiện tại của năm hiện tại
+        $currentYear = now()->year;
+        $currentMonth = now()->month;
+        $months = [];
+        for ($i = 1; $i <= $currentMonth; $i++) {
+            $months[] = sprintf('%04d-%02d', $currentYear, $i);
+        }
+        $this->labels = array_map(function($month) {
+            return date('Y/m', strtotime($month . '-01'));
+        }, $months);
+
+        // Lấy dữ liệu bán hàng từ đầu năm đến tháng hiện tại
+        $startDate = $currentYear . '-01-01 00:00:00';
+        $endDate = now()->endOfMonth()->format('Y-m-d H:i:s');
+
         $orderItems = \App\Models\OrderItem::query()
-            ->selectRaw('book_formats.format_name, DATE_FORMAT(orders.created_at, "%Y-%m") as month, SUM(order_items.quantity) as total')
+            ->selectRaw('book_formats.format_name, 
+                       DATE_FORMAT(orders.created_at, "%Y-%m") as month, 
+                       SUM(order_items.quantity) as total')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('books', 'order_items.book_id', '=', 'books.id')
-            ->join('book_formats', function($join) {
-                $join->on('book_formats.book_id', '=', 'books.id');
-            })
+            ->join('book_formats', 'order_items.book_format_id', '=', 'book_formats.id')
             ->where('orders.order_status_id', $successStatus)
+            ->whereBetween('orders.created_at', [$startDate, $endDate])
             ->groupBy('month', 'book_formats.format_name')
             ->orderBy('month')
             ->get();
 
-        // Lấy danh sách tháng và format
-        $months = $orderItems->pluck('month')->unique()->values()->toArray();
+        // Lấy danh sách các định dạng sách
         $formats = $orderItems->pluck('format_name')->unique()->values()->toArray();
-        $this->labels = $months;
 
         // Chuẩn bị dữ liệu cho chart
         $colors = [
@@ -69,9 +82,7 @@ class BookTypeLineChart extends Component
             foreach ($months as $month) {
                 $count = DB::table('order_items')
                     ->join('books', 'order_items.book_id', '=', 'books.id')
-                    ->join('book_formats', function($join) {
-                        $join->on('book_formats.book_id', '=', 'books.id');
-                    })
+                    ->join('book_formats', 'order_items.book_format_id', '=', 'book_formats.id')
                     ->join('orders', 'order_items.order_id', '=', 'orders.id')
                     ->where('orders.order_status_id', $successStatus)
                     ->whereRaw('DATE_FORMAT(orders.created_at, "%Y-%m") = ?', [$month])

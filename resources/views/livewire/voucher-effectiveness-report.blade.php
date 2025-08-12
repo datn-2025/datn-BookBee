@@ -20,7 +20,7 @@
         <thead>
             <tr>
                 <th>Mã voucher</th>
-                <th>Thời gian</th>
+                <th>Thời gian hiệu lực</th>
                 <th>Số đơn hàng</th>
                 <th>Doanh thu</th>
                 <th>Giảm giá</th>
