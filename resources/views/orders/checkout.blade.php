@@ -134,10 +134,18 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-bold uppercase tracking-wide mb-2">ĐƠN HÀNG EBOOK</h3>
-                        <p class="text-sm leading-relaxed">
+                        <p class="text-sm leading-relaxed mb-3">
                             Giỏ hàng của bạn chỉ có <span class="font-bold">sách điện tử (ebook)</span>. 
-                            Bạn không cần nhập địa chỉ giao hàng và sẽ nhận link tải ebook qua email sau khi thanh toán thành công.
+                            Bạn sẽ nhận link tải ebook qua email sau khi thanh toán thành công.
                         </p>
+                        <div class="bg-white/10 p-4 rounded">
+                            <h4 class="font-bold text-sm mb-2">💳 PHƯƠNG THỨC THANH TOÁN:</h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• <span class="font-semibold">Thanh toán online:</span> Nhận link tải ngay sau khi thanh toán thành công</li>
+                                <li>• <span class="text-gray-300">Thanh toán khi nhận hàng không áp dụng cho ebook</span></li>
+                            </ul>
+                            <p class="text-xs mt-2 opacity-90">* Không cần nhập địa chỉ giao hàng cho ebook.</p>
+                        </div>
                     </div>
                 </div>
             </div>
