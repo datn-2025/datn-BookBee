@@ -95,7 +95,7 @@ class VoucherEffectivenessReport extends Component
             ->pluck('voucher_id');
 
         $vouchers = Voucher::whereIn('id', $usedVoucherIds)->get();
-        $totalOrders = Order::whereBetween('created_at', [$this->appliedFromDate, $this->appliedToDate])->count();
+        $totalOrders = Order::count();
 
         $report = $vouchers->map(function ($voucher) use ($totalOrders) {
             $appliedVouchers = AppliedVoucher::where('voucher_id', $voucher->id)
@@ -103,9 +103,7 @@ class VoucherEffectivenessReport extends Component
                 ->get();
 
             $orderIds = $appliedVouchers->pluck('order_id')->filter();
-            $orders = Order::whereIn('id', $orderIds)
-                ->whereBetween('created_at', [$this->appliedFromDate, $this->appliedToDate])
-                ->get();
+            $orders = Order::whereIn('id', $orderIds)->get();
 
             $orderCount = $orders->count();
             $totalRevenue = $orders->sum('total_amount');
