@@ -2852,7 +2852,7 @@
                 
                 if (!isEbook) {
                     attributeSelects.forEach(select => {
-                        if (select.selectedOptions[0]) {
+                        if (select.selectedOptions[0] && select.value) {
                             const selectedOption = select.selectedOptions[0];
                             const extraPrice = parseFloat(selectedOption.dataset.price) || 0;
                             const attributeStock = parseInt(selectedOption.dataset.stock) || 0;
@@ -2916,9 +2916,10 @@
                         }
                     });
                     
-                    // Use the lowest variant stock for physical books
+                    // Use the lowest variant stock for physical books - apply hierarchical stock logic
                     if (selectedVariantInfo.length > 0) {
-                        stock = lowestVariantStock;
+                        // Apply hierarchical stock: Math.min(format_stock, lowest_variant_stock)
+                        stock = Math.min(stock, lowestVariantStock);
                     }
                 }
 
@@ -3199,10 +3200,12 @@
                                 newText += ' (+' + new Intl.NumberFormat('vi-VN').format(extraPrice) + '₫)';
                             }
                             
-                            // Add stock info
+                            // Add stock info with better formatting
                             if (variantStock <= 0) {
                                 newText += ' - Hết hàng';
                             } else if (variantStock <= 5) {
+                                newText += ' - Còn ' + variantStock + ' cuốn';
+                            } else if (variantStock <= 10) {
                                 newText += ' - Còn ' + variantStock + ' cuốn';
                             }
                             
@@ -3263,6 +3266,77 @@
                 }
             }
 
+            // Helper function to get real-time available stock based on current selections
+            function getCurrentAvailableStock() {
+                const formatSelect = document.getElementById('bookFormatSelect');
+                const attributeSelects = document.querySelectorAll('[name^="attributes["]');
+                
+                if (!formatSelect || !formatSelect.selectedOptions[0]) {
+                    return 0;
+                }
+                
+                const selectedText = formatSelect.selectedOptions[0].textContent.trim().toLowerCase();
+                const isEbook = selectedText.includes('ebook');
+                
+                // For ebooks, return unlimited
+                if (isEbook) {
+                    return Infinity;
+                }
+                
+                let formatStock = parseInt(formatSelect.selectedOptions[0].dataset.stock) || 0;
+                let minVariantStock = Infinity;
+                let hasSelectedVariants = false;
+                
+                // Check if any attributes are selected
+                attributeSelects.forEach(select => {
+                    if (select.value && select.selectedOptions[0]) {
+                        hasSelectedVariants = true;
+                        const variantStock = parseInt(select.selectedOptions[0].dataset.stock) || 0;
+                        if (variantStock < minVariantStock) {
+                            minVariantStock = variantStock;
+                        }
+                    }
+                });
+                
+                // Apply hierarchical stock logic
+                if (hasSelectedVariants && minVariantStock !== Infinity) {
+                    return Math.min(formatStock, minVariantStock);
+                }
+                
+                return formatStock;
+            }
+
+            // Helper function to update stock display in real-time
+            function updateRealTimeStockDisplay() {
+                const currentStock = getCurrentAvailableStock();
+                const stockQuantityDisplay = document.getElementById('stockQuantityDisplay');
+                const productQuantityElement = document.getElementById('productQuantity');
+                const quantityInput = document.getElementById('quantity');
+                
+                // Update stock display
+                if (stockQuantityDisplay && currentStock !== Infinity) {
+                    if (currentStock > 0) {
+                        stockQuantityDisplay.style.display = 'inline';
+                        if (productQuantityElement) {
+                            productQuantityElement.textContent = currentStock;
+                        }
+                    } else {
+                        stockQuantityDisplay.style.display = 'none';
+                    }
+                }
+                
+                // Update quantity input constraints
+                if (quantityInput && currentStock !== Infinity) {
+                    quantityInput.max = Math.max(0, currentStock);
+                    
+                    // Adjust current value if it exceeds new max
+                    const currentValue = parseInt(quantityInput.value) || 1;
+                    if (currentValue > currentStock) {
+                        quantityInput.value = Math.max(1, Math.min(currentValue, currentStock));
+                    }
+                }
+            }
+
             // Initialize variant overview interactions
             function initializeVariantOverview() {
                 const variantItems = document.querySelectorAll('.variant-item:not(.out-of-stock)');
@@ -3311,6 +3385,7 @@
                 if (formatSelect) {
                     formatSelect.addEventListener('change', function() {
                         updatePriceAndStock();
+                        updateRealTimeStockDisplay(); // Update real-time stock display
                         
                         // Update dropdown options display only for physical books
                         const selectedOption = formatSelect.selectedOptions[0];
@@ -3331,6 +3406,7 @@
                 attributeSelects.forEach(select => {
                     select.addEventListener('change', function() {
                         updatePriceAndStock();
+                        updateRealTimeStockDisplay(); // Update real-time stock display
                         
                         // Re-check attribute visibility after any attribute change
                         const formatSelect = document.getElementById('bookFormatSelect');
@@ -3385,10 +3461,12 @@
 
                 // Initialize price and stock on page load
                 updatePriceAndStock();
+                updateRealTimeStockDisplay(); // Initialize real-time stock display
 
                 // Initialize attribute visibility on page load - Double check after DOM fully loaded
                 setTimeout(() => {
                     updatePriceAndStock(); // Gọi lại để đảm bảo thuộc tính được ẩn/hiện đúng
+                    updateRealTimeStockDisplay(); // Update real-time stock display again
                     
                     // Final check for attribute visibility
                     const finalFormatSelect = document.getElementById('bookFormatSelect');
@@ -3442,14 +3520,14 @@
 
                     // Frontend validation for quantity - check before sending request
                     if (!isEbook) {
-                        // Get current stock information from DOM
+                        // Get current stock information from DOM - use hierarchical stock logic
                         let currentStock = 0;
                         const formatSelect = document.getElementById('bookFormatSelect');
                         
                         if (formatSelect && formatSelect.selectedOptions[0]) {
                             currentStock = parseInt(formatSelect.selectedOptions[0].dataset.stock) || 0;
                             
-                            // If attributes are selected, get minimum variant stock
+                            // If attributes are selected, get minimum variant stock and apply hierarchical logic
                             if (attributeValueIds.length > 0) {
                                 let minVariantStock = Infinity;
                                 
@@ -3463,6 +3541,7 @@
                                 });
                                 
                                 if (minVariantStock !== Infinity) {
+                                    // Apply hierarchical stock: Math.min(format_stock, min_variant_stock)
                                     currentStock = Math.min(currentStock, minVariantStock);
                                 }
                             }
@@ -3575,7 +3654,7 @@
                                 return;
                             }
 
-                            // Use minimum between format stock and variant stock
+                            // Apply hierarchical stock: Math.min(format_stock, min_variant_stock)
                             if (minVariantStock !== Infinity) {
                                 finalStock = Math.min(formatStock, minVariantStock);
                                 
