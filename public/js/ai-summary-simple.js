@@ -479,6 +479,11 @@ class AISummaryManager {
             return;
         }
 
+        if (message.length > 300) {
+            this.showNotification('Câu hỏi quá dài, vui lòng nhập tối đa 300 ký tự', 'error');
+            return;
+        }
+
         const chatMessages = document.getElementById('chat-messages');
         const sendButton = document.querySelector('.send-chat-btn');
         
@@ -524,6 +529,64 @@ class AISummaryManager {
             console.log('Chat API response status:', response.status);
             console.log('Chat API response headers:', response.headers);
 
+            // Xử lý response dựa trên status code
+            if (response.status === 422) {
+                // Validation error
+                const result = await response.json();
+                console.log('Validation error:', result);
+                
+                this.removeTypingIndicator(typingId);
+                
+                let errorMessage = 'Tin nhắn không hợp lệ.';
+                if (result.errors && result.errors.message) {
+                    errorMessage = result.errors.message[0];
+                } else if (result.message) {
+                    errorMessage = result.message;
+                }
+                
+                this.addChatMessage(chatMessages, errorMessage, 'error');
+                this.showNotification('Validation error', 'error');
+                return;
+            }
+
+            if (response.status === 429) {
+                // Rate limit error
+                const result = await response.json();
+                console.log('Rate limit error:', result);
+                
+                this.removeTypingIndicator(typingId);
+                this.addChatMessage(chatMessages, result.message || 'Bạn đã gửi quá nhiều tin nhắn. Vui lòng đợi một chút.', 'warning');
+                this.showNotification('Rate limit exceeded', 'warning');
+                return;
+            }
+
+            if (response.status === 404) {
+                // Not found error
+                const result = await response.json();
+                console.log('Book not found error:', result);
+                
+                this.removeTypingIndicator(typingId);
+                this.addChatMessage(chatMessages, result.message || 'Không tìm thấy sách.', 'error');
+                this.showNotification('Sách không tồn tại', 'error');
+                return;
+            }
+
+            if (response.status === 500) {
+                // Server error
+                this.removeTypingIndicator(typingId);
+                this.addChatMessage(chatMessages, 'Lỗi hệ thống. Vui lòng thử lại sau.', 'error');
+                this.showNotification('Lỗi server', 'error');
+                return;
+            }
+
+            if (!response.ok) {
+                // Other HTTP errors
+                this.removeTypingIndicator(typingId);
+                this.addChatMessage(chatMessages, `Lỗi HTTP ${response.status}. Vui lòng thử lại.`, 'error');
+                this.showNotification(`HTTP ${response.status} Error`, 'error');
+                return;
+            }
+
             const result = await response.json();
             console.log('Chat API result:', result);
             
@@ -541,17 +604,8 @@ class AISummaryManager {
                 }
             } else {
                 console.error('Chat API error:', result);
-                // Xử lý các loại lỗi khác nhau
-                if (response.status === 429) {
-                    this.addChatMessage(chatMessages, result.message || 'Bạn đã gửi quá nhiều tin nhắn. Vui lòng đợi một chút.', 'warning');
-                    this.showNotification('Rate limit exceeded', 'warning');
-                } else if (response.status === 422) {
-                    // Validation error
-                    this.addChatMessage(chatMessages, result.message || 'Tin nhắn không hợp lệ. Vui lòng kiểm tra lại.', 'error');
-                    this.showNotification('Validation error', 'error');
-                } else {
-                    this.addChatMessage(chatMessages, result.message || 'Lỗi khi gửi tin nhắn', 'error');
-                }
+                this.addChatMessage(chatMessages, result.message || 'Lỗi khi gửi tin nhắn', 'error');
+                this.showNotification(result.message || 'Lỗi API', 'error');
             }
 
         } catch (error) {
@@ -566,8 +620,17 @@ class AISummaryManager {
             });
             
             this.removeTypingIndicator(typingId);
-            this.addChatMessage(chatMessages, 'Lỗi kết nối. Vui lòng thử lại sau.', 'error');
-            this.showNotification('Lỗi kết nối', 'error');
+            
+            if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+                this.addChatMessage(chatMessages, 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.', 'error');
+                this.showNotification('Lỗi kết nối mạng', 'error');
+            } else if (error.name === 'SyntaxError') {
+                this.addChatMessage(chatMessages, 'Lỗi dữ liệu từ server. Vui lòng thử lại.', 'error');
+                this.showNotification('Lỗi dữ liệu', 'error');
+            } else {
+                this.addChatMessage(chatMessages, 'Lỗi không xác định. Vui lòng thử lại sau.', 'error');
+                this.showNotification('Lỗi hệ thống', 'error');
+            }
         } finally {
             // Re-enable input và button
             input.disabled = false;
