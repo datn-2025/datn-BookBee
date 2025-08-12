@@ -135,11 +135,14 @@ class OrderService
                 // Lưu thuộc tính vào bảng order_item_attribute_values
                 if (!empty($attributeIds)) {
                     foreach ($attributeIds as $attributeValueId) {
-                        \App\Models\OrderItemAttributeValue::create([
-                            'id' => (string) Str::uuid(),
-                            'order_item_id' => $orderItem->id,
-                            'attribute_value_id' => $attributeValueId
-                        ]);
+                        // Kiểm tra attributeValueId hợp lệ (không phải 0, null, hoặc empty)
+                        if ($attributeValueId && is_numeric($attributeValueId) && $attributeValueId > 0) {
+                            \App\Models\OrderItemAttributeValue::create([
+                                'id' => (string) Str::uuid(),
+                                'order_item_id' => $orderItem->id,
+                                'attribute_value_id' => $attributeValueId
+                            ]);
+                        }
                     }
                 }
             }
@@ -539,7 +542,8 @@ class OrderService
         
         if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
             foreach ($attributeValueIds as $attributeValueId) {
-                if ($attributeValueId) {
+                // Kiểm tra attributeValueId hợp lệ (không phải 0, null, hoặc empty)
+                if ($attributeValueId && is_numeric($attributeValueId) && $attributeValueId > 0) {
                     $bookAttributeValue = BookAttributeValue::where('book_id', $cartItem->book_id)
                         ->where('attribute_value_id', $attributeValueId)
                         ->first();
@@ -584,9 +588,23 @@ class OrderService
     {
         $attributeValueIds = $cartItem->attribute_value_ids ?? [];
         
+        // Xử lý attribute_value_ids có thể là JSON string hoặc array
+        if (is_string($attributeValueIds) && !empty($attributeValueIds) && $attributeValueIds !== '[]') {
+            $decoded = json_decode($attributeValueIds, true);
+            if (is_array($decoded)) {
+                $attributeValueIds = $decoded;
+            } else {
+                $attributeValueIds = [];
+            }
+        } elseif (!is_array($attributeValueIds)) {
+            $attributeValueIds = [];
+        }
+        
+        // Chỉ tạo record khi có thuộc tính hợp lệ
         if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
             foreach ($attributeValueIds as $attributeValueId) {
-                if ($attributeValueId) {
+                // Kiểm tra attributeValueId hợp lệ (không phải 0, null, hoặc empty)
+                if ($attributeValueId && is_numeric($attributeValueId) && $attributeValueId > 0) {
                     OrderItemAttributeValue::create([
                         'id' => (string) Str::uuid(),
                         'order_item_id' => $orderItem->id,
@@ -594,14 +612,8 @@ class OrderService
                     ]);
                 }
             }
-        } else {
-            // Tạo record với attribute_value_id = 0 nếu không có thuộc tính
-            OrderItemAttributeValue::create([
-                'id' => (string) Str::uuid(),
-                'order_item_id' => $orderItem->id,
-                'attribute_value_id' => 0,
-            ]);
         }
+        // Không tạo record nào nếu không có thuộc tính (ví dụ: ebook)
     }
 
     /**
