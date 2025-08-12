@@ -94,6 +94,35 @@ class AddressClientController extends Controller
         return response()->json($address);
     }
 
+    public function getAddressForShipping($id)
+    {
+        try {
+            // Lấy địa chỉ theo ID với thông tin cần thiết cho tính phí ship
+            $address = Auth::user()->addresses()->findOrFail($id);
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $address->id,
+                    'district_id' => $address->district_id,
+                    'ward_code' => $address->ward_code,
+                    'city' => $address->city,
+                    'district' => $address->district,
+                    'ward' => $address->ward,
+                    'address_detail' => $address->address_detail,
+                    'recipient_name' => $address->recipient_name,
+                    'phone' => $address->phone
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error getting address for shipping: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể lấy thông tin địa chỉ'
+            ], 500);
+        }
+    }
+
     public function update(Request $request, $id)
     {
         // Validate dữ liệu từ form

@@ -144,11 +144,12 @@ Route::middleware('auth')->group(function () {
 
         // Address management
         Route::get('/addresses', [AddressClientController::class, 'index'])->name('addresses');
-        Route::post('/addresses', [AddressClientController::class, 'store'])->name('addresses.store');
-        Route::get('/addresses/{id}/edit', [AddressClientController::class, 'edit'])->name('addresses.edit');
-        Route::put('/addresses/{id}', [AddressClientController::class, 'update'])->name('addresses.update');
-        Route::delete('/addresses/{id}', [AddressClientController::class, 'destroy'])->name('addresses.destroy');
-        Route::post('/addresses/{id}/set-default', [AddressClientController::class, 'setDefault'])->name('addresses.setDefault');
+Route::post('/addresses', [AddressClientController::class, 'store'])->name('addresses.store');
+Route::get('/addresses/{id}/edit', [AddressClientController::class, 'edit'])->name('addresses.edit');
+Route::get('/addresses/{id}/shipping', [AddressClientController::class, 'getAddressForShipping'])->name('addresses.shipping');
+Route::put('/addresses/{id}', [AddressClientController::class, 'update'])->name('addresses.update');
+Route::delete('/addresses/{id}', [AddressClientController::class, 'destroy'])->name('addresses.destroy');
+Route::post('/addresses/{id}/set-default', [AddressClientController::class, 'setDefault'])->name('addresses.setDefault');
 
         Route::get('/purchase', [ReviewClientController::class, 'index'])->name('purchase');
 
