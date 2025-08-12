@@ -228,7 +228,7 @@
 
         .product-detail-page .adidas-btn-enhanced:active {
             transform: translateY(0);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 15px rgba(217, 119, 6, 0.2);
         }
 
         .product-detail-page .adidas-btn-enhanced .relative {
@@ -793,7 +793,7 @@
                             </button>
                             <!-- Enhanced Share Section -->
                             <div class="share-section pt-8 border-t border-gray-200 mt-8">
-                                <h3 class="text-sm font-bold text-black uppercase tracking-wider mb-6">Chia sẻ sản phẩm</h3>
+                                <h3 class="text-sm font-bold text-amber-600 uppercase tracking-wider mb-6">Chia sẻ sản phẩm</h3>
                                 <div class="flex space-x-4">
                                     <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}"
                                         target="_blank" class="share-btn-enhanced w-12 h-12 flex items-center justify-center">
@@ -888,9 +888,9 @@
                     <!-- Section Header with Adidas Style -->
                     <div class="relative">
                         <div class="flex items-center space-x-4 mb-8">
-                            <div class="w-1 h-12 bg-black"></div>
+                            <div class="w-1 h-12 bg-amber-600"></div>
                             <div>
-                                <h2 class="adidas-font text-3xl font-bold text-black uppercase tracking-wider">
+                                <h2 class="adidas-font text-3xl font-bold text-amber-600 uppercase tracking-wider">
                                     ĐÁNH GIÁ KHÁCH HÀNG - COMBO
                                 </h2>
                                 <div class="flex items-center space-x-2 mt-1">
@@ -918,9 +918,9 @@
                     <div class="space-y-6">
                         @forelse($combo->reviews as $review)
                             <div
-                                class="review-card bg-white border-2 border-gray-100 relative overflow-hidden group hover:border-black transition-all duration-300">
+                                class="review-card bg-white border-2 border-gray-100 relative overflow-hidden group hover:border-amber-600 transition-all duration-300">
                                 <!-- Header Bar -->
-                                <div class="bg-black text-white px-6 py-3 flex items-center justify-between">
+                                <div class="bg-amber-600 text-white px-6 py-3 flex items-center justify-between">
                                     <div class="flex items-center space-x-3">
                                         <div class="w-8 h-8 bg-white bg-opacity-20 flex items-center justify-center">
                                             <i class="fas fa-user text-xs"></i>
@@ -1072,7 +1072,7 @@
                             <!-- Enhanced Empty State -->
                             <div class="bg-white border-2 border-gray-100 relative overflow-hidden">
                                 <!-- Header Bar -->
-                                <div class="bg-black text-white px-6 py-3 flex items-center justify-between">
+                                <div class="bg-amber-600 text-white px-6 py-3 flex items-center justify-between">
                                     <div class="flex items-center space-x-3">
                                         <div class="w-8 h-8 bg-white bg-opacity-20 flex items-center justify-center">
                                             <i class="fas fa-comments text-xs"></i>
@@ -1087,25 +1087,25 @@
                                 <!-- Content Area -->
                                 <div class="p-12 text-center">
                                     <div class="space-y-6">
-                                        <div class="w-16 h-16 bg-gray-100 flex items-center justify-center mx-auto">
-                                            <i class="fas fa-star text-2xl text-gray-400"></i>
+                                        <div class="w-16 h-16 bg-amber-50 flex items-center justify-center mx-auto">
+                                            <i class="fas fa-star text-2xl text-amber-400"></i>
                                         </div>
                                         <div class="space-y-2 col-span-1">
-                                            <h3 class="text-xl font-bold text-black uppercase tracking-wider adidas-font">CHƯA CÓ
+                                            <h3 class="text-xl font-bold text-amber-600 uppercase tracking-wider adidas-font">CHƯA CÓ
                                                 ĐÁNH GIÁ</h3>
                                             <p class="text-gray-600 text-sm adidas-font">Hãy là người đầu tiên đánh giá combo
                                                 này.</p>
                                         </div>
                                         <div class="flex justify-center space-x-1">
-                                            <div class="w-2 h-2 bg-black"></div>
-                                            <div class="w-2 h-2 bg-gray-300"></div>
-                                            <div class="w-2 h-2 bg-gray-300"></div>
+                                            <div class="w-2 h-2 bg-amber-600"></div>
+                                            <div class="w-2 h-2 bg-amber-300"></div>
+                                            <div class="w-2 h-2 bg-amber-300"></div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Side accent -->
-                                <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-600 to-black">
+                                <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600">
                                 </div>
                             </div>
                         @endforelse
@@ -1208,7 +1208,7 @@
                                     </div>
 
                                     <!-- Side accent -->
-                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-600 to-black">
+                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600">
                                     </div>
                                 </div>
                             </div>
@@ -1220,9 +1220,9 @@
             {{-- Sản phẩm liên quan (đồng bộ style sách đơn, fix ảnh) --}}
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20">
                 <div class="flex items-center space-x-4 mb-8">
-                    <div class="w-1 h-12 bg-black"></div>
+                    <div class="w-1 h-12 bg-amber-600"></div>
                     <div>
-                        <h2 class="adidas-font text-3xl font-bold text-black uppercase tracking-wider">
+                        <h2 class="adidas-font text-3xl font-bold text-amber-600 uppercase tracking-wider">
                             SẢN PHẨM LIÊN QUAN
                         </h2>
                         <p class="text-sm text-gray-600 uppercase tracking-wide font-medium mt-1">Có thể bạn sẽ thích</p>
@@ -1234,7 +1234,7 @@
                         </div>
                     @endif
                     @foreach ($relatedCombos as $related)
-                        <div class="bg-white border border-gray-200 overflow-hidden group hover:border-black transition-all duration-300 p-2 cursor-pointer relative"
+                        <div class="bg-white border border-gray-200 overflow-hidden group hover:border-amber-600 transition-all duration-300 p-2 cursor-pointer relative"
                             onclick="window.location.href='{{ route('combos.show', $related->slug ?? $related->id) }}'">
                             <div class="relative aspect-square bg-white border border-gray-100 overflow-hidden mb-2">
                                 <a href="{{ route('combos.show', $related->slug ?? $related->id) }}" class="block w-full h-full">
@@ -1253,8 +1253,8 @@
                                 <!-- Wishlist Button -->
                                 <div class="absolute top-2 right-2">
                                     <button
-                                        class="w-10 h-10 bg-white bg-opacity-90 flex items-center justify-center border border-gray-200 hover:bg-black hover:text-white hover:border-black transition-all duration-300 transform hover:scale-110"
-                                        onclick="event.stopPropagation();">
+                                        class="w-10 h-10 bg-white bg-opacity-90 flex items-center justify-center border border-gray-200 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition-all duration-300 transform hover:scale-110"
+                                        onclick="event.stopPropagation();">>
                                         <i class="far fa-heart text-sm"></i>
                                     </button>
                                 </div>
@@ -1858,9 +1858,9 @@
                         <!-- Section Header with Adidas Style -->
                         <div class="relative">
                             <div class="flex items-center space-x-4 mb-8">
-                                <div class="w-1 h-12 bg-black"></div>
+                                <div class="w-1 h-12 bg-amber-600"></div>
                                 <div>
-                                    <h2 class="adidas-font text-3xl font-bold text-black uppercase tracking-wider">
+                                    <h2 class="adidas-font text-3xl font-bold text-amber-600 uppercase tracking-wider">
                                         ĐÁNH GIÁ KHÁCH HÀNG
                                     </h2>
                                     <div class="flex items-center space-x-2 mt-1">
@@ -1888,9 +1888,9 @@
                         <div class="space-y-6">
                             @forelse($book->reviews as $review)
                                 <div
-                                    class="review-card bg-white border-2 border-gray-100 relative overflow-hidden group hover:border-black transition-all duration-300">
+                                    class="review-card bg-white border-2 border-gray-100 relative overflow-hidden group hover:border-amber-600 transition-all duration-300">
                                     <!-- Header Bar -->
-                                    <div class="bg-black text-white px-6 py-3 flex items-center justify-between">
+                                    <div class="bg-amber-600 text-white px-6 py-3 flex items-center justify-between">
                                         <div class="flex items-center space-x-3">
                                             <div class="w-8 h-8 bg-white bg-opacity-20 flex items-center justify-center">
                                                 <i class="fas fa-user text-xs"></i>
@@ -1965,7 +1965,7 @@
                                         @endif
 
                                         <!-- Product Info & Format -->
-                                        <div class="mt-4 p-3 bg-gray-50 border-l-4 border-black product-info">
+                                        <div class="mt-4 p-3 bg-gray-50 border-l-4 border-amber-600 product-info">
                                             <div class="flex items-center justify-between">
                                                 <div class="flex items-center space-x-3">
                                                     <span class="text-xs text-gray-600 uppercase tracking-wider font-semibold">
@@ -2002,14 +2002,14 @@
                                     </div>
 
                                     <!-- Side accent -->
-                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-600 to-black">
+                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600">
                                     </div>
                                 </div>
                             @empty
                                 <!-- Enhanced Empty State -->
                                 <div class="bg-white border-2 border-gray-100 relative overflow-hidden">
                                     <!-- Header Bar -->
-                                    <div class="bg-black text-white px-6 py-3 flex items-center justify-between">
+                                    <div class="bg-amber-600 text-white px-6 py-3 flex items-center justify-between">
                                         <div class="flex items-center space-x-3">
                                             <div class="w-8 h-8 bg-white bg-opacity-20  flex items-center justify-center">
                                                 <i class="fas fa-comments text-xs"></i>
@@ -2024,25 +2024,25 @@
                                     <!-- Content Area -->
                                     <div class="p-12 text-center">
                                         <div class="space-y-6">
-                                            <div class="w-16 h-16 bg-gray-100  flex items-center justify-center mx-auto">
-                                                <i class="fas fa-star text-2xl text-gray-400"></i>
+                                            <div class="w-16 h-16 bg-amber-50  flex items-center justify-center mx-auto">
+                                                <i class="fas fa-star text-2xl text-amber-400"></i>
                                             </div>
                                             <div class="space-y-2 col-span-1">
-                                                <h3 class="text-xl font-bold text-black uppercase tracking-wider adidas-font">CHƯA CÓ
+                                                <h3 class="text-xl font-bold text-amber-600 uppercase tracking-wider adidas-font">CHƯA CÓ
                                                     ĐÁNH GIÁ</h3>
                                                 <p class="text-gray-600 text-sm adidas-font">Hãy là người đầu tiên đánh giá sản phẩm
                                                     này.</p>
                                             </div>
                                             <div class="flex justify-center space-x-1">
-                                                <div class="w-2 h-2 bg-black "></div>
-                                                <div class="w-2 h-2 bg-gray-300 "></div>
-                                                <div class="w-2 h-2 bg-gray-300 "></div>
+                                                <div class="w-2 h-2 bg-amber-600 "></div>
+                                                <div class="w-2 h-2 bg-amber-300 "></div>
+                                                <div class="w-2 h-2 bg-amber-300 "></div>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Side accent -->
-                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-600 to-black">
+                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600">
                                     </div>
                                 </div>
                             @endforelse
@@ -2054,9 +2054,9 @@
                         <!-- Section Header with Adidas Style -->
                         <div class="relative">
                             <div class="flex items-center space-x-4 mb-8">
-                                <div class="w-1 h-12 bg-black"></div>
+                                <div class="w-1 h-12 bg-amber-600"></div>
                                 <div>
-                                    <h2 class="adidas-font text-3xl font-bold text-black uppercase tracking-wider">
+                                    <h2 class="adidas-font text-3xl font-bold text-amber-600 uppercase tracking-wider">
                                         SẢN PHẨM LIÊN QUAN
                                     </h2>
                                     <p class="text-sm text-gray-600 uppercase tracking-wide font-medium mt-1">Có thể bạn sẽ thích
@@ -2083,7 +2083,7 @@
                                     }
                                 @endphp
 
-                                <div class="bg-white border border-gray-200 overflow-hidden group hover:border-black transition-all duration-300 p-2 cursor-pointer relative"
+                                <div class="bg-white border border-gray-200 overflow-hidden group hover:border-amber-600 transition-all duration-300 p-2 cursor-pointer relative"
                                     onclick="window.location.href='{{ route('books.show', $related->slug ?? $related->id) }}'">
                                     <div class="relative aspect-square bg-white border border-gray-100 overflow-hidden mb-2">
                                         <a href="{{ route('books.show', $related->slug ?? $related->id) }}" class="block w-full h-full">
@@ -2105,8 +2105,8 @@
                                         <!-- Wishlist Button -->
                                         <div class="absolute top-2 right-2">
                                             <button
-                                                class="w-10 h-10 bg-white bg-opacity-90 flex items-center justify-center border border-gray-200 hover:bg-black hover:text-white hover:border-black transition-all duration-300 transform hover:scale-110"
-                                                onclick="event.stopPropagation();">
+                                                class="w-10 h-10 bg-white bg-opacity-90 flex items-center justify-center border border-gray-200 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition-all duration-300 transform hover:scale-110"
+                                                onclick="event.stopPropagation();">>
                                                 <i class="far fa-heart text-sm"></i>
                                             </button>
                                         </div>
