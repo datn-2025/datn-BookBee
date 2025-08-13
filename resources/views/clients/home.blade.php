@@ -424,7 +424,11 @@
                                 
                                 <!-- Image Container -->
                                 <div class="aspect-square bg-gray-50 overflow-hidden relative">
-                                    <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
+                                    <img src="{{ $book->cover_image 
+    ? asset('storage/' . $book->cover_image) 
+    : ($book->images->first() 
+        ? asset('storage/' . $book->images->first()->image_url) 
+        : asset('images/default.jpg')) }}"
                                          alt="{{ $book->title }}"
                                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                     
@@ -507,7 +511,11 @@
                         
                         <!-- Image Container -->
                         <div class="aspect-square bg-gray-50 overflow-hidden relative">
-                            <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
+                            <img src="{{ $book->cover_image 
+                                ? asset('storage/' . $book->cover_image) 
+                                : ($book->images->first() 
+                                    ? asset('storage/' . $book->images->first()->image_url) 
+                                    : asset('images/default.jpg')) }}"
                                  alt="{{ $book->title }}"
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                             
@@ -588,7 +596,11 @@
                 <div class="bg-black text-white relative overflow-hidden group cursor-pointer h-[600px]"
                      onclick="window.location='{{ route('books.show', ['slug' => $featuredBooks->first()->slug]) }}'">
                     <div class="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10"></div>
-                    <img src="{{ $featuredBooks->first()->images->first() ? asset('storage/' . $featuredBooks->first()->images->first()->image_url) : ($featuredBooks->first()->cover_image ? asset('storage/' . $featuredBooks->first()->cover_image) : asset('images/default.jpg')) }}"
+                    <img src="{{ $featuredBooks->first()->cover_image
+    ? asset('storage/' . $featuredBooks->first()->cover_image)
+    : ($featuredBooks->first()->images->first()
+        ? asset('storage/' . $featuredBooks->first()->images->first()->image_url)
+        : asset('images/default.jpg')) }}"
                          alt="Best Selling Book"
                          class="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-500">
                     
@@ -630,7 +642,11 @@
                         @foreach ($latestBooks->take(3) as $book)
                             <div onclick="window.location='{{ route('books.show', ['slug' => $book->slug]) }}'"
                                  class="flex gap-4 p-3 hover:bg-gray-50 cursor-pointer group transition-colors border-b border-gray-100 last:border-b-0">
-                                <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
+                                <img src="{{ $book->cover_image 
+                                    ? asset('storage/' . $book->cover_image) 
+                                    : ($book->images->first() 
+                                        ? asset('storage/' . $book->images->first()->image_url) 
+                                        : asset('images/default.jpg')) }}"
                                      alt="{{ $book->title }}" 
                                      class="w-24 h-32 object-cover shadow-lg rounded flex-shrink-0">
                                 <div class="flex-1 min-w-0 flex flex-col justify-between">
@@ -661,7 +677,11 @@
                             @endphp
                             <div onclick="window.location='{{ route('books.show', ['slug' => $book->slug]) }}'"
                                  class="flex gap-4 p-3 hover:bg-gray-50 cursor-pointer group transition-colors border-b border-gray-100 last:border-b-0">
-                                <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
+                                <img src="{{ $book->cover_image 
+                                    ? asset('storage/' . $book->cover_image) 
+                                    : ($book->images->first() 
+                                        ? asset('storage/' . $book->images->first()->image_url) 
+                                        : asset('images/default.jpg')) }}"
                                      alt="{{ $book->title }}" 
                                      class="w-24 h-32 object-cover shadow-lg rounded flex-shrink-0">
                                 <div class="flex-1 min-w-0 flex flex-col justify-between">
@@ -720,8 +740,11 @@
                                 
                                 <!-- Image Container -->
                                 <div class="aspect-square bg-gray-50 overflow-hidden relative">
-                                    <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
-                                         alt="{{ $book->title }}"
+                                    <img src="{{ $book->cover_image 
+                                        ? asset('storage/' . $book->cover_image) 
+                                        : ($book->images->first() 
+                                            ? asset('storage/' . $book->images->first()->image_url) 
+                                            : asset('images/default.jpg')) }}"
                                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                     
                                     @if ($discount > 0)
