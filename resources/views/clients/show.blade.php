@@ -1434,8 +1434,8 @@
                                             -<span id="discountAmount">0</span>₫
                                         </span>
                                     @endif
-                                    <!-- Stock Status with Enhanced Design -->
-                                    @php
+                                </div>
+                                @php
                                         $isEbook = false;
                                         if (isset($defaultFormat->format_name)) {
                                             $isEbook = stripos($defaultFormat->format_name, 'ebook') !== false;
@@ -1504,7 +1504,6 @@
                                             </span>
                                         @endif
                                     </div>
-                                </div>
                             </div>
 
                             <!-- Quà tặng kèm -->
