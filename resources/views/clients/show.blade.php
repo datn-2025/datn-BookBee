@@ -559,7 +559,7 @@
                 gap: 0.75rem;
             }
 
-            .product-detail-page .variant-info-item > div:first-child {
+            .product-detail-page .variant-info-item>div:first-child {
                 width: 100%;
             }
 
@@ -843,12 +843,14 @@
                         <i class="fas fa-align-left mr-2 text-black"></i>Mô tả combo
                     </h2>
                     @php
-                        $comboDesc = strip_tags($combo->description ?? '');
+                        // Giải mã HTML entity nếu trong DB lưu dạng &lt;p&gt;
+                        $decodedDesc = html_entity_decode($combo->description ?? '');
+                        // Loại bỏ thẻ HTML
+                        $comboDesc = strip_tags($decodedDesc);
                         $showComboMore = \Illuminate\Support\Str::length($comboDesc) > 200;
                     @endphp
                     <div id="comboDescription" class="text-gray-700 text-base leading-relaxed text-left"
-                        data-full="{{ e($comboDesc) }}"
-                        data-short="{{ \Illuminate\Support\Str::limit($comboDesc, 200, '...') }}">
+                        data-full="{{ $comboDesc }}" data-short="{{ \Illuminate\Support\Str::limit($comboDesc, 200, '...') }}">
                         @if (empty($comboDesc))
                             <div class="text-center"><span class="italic text-gray-400">Không có mô tả nào</span></div>
                         @else
@@ -964,95 +966,104 @@
                                     </div>
 
                                     <!-- Comment -->
-                                        <div class="relative">
-                                            <div
-                                                class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-400 to-black">
+                                    <div class="relative">
+                                        <div
+                                            class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-400 to-black">
+                                        </div>
+                                        <div class="pl-6">
+                                            <p class="text-gray-800 leading-relaxed font-medium review-comment">{{ $review->comment }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Review Images -->
+                                    @if($review->images && count($review->images) > 0)
+                                        <div class="mt-4">
+                                            <div class="text-xs text-gray-600 mb-2 uppercase tracking-wider font-semibold">
+                                                ẢNH ĐÁNH GIÁ
                                             </div>
-                                            <div class="pl-6">
-                                                <p class="text-gray-800 leading-relaxed font-medium review-comment">{{ $review->comment }}</p>
+                                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                @foreach($review->images as $imagePath)
+                                                    <div class="relative group cursor-pointer review-image"
+                                                        onclick="showReviewImageModal('{{ asset('storage/' . $imagePath) }}')">
+                                                        <img src="{{ asset('storage/' . $imagePath) }}" alt="Review Image"
+                                                            class="w-full h-20 object-cover border border-gray-300 group-hover:border-black transition-colors duration-200">
+                                                        <div
+                                                            class="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-90 transition-all duration-200 flex items-center justify-center">
+                                                            <i
+                                                                class="fas fa-expand-alt text-black opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-lg"></i>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
                                             </div>
                                         </div>
+                                    @endif
 
-                                        <!-- Review Images -->
-                                        @if($review->images && count($review->images) > 0)
-                                            <div class="mt-4">
-                                                <div class="text-xs text-gray-600 mb-2 uppercase tracking-wider font-semibold">
-                                                    ẢNH ĐÁNH GIÁ
+                                    <!-- Admin Response -->
+                                    @if($review->admin_response)
+                                        <div
+                                            class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-r-lg admin-response">
+                                            <div class="flex items-center space-x-2 mb-2">
+                                                <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-reply text-xs"></i>
                                                 </div>
-                                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                                                    @foreach($review->images as $imagePath)
-                                                        <div class="relative group cursor-pointer review-image" onclick="showReviewImageModal('{{ asset('storage/' . $imagePath) }}')">
-                                                            <img src="{{ asset('storage/' . $imagePath) }}" 
-                                                                 alt="Review Image" 
-                                                                 class="w-full h-20 object-cover border border-gray-300 group-hover:border-black transition-colors duration-200">
-                                                            <div class="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-90 transition-all duration-200 flex items-center justify-center">
-                                                                <i class="fas fa-expand-alt text-black opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-lg"></i>
-                                                            </div>
-                                                        </div>
-                                                    @endforeach
+                                                <span class="text-xs text-blue-700 uppercase tracking-wider font-bold">
+                                                    PHẢN HỒI TỪ BOOKBEE
+                                                </span>
+                                            </div>
+                                            <div class="pl-8">
+                                                <p class="text-gray-700 leading-relaxed font-medium italic">{{ $review->admin_response }}
+                                                </p>
+                                                <div class="mt-2 text-xs text-gray-500">
+                                                    <i class="fas fa-clock mr-1"></i>
+                                                    {{ $review->updated_at->format('d/m/Y H:i') }}
                                                 </div>
                                             </div>
-                                        @endif
+                                        </div>
+                                    @endif
 
-                                        <!-- Admin Response -->
-                                        @if($review->admin_response)
-                                            <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-r-lg admin-response">
-                                                <div class="flex items-center space-x-2 mb-2">
-                                                    <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center">
-                                                        <i class="fas fa-reply text-xs"></i>
-                                                    </div>
-                                                    <span class="text-xs text-blue-700 uppercase tracking-wider font-bold">
-                                                        PHẢN HỒI TỪ BOOKBEE
-                                                    </span>
+                                    <!-- Admin Response -->
+                                    @if($review->admin_response)
+                                        <div
+                                            class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-r-lg admin-response">
+                                            <div class="flex items-center space-x-2 mb-2">
+                                                <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-reply text-xs"></i>
                                                 </div>
-                                                <div class="pl-8">
-                                                    <p class="text-gray-700 leading-relaxed font-medium italic">{{ $review->admin_response }}</p>
-                                                    <div class="mt-2 text-xs text-gray-500">
-                                                        <i class="fas fa-clock mr-1"></i>
-                                                        {{ $review->updated_at->format('d/m/Y H:i') }}
-                                                    </div>
+                                                <span class="text-xs text-blue-700 uppercase tracking-wider font-bold">
+                                                    PHẢN HỒI TỪ BOOKBEE
+                                                </span>
+                                            </div>
+                                            <div class="pl-8">
+                                                <p class="text-gray-700 leading-relaxed font-medium italic">{{ $review->admin_response }}
+                                                </p>
+                                                <div class="mt-2 text-xs text-gray-500">
+                                                    <i class="fas fa-clock mr-1"></i>
+                                                    {{ $review->updated_at->format('d/m/Y H:i') }}
                                                 </div>
                                             </div>
-                                        @endif
+                                        </div>
+                                    @endif
 
-                                        <!-- Admin Response -->
-                                        @if($review->admin_response)
-                                            <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-r-lg admin-response">
-                                                <div class="flex items-center space-x-2 mb-2">
-                                                    <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center">
-                                                        <i class="fas fa-reply text-xs"></i>
-                                                    </div>
-                                                    <span class="text-xs text-blue-700 uppercase tracking-wider font-bold">
-                                                        PHẢN HỒI TỪ BOOKBEE
-                                                    </span>
-                                                </div>
-                                                <div class="pl-8">
-                                                    <p class="text-gray-700 leading-relaxed font-medium italic">{{ $review->admin_response }}</p>
-                                                    <div class="mt-2 text-xs text-gray-500">
-                                                        <i class="fas fa-clock mr-1"></i>
-                                                        {{ $review->updated_at->format('d/m/Y H:i') }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @endif
-
-                                        <!-- Product Info & Format -->
+                                    <!-- Product Info & Format -->
                                     <div class="mt-4 p-3 bg-gray-50 border-l-4 border-black product-info">
                                         <div class="flex items-center justify-between">
                                             <div class="flex items-center space-x-3">
                                                 <span class="text-xs text-gray-600 uppercase tracking-wider font-semibold">
                                                     {{ $review->product_type }}: {{ $review->product_name }}
                                                 </span>
-                                                <span class="px-2 py-1 text-xs font-bold uppercase tracking-wider bg-green-100 text-green-800">
+                                                <span
+                                                    class="px-2 py-1 text-xs font-bold uppercase tracking-wider bg-green-100 text-green-800">
                                                     COMBO
                                                 </span>
-                                            </div>  
+                                            </div>
                                         </div>
                                     </div>
 
                                     <!-- Bottom Accent -->
                                     <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-                                        <div class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider verified-badge">
+                                        <div
+                                            class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider verified-badge">
                                             <i class="fas fa-check-circle w-3"></i>
                                             <span>Đánh giá đã xác thực</span>
                                         </div>
@@ -1105,31 +1116,32 @@
                                 </div>
 
                                 <!-- Side accent -->
-                                <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600">
+                                <div
+                                    class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600">
                                 </div>
                             </div>
                         @endforelse
                     </div>
-                    
+
                     {{-- Form đánh giá combo --}}
                     @auth
                         @php
                             // Kiểm tra xem user đã mua combo này chưa và đã hoàn thành đơn hàng chưa
                             $userPurchasedCombo = Auth::user()->orders()
-                                ->whereHas('orderStatus', function($q) {
+                                ->whereHas('orderStatus', function ($q) {
                                     $q->where('name', 'Thành công');
                                 })
-                                ->whereHas('orderItems', function($q) use ($combo) {
+                                ->whereHas('orderItems', function ($q) use ($combo) {
                                     $q->where('collection_id', $combo->id);
                                 })
                                 ->exists();
-                            
+
                             // Kiểm tra xem user đã đánh giá combo này chưa
                             $userReviewed = Auth::user()->reviews()
                                 ->where('collection_id', $combo->id)
                                 ->exists();
                         @endphp
-                        
+
                         @if($userPurchasedCombo && !$userReviewed)
                             <div class="mt-12">
                                 <div class="bg-white border-2 border-gray-100 relative overflow-hidden">
@@ -1149,23 +1161,23 @@
                                     <!-- Content Area -->
                                     <div class="p-6">
                                         <form action="{{ route('account.reviews.store') }}" method="POST" class="space-y-6">
-                                             @csrf
-                                             <input type="hidden" name="collection_id" value="{{ $combo->id }}">
-                                             @php
-                                                 // Tìm order_id của đơn hàng đã hoàn thành có chứa combo này
-                                                 $completedOrder = Auth::user()->orders()
-                                                     ->whereHas('orderStatus', function($q) {
-                                                         $q->where('name', 'Thành công');
-                                                     })
-                                                     ->whereHas('orderItems', function($q) use ($combo) {
-                                                         $q->where('collection_id', $combo->id);
-                                                     })
-                                                     ->first();
+                                            @csrf
+                                            <input type="hidden" name="collection_id" value="{{ $combo->id }}">
+                                            @php
+                                                // Tìm order_id của đơn hàng đã hoàn thành có chứa combo này
+                                                $completedOrder = Auth::user()->orders()
+                                                    ->whereHas('orderStatus', function ($q) {
+                                                        $q->where('name', 'Thành công');
+                                                    })
+                                                    ->whereHas('orderItems', function ($q) use ($combo) {
+                                                        $q->where('collection_id', $combo->id);
+                                                    })
+                                                    ->first();
                                              @endphp
-                                             @if($completedOrder)
-                                                 <input type="hidden" name="order_id" value="{{ $completedOrder->id }}">
-                                             @endif
-                                            
+                                            @if($completedOrder)
+                                                <input type="hidden" name="order_id" value="{{ $completedOrder->id }}">
+                                            @endif
+
                                             <!-- Rating Section -->
                                             <div class="space-y-3">
                                                 <label class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">
@@ -1174,32 +1186,36 @@
                                                 <div class="flex items-center space-x-2">
                                                     <div class="flex space-x-1 rating-stars">
                                                         @for($i = 5; $i >= 1; $i--)
-                                                            <input type="radio" id="combo-star-{{ $i }}" name="rating" value="{{ $i }}" class="sr-only" {{ $i == 5 ? 'checked' : '' }}>
-                                                            <label for="combo-star-{{ $i }}" class="text-gray-300 text-2xl cursor-pointer transition-all duration-200 hover:text-yellow-400 hover:scale-110 star-label" data-star="{{ $i }}">★</label>
+                                                            <input type="radio" id="combo-star-{{ $i }}" name="rating" value="{{ $i }}"
+                                                                class="sr-only" {{ $i == 5 ? 'checked' : '' }}>
+                                                            <label for="combo-star-{{ $i }}"
+                                                                class="text-gray-300 text-2xl cursor-pointer transition-all duration-200 hover:text-yellow-400 hover:scale-110 star-label"
+                                                                data-star="{{ $i }}">★</label>
                                                         @endfor
                                                     </div>
                                                     <span class="text-sm text-gray-600 ml-3 rating-text">Tuyệt vời</span>
                                                 </div>
                                             </div>
-                                            
+
                                             <!-- Comment Section -->
                                             <div class="space-y-3">
-                                                <label for="combo-comment" class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">
+                                                <label for="combo-comment"
+                                                    class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">
                                                     Chia sẻ trải nghiệm của bạn về combo này
                                                 </label>
-                                                <textarea id="combo-comment" name="comment" rows="4" 
-                                                          class="w-full px-4 py-3 border-2 border-gray-300 focus:border-black focus:ring-0 text-sm resize-none transition-all duration-200" 
-                                                          placeholder="Chia sẻ trải nghiệm của bạn về combo này...">{{ old('comment') }}</textarea>
+                                                <textarea id="combo-comment" name="comment" rows="4"
+                                                    class="w-full px-4 py-3 border-2 border-gray-300 focus:border-black focus:ring-0 text-sm resize-none transition-all duration-200"
+                                                    placeholder="Chia sẻ trải nghiệm của bạn về combo này...">{{ old('comment') }}</textarea>
                                             </div>
-                                            
+
                                             <!-- Submit Button -->
                                             <div class="flex items-center justify-between pt-4 border-t border-gray-100">
                                                 <div class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider">
                                                     <i class="fas fa-info-circle w-3"></i>
                                                     <span>Đánh giá sẽ được hiển thị sau khi duyệt</span>
                                                 </div>
-                                                <button type="submit" 
-                                                        class="px-8 py-3 bg-black hover:bg-gray-800 text-white text-sm font-bold uppercase tracking-wider transition-all duration-300 flex items-center space-x-2">
+                                                <button type="submit"
+                                                    class="px-8 py-3 bg-black hover:bg-gray-800 text-white text-sm font-bold uppercase tracking-wider transition-all duration-300 flex items-center space-x-2">
                                                     <i class="fas fa-paper-plane text-xs"></i>
                                                     <span>GỬI ĐÁNH GIÁ</span>
                                                 </button>
@@ -1208,7 +1224,8 @@
                                     </div>
 
                                     <!-- Side accent -->
-                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600">
+                                    <div
+                                        class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600">
                                     </div>
                                 </div>
                             </div>
@@ -1406,7 +1423,8 @@
                                         <span id="originalPrice"
                                             class="text-xl text-gray-500 line-through adidas-font">{{ number_format($defaultPrice, 0, ',', '.') }}₫</span>
                                         <span id="discountText"
-                                            class="bg-red-600 text-white px-3 py-1 text-sm font-bold adidas-font uppercase tracking-wider">-<span id="discountAmount">{{ number_format($discount, 0, ',', '.') }}</span>₫</span>
+                                            class="bg-red-600 text-white px-3 py-1 text-sm font-bold adidas-font uppercase tracking-wider">-<span
+                                                id="discountAmount">{{ number_format($discount, 0, ',', '.') }}</span>₫</span>
                                     @else
                                         <span id="originalPrice" class="text-xl text-gray-500 line-through adidas-font"
                                             style="display: none;"></span>
@@ -1533,7 +1551,7 @@
                                 </div>
                             @endif
 
-                          
+
 
                             <!-- Enhanced Format Selection -->
                             @if ($book->formats->count())
@@ -1617,123 +1635,150 @@
                                                 <div class="relative">
                                                     <select name="attributes[{{ $attrVal->id }}]" id="attribute_{{ $attrVal->id }}"
                                                         class="adidas-select w-full appearance-none bg-white">
-                                                        @foreach($filteredValues as $bookAttrVal)                                            @php
-                                                $variantStock = $bookAttrVal->stock ?? 0;
-                                                $variantSku = $bookAttrVal->sku ?? '';
-                                                $extraPrice = $bookAttrVal->extra_price ?? 0;
-                                                $displayText = $bookAttrVal->attributeValue->value ?? 'Không rõ';
-                                                
-                                                // Build option text with price and stock info - logic will be dynamic via JavaScript
-                                                $optionText = $displayText;
-                                                
-                                                // Always show actual extra price in dropdown initially (JavaScript will handle ebook case)
-                                                if ($extraPrice > 0) {
-                                                    $optionText .= ' (+' . number_format($extraPrice, 0, ',', '.') . '₫)';
-                                                }
-                                                
-                                                // Add stock info
-                                                if ($variantStock <= 0) {
-                                                    $optionText .= ' - Hết hàng';
-                                                } else if ($variantStock <= 5) {
-                                                    $optionText .= ' - Còn ' . $variantStock . ' cuốn';
-                                                }
-                                            @endphp                                            <option value="{{ $bookAttrVal->attribute_value_id }}"
-                                                data-price="{{ $extraPrice }}"
-                                                data-stock="{{ $variantStock }}"
-                                                data-sku="{{ $variantSku }}"
-                                                {{ $variantStock == 0 ? 'disabled' : '' }}>
-                                                {{ $optionText }}
-                                            </option>
+                                                        @foreach($filteredValues as $bookAttrVal) @php
+                                                                $variantStock = $bookAttrVal->stock ?? 0;
+                                                                $variantSku = $bookAttrVal->sku ?? '';
+                                                                $extraPrice = $bookAttrVal->extra_price ?? 0;
+                                                                $displayText = $bookAttrVal->attributeValue->value ?? 'Không rõ';
+
+                                                                // Build option text with price and stock info - logic will be dynamic via JavaScript
+                                                                $optionText = $displayText;
+
+                                                                // Always show actual extra price in dropdown initially (JavaScript will handle ebook case)
+                                                                if ($extraPrice > 0) {
+                                                                    $optionText .= ' (+' . number_format($extraPrice, 0, ',', '.') . '₫)';
+                                                                }
+
+                                                                // Add stock info
+                                                                if ($variantStock <= 0) {
+                                                                    $optionText .= ' - Hết hàng';
+                                                                } else if ($variantStock <= 5) {
+                                                                    $optionText .= ' - Còn ' . $variantStock . ' cuốn';
+                                                                }
+                                                            @endphp <option value="{{ $bookAttrVal->attribute_value_id }}"
+                                                                data-price="{{ $extraPrice }}" data-stock="{{ $variantStock }}"
+                                                                data-sku="{{ $variantSku }}" {{ $variantStock == 0 ? 'disabled' : '' }}>
+                                                                {{ $optionText }}
+                                                            </option>
                                                         @endforeach
                                                     </select>
                                                     <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
                                                         <i class="fas fa-chevron-down text-black"></i>
                                                     </div>
                                                 </div>
-                                                                 {{-- Thông tin biến thể đã chọn --}}
-                                <div id="variant_info_{{ $attrVal->id }}" class="mt-4 hidden">
-                                    <div class="variant-info-card bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 shadow-sm">
-                                        <div class="variant-info-header bg-black text-white px-4 py-3 flex items-center">
-                                            <i class="fas fa-info-circle mr-2 text-sm"></i>
-                                            <span class="text-sm font-bold uppercase tracking-wider adidas-font">Thông tin đã chọn</span>
-                                        </div>
-                                        
-                                        <!-- For Physical Books -->
-                                        <div id="physical_variant_info_{{ $attrVal->id }}" class="p-4 space-y-3">
-                                            <div class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
-                                                <div class="flex items-center">
-                                                    <div class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
-                                                        <i class="fas fa-boxes text-xs"></i>
+                                                {{-- Thông tin biến thể đã chọn --}}
+                                                <div id="variant_info_{{ $attrVal->id }}" class="mt-4 hidden">
+                                                    <div
+                                                        class="variant-info-card bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 shadow-sm">
+                                                        <div class="variant-info-header bg-black text-white px-4 py-3 flex items-center">
+                                                            <i class="fas fa-info-circle mr-2 text-sm"></i>
+                                                            <span class="text-sm font-bold uppercase tracking-wider adidas-font">Thông tin
+                                                                đã chọn</span>
+                                                        </div>
+
+                                                        <!-- For Physical Books -->
+                                                        <div id="physical_variant_info_{{ $attrVal->id }}" class="p-4 space-y-3">
+                                                            <div
+                                                                class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                                                                <div class="flex items-center">
+                                                                    <div
+                                                                        class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
+                                                                        <i class="fas fa-boxes text-xs"></i>
+                                                                    </div>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Số
+                                                                        lượng:</span>
+                                                                </div>
+                                                                <span id="selected_stock_{{ $attrVal->id }}"
+                                                                    class="variant-info-value font-bold text-green-700 bg-white px-3 py-1 border border-green-300 text-sm">-</span>
+                                                            </div>
+                                                            <div
+                                                                class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                                                                <div class="flex items-center">
+                                                                    <div
+                                                                        class="icon-container w-8 h-8 bg-yellow-500 text-white rounded-sm flex items-center justify-center mr-3">
+                                                                        <i class="fas fa-coins text-xs"></i>
+                                                                    </div>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Phí
+                                                                        cộng thêm:</span>
+                                                                </div>
+                                                                <span id="selected_extra_price_{{ $attrVal->id }}"
+                                                                    class="variant-info-value font-bold text-yellow-700 bg-white px-3 py-1 border border-yellow-300 text-sm">0₫</span>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- For Ebooks -->
+                                                        <div id="ebook_variant_info_{{ $attrVal->id }}" class="p-4 space-y-3 hidden">
+                                                            <div
+                                                                class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                                                                <div class="flex items-center">
+                                                                    <div
+                                                                        class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
+                                                                        <i class="fas fa-check-circle text-xs"></i>
+                                                                    </div>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Trạng
+                                                                        thái:</span>
+                                                                </div>
+                                                                <div
+                                                                    class="variant-info-badge inline-flex items-center px-3 py-1 bg-green-100 text-green-800 border border-green-300 text-xs font-bold uppercase tracking-wide adidas-font">
+                                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                                    Còn hàng
+                                                                </div>
+                                                            </div>
+                                                            <div
+                                                                class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                                                                <div class="flex items-center">
+                                                                    <div
+                                                                        class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
+                                                                        <i class="fas fa-coins text-xs"></i>
+                                                                    </div>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Phí
+                                                                        cộng thêm:</span>
+                                                                </div>
+                                                                <span
+                                                                    class="variant-info-value font-bold text-green-700 bg-white px-3 py-1 border border-green-300 text-sm">Miễn
+                                                                    phí</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <span class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Số lượng:</span>
                                                 </div>
-                                                <span id="selected_stock_{{ $attrVal->id }}" class="variant-info-value font-bold text-green-700 bg-white px-3 py-1 border border-green-300 text-sm">-</span>
-                                            </div>
-                                            <div class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
-                                                <div class="flex items-center">
-                                                    <div class="icon-container w-8 h-8 bg-yellow-500 text-white rounded-sm flex items-center justify-center mr-3">
-                                                        <i class="fas fa-coins text-xs"></i>
-                                                    </div>
-                                                    <span class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Phí cộng thêm:</span>
-                                                </div>
-                                                <span id="selected_extra_price_{{ $attrVal->id }}" class="variant-info-value font-bold text-yellow-700 bg-white px-3 py-1 border border-yellow-300 text-sm">0₫</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- For Ebooks -->
-                                        <div id="ebook_variant_info_{{ $attrVal->id }}" class="p-4 space-y-3 hidden">
-                                            <div class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
-                                                <div class="flex items-center">
-                                                    <div class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
-                                                        <i class="fas fa-check-circle text-xs"></i>
-                                                    </div>
-                                                    <span class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Trạng thái:</span>
-                                                </div>
-                                                <div class="variant-info-badge inline-flex items-center px-3 py-1 bg-green-100 text-green-800 border border-green-300 text-xs font-bold uppercase tracking-wide adidas-font">
-                                                    <i class="fas fa-check-circle mr-1"></i>
-                                                    Còn hàng
-                                                </div>
-                                            </div>
-                                            <div class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
-                                                <div class="flex items-center">
-                                                    <div class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
-                                                        <i class="fas fa-coins text-xs"></i>
-                                                    </div>
-                                                    <span class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Phí cộng thêm:</span>
-                                                </div>
-                                                <span class="variant-info-value font-bold text-green-700 bg-white px-3 py-1 border border-green-300 text-sm">Miễn phí</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                                             </div>
                                         @endforeach
                                     </div>
-                                    
+
                                     {{-- Tổng kết phí cộng thêm và stock biến thể --}}
-                                    {{-- <div id="attributesSummary" class="mt-6 bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 p-4 rounded-lg shadow-sm hidden">
+                                    {{-- <div id="attributesSummary"
+                                        class="mt-6 bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 p-4 rounded-lg shadow-sm hidden">
                                         <div class="flex items-center mb-3">
                                             <i class="fas fa-calculator text-gray-600 mr-2"></i>
-                                            <span class="text-sm font-bold text-gray-800 uppercase tracking-wide">Tổng kết lựa chọn</span>
+                                            <span class="text-sm font-bold text-gray-800 uppercase tracking-wide">Tổng kết lựa
+                                                chọn</span>
                                         </div>
-                                        
+
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <!-- Tổng phí cộng thêm -->
                                             <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-100">
                                                 <div class="flex items-center">
                                                     <i class="fas fa-plus-circle text-yellow-500 mr-2 text-sm"></i>
-                                                    <span class="text-sm font-medium text-gray-700" id="extraPriceLabel">Tổng phí cộng thêm:</span>
+                                                    <span class="text-sm font-medium text-gray-700" id="extraPriceLabel">Tổng phí cộng
+                                                        thêm:</span>
                                                 </div>
-                                                <span id="totalExtraPrice" class="font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm">0₫</span>
+                                                <span id="totalExtraPrice"
+                                                    class="font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm">0₫</span>
                                             </div>
-                                            
+
                                             <!-- Stock thấp nhất (cho sách vật lý) -->
-                                            <div id="minStockSummary" class="flex items-center justify-between p-2 bg-white rounded border border-gray-100">
+                                            <div id="minStockSummary"
+                                                class="flex items-center justify-between p-2 bg-white rounded border border-gray-100">
                                                 <div class="flex items-center">
                                                     <i class="fas fa-warehouse text-green-500 mr-2 text-sm"></i>
                                                     <span class="text-sm font-medium text-gray-700">Tồn kho khả dụng:</span>
                                                 </div>
-                                                <span id="minStockValue" class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">-</span>
+                                                <span id="minStockValue"
+                                                    class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">-</span>
                                             </div>
                                         </div>
                                     </div> --}}
@@ -1810,7 +1855,10 @@
                         </div>
                     </div>
                     @php
-                        $bookDesc = strip_tags($book->description ?? '');
+                        // Decode nếu mô tả trong DB lưu dạng HTML entity
+                        $decodedDesc = html_entity_decode($book->description ?? '');
+                        // Xóa toàn bộ thẻ HTML
+                        $bookDesc = strip_tags($decodedDesc);
                         $showBookMore = \Illuminate\Support\Str::length($bookDesc) > 200;
                     @endphp
                     @if(isset($book))
@@ -1819,7 +1867,7 @@
                                 <i class="fas fa-align-left mr-2 text-black"></i>Mô tả sách
                             </h2>
                             <div id="bookDescription" class="text-gray-700 text-base leading-relaxed text-left"
-                                data-full="{{ e($bookDesc) }}" data-short="{{ \Illuminate\Support\Str::limit($bookDesc, 200, '...') }}">
+                                data-full="{{ $bookDesc }}" data-short="{{ \Illuminate\Support\Str::limit($bookDesc, 200, '...') }}">
                                 @if (empty($bookDesc))
                                     <div class="text-center"><span class="italic text-gray-400">Không có mô tả nào</span></div>
                                 @else
@@ -1939,7 +1987,9 @@
                                                 class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-400 to-black">
                                             </div>
                                             <div class="pl-6">
-                                                <p class="text-gray-800 leading-relaxed font-medium review-comment">{{ $review->comment }}</p>
+                                                <p class="text-gray-800 leading-relaxed font-medium review-comment">
+                                                    {{ $review->comment }}
+                                                </p>
                                             </div>
                                         </div>
 
@@ -1951,12 +2001,14 @@
                                                 </div>
                                                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                                     @foreach($review->images as $imagePath)
-                                                        <div class="relative group cursor-pointer review-image" onclick="showReviewImageModal('{{ asset('storage/' . $imagePath) }}')">
-                                                            <img src="{{ asset('storage/' . $imagePath) }}" 
-                                                                 alt="Review Image" 
-                                                                 class="w-full h-20 object-cover border border-gray-300 group-hover:border-black transition-colors duration-200">
-                                                            <div class="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-90 transition-all duration-200 flex items-center justify-center">
-                                                                <i class="fas fa-expand-alt text-black opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-lg"></i>
+                                                        <div class="relative group cursor-pointer review-image"
+                                                            onclick="showReviewImageModal('{{ asset('storage/' . $imagePath) }}')">
+                                                            <img src="{{ asset('storage/' . $imagePath) }}" alt="Review Image"
+                                                                class="w-full h-20 object-cover border border-gray-300 group-hover:border-black transition-colors duration-200">
+                                                            <div
+                                                                class="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-90 transition-all duration-200 flex items-center justify-center">
+                                                                <i
+                                                                    class="fas fa-expand-alt text-black opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-lg"></i>
                                                             </div>
                                                         </div>
                                                     @endforeach
@@ -1973,23 +2025,25 @@
                                                     </span>
                                                     @php
                                                         $orderItem = $review->order->orderItems->firstWhere('book_id', $review->book_id);
-                                                        
+
                                                     @endphp
                                                     @if($orderItem && $orderItem->bookFormat)
-                                                    {{-- @php
+                                                        {{-- @php
                                                         dd($orderItem->bookFormat->format_name);
-                                                    @endphp --}}
-                                                        <span class="px-2 py-1 text-xs font-bold uppercase tracking-wider rounded-none {{ strtolower($orderItem->bookFormat->format_name) === 'ebook' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
+                                                        @endphp --}}
+                                                        <span
+                                                            class="px-2 py-1 text-xs font-bold uppercase tracking-wider rounded-none {{ strtolower($orderItem->bookFormat->format_name) === 'ebook' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
                                                             {{ $orderItem->bookFormat->format_name }}
                                                         </span>
                                                     @endif
-                                                </div>  
+                                                </div>
                                             </div>
                                         </div>
 
                                         <!-- Bottom Accent -->
                                         <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-                                            <div class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider verified-badge">
+                                            <div
+                                                class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider verified-badge">
                                                 <i class="fas fa-check-circle w-3"></i>
                                                 <span>Đánh giá đã xác thực</span>
                                             </div>
@@ -2002,7 +2056,8 @@
                                     </div>
 
                                     <!-- Side accent -->
-                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600">
+                                    <div
+                                        class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600">
                                     </div>
                                 </div>
                             @empty
@@ -2028,7 +2083,8 @@
                                                 <i class="fas fa-star text-2xl text-amber-400"></i>
                                             </div>
                                             <div class="space-y-2 col-span-1">
-                                                <h3 class="text-xl font-bold text-amber-600 uppercase tracking-wider adidas-font">CHƯA CÓ
+                                                <h3 class="text-xl font-bold text-amber-600 uppercase tracking-wider adidas-font">CHƯA
+                                                    CÓ
                                                     ĐÁNH GIÁ</h3>
                                                 <p class="text-gray-600 text-sm adidas-font">Hãy là người đầu tiên đánh giá sản phẩm
                                                     này.</p>
@@ -2042,7 +2098,8 @@
                                     </div>
 
                                     <!-- Side accent -->
-                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600">
+                                    <div
+                                        class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600">
                                     </div>
                                 </div>
                             @endforelse
@@ -2365,7 +2422,7 @@
                 const classMap = {
                     stock: {
                         green: 'font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm',
-                        yellow: 'font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm', 
+                        yellow: 'font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm',
                         red: 'font-bold text-red-600 bg-red-100 px-2 py-1 rounded text-sm'
                     },
                     badge: {
@@ -2377,7 +2434,7 @@
                     },
                     dot: {
                         gray: 'bg-gray-500',
-                        yellow: 'bg-yellow-500', 
+                        yellow: 'bg-yellow-500',
                         red: 'bg-red-500',
                         green: 'bg-green-500',
                         blue: 'bg-blue-500'
@@ -2426,7 +2483,7 @@
                         dot: 'red'
                     }
                 };
-                
+
                 return statusMap[bookStatus] || statusMap['Còn Hàng'];
             }
 
@@ -2455,7 +2512,7 @@
                 const btn = document.getElementById(btnId);
                 const div = document.getElementById(divId);
                 let isExpanded = false;
-                
+
                 if (btn && div) {
                     btn.addEventListener('click', function () {
                         if (isExpanded) {
@@ -2630,7 +2687,7 @@
                 if (!ratingStars.length) return;
 
                 ratingStars.forEach(star => {
-                    star.addEventListener('mouseenter', function() {
+                    star.addEventListener('mouseenter', function () {
                         const rating = parseInt(this.dataset.star);
                         updateStarDisplay(ratingStars, rating);
                         if (ratingText && ratingTexts[rating]) {
@@ -2638,7 +2695,7 @@
                         }
                     });
 
-                    star.addEventListener('click', function() {
+                    star.addEventListener('click', function () {
                         const rating = parseInt(this.dataset.star);
                         const inputId = containerSelector.includes('combo') ? `combo-star-${rating}` : `star-${rating}`;
                         const input = document.querySelector(`#${inputId}`);
@@ -2655,7 +2712,7 @@
                 // Reset stars on container mouse leave
                 const ratingContainer = document.querySelector(containerSelector);
                 if (ratingContainer) {
-                    ratingContainer.addEventListener('mouseleave', function() {
+                    ratingContainer.addEventListener('mouseleave', function () {
                         const checkedStar = document.querySelector(`${containerSelector} input[name="rating"]:checked`);
                         if (checkedStar) {
                             const rating = parseInt(checkedStar.value);
@@ -2711,7 +2768,7 @@
                     let val = parseInt(this.value) || 0;
                     const max = maxStock || parseInt(this.getAttribute('max')) || parseInt(this.max);
                     const min = parseInt(this.getAttribute('min')) || 1;
-                    
+
                     if (val < min) val = min;
                     if (val > max) val = max;
                     this.value = val;
@@ -2776,10 +2833,10 @@
                             'thuộc tính': 'Lỗi thuộc tính sách',
                             'biến thể': 'Lỗi thuộc tính sách'
                         };
-                        
+
                         let errorTitle = 'Lỗi thêm vào giỏ hàng';
                         let timeOut = 5000;
-                        
+
                         for (const [keyword, title] of Object.entries(errorTitles)) {
                             if (data.error.includes(keyword)) {
                                 errorTitle = title;
@@ -2787,7 +2844,7 @@
                                 break;
                             }
                         }
-                        
+
                         showToastr('error', data.error, errorTitle, { timeOut });
                     }
                 }
@@ -2849,7 +2906,7 @@
                 let totalVariantStock = stock; // Start with format stock
                 let lowestVariantStock = stock;
                 let totalExtraPrice = 0; // Track total extra price from variants
-                
+
                 if (!isEbook) {
                     attributeSelects.forEach(select => {
                         if (select.selectedOptions[0] && select.value) {
@@ -2857,11 +2914,11 @@
                             const extraPrice = parseFloat(selectedOption.dataset.price) || 0;
                             const attributeStock = parseInt(selectedOption.dataset.stock) || 0;
                             const attributeSku = selectedOption.dataset.sku || '';
-                            
+
                             // Add extra price for physical books
                             finalPrice += extraPrice;
                             totalExtraPrice += extraPrice;
-                            
+
                             // Use the minimum stock among variants for physical books
                             if (attributeStock >= 0) {
                                 lowestVariantStock = Math.min(lowestVariantStock, attributeStock);
@@ -2872,7 +2929,7 @@
                                     extraPrice: extraPrice
                                 });
                             }
-                            
+
                             // Update variant info display for physical books
                             const attributeId = select.id.replace('attribute_', '');
                             const skuElement = document.getElementById(`selected_sku_${attributeId}`);
@@ -2881,10 +2938,10 @@
                             const infoElement = document.getElementById(`variant_info_${attributeId}`);
                             const physicalInfoElement = document.getElementById(`physical_variant_info_${attributeId}`);
                             const ebookInfoElement = document.getElementById(`ebook_variant_info_${attributeId}`);
-                            
+
                             if (infoElement) {
                                 infoElement.classList.remove('hidden');
-                                
+
                                 // Show physical info, hide ebook info
                                 if (physicalInfoElement) {
                                     physicalInfoElement.classList.remove('hidden');
@@ -2892,19 +2949,19 @@
                                 if (ebookInfoElement) {
                                     ebookInfoElement.classList.add('hidden');
                                 }
-                                
+
                                 // Update SKU and stock for physical books
                                 if (skuElement) {
                                     const displaySku = attributeSku || 'N/A';
                                     skuElement.textContent = displaySku;
                                 }
-                                
+
                                 if (stockElement) {
                                     stockElement.textContent = `${attributeStock}`;
                                     // Update stock color based on availability
                                     stockElement.className = getStatusClasses('stock', attributeStock > 0 ? 'green' : 'red');
                                 }
-                                
+
                                 // Update extra price display
                                 if (extraPriceElement) {
                                     let displayPrice = extraPrice > 0 ? formatPrice(extraPrice) : 'Miễn phí';
@@ -2915,7 +2972,7 @@
                             }
                         }
                     });
-                    
+
                     // Use the lowest variant stock for physical books - apply hierarchical stock logic
                     if (selectedVariantInfo.length > 0) {
                         // Apply hierarchical stock: Math.min(format_stock, lowest_variant_stock)
@@ -2930,7 +2987,7 @@
                 const originalPriceElement = document.getElementById('originalPrice');
                 const discountTextElement = document.getElementById('discountText');
                 const discountAmountElement = document.getElementById('discountAmount');
-                
+
                 if (discount > 0) {
                     if (originalPriceElement) {
                         originalPriceElement.textContent = formatPrice(finalPrice);
@@ -2961,9 +3018,9 @@
                     // For eBooks - apply status priority logic too
                     const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
                     const stockConfig = getStockStatusConfig(bookStatus, stock, true);
-                    
+
                     updateStockDisplay(stockConfig, stockTextElement, stockBadgeElement, stockDotElement);
-                    
+
                     if (stockQuantityDisplay) {
                         stockQuantityDisplay.style.display = 'none';
                     }
@@ -2976,7 +3033,7 @@
                     // For physical books - apply status priority logic
                     const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
                     const stockConfig = getStockStatusConfig(bookStatus, stock, false);
-                    
+
                     updateStockDisplay(stockConfig, stockTextElement, stockBadgeElement, stockDotElement);
 
                     if (stockQuantityDisplay) {
@@ -3030,10 +3087,10 @@
                         if (currentValue > stock) {
                             quantityInput.value = Math.min(currentValue, stock);
                         }
-                        
+
                         // Update min value appropriately
                         quantityInput.min = 1;
-                        
+
                         // Log variant stock info for debugging
                         if (selectedVariantInfo.length > 0) {
                         }
@@ -3044,25 +3101,25 @@
                         quantityInput.min = 0;
                     }
                 }
-                
+
                 // Update attributes summary
                 const attributesSummary = document.getElementById('attributesSummary');
                 const totalExtraPriceElement = document.getElementById('totalExtraPrice');
                 const minStockSummary = document.getElementById('minStockSummary');
                 const minStockValue = document.getElementById('minStockValue');
-                
+
                 // Show summary if any attributes are selected (only for physical books)
                 if (!isEbook && attributeSelects.length > 0 && Array.from(attributeSelects).some(s => s.value)) {
                     if (attributesSummary) {
                         attributesSummary.classList.remove('hidden');
-                        
+
                         // Update total extra price
                         if (totalExtraPriceElement) {
                             let displayTotalExtra, displayTotalClass;
                             const extraPriceLabelElement = document.getElementById('extraPriceLabel');
-                            
+
                             // For physical books, show actual total extra price
-                            displayTotalExtra = totalExtraPrice > 0 
+                            displayTotalExtra = totalExtraPrice > 0
                                 ? new Intl.NumberFormat('vi-VN').format(totalExtraPrice) + '₫'
                                 : 'Miễn phí';
                             displayTotalClass = totalExtraPrice > 0
@@ -3071,11 +3128,11 @@
                             if (extraPriceLabelElement) {
                                 extraPriceLabelElement.textContent = 'Tổng phí cộng thêm:';
                             }
-                            
+
                             totalExtraPriceElement.textContent = displayTotalExtra;
                             totalExtraPriceElement.className = displayTotalClass;
                         }
-                        
+
                         // Update min stock (for physical books only)
                         if (selectedVariantInfo.length > 0) {
                             if (minStockSummary) {
@@ -3096,8 +3153,9 @@
                 } else {
                     if (attributesSummary) {
                         attributesSummary.classList.add('hidden');
-                    }                }
-                
+                    }
+                }
+
                 // Show/hide attributes based on format type
                 const attributesGroup = document.getElementById('bookAttributesGroup');
                 if (attributesGroup) {
@@ -3119,13 +3177,13 @@
                         attributesGroup.style.display = 'none';
                     } else {
                         attributesGroup.style.display = 'block';
-                        
+
                         // Update group title for physical books
                         const groupTitle = attributesGroup.querySelector('h3');
                         if (groupTitle) {
                             groupTitle.textContent = 'Tuỳ chọn sản phẩm';
                         }
-                        
+
                         // Update dropdown options display for physical books
                         // This will handle hiding attributes with no available variants
                         updateAttributeOptionsDisplay(isEbook);
@@ -3136,7 +3194,7 @@
                 const addToCartBtn = document.getElementById('addToCartBtn');
                 const quantitySection = document.querySelector('.quantity-section');
                 const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
-                
+
                 if (addToCartBtn) {
                     // Hide button for discontinued, coming soon, or out of stock products
                     if (bookStatus === 'Ngừng Kinh Doanh' || bookStatus === 'Sắp Ra Mắt' || bookStatus === 'Hết Hàng Tồn Kho') {
@@ -3145,15 +3203,15 @@
                         addToCartBtn.style.display = 'block';
                     }
                 }
-                
+
                 // Show/hide quantity controls based on product status and stock
                 if (quantitySection) {
-                    const shouldHideQuantityControls = 
-                        bookStatus === 'Ngừng Kinh Doanh' || 
-                        bookStatus === 'Sắp Ra Mắt' || 
+                    const shouldHideQuantityControls =
+                        bookStatus === 'Ngừng Kinh Doanh' ||
+                        bookStatus === 'Sắp Ra Mắt' ||
                         bookStatus === 'Hết Hàng Tồn Kho' ||
                         (bookStatus === 'Còn Hàng' && stock <= 0 && !isEbook);
-                        
+
                     if (shouldHideQuantityControls) {
                         quantitySection.style.display = 'none';
                     } else if (!isEbook) {
@@ -3162,44 +3220,44 @@
                     }
                     // For ebooks, quantity section is already handled in the ebook section above
                 }
-                
+
                 // Update preview section visibility after stock/status changes
                 updatePreviewSectionVisibility();
             }
-            
+
             // Function to update attribute dropdown options based on format (only for physical books)
             function updateAttributeOptionsDisplay(isEbook) {
                 // Only update for physical books
                 if (isEbook) return;
-                
+
                 const attributeSelects = document.querySelectorAll('[name^="attributes["]');
                 let hiddenAttributesCount = 0;
-                
+
                 attributeSelects.forEach(select => {
                     const options = select.querySelectorAll('option');
                     let hasAvailableOptions = false;
-                    
+
                     options.forEach(option => {
                         if (option.value) { // Skip empty option
                             const originalText = option.dataset.originalText || option.textContent;
                             const extraPrice = parseFloat(option.dataset.price) || 0;
                             const variantStock = parseInt(option.dataset.stock) || 0;
-                            
+
                             // Store original text if not stored
                             if (!option.dataset.originalText) {
                                 // Extract base text (everything before " (+")
                                 const baseText = originalText.split(' (+')[0].split(' - ')[0];
                                 option.dataset.originalText = baseText;
                             }
-                            
+
                             const baseText = option.dataset.originalText;
                             let newText = baseText;
-                            
+
                             // For physical books: show actual extra price and stock info
                             if (extraPrice > 0) {
                                 newText += ' (+' + new Intl.NumberFormat('vi-VN').format(extraPrice) + '₫)';
                             }
-                            
+
                             // Add stock info with better formatting
                             if (variantStock <= 0) {
                                 newText += ' - Hết hàng';
@@ -3208,26 +3266,26 @@
                             } else if (variantStock <= 10) {
                                 newText += ' - Còn ' + variantStock + ' cuốn';
                             }
-                            
+
                             // Update disabled state for physical books only
                             option.disabled = variantStock === 0;
-                            
+
                             // Check if this option is available (has stock)
                             if (variantStock > 0) {
                                 hasAvailableOptions = true;
                             }
-                            
+
                             option.textContent = newText;
                         }
                     });
-                    
+
                     // Hide/show the entire attribute group based on availability
                     const attributeItem = select.closest('.attribute-item');
                     if (attributeItem) {
                         const attributeName = select.name || 'Unknown';
                         const label = attributeItem.querySelector('label');
                         const displayName = label ? label.textContent.trim() : attributeName;
-                        
+
                         if (hasAvailableOptions) {
                             attributeItem.style.display = 'block';
                         } else {
@@ -3242,13 +3300,13 @@
                         }
                     }
                 });
-                
+
                 // Check if any attribute groups are visible and hide the entire attributes section if none
                 const attributesGroup = document.getElementById('bookAttributesGroup');
                 if (attributesGroup) {
                     const allAttributeItems = attributesGroup.querySelectorAll('.attribute-item');
                     const totalAttributes = allAttributeItems.length;
-                    
+
                     // Count actually visible items (not hidden by display:none)
                     let visibleCount = 0;
                     allAttributeItems.forEach(item => {
@@ -3257,7 +3315,7 @@
                             visibleCount++;
                         }
                     });
-                    
+
                     if (visibleCount === 0) {
                         attributesGroup.style.display = 'none';
                     } else {
@@ -3270,23 +3328,23 @@
             function getCurrentAvailableStock() {
                 const formatSelect = document.getElementById('bookFormatSelect');
                 const attributeSelects = document.querySelectorAll('[name^="attributes["]');
-                
+
                 if (!formatSelect || !formatSelect.selectedOptions[0]) {
                     return 0;
                 }
-                
+
                 const selectedText = formatSelect.selectedOptions[0].textContent.trim().toLowerCase();
                 const isEbook = selectedText.includes('ebook');
-                
+
                 // For ebooks, return unlimited
                 if (isEbook) {
                     return Infinity;
                 }
-                
+
                 let formatStock = parseInt(formatSelect.selectedOptions[0].dataset.stock) || 0;
                 let minVariantStock = Infinity;
                 let hasSelectedVariants = false;
-                
+
                 // Check if any attributes are selected
                 attributeSelects.forEach(select => {
                     if (select.value && select.selectedOptions[0]) {
@@ -3297,12 +3355,12 @@
                         }
                     }
                 });
-                
+
                 // Apply hierarchical stock logic
                 if (hasSelectedVariants && minVariantStock !== Infinity) {
                     return Math.min(formatStock, minVariantStock);
                 }
-                
+
                 return formatStock;
             }
 
@@ -3312,7 +3370,7 @@
                 const stockQuantityDisplay = document.getElementById('stockQuantityDisplay');
                 const productQuantityElement = document.getElementById('productQuantity');
                 const quantityInput = document.getElementById('quantity');
-                
+
                 // Update stock display
                 if (stockQuantityDisplay && currentStock !== Infinity) {
                     if (currentStock > 0) {
@@ -3324,11 +3382,11 @@
                         stockQuantityDisplay.style.display = 'none';
                     }
                 }
-                
+
                 // Update quantity input constraints
                 if (quantityInput && currentStock !== Infinity) {
                     quantityInput.max = Math.max(0, currentStock);
-                    
+
                     // Adjust current value if it exceeds new max
                     const currentValue = parseInt(quantityInput.value) || 1;
                     if (currentValue > currentStock) {
@@ -3340,15 +3398,15 @@
             // Initialize variant overview interactions
             function initializeVariantOverview() {
                 const variantItems = document.querySelectorAll('.variant-item:not(.out-of-stock)');
-                
+
                 variantItems.forEach(item => {
                     // Add click interaction to select variant
-                    item.addEventListener('click', function() {
+                    item.addEventListener('click', function () {
                         const variantValue = this.dataset.variantValue;
                         const attributeName = this.dataset.attributeName;
                         const stock = this.dataset.stock;
                         const sku = this.dataset.sku;
-                        
+
                         // Find corresponding select by matching attribute name
                         const attributeSelects = document.querySelectorAll('[name^="attributes["]');
                         attributeSelects.forEach(select => {
@@ -3363,13 +3421,13 @@
                                         select.value = option.value;
                                         // Trigger change event to update price and stock
                                         select.dispatchEvent(new Event('change'));
-                                        
+
                                         // Add visual feedback
                                         item.style.transform = 'scale(0.95)';
                                         setTimeout(() => {
                                             item.style.transform = '';
                                         }, 150);
-                                        
+
                                         // Show simple feedback
                                     }
                                 });
@@ -3383,10 +3441,10 @@
             $(document).ready(function () {
                 const formatSelect = document.getElementById('bookFormatSelect');
                 if (formatSelect) {
-                    formatSelect.addEventListener('change', function() {
+                    formatSelect.addEventListener('change', function () {
                         updatePriceAndStock();
                         updateRealTimeStockDisplay(); // Update real-time stock display
-                        
+
                         // Update dropdown options display only for physical books
                         const selectedOption = formatSelect.selectedOptions[0];
                         if (selectedOption) {
@@ -3404,10 +3462,10 @@
 
                 const attributeSelects = document.querySelectorAll('[name^="attributes["]');
                 attributeSelects.forEach(select => {
-                    select.addEventListener('change', function() {
+                    select.addEventListener('change', function () {
                         updatePriceAndStock();
                         updateRealTimeStockDisplay(); // Update real-time stock display
-                        
+
                         // Re-check attribute visibility after any attribute change
                         const formatSelect = document.getElementById('bookFormatSelect');
                         if (formatSelect && formatSelect.selectedOptions[0]) {
@@ -3467,7 +3525,7 @@
                 setTimeout(() => {
                     updatePriceAndStock(); // Gọi lại để đảm bảo thuộc tính được ẩn/hiện đúng
                     updateRealTimeStockDisplay(); // Update real-time stock display again
-                    
+
                     // Final check for attribute visibility
                     const finalFormatSelect = document.getElementById('bookFormatSelect');
                     if (finalFormatSelect && finalFormatSelect.selectedOptions[0]) {
@@ -3491,13 +3549,13 @@
                         return;
                     @endguest
 
-                    const addToCartBtn = document.getElementById('addToCartBtn');
+                                            const addToCartBtn = document.getElementById('addToCartBtn');
                     const originalText = addToCartBtn.textContent;
                     const bookId = '{{ $book->id }}';
                     const quantity = parseInt(document.getElementById('quantity')?.value) || 1;
                     const formatSelect = document.getElementById('bookFormatSelect');
                     const bookFormatId = formatSelect?.value || null;
-                    
+
                     let isEbook = false;
                     if (formatSelect?.selectedOptions[0]) {
                         const selectedText = formatSelect.selectedOptions[0].textContent.trim().toLowerCase();
@@ -3523,14 +3581,14 @@
                         // Get current stock information from DOM - use hierarchical stock logic
                         let currentStock = 0;
                         const formatSelect = document.getElementById('bookFormatSelect');
-                        
+
                         if (formatSelect && formatSelect.selectedOptions[0]) {
                             currentStock = parseInt(formatSelect.selectedOptions[0].dataset.stock) || 0;
-                            
+
                             // If attributes are selected, get minimum variant stock and apply hierarchical logic
                             if (attributeValueIds.length > 0) {
                                 let minVariantStock = Infinity;
-                                
+
                                 attributeSelects.forEach(select => {
                                     if (select.value && select.selectedOptions[0]) {
                                         const variantStock = parseInt(select.selectedOptions[0].dataset.stock) || 0;
@@ -3539,14 +3597,14 @@
                                         }
                                     }
                                 });
-                                
+
                                 if (minVariantStock !== Infinity) {
                                     // Apply hierarchical stock: Math.min(format_stock, min_variant_stock)
                                     currentStock = Math.min(currentStock, minVariantStock);
                                 }
                             }
                         }
-                        
+
                         // Check quantity against current stock
                         if (currentStock <= 0) {
                             showToastr('error', 'Sản phẩm này hiện đã hết hàng!', 'Hết hàng', { timeOut: 4000 });
@@ -3554,7 +3612,7 @@
                             addToCartBtn.textContent = originalText;
                             return;
                         }
-                        
+
                         if (quantity > currentStock) {
                             showToastr('error', `Số lượng vượt quá tồn kho! Chỉ còn ${currentStock} cuốn khả dụng.`, 'Vượt quá tồn kho');
                             addToCartBtn.disabled = false;
@@ -3574,12 +3632,12 @@
                             'Sắp Ra Mắt': { msg: 'Sản phẩm này hiện chưa ra mắt!', title: 'Sắp ra mắt' },
                             'Hết Hàng Tồn Kho': { msg: 'Sản phẩm này hiện hết hàng tồn kho!', title: 'Hết hàng tồn kho' }
                         };
-                        
+
                         const statusInfo = statusMessages[bookStatus];
                         if (statusInfo) {
                             showToastr('error', statusInfo.msg, statusInfo.title);
                         }
-                       
+
                         addToCartBtn.disabled = false;
                         addToCartBtn.textContent = originalText;
                         return;
@@ -3614,7 +3672,7 @@
 
                         // Step 3: Check variant stock if attributes are selected (book_attribute_values.stock)
                         let finalStock = formatStock; // Start with format stock
-                        
+
                         if (attributeValueIds.length > 0) {
                             let minVariantStock = Infinity;
                             let hasOutOfStockVariant = false;
@@ -3626,13 +3684,13 @@
                                     const variantStock = parseInt(select.selectedOptions[0].dataset.stock) || 0;
                                     const variantSku = select.selectedOptions[0].dataset.sku || '';
                                     const variantName = select.selectedOptions[0].textContent.split(' - ')[0].trim();
-                                    
+
                                     const variantInfo = {
                                         name: variantName,
                                         sku: variantSku,
                                         stock: variantStock
                                     };
-                                    
+
                                     if (variantStock <= 0) {
                                         hasOutOfStockVariant = true;
                                         outOfStockVariantDetails.push(variantInfo);
@@ -3657,7 +3715,7 @@
                             // Apply hierarchical stock: Math.min(format_stock, min_variant_stock)
                             if (minVariantStock !== Infinity) {
                                 finalStock = Math.min(formatStock, minVariantStock);
-                                
+
                                 // Check if quantity exceeds variant stock
                                 if (quantity > minVariantStock) {
                                     const limitingVariant = validVariants.find(v => v.stock === minVariantStock);
@@ -3695,13 +3753,13 @@
                         quantity: quantity,
                         book_format_id: bookFormatId
                     };
-                    
+
                     // Only add attributes for physical books
                     if (!isEbook) {
                         requestData.attribute_value_ids = JSON.stringify(attributeValueIds);
                         requestData.attributes = attributes;
                     }
-                    
+
                     // Send request
                     fetch('{{ route("cart.add") }}', {
                         method: 'POST',
@@ -3718,7 +3776,7 @@
                                     throw new Error('Server returned non-JSON response');
                                 });
                             }
-                            
+
                             // Parse JSON for both success and error responses
                             return response.json().then(data => {
                                 if (!response.ok) {
@@ -3736,13 +3794,13 @@
                                 handleCartResponse(data);
                                 return; // Exit early for error responses
                             }
-                            
+
                             // Handle success/error responses
                             handleCartResponse(data, isEbook);
                         })
                         .catch(error => {
                             console.error('Fetch Error Details:', error);
-                            
+
                             // Error message mapping for better user experience
                             const errorMap = {
                                 'HTTP error! status: 422': { msg: 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin!', title: 'Dữ liệu không hợp lệ' },
@@ -3752,9 +3810,9 @@
                                 'NetworkError': { msg: 'Lỗi mạng. Vui lòng kiểm tra kết nối internet và thử lại!', title: 'Lỗi mạng' },
                                 'Failed to fetch': { msg: 'Lỗi mạng. Vui lòng kiểm tra kết nối internet và thử lại!', title: 'Lỗi mạng' }
                             };
-                            
+
                             let errorInfo = { msg: 'Có lỗi xảy ra khi thêm vào giỏ hàng', title: 'Lỗi thêm vào giỏ hàng' };
-                            
+
                             // Find matching error type
                             for (const [key, value] of Object.entries(errorMap)) {
                                 if (error.message && error.message.includes(key)) {
@@ -3762,12 +3820,12 @@
                                     break;
                                 }
                             }
-                            
+
                             // Fallback for HTTP errors
                             if (error.message && error.message.includes('HTTP error') && errorInfo.title === 'Lỗi thêm vào giỏ hàng') {
                                 errorInfo = { msg: 'Lỗi kết nối server. Vui lòng thử lại sau!', title: 'Lỗi kết nối' };
                             }
-                            
+
                             showToastr('error', errorInfo.msg, errorInfo.title, { timeOut: 6000 });
                         })
                         .finally(() => {
@@ -3780,7 +3838,7 @@
                     console.warn('addToCart function called on combo page');
                     showToastr('warning', 'Chức năng này chỉ khả dụng trên trang sách đơn');
                 @endif
-                            }
+                                            }
 
             // Add related product to cart function - optimized  
             function addRelatedToCart(bookId) {
@@ -3792,7 +3850,7 @@
                     return;
                 @endguest
 
-                const button = event.target.closest('button');
+                                const button = event.target.closest('button');
                 const originalText = button.innerHTML;
 
                 // Disable button and show loading
@@ -3829,7 +3887,7 @@
                     .then(data => {
                         // Use helper function to handle response
                         handleCartResponse(data);
-                        
+
                         // Show additional tip if successful
                         if (data.success) {
                             setTimeout(() => {
@@ -3844,7 +3902,7 @@
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        
+
                         // Use error mapping like in addToCart
                         const errorMap = {
                             'HTTP error': 'Lỗi kết nối server. Vui lòng thử lại sau!',
@@ -3852,7 +3910,7 @@
                             'NetworkError': 'Lỗi mạng. Vui lòng kiểm tra kết nối internet và thử lại!',
                             'Failed to fetch': 'Lỗi mạng. Vui lòng kiểm tra kết nối internet và thử lại!'
                         };
-                        
+
                         let errorMessage = 'Có lỗi xảy ra khi thêm sách liên quan vào giỏ hàng';
                         for (const [key, value] of Object.entries(errorMap)) {
                             if (error.message && error.message.includes(key)) {
@@ -3860,7 +3918,7 @@
                                 break;
                             }
                         }
-                        
+
                         showToastr('error', errorMessage, 'Lỗi thêm sách liên quan', { timeOut: 6000 });
                     })
                     .finally(() => {
@@ -3874,29 +3932,29 @@
             function updatePreviewSectionVisibility() {
                 const bookFormatSelectElement = document.getElementById('bookFormatSelect');
                 const previewSection = document.getElementById('previewSection');
-                
+
                 if (!bookFormatSelectElement || !previewSection) return;
-                
+
                 const selectedOption = bookFormatSelectElement.options[bookFormatSelectElement.selectedIndex];
                 if (!selectedOption) return;
-                
+
                 const formatName = selectedOption.text.toLowerCase();
-                
+
                 // Kiểm tra xem có phải ebook không
                 if (formatName.includes('ebook')) {
                     // Kiểm tra trạng thái sản phẩm và stock để quyết định hiển thị nút đọc thử
                     const bookPriceElement = document.getElementById('bookPrice');
                     const bookStatus = bookPriceElement?.dataset.bookStatus || 'Còn Hàng';
                     const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
-                    
+
                     // Ẩn nút đọc thử nếu sản phẩm có trạng thái không khả dụng
-                    const isUnavailable = 
-                        bookStatus === 'Ngừng Kinh Doanh' || 
-                        bookStatus === 'Sắp Ra Mắt' || 
+                    const isUnavailable =
+                        bookStatus === 'Ngừng Kinh Doanh' ||
+                        bookStatus === 'Sắp Ra Mắt' ||
                         bookStatus === 'Hết Hàng Tồn Kho' ||
                         stock === -1 || // Sắp ra mắt  
                         stock === -2;   // Ngừng kinh doanh
-                        
+
                     if (isUnavailable) {
                         previewSection.classList.add('hidden');
                     } else {
@@ -3913,7 +3971,7 @@
                 bookFormatSelectElement.addEventListener('change', function () {
                     updatePreviewSectionVisibility();
                 });
-                
+
                 // Kiểm tra trạng thái nút đọc thử khi trang load lần đầu
                 updatePreviewSectionVisibility();
             }
@@ -4105,21 +4163,21 @@
             };
             setupStarRating('.rating-stars', '.rating-text', ratingTexts);
 
-                    const comboForm = document.querySelector('form[action="{{ route("cart.add") }}"]');
-                    if (comboForm) {
-                        comboForm.addEventListener('submit', function (e) {
-                            e.preventDefault();
+            const comboForm = document.querySelector('form[action="{{ route("cart.add") }}"]');
+            if (comboForm) {
+                comboForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
 
-                            @guest
-                                showToastr('error', 'Vui lòng đăng nhập để thêm combo vào giỏ hàng!');
-                                setTimeout(() => {
-                                    window.location.href = '{{ route("login") }}';
-                                }, 1500);
-                                return;
-                            @endguest
+                    @guest
+                        showToastr('error', 'Vui lòng đăng nhập để thêm combo vào giỏ hàng!');
+                        setTimeout(() => {
+                            window.location.href = '{{ route("login") }}';
+                        }, 1500);
+                        return;
+                    @endguest
 
-                            const formData = new FormData(comboForm);
-                            const urlParams = new URLSearchParams();
+                                            const formData = new FormData(comboForm);
+                    const urlParams = new URLSearchParams();
 
                     // Convert FormData to URLSearchParams
                     for (let pair of formData.entries()) {
@@ -4189,7 +4247,7 @@
                         .then(data => {
                             // Use helper function to handle combo response
                             handleCartResponse(data);
-                            
+
                             // Show additional tip if successful
                             if (data.success) {
                                 setTimeout(() => {
@@ -4234,7 +4292,7 @@
             // Wishlist functionality for book page
             const wishlistBtn = document.getElementById('wishlistBtn');
             if (wishlistBtn) {
-                wishlistBtn.addEventListener('click', function(e) {
+                wishlistBtn.addEventListener('click', function (e) {
                     e.preventDefault();
                     e.stopPropagation();
 
@@ -4246,7 +4304,7 @@
                         return;
                     @endguest
 
-                    if (this.disabled) return;
+                                    if (this.disabled) return;
 
                     const button = this;
                     const bookId = button.dataset.bookId;
@@ -4264,39 +4322,39 @@
                         },
                         body: JSON.stringify({ book_id: bookId })
                     })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            button.classList.remove('border-black', 'text-black');
-                            button.classList.add('bg-red-500', 'text-white', 'border-red-500');
-                            button.innerHTML = '<i class="fas fa-heart mr-3"></i><span>ĐÃ YÊU THÍCH</span>';
-                            showToastr('success', 'Đã thêm vào danh sách yêu thích!', 'Thành công', { timeOut: 3000 });
-                            
-                            // Dispatch wishlist update event
-                            if (typeof data.wishlist_count !== 'undefined') {
-                                document.dispatchEvent(new CustomEvent('wishlistItemAdded', {
-                                    detail: { count: data.wishlist_count }
-                                }));
-                            } else {
-                                // Fallback: refresh wishlist count from server
-                                if (window.WishlistCountManager && typeof window.WishlistCountManager.refreshFromServer === 'function') {
-                                    window.WishlistCountManager.refreshFromServer();
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                button.classList.remove('border-black', 'text-black');
+                                button.classList.add('bg-red-500', 'text-white', 'border-red-500');
+                                button.innerHTML = '<i class="fas fa-heart mr-3"></i><span>ĐÃ YÊU THÍCH</span>';
+                                showToastr('success', 'Đã thêm vào danh sách yêu thích!', 'Thành công', { timeOut: 3000 });
+
+                                // Dispatch wishlist update event
+                                if (typeof data.wishlist_count !== 'undefined') {
+                                    document.dispatchEvent(new CustomEvent('wishlistItemAdded', {
+                                        detail: { count: data.wishlist_count }
+                                    }));
+                                } else {
+                                    // Fallback: refresh wishlist count from server
+                                    if (window.WishlistCountManager && typeof window.WishlistCountManager.refreshFromServer === 'function') {
+                                        window.WishlistCountManager.refreshFromServer();
+                                    }
                                 }
+
+                                button.disabled = false;
+                            } else {
+                                button.innerHTML = originalHTML;
+                                button.disabled = false;
+                                showToastr('warning', data.message || 'Lỗi khi thêm vào danh sách yêu thích!', 'Thông báo', { timeOut: 4000 });
                             }
-                            
-                            button.disabled = false;
-                        } else {
+                        })
+                        .catch(error => {
+                            console.error('Wishlist error:', error);
                             button.innerHTML = originalHTML;
                             button.disabled = false;
-                            showToastr('warning', data.message || 'Lỗi khi thêm vào danh sách yêu thích!', 'Thông báo', { timeOut: 4000 });
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Wishlist error:', error);
-                        button.innerHTML = originalHTML;
-                        button.disabled = false;
-                        showToastr('error', 'Lỗi kết nối! Vui lòng thử lại.', 'Lỗi mạng', { timeOut: 5000 });
-                    });
+                            showToastr('error', 'Lỗi kết nối! Vui lòng thử lại.', 'Lỗi mạng', { timeOut: 5000 });
+                        });
                 });
             }
 
@@ -4304,7 +4362,8 @@
         <!-- Review Image Modal -->
         <div id="reviewImageModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
             <div class="relative max-w-4xl max-h-full p-4">
-                <button onclick="closeReviewImageModal()" class="absolute top-2 right-2 text-white hover:text-gray-300 text-2xl z-10">
+                <button onclick="closeReviewImageModal()"
+                    class="absolute top-2 right-2 text-white hover:text-gray-300 text-2xl z-10">
                     <i class="fas fa-times"></i>
                 </button>
                 <img id="reviewModalImage" src="" alt="Review Image" class="max-w-full max-h-full object-contain">
@@ -4325,14 +4384,14 @@
             }
 
             // Close modal when clicking outside the image
-            document.getElementById('reviewImageModal').addEventListener('click', function(e) {
+            document.getElementById('reviewImageModal').addEventListener('click', function (e) {
                 if (e.target === this) {
                     closeReviewImageModal();
                 }
             });
 
             // Close modal with Escape key
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
                     closeReviewImageModal();
                 }
@@ -4341,177 +4400,200 @@
     @endpush
 
     @push('styles')
-    <style>
-        /* Enhanced Review Styles */
-        .review-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            border-radius: 12px;
-            overflow: hidden;
-            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-        }
-        
-        .review-card:hover {
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            transform: translateY(-4px) scale(1.02);
-        }
-        
-        .review-card .bg-black {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
-            position: relative;
-        }
-        
-        .review-card .bg-black::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
-            animation: shimmer 3s infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-        
-        /* Admin Response Animation */
-        .admin-response {
-            animation: slideInFromLeft 0.6s ease-out;
-            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #dbeafe 100%);
-            border-left: 4px solid #3b82f6;
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
-        }
-        
-        @keyframes slideInFromLeft {
-            0% {
-                transform: translateX(-30px);
+        <style>
+            /* Enhanced Review Styles */
+            .review-card {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                border-radius: 12px;
+                overflow: hidden;
+                background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            }
+
+            .review-card:hover {
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                transform: translateY(-4px) scale(1.02);
+            }
+
+            .review-card .bg-black {
+                background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+                position: relative;
+            }
+
+            .review-card .bg-black::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+                animation: shimmer 3s infinite;
+            }
+
+            @keyframes shimmer {
+                0% {
+                    transform: translateX(-100%);
+                }
+
+                100% {
+                    transform: translateX(100%);
+                }
+            }
+
+            /* Admin Response Animation */
+            .admin-response {
+                animation: slideInFromLeft 0.6s ease-out;
+                background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #dbeafe 100%);
+                border-left: 4px solid #3b82f6;
+                box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+            }
+
+            @keyframes slideInFromLeft {
+                0% {
+                    transform: translateX(-30px);
+                    opacity: 0;
+                }
+
+                100% {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+
+            /* Star Rating Enhancement */
+            .star-rating {
+                filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.3));
+                animation: starGlow 2s ease-in-out infinite alternate;
+            }
+
+            @keyframes starGlow {
+                0% {
+                    filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.3));
+                }
+
+                100% {
+                    filter: drop-shadow(0 4px 8px rgba(251, 191, 36, 0.5));
+                }
+            }
+
+            /* Image Gallery Enhancement */
+            .review-image {
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                border-radius: 8px;
+                overflow: hidden;
+                position: relative;
+            }
+
+            .review-image::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .review-image:hover {
+                transform: scale(1.08) rotate(1deg);
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+            }
+
+            .review-image:hover::before {
+                opacity: 1;
+                animation: imageShimmer 0.6s ease-out;
+            }
+
+            @keyframes imageShimmer {
+                0% {
+                    transform: translateX(-100%);
+                }
+
+                100% {
+                    transform: translateX(100%);
+                }
+            }
+
+            /* Enhanced Typography */
+            .review-comment {
+                line-height: 1.8;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+                position: relative;
+            }
+
+            .review-comment::before {
+                content: '"';
+                position: absolute;
+                left: -20px;
+                top: -10px;
+                font-size: 3rem;
+                color: #e5e7eb;
+                font-family: serif;
+            }
+
+            /* Product Info Enhancement */
+            .product-info {
+                background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+                border-left: 4px solid #111827;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .product-info::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 2px;
+                background: linear-gradient(90deg, #111827 0%, #6b7280 50%, #111827 100%);
+            }
+
+            /* Responsive Improvements */
+            @media (max-width: 768px) {
+                .review-card {
+                    margin-bottom: 1.5rem;
+                    border-radius: 8px;
+                }
+
+                .review-card .p-6 {
+                    padding: 1.25rem;
+                }
+
+                .review-card:hover {
+                    transform: translateY(-2px) scale(1.01);
+                }
+            }
+
+            /* Loading Animation for Images */
+            .review-image img {
+                transition: opacity 0.3s ease;
+            }
+
+            .review-image img:not([src]) {
                 opacity: 0;
             }
-            100% {
-                transform: translateX(0);
-                opacity: 1;
+
+            /* Enhanced Verified Badge */
+            .verified-badge {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                animation: pulse 2s infinite;
             }
-        }
-        
-        /* Star Rating Enhancement */
-        .star-rating {
-            filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.3));
-            animation: starGlow 2s ease-in-out infinite alternate;
-        }
-        
-        @keyframes starGlow {
-            0% { filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.3)); }
-            100% { filter: drop-shadow(0 4px 8px rgba(251, 191, 36, 0.5)); }
-        }
-        
-        /* Image Gallery Enhancement */
-        .review-image {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 8px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .review-image::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .review-image:hover {
-            transform: scale(1.08) rotate(1deg);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
-        }
-        
-        .review-image:hover::before {
-            opacity: 1;
-            animation: imageShimmer 0.6s ease-out;
-        }
-        
-        @keyframes imageShimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-        
-        /* Enhanced Typography */
-        .review-comment {
-            line-height: 1.8;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-            position: relative;
-        }
-        
-        .review-comment::before {
-            content: '"';
-            position: absolute;
-            left: -20px;
-            top: -10px;
-            font-size: 3rem;
-            color: #e5e7eb;
-            font-family: serif;
-        }
-        
-        /* Product Info Enhancement */
-        .product-info {
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-            border-left: 4px solid #111827;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .product-info::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, #111827 0%, #6b7280 50%, #111827 100%);
-        }
-        
-        /* Responsive Improvements */
-        @media (max-width: 768px) {
-            .review-card {
-                margin-bottom: 1.5rem;
-                border-radius: 8px;
+
+            @keyframes pulse {
+
+                0%,
+                100% {
+                    opacity: 1;
+                }
+
+                50% {
+                    opacity: 0.8;
+                }
             }
-            
-            .review-card .p-6 {
-                padding: 1.25rem;
-            }
-            
-            .review-card:hover {
-                transform: translateY(-2px) scale(1.01);
-            }
-        }
-        
-        /* Loading Animation for Images */
-        .review-image img {
-            transition: opacity 0.3s ease;
-        }
-        
-        .review-image img:not([src]) {
-            opacity: 0;
-        }
-        
-        /* Enhanced Verified Badge */
-        .verified-badge {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-        }
-    </style>
+        </style>
     @endpush
 @endsection
