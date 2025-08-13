@@ -2145,8 +2145,11 @@
                                     <div class="relative aspect-square bg-white border border-gray-100 overflow-hidden mb-2">
                                         <a href="{{ route('books.show', $related->slug ?? $related->id) }}" class="block w-full h-full">
                                             @php
-                                                $firstImage = $related->images->first();
-                                                $imageUrl = $firstImage ? asset('storage/' . $firstImage->image_url) : ($related->cover_image ? asset('storage/' . $related->cover_image) : asset('images/default.jpg'));
+                                                $imageUrl = $related->cover_image
+                                                    ? asset('storage/' . $related->cover_image)
+                                                    : ($related->images->first()
+                                                        ? asset('storage/' . $related->images->first()->image_url)
+                                                        : asset('images/default.jpg'));
                                             @endphp
                                             <img src="{{ $imageUrl }}" alt="{{ $related->title }}"
                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
@@ -3549,7 +3552,7 @@
                         return;
                     @endguest
 
-                                            const addToCartBtn = document.getElementById('addToCartBtn');
+                                                        const addToCartBtn = document.getElementById('addToCartBtn');
                     const originalText = addToCartBtn.textContent;
                     const bookId = '{{ $book->id }}';
                     const quantity = parseInt(document.getElementById('quantity')?.value) || 1;
@@ -3838,7 +3841,7 @@
                     console.warn('addToCart function called on combo page');
                     showToastr('warning', 'Chức năng này chỉ khả dụng trên trang sách đơn');
                 @endif
-                                            }
+                                                    }
 
             // Add related product to cart function - optimized  
             function addRelatedToCart(bookId) {
@@ -3850,7 +3853,7 @@
                     return;
                 @endguest
 
-                                const button = event.target.closest('button');
+                                        const button = event.target.closest('button');
                 const originalText = button.innerHTML;
 
                 // Disable button and show loading
@@ -4176,7 +4179,7 @@
                         return;
                     @endguest
 
-                                            const formData = new FormData(comboForm);
+                                                    const formData = new FormData(comboForm);
                     const urlParams = new URLSearchParams();
 
                     // Convert FormData to URLSearchParams
@@ -4304,7 +4307,7 @@
                         return;
                     @endguest
 
-                                    if (this.disabled) return;
+                                            if (this.disabled) return;
 
                     const button = this;
                     const bookId = button.dataset.bookId;
