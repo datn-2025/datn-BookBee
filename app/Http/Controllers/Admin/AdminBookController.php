@@ -738,13 +738,13 @@ class AdminBookController extends Controller
     public function trash(Request $request)
     {
         $query = Book::onlyTrashed()
-            ->with([
-                'category:id,name',
-                'author:id,name',
-                'brand:id,name',
-                'formats:id,book_id,format_name,price,discount,stock',
-                'images:id,book_id,image_url'
-            ]);
+        ->with([
+            'category:id,name',
+            'authors:id,name',
+            'brand:id,name',
+            'formats:id,book_id,format_name,price,discount,stock',
+            'images:id,book_id,image_url'
+        ]);
 
         // Tìm kiếm theo tiêu đề sách hoặc mã ISBN
         if ($request->filled('search')) {
@@ -765,6 +765,32 @@ class AdminBookController extends Controller
 
         Toastr::success('Sách đã được khôi phục thành công!', 'Thành công');
         return redirect()->route('admin.books.trash');
+    }
+
+    public function deleteImage($imageId)
+    {
+        try {
+            $image = \App\Models\BookImage::findOrFail($imageId);
+            
+            // Xóa file từ storage
+            if ($image->image_url && Storage::disk('public')->exists($image->image_url)) {
+                Storage::disk('public')->delete($image->image_url);
+            }
+            
+            // Xóa record từ database
+            $image->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Ảnh đã được xóa thành công!'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xóa ảnh: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function forceDelete($id)
