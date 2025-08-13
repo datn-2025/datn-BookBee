@@ -14,7 +14,7 @@ class AdminReviewController extends Controller
      */
     public function index(Request $request)
     {
-        $reviews = Review::with(['book', 'user', 'collection', 'order.orderItems'])
+        $reviews = Review::with(['book', 'user', 'collection', 'order.orderItems.bookFormat'])
             ->when($request->status, fn($q) => $q->where('status', $request->status))
 
             ->when($request->admin_response, fn($q) =>
@@ -81,20 +81,20 @@ class AdminReviewController extends Controller
             },
             'user',
             'collection',
-            'order.orderItems'
+            'order.orderItems.bookFormat'
         ]);
 
         // Lấy các đánh giá khác của cùng sản phẩm (sách hoặc combo)
         if ($review->isComboReview()) {
             $otherReviews = Review::where('collection_id', $review->collection_id)
                 ->where('id', '!=', $review->id)
-                ->with(['user' => fn($query) => $query->withTrashed(), 'collection', 'order.orderItems'])
+                ->with(['user' => fn($query) => $query->withTrashed(), 'collection', 'order.orderItems.bookFormat'])
                 ->latest()
                 ->paginate(5);
         } else {
             $otherReviews = Review::where('book_id', $review->book_id)
                 ->where('id', '!=', $review->id)
-                ->with(['user' => fn($query) => $query->withTrashed(), 'book', 'order.orderItems'])
+                ->with(['user' => fn($query) => $query->withTrashed(), 'book', 'order.orderItems.bookFormat'])
                 ->latest()
                 ->paginate(5);
         }

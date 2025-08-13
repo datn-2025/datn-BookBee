@@ -2,8 +2,10 @@
 
 use Illuminate\Foundation\Application;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\BroadcastingMiddleware;
 use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\RedirectIfAdminAuthenticated;
+use App\Http\Middleware\UpdateLastSeen;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
@@ -14,11 +16,28 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['prefix' => 'broadcasting', 'middleware' => ['web', 'auth:admin']],
+    )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'admin' => AdminMiddleware::class,
             'guest:admin' => RedirectIfAdminAuthenticated::class,
             'checkpermission' => CheckPermission::class,
+            'broadcasting.auth' => BroadcastingMiddleware::class,
+        ]);
+        
+        // Ensure ShareErrorsFromSession is included for web routes
+        $middleware->web(append: [
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            UpdateLastSeen::class,
+        ]);
+        
+        $middleware->group('api', [
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            // 'throttle:api',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

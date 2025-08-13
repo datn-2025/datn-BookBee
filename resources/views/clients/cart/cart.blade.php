@@ -145,6 +145,7 @@
                     @if($item->is_combo)
                         {{-- Combo Item --}}
                         <div class="cart-hover bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 p-6 cart-item combo-item" 
+                             data-cart-id="{{ $item->id }}"
                              data-collection-id="{{ $item->collection_id }}" 
                              data-price="{{ $item->price ?? 0 }}"
                              data-is-combo="true">
@@ -226,9 +227,36 @@
                                         <!-- Price -->
                                         <div>
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Đơn giá</span>
-                                            <div class="text-lg font-bold text-black">
-                                                {{ number_format($item->price) }}đ
-                                            </div>
+                                            @php
+                                                $hasComboDiscount = isset($item->original_price) && isset($item->price) && $item->original_price > $item->price;
+                                                $comboDiscountAmount = $hasComboDiscount ? ($item->original_price - $item->price) : 0;
+                                                $comboDiscountPercent = $hasComboDiscount ? round(($comboDiscountAmount / $item->original_price) * 100) : 0;
+                                            @endphp
+                                            
+                                            @if($hasComboDiscount)
+                                                <!-- Giá combo cuối cùng (sau giảm giá) -->
+                                                <div class="text-lg font-bold text-green-600">
+                                                    {{ number_format($item->price) }}đ
+                                                </div>
+                                                <!-- Giá combo trước khi giảm -->
+                                                <div class="text-sm text-gray-500 line-through">
+                                                    Giá combo gốc: {{ number_format($item->original_price) }}đ
+                                                </div>
+                                                <!-- Mức tiết kiệm combo -->
+                                                <div class="text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded mt-1">
+                                                    <i class="fas fa-gift mr-1"></i>
+                                                    Tiết kiệm {{ number_format($comboDiscountAmount) }}đ ({{ $comboDiscountPercent }}%)
+                                                </div>
+                                            @else
+                                                <!-- Giá combo cuối cùng (không giảm thêm) -->
+                                                <div class="text-lg font-bold text-green-600">
+                                                    {{ number_format($item->price) }}đ
+                                                </div>
+                                                <div class="text-xs text-green-600 mt-1 bg-green-50 px-2 py-1 rounded">
+                                                    <i class="fas fa-layer-group mr-1"></i>
+                                                    Giá combo đã ưu đãi
+                                                </div>
+                                            @endif
                                         </div>
                                         
                                         <!-- Quantity -->
@@ -245,6 +273,7 @@
                                                        class="w-16 h-10 text-center border-t-2 border-b-2 border-black text-black font-bold quantity-input" 
                                                        value="{{ $item->quantity ?? 1 }}" 
                                                        min="1"
+                                                       data-cart-id="{{ $item->id }}"
                                                        data-collection-id="{{ $item->collection_id }}"
                                                        data-last-value="{{ $item->quantity ?? 1 }}"
                                                        data-is-combo="true">
@@ -279,6 +308,7 @@
                         
                         {{-- Individual Book Item --}}
                         <div class="cart-hover bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 p-6 cart-item" 
+                             data-cart-id="{{ $item->id }}"
                              data-book-id="{{ $item->book_id }}" 
                              data-book-format-id="{{ $item->book_format_id }}"
                              data-attribute-value-ids="{{ $item->attribute_value_ids }}"
@@ -469,15 +499,34 @@
                                         <!-- Price -->
                                         <div>
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Đơn giá</span>
-                                            <div class="text-lg font-bold text-black">
-                                                {{ number_format($item->price) }}đ
-                                            </div>
-                                            @if(isset($item->discount) && $item->discount > 0)
-                                                <div class="text-sm text-gray-500 line-through">
-                                                    {{ number_format($item->original_price) }}đ
+                                            @php
+                                                $hasDiscount = isset($item->original_price) && isset($item->price) && $item->original_price > $item->price;
+                                                $discountAmount = $hasDiscount ? ($item->original_price - $item->price) : 0;
+                                                $discountPercent = $hasDiscount ? round(($discountAmount / $item->original_price) * 100) : 0;
+                                            @endphp
+                                            
+                                            @if($hasDiscount)
+                                                <!-- Giá cuối cùng (đã bao gồm biến thể + giảm giá) -->
+                                                <div class="text-lg font-bold text-red-600">
+                                                    {{ number_format($item->price) }}đ
                                                 </div>
-                                                <div class="text-xs text-red-600 font-bold">
-                                                    -{{ number_format($item->discount) }}đ
+                                                <!-- Giá trước khi giảm -->
+                                                <div class="text-sm text-gray-500 line-through">
+                                                    Trước giảm: {{ number_format($item->original_price) }}đ
+                                                </div>
+                                                <!-- Mức tiết kiệm -->
+                                                <div class="text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded mt-1">
+                                                    <i class="fas fa-tag mr-1"></i>
+                                                    Tiết kiệm {{ number_format($discountAmount) }}đ ({{ $discountPercent }}%)
+                                                </div>
+                                            @else
+                                                <!-- Giá cuối cùng (đã bao gồm biến thể, không giảm giá) -->
+                                                <div class="text-lg font-bold text-black">
+                                                    {{ number_format($item->price) }}đ
+                                                </div>
+                                                <div class="text-xs text-blue-600 mt-1 bg-blue-50 px-2 py-1 rounded">
+                                                    <i class="fas fa-calculator mr-1"></i>
+                                                    Giá cuối (đã gồm biến thể)
                                                 </div>
                                             @endif
                                         </div>
@@ -492,6 +541,7 @@
                                                            value="1" 
                                                            min="1" 
                                                            max="1" 
+                                                           data-cart-id="{{ $item->id }}"
                                                            data-book-id="{{ $item->book_id }}"
                                                            data-last-value="1"
                                                            data-is-ebook="true"
@@ -513,6 +563,7 @@
                                                            value="{{ $item->quantity }}" 
                                                            min="1" 
                                                            max="{{ $item->stock ?? 1 }}" 
+                                                           data-cart-id="{{ $item->id }}"
                                                            data-book-id="{{ $item->book_id }}" 
                                                            data-last-value="{{ $item->quantity }}"
                                                            data-is-combo="false">

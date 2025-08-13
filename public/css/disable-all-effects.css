@@ -1,0 +1,67 @@
+/* SELECTIVE OPTION - DISABLE ONLY SCALE/ZOOM EFFECTS, KEEP BACKGROUND COLORS */
+
+/* Disable only transforms that cause scaling/zooming */
+* {
+    transform: none !important;
+    scale: none !important;
+    zoom: 1 !important;
+    /* Giữ lại transition và animation cho smooth UX */
+}
+
+*:hover {
+    transform: none !important;
+    scale: none !important;
+    zoom: 1 !important;
+    /* KHÔNG tắt background-color để giữ hiệu ứng màu nền */
+}
+
+*:active {
+    transform: none !important;
+    scale: none !important;
+    zoom: 1 !important;
+}
+
+*:focus {
+    transform: none !important;
+    scale: none !important;
+    zoom: 1 !important;
+}
+
+/* Override all possible CSS classes */
+[class*="hover"]:hover {
+    transform: none !important;
+    scale: none !important;
+    zoom: 1 !important;
+}
+
+[class*="scale"]:hover {
+    transform: none !important;
+    scale: none !important;
+    zoom: 1 !important;
+}
+
+[class*="transform"]:hover {
+    transform: none !important;
+    scale: none !important;
+    zoom: 1 !important;
+}
+
+/* Target specific elements that might be causing scaling issues */
+.p-1:hover,
+button:hover,
+div:hover,
+span:hover {
+    transform: none !important;
+    scale: none !important;
+    zoom: 1 !important;
+    /* GIỮ LẠI background-color tự nhiên - không override */
+}
+
+/* Disable any scaling that might affect the message display */
+.order-info-message *,
+.message-actions *,
+.chat-message * {
+    transform: none !important;
+    scale: none !important;
+    zoom: 1 !important;
+}

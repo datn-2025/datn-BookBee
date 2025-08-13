@@ -35,7 +35,6 @@
                     </div>
 
                     <!-- Bộ lọc tin tức -->
-                    <!-- Bộ lọc tin tức -->
                     <div class="card-body border-bottom py-4">
                         <form method="GET" action="{{ route('admin.news.index') }}">
                             <div class="row g-3 align-items-center">

@@ -73,21 +73,44 @@
             @endif
                         </div>
                         <div class="flex items-center gap-4">
-                            @php
-                                $orderStatusName = $order->orderStatus->name ?? '';
-                                $orderStatusClass = match($orderStatusName) {
-                                    'Chờ xác nhận' => 'bg-yellow-500 text-white',
-                                    'Đã xác nhận' => 'bg-blue-500 text-white',
-                                    'Đang chuẩn bị' => 'bg-indigo-500 text-white',
-                                    'Đang giao hàng' => 'bg-purple-500 text-white',
-                                    'Đã giao', 'Thành công' => 'bg-green-500 text-white',
-                                    'Đã hủy' => 'bg-red-500 text-white',
-                                    default => 'bg-gray-500 text-white'
-                                };
-                            @endphp
-                            <span class="status-badge {{ $orderStatusClass }}">
-                                {{ $order->orderStatus->name }}
-                            </span>
+                            @if($order->refundRequests->isNotEmpty())
+                                @php 
+                                    $latestRefund = $order->refundRequests->sortByDesc('created_at')->first();
+                                    $refundStatusClass = match($latestRefund->status) {
+                                        'pending' => 'bg-yellow-500 text-white',
+                                        'processing' => 'bg-blue-500 text-white',
+                                        'completed' => 'bg-green-500 text-white',
+                                        'rejected' => 'bg-red-500 text-white',
+                                        default => 'bg-gray-500 text-white'
+                                    };
+                                    $refundStatusText = match($latestRefund->status) {
+                                        'pending' => 'CHỜ HOÀN TIỀN',
+                                        'processing' => 'ĐANG HOÀN TIỀN',
+                                        'completed' => 'ĐÃ HOÀN TIỀN',
+                                        'rejected' => 'TỪ CHỐI HOÀN TIỀN',
+                                        default => 'HOÀN TIỀN'
+                                    };
+                                @endphp
+                                <span class="status-badge {{ $refundStatusClass }}">
+                                    {{ $refundStatusText }}
+                                </span>
+                            @else
+                                @php
+                                    $orderStatusName = $order->orderStatus->name ?? '';
+                                    $orderStatusClass = match($orderStatusName) {
+                                        'Chờ xác nhận' => 'bg-yellow-500 text-white',
+                                        'Đã xác nhận' => 'bg-blue-500 text-white',
+                                        'Đang chuẩn bị' => 'bg-indigo-500 text-white',
+                                        'Đang giao hàng' => 'bg-purple-500 text-white',
+                                        'Đã giao', 'Thành công' => 'bg-green-500 text-white',
+                                        'Đã hủy' => 'bg-red-500 text-white',
+                                        default => 'bg-gray-500 text-white'
+                                    };
+                                @endphp
+                                <span class="status-badge {{ $orderStatusClass }}">
+                                    {{ $order->orderStatus->name }}
+                                </span>
+                            @endif
                             <div class="text-right">
                                 <p class="text-sm text-gray-300 uppercase tracking-wide">Tổng tiền</p>
                                 <p class="text-2xl font-black text-white">
@@ -735,156 +758,219 @@
                             $hasRefundRequest = $order->refundRequests()->exists();
                         @endphp
                         
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-1 h-5 bg-black"></div>
-                            <h4 class="text-base font-bold uppercase tracking-wide text-black">YÊU CẦU HOÀN TIỀN</h4>
-                        </div>
-                        
-                        <div class="flex gap-4">
-                            @if(!$hasRefundRequest)
-                                <a href="{{ route('account.orders.refund.create', $order->id) }}"
-                                   class="inline-flex items-center gap-3 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <!-- Refund Request Section -->
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+                            <!-- Header -->
+                            <div class="bg-black text-white px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
                                     </svg>
-                                    YÊU CẦU HOÀN TIỀN
-                                </a>
-                            @else
-                                <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                   class="inline-flex items-center gap-3 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    XEM TRẠNG THÁI HOÀN TIỀN
-                                </a>
-                            @endif
+                                    <h4 class="text-lg font-bold uppercase tracking-wide">YÊU CẦU HOÀN TIỀN</h4>
+                                </div>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div class="p-6">
+                                @if(!$hasRefundRequest)
+                                    <div class="text-center py-8">
+                                        <div class="mb-4">
+                                            <svg class="h-16 w-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                            </svg>
+                                        </div>
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Chưa có yêu cầu hoàn tiền</h3>
+                                        <p class="text-gray-600 mb-6">Bạn có thể yêu cầu hoàn tiền cho đơn hàng này nếu có vấn đề với sản phẩm.</p>
+                                        <a href="{{ route('account.orders.refund.create', $order->id) }}"
+                                           class="inline-flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                            </svg>
+                                            TẠO YÊU CẦU HOÀN TIỀN
+                                        </a>
+                                    </div>
+                                @else
+                                    <div class="text-center py-8">
+                                        <div class="mb-4">
+                                            <svg class="h-16 w-16 mx-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Đã có yêu cầu hoàn tiền</h3>
+                                        <p class="text-gray-600 mb-6">Bạn đã gửi yêu cầu hoàn tiền cho đơn hàng này. Nhấn vào nút bên dưới để xem trạng thái.</p>
+                                        <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                           class="inline-flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                            XEM TRẠNG THÁI HOÀN TIỀN
+                                        </a>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     @endif
 
                     
                     
                     @if($latestRefundRequest && in_array($order->delivery_method, ['delivery', 'pickup', 'mixed']))
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-1 h-5 bg-black"></div>
-                            <h4 class="text-base font-bold uppercase tracking-wide text-black">TRẠNG THÁI HOÀN TIỀN</h4>
-                        </div>
-                        
-                        @if($latestRefundRequest->status === 'pending')
-                            <div class="bg-yellow-50 border-2 border-yellow-200 p-6">
+                        <!-- Refund Status Section -->
+                        {{-- <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+                            <!-- Header -->
+                            <div class="bg-black text-white px-6 py-4">
                                 <div class="flex items-center gap-3">
-                                    <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    <div>
-                                        <h3 class="text-base font-bold text-yellow-800 uppercase tracking-wide">
-                                            ĐANG CHỜ XỬ LÝ HOÀN TIỀN
-                                        </h3>
-                                        <p class="text-sm text-yellow-700 mt-1">
-                                            Yêu cầu hoàn tiền của bạn đã được gửi và đang chờ admin xử lý.
-                                        </p>
-                                        <p class="text-xs text-yellow-600 mt-2">
-                                            <strong>Ngày gửi:</strong> {{ $latestRefundRequest->created_at->format('d/m/Y H:i') }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="mt-4">
-                                    <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                       class="inline-flex items-center gap-3 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        XEM CHI TIẾT HOÀN TIỀN
-                                    </a>
-                                </div>
-                            </div>
-                        @elseif($latestRefundRequest->status === 'processing')
-                            <div class="bg-blue-50 border-2 border-blue-200 p-6">
-                                <div class="flex items-center gap-3">
-                                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                    </svg>
-                                    <div>
-                                        <h3 class="text-base font-bold text-blue-800 uppercase tracking-wide">
-                                            ĐANG XỬ LÝ HOÀN TIỀN
-                                        </h3>
-                                        <p class="text-sm text-blue-700 mt-1">
-                                            Yêu cầu hoàn tiền của bạn đang được admin xử lý. Vui lòng chờ thông báo kết quả.
-                                        </p>
-                                        <p class="text-xs text-blue-600 mt-2">
-                                            <strong>Số tiền hoàn:</strong> {{ number_format($latestRefundRequest->amount, 0, ',', '.') }}đ
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="mt-4">
-                                    <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                       class="inline-flex items-center gap-3 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        XEM CHI TIẾT HOÀN TIỀN
-                                    </a>
-                                </div>
-                            </div>
-                        @elseif($latestRefundRequest->status === 'completed')
-                            <div class="bg-green-50 border-2 border-green-200 p-6">
-                                <div class="flex items-center gap-3">
-                                    <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
-                                    <div>
-                                        <h3 class="text-base font-bold text-green-800 uppercase tracking-wide">
-                                            ĐÃ HOÀN TIỀN THÀNH CÔNG
-                                        </h3>
-                                        <p class="text-sm text-green-700 mt-1">
-                                            Tiền đã được hoàn về tài khoản của bạn thành công.
-                                        </p>
-                                        <p class="text-xs text-green-600 mt-2">
-                                            <strong>Số tiền đã hoàn:</strong> {{ number_format($latestRefundRequest->amount, 0, ',', '.') }}đ<br>
-                                            <strong>Ngày hoàn tiền:</strong> {{ $latestRefundRequest->processed_at ? $latestRefundRequest->processed_at->format('d/m/Y H:i') : 'N/A' }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="mt-4">
-                                    <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                       class="inline-flex items-center gap-3 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        XEM CHI TIẾT HOÀN TIỀN
-                                    </a>
+                                    <h4 class="text-lg font-bold uppercase tracking-wide">TRẠNG THÁI HOÀN TIỀN</h4>
                                 </div>
                             </div>
-                        @elseif($latestRefundRequest->status === 'rejected')
-                            <div class="bg-red-50 border-2 border-red-200 p-6">
-                                <div class="flex items-center gap-3">
-                                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                    <div>
-                                        <h3 class="text-base font-bold text-red-800 uppercase tracking-wide">
-                                            YÊU CẦU HOÀN TIỀN BỊ TỪ CHỐI
-                                        </h3>
-                                        <p class="text-sm text-red-700 mt-1">
-                                            Yêu cầu hoàn tiền của bạn đã bị từ chối.
-                                        </p>
-                                        @if($latestRefundRequest->admin_note)
-                                            <p class="text-xs text-red-600 mt-2">
-                                                <strong>Lý do:</strong> {{ $latestRefundRequest->admin_note }}
-                                            </p>
-                                        @endif
+                            
+                            <!-- Content -->
+                            <div class="p-6">
+                                @if($latestRefundRequest->status === 'pending')
+                                    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400 p-6 rounded-lg">
+                                        <div class="flex items-start gap-4">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                                    <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h3 class="text-lg font-bold text-yellow-800 uppercase tracking-wide mb-2">
+                                                    ĐANG CHỜ XỬ LÝ HOÀN TIỀN
+                                                </h3>
+                                                <p class="text-yellow-700 mb-3">
+                                                    Yêu cầu hoàn tiền của bạn đã được gửi và đang chờ admin xử lý. Chúng tôi sẽ xem xét và phản hồi trong thời gian sớm nhất.
+                                                </p>
+                                                <div class="bg-white bg-opacity-50 rounded-lg p-3 mb-4">
+                                                    <p class="text-sm text-yellow-800">
+                                                        <strong>📅 Ngày gửi:</strong> {{ $latestRefundRequest->created_at->format('d/m/Y H:i') }}<br>
+                                                        <strong>💰 Số tiền yêu cầu:</strong> {{ number_format($latestRefundRequest->amount, 0, ',', '.') }}đ
+                                                    </p>
+                                                </div>
+                                                <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                                   class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                    XEM CHI TIẾT HOÀN TIỀN
+                                                </a>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="mt-4">
-                                    <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                       class="inline-flex items-center gap-3 px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        XEM CHI TIẾT
-                                    </a>
-                                </div>
+                                @elseif($latestRefundRequest->status === 'processing')
+                                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-400 p-6 rounded-lg">
+                                        <div class="flex items-start gap-4">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h3 class="text-lg font-bold text-blue-800 uppercase tracking-wide mb-2">
+                                                    ĐANG XỬ LÝ HOÀN TIỀN
+                                                </h3>
+                                                <p class="text-blue-700 mb-3">
+                                                    Yêu cầu hoàn tiền của bạn đang được admin xử lý. Chúng tôi đang xem xét và sẽ thông báo kết quả sớm nhất có thể.
+                                                </p>
+                                                <div class="bg-white bg-opacity-50 rounded-lg p-3 mb-4">
+                                                    <p class="text-sm text-blue-800">
+                                                        <strong>💰 Số tiền hoàn:</strong> {{ number_format($latestRefundRequest->amount, 0, ',', '.') }}đ<br>
+                                                        <strong>⏱️ Trạng thái:</strong> Đang được xem xét
+                                                    </p>
+                                                </div>
+                                                <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                                   class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                    XEM CHI TIẾT HOÀN TIỀN
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @elseif($latestRefundRequest->status === 'completed')
+                                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-400 p-6 rounded-lg">
+                                        <div class="flex items-start gap-4">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                                    <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h3 class="text-lg font-bold text-green-800 uppercase tracking-wide mb-2">
+                                                    ✅ ĐÃ HOÀN TIỀN THÀNH CÔNG
+                                                </h3>
+                                                <p class="text-green-700 mb-3">
+                                                    Chúc mừng! Tiền đã được hoàn về tài khoản của bạn thành công. Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi.
+                                                </p>
+                                                <div class="bg-white bg-opacity-50 rounded-lg p-3 mb-4">
+                                                    <p class="text-sm text-green-800">
+                                                        <strong>💰 Số tiền đã hoàn:</strong> {{ number_format($latestRefundRequest->amount, 0, ',', '.') }}đ<br>
+                                                        <strong>📅 Ngày hoàn tiền:</strong> {{ $latestRefundRequest->processed_at ? $latestRefundRequest->processed_at->format('d/m/Y H:i') : 'N/A' }}<br>
+                                                        <strong>✅ Trạng thái:</strong> Hoàn thành
+                                                    </p>
+                                                </div>
+                                                <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                                   class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                    XEM CHI TIẾT HOÀN TIỀN
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @elseif($latestRefundRequest->status === 'rejected')
+                                    <div class="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-400 p-6 rounded-lg">
+                                        <div class="flex items-start gap-4">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h3 class="text-lg font-bold text-red-800 uppercase tracking-wide mb-2">
+                                                    ❌ YÊU CẦU HOÀN TIỀN BỊ TỪ CHỐI
+                                                </h3>
+                                                <p class="text-red-700 mb-3">
+                                                    Rất tiếc, yêu cầu hoàn tiền của bạn đã bị từ chối. Vui lòng xem lý do chi tiết bên dưới.
+                                                </p>
+                                                @if($latestRefundRequest->admin_note)
+                                                    <div class="bg-white bg-opacity-50 rounded-lg p-3 mb-4">
+                                                        <p class="text-sm text-red-800">
+                                                            <strong>📝 Lý do từ chối:</strong><br>
+                                                            {{ $latestRefundRequest->admin_note }}
+                                                        </p>
+                                                    </div>
+                                                @endif
+                                                <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                                   class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                    XEM CHI TIẾT HOÀN TIỀN
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
-                        @endif
+                        </div> --}}
                     @endif
                 </div>
             </div>

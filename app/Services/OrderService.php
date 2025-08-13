@@ -8,6 +8,7 @@ use App\Models\OrderStatus;
 use App\Models\PaymentStatus;
 use App\Models\Voucher;
 use App\Models\OrderItemAttributeValue;
+use App\Models\BookAttributeValue;
 use App\Models\Address;
 use App\Models\User;
 use App\Models\PaymentMethod;
@@ -134,11 +135,14 @@ class OrderService
                 // Lưu thuộc tính vào bảng order_item_attribute_values
                 if (!empty($attributeIds)) {
                     foreach ($attributeIds as $attributeValueId) {
-                        \App\Models\OrderItemAttributeValue::create([
-                            'id' => (string) Str::uuid(),
-                            'order_item_id' => $orderItem->id,
-                            'attribute_value_id' => $attributeValueId
-                        ]);
+                        // Kiểm tra attributeValueId hợp lệ (không phải 0, null, hoặc empty)
+                        if ($attributeValueId && is_numeric($attributeValueId) && $attributeValueId > 0) {
+                            \App\Models\OrderItemAttributeValue::create([
+                                'id' => (string) Str::uuid(),
+                                'order_item_id' => $orderItem->id,
+                                'attribute_value_id' => $attributeValueId
+                            ]);
+                        }
                     }
                 }
             }
@@ -516,6 +520,9 @@ class OrderService
 
         // Cập nhật tồn kho từ book_format (không phải từ book)
         $cartItem->bookFormat->decrement('stock', $cartItem->quantity);
+        
+        // ✨ THÊM MỚI: Trừ stock thuộc tính sản phẩm
+        $this->decreaseAttributeStock($cartItem);
 
         Log::info('Created book order item:', [
             'order_item_id' => $orderItem->id,
@@ -527,15 +534,77 @@ class OrderService
     }
 
     /**
+     * Trừ stock thuộc tính sản phẩm
+     */
+    private function decreaseAttributeStock($cartItem)
+    {
+        $attributeValueIds = $cartItem->attribute_value_ids ?? [];
+        
+        if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
+            foreach ($attributeValueIds as $attributeValueId) {
+                // Kiểm tra attributeValueId hợp lệ (không phải 0, null, hoặc empty)
+                if ($attributeValueId && is_numeric($attributeValueId) && $attributeValueId > 0) {
+                    $bookAttributeValue = BookAttributeValue::where('book_id', $cartItem->book_id)
+                        ->where('attribute_value_id', $attributeValueId)
+                        ->first();
+                    
+                    if ($bookAttributeValue) {
+                        // Kiểm tra stock đủ trước khi trừ
+                        if ($bookAttributeValue->stock >= $cartItem->quantity) {
+                            $bookAttributeValue->decrement('stock', $cartItem->quantity);
+                            
+                            Log::info('Decreased attribute stock:', [
+                                'book_id' => $cartItem->book_id,
+                                'attribute_value_id' => $attributeValueId,
+                                'quantity_decreased' => $cartItem->quantity,
+                                'remaining_stock' => $bookAttributeValue->fresh()->stock
+                            ]);
+                        } else {
+                            Log::warning('Insufficient attribute stock:', [
+                                'book_id' => $cartItem->book_id,
+                                'attribute_value_id' => $attributeValueId,
+                                'available_stock' => $bookAttributeValue->stock,
+                                'requested_quantity' => $cartItem->quantity
+                            ]);
+                            
+                            // Có thể throw exception hoặc xử lý theo business logic
+                            throw new \Exception("Không đủ tồn kho cho thuộc tính sản phẩm (ID: {$attributeValueId})");
+                        }
+                    } else {
+                        Log::warning('BookAttributeValue not found:', [
+                            'book_id' => $cartItem->book_id,
+                            'attribute_value_id' => $attributeValueId
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Lưu thuộc tính sản phẩm cho OrderItem
      */
     private function saveOrderItemAttributes($orderItem, $cartItem)
     {
         $attributeValueIds = $cartItem->attribute_value_ids ?? [];
         
+        // Xử lý attribute_value_ids có thể là JSON string hoặc array
+        if (is_string($attributeValueIds) && !empty($attributeValueIds) && $attributeValueIds !== '[]') {
+            $decoded = json_decode($attributeValueIds, true);
+            if (is_array($decoded)) {
+                $attributeValueIds = $decoded;
+            } else {
+                $attributeValueIds = [];
+            }
+        } elseif (!is_array($attributeValueIds)) {
+            $attributeValueIds = [];
+        }
+        
+        // Chỉ tạo record khi có thuộc tính hợp lệ
         if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
             foreach ($attributeValueIds as $attributeValueId) {
-                if ($attributeValueId) {
+                // Kiểm tra attributeValueId hợp lệ (không phải 0, null, hoặc empty)
+                if ($attributeValueId && is_numeric($attributeValueId) && $attributeValueId > 0) {
                     OrderItemAttributeValue::create([
                         'id' => (string) Str::uuid(),
                         'order_item_id' => $orderItem->id,
@@ -543,14 +612,8 @@ class OrderService
                     ]);
                 }
             }
-        } else {
-            // Tạo record với attribute_value_id = 0 nếu không có thuộc tính
-            OrderItemAttributeValue::create([
-                'id' => (string) Str::uuid(),
-                'order_item_id' => $orderItem->id,
-                'attribute_value_id' => 0,
-            ]);
         }
+        // Không tạo record nào nếu không có thuộc tính (ví dụ: ebook)
     }
 
     /**

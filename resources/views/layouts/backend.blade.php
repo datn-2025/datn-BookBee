@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta content="BookBee Admin Dashboard" name="description" />
     <meta content="Your Team" name="author" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ get_setting()->name_website ?? 'BookBee' }} - @yield('title')</title>
 
     <!-- App favicon -->
@@ -28,8 +29,24 @@
         href= "https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
-
+    
+     <!-- Chat CSS -->
+    <link href="{{ asset('css/chat.css') }}" rel="stylesheet" />
+     @vite(['resources/js/app.js', 'resources/css/app.css'])
+     <!-- Laravel Echo / Pusher Setup -->
+    <script>
+        // Import Echo from Vite
+        window.Pusher = window.Pusher || {};
+        
+        // Setup Echo when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.Echo !== 'undefined') {
+                console.log('Laravel Echo initialized successfully');
+            } else {
+                console.warn('Laravel Echo not available');
+            }
+        });
+    </script>
     <!-- Plugin CSS -->
     <link href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" rel="stylesheet" />
@@ -83,6 +100,16 @@
             toastr.error("{{ session('error') }}");
         @endif
     </script>
+     <!-- Chat Configuration -->
+    <script>
+        window.currentUserId = {{ auth('admin')->check() ? auth('admin')->id() : (auth()->check() ? auth()->id() : 'null') }};
+        window.Laravel = {
+            user: {
+                id: {{ auth('admin')->check() ? auth('admin')->id() : (auth()->check() ? auth()->id() : 'null') }},
+                name: '{{ auth('admin')->check() ? auth('admin')->user()->name : (auth()->check() ? auth()->user()->name : '') }}'
+            }
+        };
+    </script>
 
     <!-- Custom inline styles -->
     <style>
@@ -125,6 +152,67 @@
             border: 1px solid #c3e6cb;
             font-size: 0.875rem;
             margin-top: 6px;
+        }
+
+        /* Fix cho menu dropdown */
+        .app-menu {
+            z-index: 1050 !important;
+            display: block !important;
+            visibility: visible !important;
+            position: fixed !important;
+        }
+        
+        .navbar-nav .nav-item .collapse {
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-nav .nav-item .collapse.show {
+            display: block !important;
+            visibility: visible !important;
+        }
+        
+        .menu-dropdown {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-left: 2px solid #007bff;
+            margin-left: 15px;
+        }
+        
+        .menu-dropdown .nav-link {
+            padding-left: 25px;
+            font-size: 13px;
+        }
+
+        /* Đảm bảo sidebar không bị ẩn khi click dropdown */
+        .sidebar-hidden .app-menu {
+            display: block !important;
+        }
+        
+        .vertical-overlay {
+            pointer-events: none;
+        }
+        
+        /* Fix cho Bootstrap collapse */
+        .collapse:not(.show) {
+            display: none;
+        }
+        
+        .collapse.show {
+            display: block !important;
+        }
+
+        /* Override mọi style có thể ẩn sidebar khi click dropdown */
+        body:not(.sidebar-enable) .app-menu,
+        body.twocolumn-panel .app-menu,
+        body.vertical-sidebar-enable .app-menu {
+            display: block !important;
+            transform: translateX(0) !important;
+            left: 0 !important;
+        }
+
+        /* Ngăn chặn sidebar bị ẩn */
+        .app-menu:not(.hide-forced) {
+            display: block !important;
+            visibility: visible !important;
         }
     </style>
 
@@ -615,6 +703,11 @@
                                 </div>
                             </li>
                         @endpermission
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="{{ route('admin.chat.index') }}">
+                                <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Chat</span>
+                            </a>
+                        </li>
                         @permission('review.view')
                             <li class="nav-item">
                                 <a class="nav-link menu-link" href="{{ route('admin.reviews.index') }}">
@@ -656,6 +749,8 @@
         <div class="main-content">
             <div class="page-content">
                 @hasSection('content')
+                 <div id="notification" class=" alert mx-3 invisible" >
+                    </div>
                     @yield('content')
                 @else
                     {{ $slot }}
@@ -1433,6 +1528,113 @@
                     }
                 }
             });
+
+            // Fix cho sidebar dropdown menu - ngăn chặn việc ẩn toàn bộ sidebar
+            document.querySelectorAll('.navbar-nav .nav-link[data-bs-toggle="collapse"]').forEach(function(trigger) {
+                trigger.addEventListener('click', function(event) {
+                    // Không preventDefault để Bootstrap collapse vẫn hoạt động
+                    const targetSelector = this.getAttribute('data-bs-target') || this.getAttribute('href');
+                    const targetElement = document.querySelector(targetSelector);
+                    
+                    if (targetElement) {
+                        // Đảm bảo sidebar không bị ẩn
+                        const sidebar = document.querySelector('.app-menu');
+                        if (sidebar) {
+                            sidebar.style.display = 'block';
+                            sidebar.style.visibility = 'visible';
+                        }
+                        
+                        // Ngăn chặn event bubbling để không trigger hamburger menu
+                        event.stopPropagation();
+                    }
+                });
+            });
+
+            // Ngăn chặn click trên dropdown menu ẩn sidebar
+            document.querySelectorAll('.menu-dropdown').forEach(function(dropdown) {
+                dropdown.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                });
+            });
+
+            // Override hamburger menu behavior để không ảnh hưởng đến dropdown
+            const hamburgerIcon = document.querySelector('#topnav-hamburger-icon');
+            if (hamburgerIcon) {
+                hamburgerIcon.addEventListener('click', function(event) {
+                    // Chỉ toggle sidebar khi không có dropdown menu nào đang mở
+                    const openDropdowns = document.querySelectorAll('.menu-dropdown.show');
+                    if (openDropdowns.length === 0) {
+                        document.body.classList.toggle('sidebar-hidden');
+                    }
+                });
+            }
+
+            // Bootstrap collapse event handlers
+            document.querySelectorAll('.collapse').forEach(function(collapseElement) {
+                collapseElement.addEventListener('show.bs.collapse', function(event) {
+                    // Đảm bảo sidebar vẫn hiển thị khi dropdown mở
+                    const sidebar = document.querySelector('.app-menu');
+                    if (sidebar) {
+                        sidebar.style.display = 'block';
+                        sidebar.style.visibility = 'visible';
+                    }
+                    event.stopPropagation();
+                });
+
+                collapseElement.addEventListener('hide.bs.collapse', function(event) {
+                    // Đảm bảo sidebar vẫn hiển thị khi dropdown đóng
+                    const sidebar = document.querySelector('.app-menu');
+                    if (sidebar) {
+                        sidebar.style.display = 'block'; 
+                        sidebar.style.visibility = 'visible';
+                    }
+                    event.stopPropagation();
+                });
+            });
+
+            // Đảm bảo sidebar không bị ẩn khi click vào dropdown
+            document.querySelectorAll('.app-menu .nav-link').forEach(function(link) {
+                if (link.hasAttribute('data-bs-toggle')) {
+                    link.addEventListener('click', function(e) {
+                        // Ngăn chặn việc ẩn sidebar
+                        e.stopPropagation();
+                    });
+                }
+            });
+
+            // MutationObserver để theo dõi và ngăn chặn sidebar bị ẩn
+            const sidebar = document.querySelector('.app-menu');
+            if (sidebar) {
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                            const currentStyle = sidebar.getAttribute('style');
+                            if (currentStyle && (currentStyle.includes('display: none') || currentStyle.includes('visibility: hidden'))) {
+                                // Reset style để hiển thị sidebar
+                                sidebar.style.display = 'block';
+                                sidebar.style.visibility = 'visible';
+                            }
+                        }
+                    });
+                });
+
+                observer.observe(sidebar, {
+                    attributes: true,
+                    attributeFilter: ['style', 'class']
+                });
+            }
+
+            // Đảm bảo sidebar luôn hiển thị
+            setInterval(function() {
+                const sidebarElement = document.querySelector('.app-menu');
+                if (sidebarElement) {
+                    const computed = window.getComputedStyle(sidebarElement);
+                    if (computed.display === 'none' || computed.visibility === 'hidden') {
+                        sidebarElement.style.display = 'block';
+                        sidebarElement.style.visibility = 'visible';
+                    }
+                }
+            }, 100);
         });
     </script>
 

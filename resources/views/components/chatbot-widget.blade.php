@@ -1,5 +1,5 @@
 <!-- Tmart-style Chatbot Widget -->
-<div id="chatbot-widget" class="fixed bottom-4 right-4 z-50 font-sans" role="region" aria-label="BookBee Chatbot Assistant">
+<div id="chatbot-widget" class="fixed bottom-24 right-5 z-50 font-sans" role="region" aria-label="BookBee Chatbot Assistant">
     <!-- Floating Action Button - Tmart Style -->
     <button id="chatbot-toggle" 
             class="group relative bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white w-16 h-16 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-teal-300/50"
@@ -21,12 +21,12 @@
         <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
             <span class="text-white text-xs font-bold">1</span>
         </div>
-        <img style=" border-radius: 50%; object-fit: cover;" src="{{ asset('images/avtchatbot.jpg') }}" alt="">
+        <img style=" border-radius: 50%; object-fit: cover;" src="{{ asset('storage/avtchatbot.jpg') }}" alt="">
     </button>
 
     <!-- Chat Window - Style -->
     <div id="chatbot-window" 
-         class="hidden fixed bottom-25 right-4 w-99 h-[650px] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bg-white transform transition-all duration-300 scale-95 opacity-0"
+         class="hidden fixed bottom-44 right-5 w-99 h-[650px] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bg-white transform transition-all duration-300 scale-95 opacity-0"
          style="display: none;"
          role="dialog" 
          aria-labelledby="chatbot-title" 
@@ -313,8 +313,13 @@
         }
         
         #chatbot-toggle {
-            bottom: 20px !important;
+            bottom: 90px !important;
             right: 20px !important;
+        }
+        
+        #chatbot-widget {
+            right: 20px !important;
+            bottom: 90px !important;
         }
     }
     

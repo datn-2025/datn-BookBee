@@ -181,6 +181,18 @@ function removeFromWishlist(bookId) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Dispatch wishlist update event
+                    if (typeof data.wishlist_count !== 'undefined') {
+                        document.dispatchEvent(new CustomEvent('wishlistItemRemoved', {
+                            detail: { count: data.wishlist_count }
+                        }));
+                    } else {
+                        // Fallback: refresh wishlist count from server
+                        if (window.WishlistCountManager && typeof window.WishlistCountManager.refreshFromServer === 'function') {
+                            window.WishlistCountManager.refreshFromServer();
+                        }
+                    }
+                    
                     setTimeout(() => {
                         location.reload();
                     }, 500);
@@ -255,6 +267,18 @@ function removeAllFromWishlist() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Dispatch wishlist update event
+                    if (typeof data.wishlist_count !== 'undefined') {
+                        document.dispatchEvent(new CustomEvent('wishlistUpdated', {
+                            detail: { count: data.wishlist_count }
+                        }));
+                    } else {
+                        // Fallback: refresh wishlist count from server
+                        if (window.WishlistCountManager && typeof window.WishlistCountManager.refreshFromServer === 'function') {
+                            window.WishlistCountManager.refreshFromServer();
+                        }
+                    }
+                    
                     setTimeout(() => {
                         location.reload();
                     }, 1000);

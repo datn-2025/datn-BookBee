@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
@@ -18,7 +19,7 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class, 'role_id');
     }
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
     protected $table = 'users';
 
@@ -37,7 +38,8 @@ class User extends Authenticatable
         'avatar',
         'activation_token',
         'activation_expires',
-        'google_id'
+        'google_id',
+        'last_seen'
     ];
 
     /**
@@ -60,6 +62,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_seen' => 'datetime',
+            'activation_expires' => 'datetime',
         ];
     }
 
@@ -153,4 +157,52 @@ class User extends Authenticatable
     {
         return $this->hasOne(\App\Models\Wallet::class);
     }
+    public function conversationsAsCustomer()
+    {
+        return $this->hasMany(\App\Models\Conversation::class, 'customer_id');
+    }
+
+    public function conversationsAsAdmin()
+    {
+        return $this->hasMany(\App\Models\Conversation::class, 'admin_id');
+    }
+
+    /**
+     * Check if user is currently online
+     * User is considered online if they were active within the last 5 minutes
+     */
+    public function isOnline()
+    {
+        if ($this->last_seen) {
+            return $this->last_seen->diffInMinutes(now()) <= 5;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Check if user was active within specified minutes
+     */
+    public function isActiveWithin($minutes = 60)
+    {
+        if ($this->last_seen) {
+            return $this->last_seen->diffInMinutes(now()) <= $minutes;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Update user's last seen timestamp
+     */
+    public function updateLastSeen()
+    {
+        $this->update([
+            'last_seen' => now()
+        ]);
+    }
+
+    // protected $dispatchesEvents = [
+    //     'created' => UserCreated::class,
+    // ];
 }

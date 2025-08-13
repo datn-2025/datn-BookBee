@@ -1,0 +1,821 @@
+/* Chat CSS for BookBee */
+
+/* ============================================ */
+/* CORE CHAT LAYOUT STYLES */
+/* ============================================ */
+
+/* Chat conversation container */
+.chat-conversation {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scroll-behavior: smooth !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 1rem !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #c1c1c1 #f1f1f1 !important;
+    position: relative !important;
+    display: block !important;
+    flex: 1 !important;
+}
+
+/* Ensure scrollbar is always visible when needed */
+.chat-conversation::-webkit-scrollbar {
+    width: 8px !important;
+    display: block !important;
+}
+
+.chat-conversation::-webkit-scrollbar-track {
+    background: #f1f1f1 !important;
+    border-radius: 3px !important;
+}
+
+.chat-conversation::-webkit-scrollbar-thumb {
+    background: #c1c1c1 !important;
+    border-radius: 3px !important;
+}
+
+.chat-conversation::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8 !important;
+}
+
+/* Message container */
+#message-container {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100% !important;
+    padding-bottom: 1rem !important;
+}
+
+/* Chat conversation list */
+.chat-conversation-list {
+    flex: 1 !important;
+    overflow-y: visible !important;
+    min-height: auto !important;
+}
+
+/* Chat list items */
+.chat-list {
+    margin-bottom: 1rem !important;
+    animation: fadeInUp 0.3s ease-out;
+}
+
+/* Message animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Typing animation */
+.typing-animation {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.typing-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typing {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Drag and drop styles */
+.chat-conversation.drag-over {
+    border: 2px dashed #007bff !important;
+    background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+/* Message content styles */
+.message-image img {
+    transition: transform 0.2s;
+    max-width: 200px;
+    border-radius: 8px;
+}
+
+.message-image img:hover {
+    /* transform: scale(1.05); */
+    cursor: pointer;
+}
+
+.message-file {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+}
+
+.message-file:hover {
+    background-color: #f8f9fa !important;
+}
+
+/* Chat input improvements */
+.chat-input {
+    resize: none !important;
+    min-height: 40px !important;
+    border-radius: 20px !important;
+    padding: 10px 15px !important;
+}
+
+.chat-input:focus {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+}
+
+/* Chat container fixed sizing */
+.chat-container {
+    min-height: 800px !important;
+    height: 800px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.chat-header {
+    flex-shrink: 0 !important;
+    min-height: 70px !important;
+    border-bottom: 1px solid #e9ecef !important;
+    padding: 15px !important;
+}
+
+.chat-body {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
+    position: relative !important;
+    padding: 0 !important;
+}
+
+.chat-footer {
+    flex-shrink: 0 !important;
+    min-height: 80px !important;
+    border-top: 1px solid #e9ecef !important;
+    padding: 15px !important;
+    background-color: #f8f9fa !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+/* Loading states */
+.btn[wire\:loading] {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* Status indicators */
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.25rem;
+}
+
+.status-indicator.online {
+    background-color: #28a745;
+}
+
+.status-indicator.offline {
+    background-color: #6c757d;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .chat-container {
+        min-height: 700px !important;
+        height: 700px !important;
+    }
+    
+    .chat-body {
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    .chat-conversation {
+        height: 100% !important;
+        min-height: 0 !important;
+        flex: 1 !important;
+    }
+}
+
+/* Empty state styling */
+.chat-empty-state {
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Introduction screen specific styling */
+.chat-introduction {
+    min-height: 0 !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 2rem 1rem !important;
+}
+
+/* ============================================ */
+/* MESSAGE AND IMAGE STYLES FROM BLADE */
+/* ============================================ */
+
+/* Message image styles */
+.message-image img {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 8px;
+}
+
+.message-image img:hover {
+    /* transform: scale(1.02); */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Message file styles */
+.message-file {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.message-file:hover {
+    background-color: #f8f9fa !important;
+}
+
+/* ============================================ */
+/* CHAT INTRODUCTION STYLES */
+/* ============================================ */
+
+/* Chat introduction styles */
+.chat-introduction {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem 1rem;
+    text-align: center;
+    color: white;
+    border-radius: 15px;
+    margin: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.chat-introduction::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: shine 3s infinite;
+}
+
+.chat-introduction .celebration-icons {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    animation: bounce 2s infinite;
+    z-index: 2;
+    position: relative;
+}
+
+.chat-introduction .user-avatar {
+    width: 80px;
+    height: 80px;
+    border: 4px solid rgba(255,255,255,0.3);
+    margin: 0 auto 1rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    z-index: 2;
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.chat-introduction .intro-text {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    opacity: 0.9;
+    z-index: 2;
+    position: relative;
+}
+
+.chat-introduction .start-chat-btn {
+    background: rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    z-index: 2;
+    position: relative;
+}
+
+.chat-introduction .start-chat-btn:hover {
+    background: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.5);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.quick-sticker {
+    padding: 0.5rem;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    margin: 0 0.25rem;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.quick-sticker:hover {
+    background: rgba(255,255,255,0.3);
+    /* transform: scale(1.2) rotate(10deg); */
+}
+
+/* ============================================ */
+/* ANIMATIONS */
+/* ============================================ */
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes shine {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes admin-highlight-pulse {
+    0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4);
+    }
+    50% { 
+        box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+    }
+}
+
+/* ============================================ */
+/* MESSAGE DATE SEPARATOR */
+/* ============================================ */
+
+/* Message day separator */
+.message-date-separator {
+    text-align: center;
+    margin: 1.5rem 0;
+    position: relative;
+}
+
+.message-date-separator::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e5e5e5;
+}
+
+.message-date-separator .date-badge {
+    background: #f8f9fa;
+    padding: 0.25rem 1rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    color: #6c757d;
+    position: relative;
+    display: inline-block;
+}
+
+/* ============================================ */
+/* EMOJI PICKER STYLES */
+/* ============================================ */
+
+/* Admin Emoji Picker Styles */
+#emoji-picker {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid #e5e7eb !important;
+    background-color: white !important;
+    z-index: 999999 !important;
+    position: absolute !important;
+    border-radius: 8px !important;
+}
+
+#emoji-picker.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+#emoji-picker:not(.hidden) {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Ensure emoji container has proper positioning */
+.emoji-container {
+    position: relative !important;
+}
+
+/* Fix potential Bootstrap/CSS conflicts */
+#emoji-picker {
+    font-family: inherit !important;
+    line-height: 1.5 !important;
+    color: #333 !important;
+}
+
+/* Force emoji picker to be visible and properly positioned */
+#emoji-picker:not(.hidden) {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: absolute !important;
+    z-index: 999999 !important;
+    background: white !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+    width: 280px !important;
+    max-height: 200px !important;
+    overflow-y: auto !important;
+    bottom: 50px !important;
+    left: 0 !important;
+}
+
+/* Make sure emoji picker is above everything */
+#emoji-picker {
+    transform: none !important;
+    margin: 0 !important;
+    clip: none !important;
+    clip-path: none !important;
+}
+
+/* Force override all possible CSS conflicts */
+body #emoji-picker:not(.hidden) {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: absolute !important;
+    z-index: 999999 !important;
+    background: white !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+    width: 280px !important;
+    max-height: 200px !important;
+    overflow-y: auto !important;
+    bottom: 50px !important;
+    left: 0 !important;
+}
+
+#emoji-picker .grid {
+    display: grid !important;
+    grid-template-columns: repeat(8, 1fr) !important;
+    gap: 4px !important;
+}
+
+#emoji-picker .grid button,
+#emoji-picker .grid .emoji-btn {
+    transition: all 0.2s ease;
+    background-color: transparent !important;
+    border: 1px solid transparent !important;
+    font-size: 1.2rem !important;
+    width: 30px !important;
+    height: 30px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    border-radius: 4px !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    outline: none !important;
+    
+    /* Prevent system emoji picker from appearing */
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    text-decoration: none !important;
+    
+    /* Force emoji to render as text only */
+    font-family: Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, Segoe UI Symbol, Android Emoji, EmojiSymbols !important;
+    -webkit-font-feature-settings: "liga" off, "clig" off, "calt" off !important;
+    font-feature-settings: "liga" off, "clig" off, "calt" off !important;
+    text-rendering: optimizeSpeed !important;
+    
+    /* Prevent any input-like behavior */
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    resize: none !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+}
+
+#emoji-picker .grid button:hover,
+#emoji-picker .grid .emoji-btn:hover {
+    background-color: #f3f4f6 !important;
+    /* transform: scale(1.1); */
+    border-color: #e5e7eb !important;
+}
+
+/* ============================================ */
+/* DROPDOWN MENU STYLES */
+/* ============================================ */
+
+/* Remove underline for dropdown menu */
+.message-box-drop .dropdown-toggle {
+    text-decoration: none !important;
+}
+
+.message-box-drop .dropdown-toggle:hover {
+    text-decoration: none !important;
+}
+
+.message-box-drop .dropdown-item {
+    text-decoration: none !important;
+}
+
+.message-box-drop .dropdown-item:hover {
+    text-decoration: none !important;
+}
+
+/* ============================================ */
+/* REPLY PREVIEW STYLES */
+/* ============================================ */
+
+/* Style for reply preview */
+.reply-preview {
+    background-color: #f8f9fa;
+    border-left: 3px solid #007bff;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.reply-preview.show {
+    display: block !important;
+}
+
+.reply-preview .reply-to {
+    font-weight: 600;
+    color: #007bff;
+    margin-bottom: 4px;
+}
+
+.reply-preview .reply-content {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.reply-preview .close-reply {
+    float: right;
+    cursor: pointer;
+    color: #6c757d;
+    font-weight: bold;
+}
+
+.reply-preview .close-reply:hover {
+    color: #dc3545;
+}
+
+/* ============================================ */
+/* ADMIN SEARCH STYLES */
+/* ============================================ */
+
+/* Admin Search Styles */
+.admin-message-highlight {
+    background-color: #fff3cd !important;
+    border: 2px solid #ffc107 !important;
+    animation: admin-highlight-pulse 2s ease-in-out;
+    border-radius: 10px !important;
+}
+
+/* Admin search dropdown enhancements */
+#admin-search-dropdown {
+    min-width: 320px !important;
+}
+
+#admin-search-dropdown .search-box {
+    position: relative;
+}
+
+#admin-clear-search {
+    padding: 0.25rem 0.5rem !important;
+    line-height: 1 !important;
+}
+
+#admin-clear-search:hover {
+    background-color: rgba(0,0,0,0.05) !important;
+    border-radius: 50% !important;
+}
+
+/* Search results styling */
+#admin-search-results-info {
+    background-color: #e8f5e8;
+    border: 1px solid #c3e6cb;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+}
+
+#admin-search-instructions {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+}
+
+/* ============================================ */
+/* OVERFLOW FIXES FOR EMOJI PICKER */
+/* ============================================ */
+
+/* Override chat.css conflicts for emoji picker */
+.chat-footer {
+    overflow: visible !important;
+    position: relative !important;
+}
+
+.chat-container {
+    overflow: hidden !important;
+}
+
+/* Ensure emoji picker parent has proper position */
+.chat-footer .col-auto {
+    position: relative !important;
+    z-index: 1000 !important;
+}
+
+/* Ensure no parent container clips the emoji picker */
+.chat-footer,
+.chat-footer *,
+.chat-footer .row,
+.chat-footer form {
+    overflow: visible !important;
+}
+
+/* EXCEPT chat-conversation which needs scroll */
+.chat-conversation {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+/* Override all possible parent overflow issues */
+body .chat-footer,
+body .chat-footer .row,
+body .chat-footer form,
+body .chat-footer .col-auto {
+    overflow: visible !important;
+}
+
+/* Ensure emoji picker container is properly positioned */
+body .chat-footer .col-auto[style*="position: relative"] {
+    position: relative !important;
+    overflow: visible !important;
+    z-index: 1000 !important;
+}
+
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .chat-introduction {
+        margin: 0.5rem;
+        padding: 1.5rem 0.75rem;
+    }
+    
+    .chat-introduction .user-avatar {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .chat-introduction .intro-text {
+        font-size: 1rem;
+    }
+    
+    .chat-introduction .celebration-icons {
+        font-size: 1.2rem;
+    }
+    
+    /* Responsive emoji picker */
+    #emoji-picker {
+        width: 240px !important;
+        max-height: 160px !important;
+    }
+    
+    #emoji-picker .grid {
+        grid-template-columns: repeat(6, 1fr) !important;
+    }
+}
+
+/* ============================================ */
+/* DISABLE ALL HOVER SCALE EFFECTS */
+/* ============================================ */
+
+/* Force disable all hover scale effects globally */
+*:hover {
+    transform: none !important;
+}
+
+/* Specifically target problematic hover classes */
+.hover\:bg-gray-100:hover,
+.hover\:bg-gray-200:hover,
+.hover\:bg-gray-300:hover,
+.hover\:bg-gray-400:hover,
+.hover\:bg-gray-500:hover {
+    transform: none !important;
+    /* Keep only safe background color changes */
+    background-color: #f3f4f6 !important;
+}
+
+/* Disable all scale transforms */
+.hover\:scale-110:hover,
+.hover\:scale-105:hover,
+.hover\:scale-102:hover,
+.hover\:scale-\[1\.1\]:hover,
+.hover\:scale-\[1\.05\]:hover,
+.hover\:scale-\[1\.02\]:hover {
+    transform: none !important;
+}
+
+/* Target the specific problematic element */
+.p-1.hover\:bg-gray-100:hover {
+    transform: none !important;
+    background-color: #f3f4f6 !important;
+}
+
+/* Force override any transform on message elements */
+[class*="message"]:hover,
+[class*="order"]:hover,
+[class*="chat"]:hover {
+    transform: none !important;
+}
+
+/* Remove transitions that might cause scale effects */
+button:hover,
+.btn:hover,
+[role="button"]:hover {
+    transform: none !important;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s !important;
+}
+
+/* Specifically disable transform on all elements with p-1 class */
+.p-1:hover {
+    transform: none !important;
+}
+
+/* Override any CSS that might add scale on hover */
+[style*="transform"]:hover {
+    transform: none !important;
+}

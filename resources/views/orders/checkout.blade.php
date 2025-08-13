@@ -95,7 +95,7 @@
             </div>
         </div>
 
-        @if(isset($mixedFormatCart) && $mixedFormatCart)
+        {{-- @if(isset($mixedFormatCart) && $mixedFormatCart)
         <div class="bg-red-600 text-white p-6 mb-8 relative overflow-hidden">
             <div class="absolute top-0 right-0 w-16 h-16 bg-white/10 transform rotate-45 translate-x-8 -translate-y-8"></div>
             <div class="relative z-10">
@@ -134,15 +134,23 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-bold uppercase tracking-wide mb-2">ĐƠN HÀNG EBOOK</h3>
-                        <p class="text-sm leading-relaxed">
+                        <p class="text-sm leading-relaxed mb-3">
                             Giỏ hàng của bạn chỉ có <span class="font-bold">sách điện tử (ebook)</span>. 
-                            Bạn không cần nhập địa chỉ giao hàng và sẽ nhận link tải ebook qua email sau khi thanh toán thành công.
+                            Bạn sẽ nhận link tải ebook qua email sau khi thanh toán thành công.
                         </p>
+                        <div class="bg-white/10 p-4 rounded">
+                            <h4 class="font-bold text-sm mb-2">💳 PHƯƠNG THỨC THANH TOÁN:</h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• <span class="font-semibold">Thanh toán online:</span> Nhận link tải ngay sau khi thanh toán thành công</li>
+                                <li>• <span class="text-gray-300">Thanh toán khi nhận hàng không áp dụng cho ebook</span></li>
+                            </ul>
+                            <p class="text-xs mt-2 opacity-90">* Không cần nhập địa chỉ giao hàng cho ebook.</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        @endif
+        @endif --}}
 
         <div class="container mx-auto px-4 py-8">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 xl:gap-12">
@@ -264,32 +272,45 @@
                                     <!-- Existing Addresses Tab -->
                                     <div id="existing-address-content" class="address-tab-content">
                                         @if($addresses && count($addresses) > 0)
-                                            <div class="space-y-3">
-                                                @foreach($addresses as $address)
-                                                <label class="group relative flex items-start p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-black hover:bg-gray-50 transition-all duration-300 has-[:checked]:border-black has-[:checked]:bg-gray-50">
-                                                    <input type="radio" name="address_id" value="{{ $address->id }}" class="sr-only">
-                                                    <div class="flex items-center justify-center w-4 h-4 border-2 border-gray-300 rounded-full group-has-[:checked]:border-black group-has-[:checked]:bg-black mr-4 mt-1 flex-shrink-0">
-                                                        <div class="w-1.5 h-1.5 bg-white rounded-full opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></div>
-                                                    </div>
-                                                    <div class="flex-1 min-w-0">
+                                            <!-- Selected Address Display -->
+                                            <div id="selected-address-display" class="hidden mb-6 p-4 border-2 border-green-500 bg-green-50 rounded-lg">
+                                                <div class="flex items-start justify-between">
+                                                    <div class="flex-1">
                                                         <div class="flex items-center gap-2 mb-2">
-                                                            <h4 class="font-bold text-gray-900">{{ $address->recipient_name }}</h4>
-                                                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                                {{ $address->phone }}
-                                                            </span>
+                                                            <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                            <h4 class="font-bold text-green-800">Địa chỉ đã chọn</h4>
                                                         </div>
-                                                        <p class="text-sm text-gray-600 leading-relaxed">
-                                                            {{ $address->address_detail }}, {{ $address->ward }}, {{ $address->district }}, {{ $address->city }}
-                                                        </p>
+                                                        <div id="selected-address-info" class="text-sm text-green-700">
+                                                            <!-- Address info will be populated here -->
+                                                        </div>
                                                     </div>
-                                                    <div class="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600 opacity-0 group-has-[:checked]:opacity-100 transition-opacity ml-3">
-                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                                        </svg>
-                                                    </div>
-                                                </label>
-                                                @endforeach
+                                                    <button type="button" onclick="openAddressModal()" 
+                                                            class="text-green-600 hover:text-green-800 font-medium text-sm underline">
+                                                        Thay đổi
+                                                    </button>
+                                                </div>
                                             </div>
+                                            
+                                            <!-- Choose Address Button -->
+                                            <div id="choose-address-btn-container" class="text-center">
+                                                <button type="button" onclick="openAddressModal()" 
+                                                        class="inline-flex items-center px-6 py-4 bg-black text-white font-bold text-sm uppercase tracking-wide hover:bg-gray-800 transition-all duration-300 rounded-lg group">
+                                                    <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    </svg>
+                                                    Chọn địa chỉ có sẵn
+                                                    <span class="ml-2 text-xs bg-white/20 px-2 py-1 rounded">
+                                                        {{ count($addresses) }} địa chỉ
+                                                    </span>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Hidden input for selected address -->
+                                            <input type="hidden" name="address_id" id="selected_address_id" value="">
+                                            
                                             @error('address_id')
                                             <p class="text-red-500 text-sm mt-3 font-medium">{{ $message }}</p>
                                             @enderror
@@ -592,24 +613,8 @@
                     <div class="space-y-3 mb-6">
                         @foreach($cartItems as $item)
                         @php
-                            // Calculate attribute extra price for this item
-                            $attributeExtraPrice = 0;
-                            if (!empty($item->attribute_value_ids) && $item->attribute_value_ids !== '[]' && !$item->is_combo) {
-                                // Handle both array and JSON string formats
-                                if (is_array($item->attribute_value_ids)) {
-                                    $attributeIds = $item->attribute_value_ids;
-                                } else {
-                                    $attributeIds = json_decode($item->attribute_value_ids, true);
-                                }
-                                
-                                if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
-                                    $attributeExtraPrice = DB::table('book_attribute_values')
-                                        ->whereIn('attribute_value_id', $attributeIds)
-                                        ->where('book_id', $item->book_id)
-                                        ->sum('extra_price');
-                                }
-                            }
-                            $finalPrice = ($item->price ?? 0) + $attributeExtraPrice;
+                            // Sử dụng trực tiếp giá từ cart item (đã bao gồm discount và extra price)
+                            $finalPrice = $item->price ?? 0;
                         @endphp
                         <div class="group flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-black transition-all duration-300">
                             @if(isset($item->is_combo) && $item->is_combo)
@@ -915,6 +920,92 @@
                     </svg>
                     <p class="text-gray-500 text-lg">Không có mã giảm giá nào</p>
                     <p class="text-gray-400 text-sm mt-1">Hiện tại chưa có voucher khả dụng</p>
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+
+<!-- Address Selection Modal -->
+<div id="address-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out opacity-0 pointer-events-none">
+    <div class="relative mx-auto p-6 w-full max-w-3xl max-h-[85vh] bg-white rounded-lg shadow-xl">
+        <div class="flex justify-between items-center pb-4 border-b">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900">Chọn địa chỉ giao hàng</h2>
+                <p class="text-sm text-gray-600 mt-1">Chọn một trong các địa chỉ đã lưu của bạn</p>
+            </div>
+            <button onclick="closeAddressModal()" class="text-gray-400 hover:text-gray-600 p-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="mt-4 space-y-3 max-h-96 overflow-y-auto">
+            @if($addresses && count($addresses) > 0)
+                @foreach($addresses as $address)
+                <div class="group border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer" 
+                     onclick="selectAddress('{{ $address->id }}', '{{ addslashes($address->recipient_name) }}', '{{ $address->phone }}', '{{ addslashes($address->address_detail) }}', '{{ addslashes($address->ward) }}', '{{ addslashes($address->district) }}', '{{ addslashes($address->city) }}')">
+                    <div class="p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <!-- Thông tin người nhận -->
+                                <div class="flex items-center gap-2 mb-2">
+                                    <h4 class="font-bold text-gray-900">{{ $address->recipient_name }}</h4>
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                        {{ $address->phone }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Địa chỉ chi tiết -->
+                                <p class="text-sm text-gray-600 leading-relaxed mb-3">
+                                    {{ $address->address_detail }}, {{ $address->ward }}, {{ $address->district }}, {{ $address->city }}
+                                </p>
+                                
+                                <!-- Thông tin bổ sung -->
+                                <div class="flex items-center gap-4 text-xs text-gray-500">
+                                    @if($address->district_id && $address->ward_code)
+                                        <div class="flex items-center gap-1">
+                                            <svg class="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            <span class="text-green-600 font-medium">Có thể tính phí ship</span>
+                                        </div>
+                                    @else
+                                        <div class="flex items-center gap-1">
+                                            <svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            <span class="text-orange-600 font-medium">Cần cập nhật thông tin GHN</span>
+                                        </div>
+                                    @endif
+                                    <div class="flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <span>{{ $address->created_at->format('d/m/Y') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Nút chọn -->
+                            <div class="ml-4">
+                                <div class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 group-hover:bg-blue-600">
+                                    Chọn địa chỉ này
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            @else
+                <div class="text-center py-8">
+                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <p class="text-gray-500 text-lg">Chưa có địa chỉ nào</p>
+                    <p class="text-gray-400 text-sm mt-1">Vui lòng thêm địa chỉ mới để tiếp tục</p>
                 </div>
             @endif
         </div>
@@ -1360,10 +1451,49 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('input[name="address_id"]').forEach(input => {
         input.addEventListener('change', function() {
             if (this.checked) {
-                showShippingMethods();
+                loadAddressForShipping(this.value);
             }
         });
     });
+
+    // Hàm lấy thông tin địa chỉ và tính phí ship
+    async function loadAddressForShipping(addressId) {
+        try {
+            const response = await fetch(`/account/addresses/${addressId}/shipping`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.data.district_id && data.data.ward_code) {
+                // Cập nhật hidden fields với thông tin địa chỉ
+                document.getElementById('form_hidden_district_id').value = data.data.district_id;
+                document.getElementById('form_hidden_ward_code').value = data.data.ward_code;
+                
+                // Hiển thị phần phương thức vận chuyển
+                showShippingMethods();
+                
+                // Load shipping services và tính phí
+                await loadShippingServices(data.data.district_id);
+                
+                // Tính phí ship với service mặc định
+                const defaultService = document.querySelector('input[name="shipping_method"]:checked');
+                if (defaultService) {
+                    await calculateShippingFeeWithService(data.data.district_id, data.data.ward_code);
+                }
+            } else {
+                console.error('Địa chỉ không có thông tin district_id hoặc ward_code');
+                resetShippingInfo();
+            }
+        } catch (error) {
+            console.error('Error loading address for shipping:', error);
+            resetShippingInfo();
+        }
+    }
     
     // Gắn sự kiện cho form địa chỉ mới
     function checkNewAddressComplete() {
@@ -2023,7 +2153,79 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+    
+    // Address Modal Functions
+    window.openAddressModal = function() {
+        document.getElementById('address-modal').classList.remove('opacity-0', 'pointer-events-none');
+        document.getElementById('address-modal').classList.add('opacity-100');
+        document.body.style.overflow = 'hidden';
+    }
+
+    window.closeAddressModal = function() {
+        document.getElementById('address-modal').classList.add('opacity-0', 'pointer-events-none');
+        document.getElementById('address-modal').classList.remove('opacity-100');
+        document.body.style.overflow = 'auto';
+    }
+
+    window.selectAddress = function(addressId, recipientName, phone, addressDetail, ward, district, city) {
+        // Update hidden input
+        document.getElementById('selected_address_id').value = addressId;
+        
+        // Update display
+        const addressInfo = `<strong>${recipientName}</strong> - ${phone}<br>${addressDetail}, ${ward}, ${district}, ${city}`;
+        document.getElementById('selected-address-info').innerHTML = addressInfo;
+        
+        // Show selected address display and hide choose button
+        document.getElementById('selected-address-display').classList.remove('hidden');
+        document.getElementById('choose-address-btn-container').classList.add('hidden');
+        
+        // Close modal
+        closeAddressModal();
+        
+        // Calculate shipping fee for this address
+        fetch(`/account/addresses/${addressId}/shipping`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.data && data.data.district_id && data.data.ward_code) {
+                    // Update hidden fields
+                    document.getElementById('form_hidden_district_id').value = data.data.district_id;
+                    document.getElementById('form_hidden_ward_code').value = data.data.ward_code;
+                    
+                    // Calculate shipping fee
+                    calculateShippingFeeWithService(data.data.district_id, data.data.ward_code);
+                } else {
+                    console.error('Invalid response data:', data);
+                    toastr.error('Không thể lấy thông tin địa chỉ để tính phí ship');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching address shipping info:', error);
+                toastr.error('Lỗi khi lấy thông tin địa chỉ: ' + error.message);
+            });
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'address-modal') {
+            closeAddressModal();
+        }
+    });
 });
+
 </script>
 @endpush
 @endsection

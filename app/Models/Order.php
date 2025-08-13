@@ -104,6 +104,14 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    /**
+     * Cuộc hội thoại liên quan đến đơn hàng
+     */
+    public function conversations(): HasMany
+    {
+        return $this->hasMany(Conversation::class, 'order_id');
+    }
+
     //  public function shipping()
     // {
     //     return $this->hasOne(shipping::class);

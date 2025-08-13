@@ -123,21 +123,56 @@
                             </div>
                             
                             <div class="flex items-center gap-4">
-                                @php
-                                    $orderStatusName = $order->orderStatus->name ?? '';
-                                    $orderStatusClass = match($orderStatusName) {
-                                        'Chờ xác nhận' => 'bg-yellow-500 text-white',
-                                        'Đã xác nhận' => 'bg-blue-500 text-white',
-                                        'Đang chuẩn bị' => 'bg-indigo-500 text-white',
-                                        'Đang giao hàng' => 'bg-purple-500 text-white',
-                                        'Đã giao', 'Thành công' => 'bg-green-500 text-white',
-                                        'Đã hủy' => 'bg-red-500 text-white',
-                                        default => 'bg-gray-500 text-white'
-                                    };
-                                @endphp
-                                <span class="status-badge {{ $orderStatusClass }}">
-                                    {{ $order->orderStatus->name }}
-                                </span>
+                                @if($order->refundRequests->isNotEmpty())
+                                    @php 
+                                        $latestRefund = $order->refundRequests->sortByDesc('created_at')->first();
+                                        $refundStatusClass = match($latestRefund->status) {
+                                            'pending' => 'bg-yellow-500 text-white',
+                                            'processing' => 'bg-blue-500 text-white',
+                                            'completed' => 'bg-green-500 text-white',
+                                            'rejected' => 'bg-red-500 text-white',
+                                            default => 'bg-gray-500 text-white'
+                                        };
+                                        $refundStatusText = match($latestRefund->status) {
+                                            'pending' => 'CHỜ HOÀN TIỀN',
+                                            'processing' => 'ĐANG HOÀN TIỀN',
+                                            'completed' => 'ĐÃ HOÀN TIỀN',
+                                            'rejected' => 'TỪ CHỐI HOÀN TIỀN',
+                                            default => 'HOÀN TIỀN'
+                                        };
+                                    @endphp
+                                    <span class="status-badge {{ $refundStatusClass }}">
+                                        {{ $refundStatusText }}
+                                    </span>
+                                @else
+                                    @php
+                                        $orderStatusName = $order->orderStatus->name ?? '';
+                                        $orderStatusClass = match($orderStatusName) {
+                                            'Chờ xác nhận' => 'bg-yellow-500 text-white',
+                                            'Đã xác nhận' => 'bg-blue-500 text-white',
+                                            'Đang chuẩn bị' => 'bg-indigo-500 text-white',
+                                            'Đang giao hàng' => 'bg-purple-500 text-white',
+                                            'Đã giao', 'Thành công' => 'bg-green-500 text-white',
+                                            'Đã hủy' => 'bg-red-500 text-white',
+                                            default => 'bg-gray-500 text-white'
+                                        };
+                                    @endphp
+                                        @if ($order->orderStatus->name !== "Đã giao thành công")
+                                        <span class="status-badge {{ $orderStatusClass }}">
+                                                {{ $order->orderStatus->name }}
+                                            </span>
+                                        @endif
+                                    @if($order->orderStatus->name === 'Đã giao thành công')
+<form action="{{ route('account.orders.confirm-received', $order->id) }}" method="POST" class="inline-block ml-2">
+    @csrf
+    <button type="submit" 
+            class="px-3 py-1 bg-blue-500 text-white text-xs font-semibold rounded hover:bg-blue-600 transition-colors"
+            onclick="return confirm('Bạn có chắc chắn đã nhận được hàng? Hành động này không thể hoàn tác.')">
+        ĐÃ NHẬN HÀNG
+    </button>
+</form>
+                                    @endif
+                                @endif
                                 <div class="text-right">
                                     <p class="text-sm text-gray-600 uppercase tracking-wide">Tổng tiền</p>
                                     <p class="text-2xl font-black text-black">
@@ -195,6 +230,16 @@
                                                 <span class="status-badge {{ $childOrderStatusClass }}">
                                                     {{ $childOrder->orderStatus->name }}
                                                 </span>
+                                                @if($childOrder->orderStatus->name === 'Đã giao thành công')
+                                                    <form action="{{ route('account.orders.confirm-received', $childOrder->id) }}" method="POST" class="inline-block ml-2">
+                                                        @csrf
+                                                        <button type="submit" 
+                                                                class="inline-flex items-center px-4 py-2 border-2 border-black text-black hover:bg-black hover:text-white font-bold text-xs uppercase tracking-wide transition-all duration-300"
+                                                                onclick="return confirm('Bạn có chắc chắn đã nhận được hàng? Hành động này không thể hoàn tác.')">
+                                                            ĐÃ NHẬN HÀNG
+                                                        </button>
+                                                    </form>
+                                                @endif
                                                 <div class="text-right">
                                                     <p class="text-lg font-bold text-black">
                                                         {{ number_format($childOrder->total_amount, 0, ',', '.') }}đ
@@ -300,7 +345,7 @@
                                                                             <p class="text-sm text-gray-600">{{ $review->admin_response }}</p>
                                                                         </div>
                                                                     @endif
-                                                                    {{-- <div class="flex gap-2 mt-3">
+                                                                    <div class="flex gap-2 mt-3">
                                                                         @if ($review->user_id === auth()->id())
                                                                             <a href="{{ route('account.reviews.edit', $review->id) }}" 
                                                                                class="px-3 py-1 bg-black text-white text-xs font-medium hover:bg-gray-900 transition-colors duration-150">
@@ -316,7 +361,7 @@
                                                                                 </button>
                                                                             </form>
                                                                         @endif
-                                                                    </div> --}}
+                                                                    </div>
                                                                 </div>
                                                             @else
                                                                 <form action="{{ route('account.reviews.store') }}" method="POST" class="space-y-4 review-form bg-gray-50 border-2 border-gray-200 p-4 quick-review-form">
@@ -599,6 +644,9 @@
                                                     } else {
                                                         $review = $order->reviews()->withTrashed()->where('book_id', $item->book_id)->first();
                                                     }
+                                                    
+                                                    // Kiểm tra xem đơn hàng có yêu cầu hoàn tiền không
+                                                    $hasRefundRequest = $order->refundRequests()->whereIn('status', ['pending', 'processing'])->exists();
                                                 @endphp
 
                                                 @if($review && !$review->trashed())
@@ -613,6 +661,18 @@
                                                             @endfor
                                                         </div>
                                                         <p class="text-sm text-gray-600 italic">"{{ $review->comment ?? 'Không có nhận xét' }}"</p>
+                                                        
+                                                        @if($review->images && count($review->images) > 0)
+                                                            <div class="mt-3">
+                                                                <p class="text-xs font-bold uppercase tracking-wide text-black mb-2">Hình ảnh đánh giá:</p>
+                                                                <div class="grid grid-cols-3 gap-2">
+                                                                    @foreach($review->images as $imagePath)
+                                                                        <img src="{{ asset('storage/' . $imagePath) }}" alt="Review Image" class="w-full h-16 object-cover border border-gray-300 rounded cursor-pointer hover:opacity-80 transition-opacity" onclick="openImageModal('{{ asset('storage/' . $imagePath) }}')">
+                                                                    @endforeach
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                        
                                                         @if($review->admin_response)
                                                             <div class="mt-3 pt-3 border-t border-gray-300">
                                                                 <p class="text-xs font-bold uppercase tracking-wide text-black mb-1">Phản hồi từ BookBee:</p>
@@ -637,8 +697,8 @@
                                                             @endif
                                                         </div>
                                                     </div>
-                                                @else
-                                                    <form action="{{ route('account.reviews.store') }}" method="POST" class="space-y-4 review-form bg-gray-50 border-2 border-gray-200 p-4 quick-review-form">
+                                                @elseif(!$hasRefundRequest)
+                                                    <form action="{{ route('account.reviews.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4 review-form bg-gray-50 border-2 border-gray-200 p-4 quick-review-form">
                                                         @csrf
                                                         <input type="hidden" name="order_id" value="{{ $order->id }}">
                                                         @if($item->isCombo())
@@ -664,6 +724,26 @@
                                                         <textarea name="comment" rows="3" 
                                                                   class="w-full px-3 py-2 border-2 border-gray-300 focus:border-black focus:ring-0 text-sm" 
                                                                   placeholder="Chia sẻ trải nghiệm của bạn về {{ $item->isCombo() ? 'combo' : 'sản phẩm' }} này...">{{ old('comment') }}</textarea>
+                                                        
+                                                        <!-- Upload hình ảnh -->
+                                                        <div class="space-y-2">
+                                                            <label class="block text-sm font-medium text-gray-700">Hình ảnh đánh giá (tùy chọn)</label>
+                                                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors" 
+                                                                 id="quick-drop-zone-{{ $order->id }}-{{ $item->isCombo() ? 'combo_'.$item->collection_id : 'book_'.$item->book_id }}">
+                                                                <input type="file" name="images[]" multiple accept="image/*" class="hidden" 
+                                                                       id="quick-images-{{ $order->id }}-{{ $item->isCombo() ? 'combo_'.$item->collection_id : 'book_'.$item->book_id }}" 
+                                                                       onchange="previewQuickImages(this, '{{ $order->id }}-{{ $item->isCombo() ? 'combo_'.$item->collection_id : 'book_'.$item->book_id }}')"> 
+                                                                <div class="text-gray-500">
+                                                                    <svg class="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                                    </svg>
+                                                                    <p class="mt-1 text-xs">Kéo thả hoặc <button type="button" class="text-blue-600 hover:text-blue-500" onclick="document.getElementById('quick-images-{{ $order->id }}-{{ $item->isCombo() ? 'combo_'.$item->collection_id : 'book_'.$item->book_id }}').click()">chọn ảnh</button></p>
+                                                                    <p class="text-xs text-gray-400">Tối đa 5 ảnh, mỗi ảnh < 2MB</p>
+                                                                </div>
+                                                            </div>
+                                                            <div id="quick-preview-{{ $order->id }}-{{ $item->isCombo() ? 'combo_'.$item->collection_id : 'book_'.$item->book_id }}" class="grid grid-cols-5 gap-2 mt-2"></div>
+                                                            <div id="quick-error-{{ $order->id }}-{{ $item->isCombo() ? 'combo_'.$item->collection_id : 'book_'.$item->book_id }}" class="text-red-500 text-xs mt-1"></div>
+                                                        </div>
                                                         
                                                         <div class="flex gap-2">
                                                             <button type="submit" 
@@ -705,6 +785,9 @@
                                         XEM CHI TIẾT
                                     </a>
                                 </div>
+                                
+                                <!-- Order Chat Button -->
+                                @include('components.order-chat-button', ['order' => $order])
                                 
                                 @if(!$order->isParentOrder() && \App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name))
                                     <form action="{{ route('account.orders.cancel', $order->id) }}" method="POST" class="inline">
@@ -971,5 +1054,125 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Image Modal Functions
+function openImageModal(imageSrc) {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    modalImage.src = imageSrc;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside the image
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('imageModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeImageModal();
+            }
+        });
+    }
+});
+
+// Preview images for quick review form
+function previewQuickImages(input, formId) {
+    const previewContainer = document.getElementById(`quick-preview-${formId}`);
+    const errorContainer = document.getElementById(`quick-error-${formId}`);
+    
+    // Clear previous previews and errors
+    previewContainer.innerHTML = '';
+    errorContainer.innerHTML = '';
+    
+    const files = Array.from(input.files);
+    
+    // Validate number of files
+    if (files.length > 5) {
+        errorContainer.innerHTML = 'Chỉ được chọn tối đa 5 hình ảnh';
+        input.value = '';
+        return;
+    }
+    
+    // Validate each file
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Check file size (2MB = 2 * 1024 * 1024 bytes)
+        if (file.size > 2 * 1024 * 1024) {
+            errorContainer.innerHTML = `Hình ảnh "${file.name}" vượt quá 2MB`;
+            input.value = '';
+            previewContainer.innerHTML = '';
+            return;
+        }
+        
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            errorContainer.innerHTML = `File "${file.name}" không phải là hình ảnh`;
+            input.value = '';
+            previewContainer.innerHTML = '';
+            return;
+        }
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'relative';
+            previewDiv.innerHTML = `
+                <img src="${e.target.result}" alt="Preview" class="w-full h-20 object-cover rounded border">
+                <button type="button" onclick="removeQuickImage(this, '${formId}', ${i})" 
+                        class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600">
+                    ×
+                </button>
+            `;
+            previewContainer.appendChild(previewDiv);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Remove image from quick review form
+function removeQuickImage(button, formId, index) {
+    const input = document.getElementById(`quick-images-${formId}`);
+    const previewContainer = document.getElementById(`quick-preview-${formId}`);
+    
+    // Remove preview element
+    button.parentElement.remove();
+    
+    // Create new FileList without the removed file
+    const dt = new DataTransfer();
+    const files = Array.from(input.files);
+    
+    files.forEach((file, i) => {
+        if (i !== index) {
+            dt.items.add(file);
+        }
+    });
+    
+    input.files = dt.files;
+    
+    // Re-render previews with correct indices
+    previewQuickImages(input, formId);
+}
 </script>
+
+<!-- Image Modal -->
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+    <div class="relative max-w-4xl max-h-full">
+        <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 z-10">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+        <img id="modalImage" src="" alt="Review Image" class="max-w-full max-h-full object-contain">
+    </div>
+</div>
+
 @endpush

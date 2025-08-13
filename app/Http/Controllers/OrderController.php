@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\OrderCancellation; // Added for order cancellation
 use App\Models\OrderItemAttributeValue; // Added for order item attributes
+use App\Models\BookAttributeValue;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
@@ -85,11 +86,13 @@ class OrderController extends Controller
         $hasPhysicalBook = false;
         $hasEbook = false;
         $mixedFormatCart = false;
+        $hasOnlyEbooks = true; // Mặc định là chỉ có ebook
 
         foreach ($cartItems as $item) {
             // Kiểm tra combo - combo luôn là sách vật lý
             if (isset($item->is_combo) && $item->is_combo) {
                 $hasPhysicalBook = true;
+                $hasOnlyEbooks = false; // Có combo thì không phải chỉ ebook
                 
                 // Nếu đã có ebook, thì đây là giỏ hàng hỗn hợp
                 if ($hasEbook) {
@@ -111,6 +114,7 @@ class OrderController extends Controller
                     }
                 } else {
                     $hasPhysicalBook = true;
+                    $hasOnlyEbooks = false; // Có sách vật lý thì không phải chỉ ebook
                     
                     // Nếu đã có ebook, thì đây là giỏ hàng hỗn hợp
                     if ($hasEbook) {
@@ -121,8 +125,10 @@ class OrderController extends Controller
             }
         }
 
-        // Nếu giỏ hàng có cả sách vật lý và ebook, ẩn phương thức thanh toán COD
-        if ($mixedFormatCart) {
+        // Ẩn phương thức thanh toán COD cho:
+        // 1. Giỏ hàng hỗn hợp (có cả sách vật lý và ebook)
+        // 2. Đơn hàng chỉ có ebook
+        if ($mixedFormatCart || $hasOnlyEbooks) {
             // Lọc bỏ phương thức thanh toán khi nhận hàng (COD)
             $paymentMethods = $paymentMethods->filter(function($method) {
                 return !str_contains(strtolower($method->name), 'khi nhận hàng') &&
@@ -134,7 +140,6 @@ class OrderController extends Controller
         $subtotal = $cartItems->sum(function ($item) {
             return $item->price * $item->quantity;
         });
-
         return view('orders.checkout', compact(
             'addresses',
             'wallet',
@@ -143,6 +148,7 @@ class OrderController extends Controller
             'cartItems',
             'subtotal',
             'mixedFormatCart', // Truyền biến này để hiển thị thông báo trong view
+            'hasOnlyEbooks', // Truyền biến này để kiểm tra đơn hàng chỉ có ebook
             'storeSettings' // Thông tin cửa hàng
         ));
     }
@@ -591,6 +597,9 @@ class OrderController extends Controller
                     Log::info("Cộng lại tồn kho cho book_format_id {$item->bookFormat->id}, số lượng: {$item->quantity}");
                     $item->bookFormat->increment('stock', $item->quantity);
                 }
+                
+                // ✨ THÊM MỚI: Cộng lại stock thuộc tính sản phẩm
+                $this->increaseAttributeStock($item);
             });
 
 
@@ -970,6 +979,27 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error generating QR code: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Cộng lại stock thuộc tính sản phẩm khi hủy đơn hàng
+     */
+    private function increaseAttributeStock($orderItem)
+    {
+        // Lấy thuộc tính từ OrderItemAttributeValue
+        $orderItemAttributes = $orderItem->orderItemAttributeValues;
+        
+        if ($orderItemAttributes && $orderItemAttributes->count() > 0) {
+            foreach ($orderItemAttributes as $orderItemAttribute) {
+                $bookAttributeValue = BookAttributeValue::where('book_id', $orderItem->book_id)
+                    ->where('attribute_value_id', $orderItemAttribute->attribute_value_id)
+                    ->first();
+                
+                if ($bookAttributeValue) {
+                    $bookAttributeValue->increment('stock', $orderItem->quantity);
+                }
+            }
         }
     }
 }

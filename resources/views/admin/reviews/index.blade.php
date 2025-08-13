@@ -189,11 +189,11 @@
                                                                     ? $review->order->orderItems->where('collection_id', $review->collection_id)->first()
                                                                     : $review->order->orderItems->where('book_id', $review->book_id)->first();
                                                             @endphp
-                                                            @if($orderItem)
-                                                                <span class="badge {{ strtolower($orderItem->format) === 'ebook' ? 'bg-info' : 'bg-secondary' }} text-white">
-                                                                    {{ $orderItem->format }}
-                                                                </span>
-                                                            @endif
+                                                            @if($orderItem && $orderItem->bookFormat)
+                                                <span class="badge {{ strtolower($orderItem->bookFormat->format_name) === 'ebook' ? 'bg-info' : 'bg-secondary' }} text-white">
+                                                    {{ $orderItem->bookFormat->format_name }}
+                                                </span>
+                                            @endif
                                                         @endif
                                                     </div>
                                                 </td>
@@ -223,6 +223,27 @@
                                                         </span>
                                                     </div>
                                                     <div class="text-truncate small mt-1">{{ $review->comment }}</div>
+                                                    @if($review->images && count($review->images) > 0)
+                                                        <div class="mt-2">
+                                                            <small class="text-muted">Ảnh đánh giá:</small>
+                                                            <div class="d-flex gap-1 mt-1">
+                                                                @foreach(array_slice($review->images, 0, 3) as $imagePath)
+                                                                    <img src="{{ asset('storage/' . $imagePath) }}" 
+                                                                         alt="Review Image" 
+                                                                         class="rounded" 
+                                                                         style="width: 40px; height: 40px; object-fit: cover; cursor: pointer;"
+                                                                         onclick="showImageModal('{{ asset('storage/' . $imagePath) }}')"
+                                                                         title="Click để xem phóng to">
+                                                                @endforeach
+                                                                @if(count($review->images) > 3)
+                                                                    <div class="d-flex align-items-center justify-content-center bg-light rounded" 
+                                                                         style="width: 40px; height: 40px; font-size: 12px; color: #666;">
+                                                                        +{{ count($review->images) - 3 }}
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    @endif
                                                 </td>
                                                 <td style="max-width: 300px;">
                                                     <span
@@ -265,10 +286,32 @@
         </div>
     </div>
 
+    {{-- Modal hiển thị ảnh phóng to --}}
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">Ảnh đánh giá</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" src="" alt="Review Image" class="img-fluid rounded">
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Reset Toastr để không hiện lại khi dùng nút quay lại --}}
     <script>
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
+        }
+
+        // Function để hiển thị ảnh trong modal
+        function showImageModal(imageSrc) {
+            document.getElementById('modalImage').src = imageSrc;
+            var imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+            imageModal.show();
         }
     </script>
 @endsection

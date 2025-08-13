@@ -39,7 +39,7 @@
                 <div class="flex justify-between text-base font-bold text-black border-t pt-2 mt-2"><span>Tổng cộng:</span><span>{{ number_format($order->total_amount, 0, ',', '.') }} đ</span></div>
             </div>
         </div>
-        <form action="{{ route('account.reviews.update', $review->id) }}" method="POST" class="space-y-5" id="edit-review-form">
+        <form action="{{ route('account.reviews.update', $review->id) }}" method="POST" enctype="multipart/form-data" class="space-y-5" id="edit-review-form">
             @csrf
             @method('PUT')
             <input type="hidden" name="order_id" value="{{ $order->id }}">
@@ -56,6 +56,50 @@
             <div>
                 <label for="comment" class="block text-sm font-semibold text-black mb-2">Nhận xét chi tiết:</label>
                 <textarea id="comment" name="comment" rows="4" class="w-full px-3 py-2 border border-black rounded-none focus:ring-2 focus:ring-black focus:border-black transition-colors duration-200 text-sm resize-none text-black bg-white" placeholder="Nhận xét về sản phẩm..." required>{{ old('comment', $review->comment) }}</textarea>
+            </div>
+            
+            <!-- Current Images Section -->
+            @if($review->images && count($review->images) > 0)
+            <div>
+                <label class="block text-sm font-semibold text-black mb-2">Hình ảnh hiện tại:</label>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
+                    @foreach($review->images as $imagePath)
+                        <div class="relative group">
+                            <img src="{{ asset('storage/' . $imagePath) }}" alt="Review Image" class="w-full h-24 object-cover border border-gray-300 rounded">
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+            
+            <!-- Upload New Images Section -->
+            <div>
+                <label class="block text-sm font-semibold text-black mb-2">Cập nhật hình ảnh đánh giá (tùy chọn):</label>
+                <div class="border-2 border-dashed border-gray-300 rounded-none p-6 text-center hover:border-black transition-colors duration-200">
+                    <input type="file" id="images" name="images[]" multiple accept="image/*" class="hidden" onchange="previewImages(this)">
+                    <label for="images" class="cursor-pointer">
+                        <div class="flex flex-col items-center">
+                            <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <p class="text-sm text-gray-600 mb-1">Nhấp để chọn hình ảnh mới</p>
+                            <p class="text-xs text-gray-500">PNG, JPG, GIF tối đa 2MB mỗi ảnh (tối đa 5 ảnh)</p>
+                            <p class="text-xs text-red-500 mt-1">Lưu ý: Chọn hình ảnh mới sẽ thay thế toàn bộ hình ảnh cũ</p>
+                        </div>
+                    </label>
+                </div>
+                
+                <!-- Preview New Images -->
+                <div id="imagePreview" class="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 hidden">
+                    <!-- Images will be displayed here -->
+                </div>
+                
+                @error('images')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+                @error('images.*')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
             </div>
             <div class="flex flex-col sm:flex-row gap-2 mt-6">
                 <a href="{{ route('account.orders.show', $order->id) }}" class="flex-1 px-4 py-2 bg-gray-200 text-black text-sm font-medium rounded-none hover:bg-gray-300 transition-colors duration-150 text-center">Xem chi tiết đơn hàng</a>
@@ -107,6 +151,62 @@ document.addEventListener('DOMContentLoaded', function () {
     // Đảm bảo highlight đúng khi load lại
     highlightStars(currentRating);
 });
+
+function previewImages(input) {
+    const previewContainer = document.getElementById('imagePreview');
+    previewContainer.innerHTML = '';
+    
+    if (input.files && input.files.length > 0) {
+        // Giới hạn tối đa 5 ảnh
+        const maxFiles = 5;
+        const files = Array.from(input.files).slice(0, maxFiles);
+        
+        if (input.files.length > maxFiles) {
+            alert(`Chỉ được chọn tối đa ${maxFiles} hình ảnh. ${maxFiles} hình ảnh đầu tiên sẽ được sử dụng.`);
+        }
+        
+        previewContainer.classList.remove('hidden');
+        
+        files.forEach((file, index) => {
+            // Kiểm tra kích thước file (2MB = 2 * 1024 * 1024 bytes)
+            if (file.size > 2 * 1024 * 1024) {
+                alert(`Hình ảnh "${file.name}" vượt quá 2MB. Vui lòng chọn hình ảnh nhỏ hơn.`);
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageDiv = document.createElement('div');
+                imageDiv.className = 'relative group';
+                imageDiv.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview ${index + 1}" class="w-full h-24 object-cover border border-gray-300 rounded">
+                    <button type="button" onclick="removeImage(${index})" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        ×
+                    </button>
+                `;
+                previewContainer.appendChild(imageDiv);
+            };
+            reader.readAsDataURL(file);
+        });
+    } else {
+        previewContainer.classList.add('hidden');
+    }
+}
+
+function removeImage(index) {
+    const input = document.getElementById('images');
+    const dt = new DataTransfer();
+    
+    // Thêm lại tất cả files trừ file tại index cần xóa
+    Array.from(input.files).forEach((file, i) => {
+        if (i !== index) {
+            dt.items.add(file);
+        }
+    });
+    
+    input.files = dt.files;
+    previewImages(input);
+}
 </script>
 @endpush
 @endsection

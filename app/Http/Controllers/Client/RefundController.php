@@ -79,6 +79,8 @@ class RefundController extends Controller
             'reason' => 'required|string|in:wrong_item,quality_issue,shipping_delay,wrong_qty,other',
             'details' => 'required|string|min:20|max:1000',
             'refund_method' => 'required|string|in:wallet,vnpay',
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
         ], [
             'reason.required' => 'Vui lòng chọn lý do hoàn tiền.',
             'details.required' => 'Vui lòng mô tả chi tiết lý do hoàn tiền.',
@@ -86,6 +88,10 @@ class RefundController extends Controller
             'details.max' => 'Chi tiết lý do không được vượt quá 1000 ký tự.',
             'refund_method.required' => 'Vui lòng chọn phương thức hoàn tiền.',
             'refund_method.in' => 'Phương thức hoàn tiền không hợp lệ.',
+            'images.max' => 'Bạn chỉ có thể tải lên tối đa 5 hình ảnh.',
+            'images.*.image' => 'File tải lên phải là hình ảnh.',
+            'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif.',
+            'images.*.max' => 'Mỗi hình ảnh không được vượt quá 2MB.',
         ]);
 
         // Check if order belongs to the authenticated user
@@ -115,12 +121,23 @@ class RefundController extends Controller
         try {
             DB::beginTransaction();
 
+            // Xử lý upload hình ảnh
+            $imagePaths = [];
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                    $imagePath = $image->storeAs('refund-images', $imageName, 'public');
+                    $imagePaths[] = $imagePath;
+                }
+            }
+
             // Create refund request
             $refundRequest = ModelsRefundRequest::create([
                 'order_id' => $order->id,
                 'user_id' => Auth::id(),
                 'reason' => $request->reason,
                 'details' => $request->details,
+                'images' => !empty($imagePaths) ? $imagePaths : null,
                 'amount' => $order->total_amount,
                 'status' => 'pending',
                 'refund_method' => $request->refund_method,

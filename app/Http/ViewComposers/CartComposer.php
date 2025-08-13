@@ -4,6 +4,7 @@ namespace App\Http\ViewComposers;
 
 use Illuminate\View\View;
 use App\Helpers\CartHelper;
+use App\Helpers\WishlistHelper;
 
 class CartComposer
 {
@@ -12,8 +13,12 @@ class CartComposer
      */
     public function compose(View $view): void
     {
-        $cartItemCount = CartHelper::getCartItemCount();
+        $cartItemCount = CartHelper::getCartDistinctItemCount();
+        $wishlistItemCount = WishlistHelper::getWishlistItemCount();
         
-        $view->with('cartItemCount', $cartItemCount);
+        $view->with([
+            'cartItemCount' => $cartItemCount,
+            'wishlistItemCount' => $wishlistItemCount
+        ]);
     }
 }

@@ -9,6 +9,10 @@
     <title>{{ get_setting() ? get_setting()->name_website : 'BookBee' }} - @yield('title')</title>
     <link rel="shortcut icon" href="{{ asset('storage/' . (get_setting() ? get_setting()->favicon : 'default_favicon.ico')) }}" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Disable hover effects -->
+    <link href="{{ asset('css/disable-hover-effects.css') }}" rel="stylesheet" />
+    <!-- Nuclear option - disable all effects -->
+    <link href="{{ asset('css/disable-all-effects.css') }}" rel="stylesheet" />
    
 
     <!-- Bootstrap CSS -->
@@ -30,12 +34,17 @@
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    
     
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     
     <!-- Cart Count Manager -->
     <script src="{{ asset('js/cart-count-manager.js') }}"></script>
+    
+    <!-- Wishlist Count Manager -->
+    <script src="{{ asset('js/wishlist-count-manager.js') }}"></script>
 
     <!-- Prevent FOUC Script -->
     <script>
@@ -224,8 +233,13 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    {{-- Chat Widget --}}
+    {{-- Chat Widget - Chỉ hiển thị khi đăng nhập --}}
+    @auth
+        @include('components.chat-widget')
+    @endauth
+
     @include('components.chatbot-widget')
+
 
     @stack('scripts')
     @include('layouts.partials.footer')

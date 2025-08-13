@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderStatus;
 use App\Models\Setting;
+use App\Models\BookAttributeValue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -71,6 +72,9 @@ class OrderClientController extends Controller
                     Log::info("+ lại tồn kho cho book_format_id {$item->bookFormat->id}, số lượng: {$item->quantity}");
                     $item->bookFormat->increment('stock', $item->quantity);
                 }
+                
+                // ✨ THÊM MỚI: Cộng lại stock thuộc tính sản phẩm
+                $this->increaseAttributeStock($item);
             });
 
             // Hoàn tiền vào ví nếu đơn hàng đã thanh toán
@@ -142,6 +146,39 @@ class OrderClientController extends Controller
 
         return redirect()->route('account.orders.index')
             ->with('success', 'Đã xóa đơn hàng thành công');
+    }
+
+    /**
+     * Cộng lại stock thuộc tính sản phẩm khi hủy đơn hàng
+     */
+    private function increaseAttributeStock($orderItem)
+    {
+        // Lấy thuộc tính từ OrderItemAttributeValue
+        $orderItemAttributes = $orderItem->orderItemAttributeValues;
+        
+        if ($orderItemAttributes && $orderItemAttributes->count() > 0) {
+            foreach ($orderItemAttributes as $orderItemAttribute) {
+                $bookAttributeValue = BookAttributeValue::where('book_id', $orderItem->book_id)
+                    ->where('attribute_value_id', $orderItemAttribute->attribute_value_id)
+                    ->first();
+                
+                if ($bookAttributeValue) {
+                    $bookAttributeValue->increment('stock', $orderItem->quantity);
+                    
+                    Log::info('Increased attribute stock on order cancellation:', [
+                        'book_id' => $orderItem->book_id,
+                        'attribute_value_id' => $orderItemAttribute->attribute_value_id,
+                        'quantity_increased' => $orderItem->quantity,
+                        'new_stock' => $bookAttributeValue->fresh()->stock
+                    ]);
+                } else {
+                    Log::warning('BookAttributeValue not found for stock increase:', [
+                        'book_id' => $orderItem->book_id,
+                        'attribute_value_id' => $orderItemAttribute->attribute_value_id
+                    ]);
+                }
+            }
+        }
     }
 
     /**
@@ -229,6 +266,9 @@ class OrderClientController extends Controller
                     Log::info("Cộng lại tồn kho cho book_format_id {$item->bookFormat->id}, số lượng: {$item->quantity}");
                     $item->bookFormat->increment('stock', $item->quantity);
                 }
+                
+                // ✨ THÊM MỚI: Cộng lại stock thuộc tính sản phẩm
+                $this->increaseAttributeStock($item);
             });
 
             // Hoàn tiền vào ví nếu đơn hàng đã thanh toán
@@ -279,6 +319,61 @@ class OrderClientController extends Controller
             ]);
             
             return redirect()->back()->with('error', 'Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại sau.');
+        }
+    }
+
+    /**
+     * Xác nhận đã nhận hàng - chuyển trạng thái từ "Đã giao thành công" thành "Thành công"
+     */
+    public function confirmReceived($id)
+    {
+        try {
+            $order = Order::findOrFail($id);
+            
+            // Kiểm tra quyền sở hữu đơn hàng
+            if ($order->user_id !== auth()->id()) {
+                return redirect()->back()->with('error', 'Bạn không có quyền thực hiện hành động này.');
+            }
+            
+            // Kiểm tra trạng thái đơn hàng phải là "Đã giao thành công"
+            if ($order->orderStatus->name !== 'Đã giao thành công') {
+                return redirect()->back()->with('error', 'Chỉ có thể xác nhận nhận hàng cho đơn hàng đã được giao thành công.');
+            }
+            
+            DB::beginTransaction();
+            
+            // Tìm trạng thái "Thành công"
+            $successStatus = OrderStatus::where('name', 'Thành công')->first();
+            if (!$successStatus) {
+                throw new \Exception('Không tìm thấy trạng thái "Thành công"');
+            }
+            
+            // Cập nhật trạng thái đơn hàng
+            $order->update([
+                'order_status_id' => $successStatus->id,
+                'delivered_at' => now() // Cập nhật thời gian hoàn thành
+            ]);
+            
+            // Ghi log
+            Log::info('Order confirmed as received by customer', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'user_id' => auth()->id()
+            ]);
+            
+            DB::commit();
+            
+            return redirect()->back()->with('success', 'Đã xác nhận nhận hàng thành công. Cảm ơn bạn đã mua sắm tại BookBee!');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error confirming order received', [
+                'order_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()->with('error', 'Có lỗi xảy ra khi xác nhận nhận hàng. Vui lòng thử lại sau.');
         }
     }
 }
