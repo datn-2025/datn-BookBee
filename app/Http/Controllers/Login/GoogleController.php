@@ -46,7 +46,7 @@ class GoogleController extends Controller
                     ]
                 );
                 Auth::login($newUser);
-                	oastr()->success('Đăng nhập thành công!');
+                	toastr()->success('Đăng nhập thành công!');
                 return redirect()->intended('/');
             }
 

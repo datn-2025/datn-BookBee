@@ -15,43 +15,47 @@ use Illuminate\Support\Facades\Mail;
 class UserController extends Controller
 {
     // Hiển thị form chỉnh sửa vai trò và quyền trực tiếp cho user (1-n role)
-    public function editRolesPermissions($id)
-    {
-        $user = User::with(['role', 'permissions'])->findOrFail($id);
-        $roles = \App\Models\Role::all();
-        // Lấy các permission mà role hiện tại chưa có
-        $rolePermissionIds = $user->role ? $user->role->permissions->pluck('id')->toArray() : [];
-        $permissions = \App\Models\Permission::when($rolePermissionIds, function($q) use ($rolePermissionIds) {
-            return $q->whereNotIn('id', $rolePermissionIds);
-        })->get();
-        return view('admin.users.roles-permissions', compact('user', 'roles', 'permissions'));
-    }
+    // public function editRolesPermissions($id)
+    // {
+    //     $user = User::with(['role', 'permissions'])->findOrFail($id);
+    //     $roles = \App\Models\Role::all();
+    //     // Lấy các permission mà role hiện tại chưa có
+    //     $rolePermissionIds = $user->role ? $user->role->permissions->pluck('id')->toArray() : [];
+    //     $permissions = \App\Models\Permission::when($rolePermissionIds, function($q) use ($rolePermissionIds) {
+    //         return $q->whereNotIn('id', $rolePermissionIds);
+    //     })->get();
+    //     return view('admin.users.roles-permissions', compact('user', 'roles', 'permissions'));
+    // }
 
-    // Cập nhật vai trò (role_id) và quyền trực tiếp cho user
-    public function updateRolesPermissions(Request $request, $id)
-    {
-        $user = User::findOrFail($id);
-        $request->validate([
-            'role_id' => 'required|exists:roles,id',
-            'permissions' => 'array',
-            'permissions.*' => 'exists:permissions,id',
-        ], [
-            'role_id.required' => 'Vui lòng chọn vai trò',
-            'role_id.exists' => 'Vai trò không tồn tại',
-        ]);
+    // // Cập nhật vai trò (role_id) và quyền trực tiếp cho user
+    // public function updateRolesPermissions(Request $request, $id)
+    // {
+    //     $user = User::findOrFail($id);
+    //     $request->validate([
+    //         'role_id' => 'required|exists:roles,id',
+    //         'permissions' => 'array',
+    //         'permissions.*' => 'exists:permissions,id',
+    //     ], [
+    //         'role_id.required' => 'Vui lòng chọn vai trò',
+    //         'role_id.exists' => 'Vai trò không tồn tại',
+    //     ]);
 
-        $user->role_id = $request->role_id;
-        $user->save();
+    //     $user->role_id = $request->role_id;
+    //     $user->save();
 
-        // Gán quyền trực tiếp
-        $user->permissions()->sync($request->input('permissions', []));
+    //     // Gán quyền trực tiếp
+    //     $user->permissions()->sync($request->input('permissions', []));
 
-        return redirect()->route('admin.users.index')->with('success', 'Cập nhật vai trò & quyền thành công.');
-    }
+    //     return redirect()->route('admin.users.index')->with('success', 'Cập nhật vai trò & quyền thành công.');
+    // }
 
     public function index(Request $request)
     {
-        $query = User::with('role')->select('id', 'name', 'avatar', 'email', 'phone', 'status', 'role_id')
+        $query = User::with('role')
+            ->whereHas('role', function($q) {
+                $q->whereIn('name', ['User', 'Khách hàng']);
+            })
+            ->select('id', 'name', 'avatar', 'email', 'phone', 'status', 'role_id')
             ->where('id', '!=', Auth::id()); // Loại bỏ tài khoản đang đăng nhập
 
         // Tìm kiếm theo text

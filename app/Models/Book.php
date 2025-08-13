@@ -86,8 +86,53 @@ class Book extends Model
     public function attributeValues(): BelongsToMany
     {
         return $this->belongsToMany(AttributeValue::class, 'book_attribute_values', 'book_id', 'attribute_value_id')
-            ->withPivot('extra_price')
+            ->withPivot('extra_price', 'stock', 'sku') // Thêm stock và sku vào pivot
             ->withTimestamps();
+    }
+
+    /**
+     * Relationship để lấy BookAttributeValue records với nested relationships
+     */
+    public function bookAttributeValues(): HasMany
+    {
+        return $this->hasMany(BookAttributeValue::class);
+    }
+
+    /**
+     * Lấy tổng số lượng tồn kho của tất cả biến thể
+     */
+    public function getTotalVariantStockAttribute(): int
+    {
+        return $this->attributeValues()->sum('book_attribute_values.stock');
+    }
+
+    /**
+     * Kiểm tra xem sách có biến thể nào còn hàng không
+     */
+    public function hasVariantInStock(): bool
+    {
+        return $this->attributeValues()->where('book_attribute_values.stock', '>', 0)->exists();
+    }
+
+    /**
+     * Lấy các biến thể có tồn kho thấp
+     */
+    public function getLowStockVariants()
+    {
+        return $this->attributeValues()
+            ->wherePivot('stock', '>', 0)
+            ->wherePivot('stock', '<', 10)
+            ->get();
+    }
+
+    /**
+     * Lấy các biến thể hết hàng
+     */
+    public function getOutOfStockVariants()
+    {
+        return $this->attributeValues()
+            ->wherePivot('stock', '<=', 0)
+            ->get();
     }
 
     public function invoiceItems(): HasMany
@@ -100,7 +145,7 @@ class Book extends Model
     }
     public function getAverageRatingAttribute()
     {
-        return $this->reviews()->avg('rating') ?? 0;
+        return $this->reviews()->whereIn('status', ['approved', 'visible'])->avg('rating') ?? 0;
     }
     public function summary()
     {

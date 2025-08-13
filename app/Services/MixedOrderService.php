@@ -35,16 +35,19 @@ class MixedOrderService
         $hasEbook = false;
 
         foreach ($cartItems as $item) {
-            if ($item->bookFormat) {
+            // Kiểm tra combo - combo luôn là sách vật lý
+            if (isset($item->is_combo) && $item->is_combo) {
+                $hasPhysicalBook = true;
+            } elseif ($item->bookFormat) {
                 if (strtolower($item->bookFormat->format_name) === 'ebook') {
                     $hasEbook = true;
                 } else {
                     $hasPhysicalBook = true;
                 }
+            }
 
-                if ($hasPhysicalBook && $hasEbook) {
-                    return true;
-                }
+            if ($hasPhysicalBook && $hasEbook) {
+                return true;
             }
         }
 
@@ -60,7 +63,10 @@ class MixedOrderService
         $ebookItems = collect();
 
         foreach ($cartItems as $item) {
-            if ($item->bookFormat && strtolower($item->bookFormat->format_name) === 'ebook') {
+            // Kiểm tra combo - combo luôn là sách vật lý
+            if (isset($item->is_combo) && $item->is_combo) {
+                $physicalItems->push($item);
+            } elseif ($item->bookFormat && strtolower($item->bookFormat->format_name) === 'ebook') {
                 $ebookItems->push($item);
             } else {
                 $physicalItems->push($item);
@@ -277,7 +283,8 @@ class MixedOrderService
     private function createOrderItems($order, $items)
     {
         foreach ($items as $item) {
-            OrderItem::create([
+            // Tạo order item với thông tin combo nếu có
+            $orderItemData = [
                 'id' => (string) \Illuminate\Support\Str::uuid(),
                 'order_id' => $order->id,
                 'book_id' => $item->book_id,
@@ -285,7 +292,45 @@ class MixedOrderService
                 'quantity' => $item->quantity,
                 'price' => $item->price,
                 'total' => $item->price * $item->quantity,
-            ]);
+            ];
+            
+            // Thêm thông tin combo nếu có
+            if (isset($item->is_combo) && $item->is_combo) {
+                $orderItemData['collection_id'] = $item->collection_id;
+                $orderItemData['is_combo'] = true;
+                $orderItemData['item_type'] = 'combo';
+            } else {
+                $orderItemData['is_combo'] = false;
+                $orderItemData['item_type'] = 'book';
+            }
+            
+            $orderItem = OrderItem::create($orderItemData);
+            
+            // Lưu thuộc tính sản phẩm vào bảng order_item_attribute_values
+            if (!empty($item->attribute_value_ids) && $item->attribute_value_ids !== '[]' && !$item->is_combo) {
+                $attributeIds = [];
+                
+                // Xử lý attribute_value_ids có thể là JSON string hoặc array
+                if (is_string($item->attribute_value_ids)) {
+                    $decoded = json_decode($item->attribute_value_ids, true);
+                    if (is_array($decoded)) {
+                        $attributeIds = $decoded;
+                    }
+                } elseif (is_array($item->attribute_value_ids)) {
+                    $attributeIds = $item->attribute_value_ids;
+                }
+                
+                // Lưu thuộc tính vào bảng order_item_attribute_values
+                if (!empty($attributeIds)) {
+                    foreach ($attributeIds as $attributeValueId) {
+                        \App\Models\OrderItemAttributeValue::create([
+                            'id' => (string) \Illuminate\Support\Str::uuid(),
+                            'order_item_id' => $orderItem->id,
+                            'attribute_value_id' => $attributeValueId
+                        ]);
+                    }
+                }
+            }
         }
     }
 

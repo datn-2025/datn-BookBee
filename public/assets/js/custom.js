@@ -8,49 +8,66 @@ document.addEventListener('DOMContentLoaded', function () {
     const sampleFileContainer = document.getElementById('sample_file_container');
 
     function toggleDisplay(checkbox, element) {
-        if (checkbox.checked) {
-            element.style.display = 'block';
-        } else {
-            element.style.display = 'none';
+        if (checkbox && element) {
+            if (checkbox.checked) {
+                element.style.display = 'block';
+            } else {
+                element.style.display = 'none';
+            }
         }
     }
 
     // Khởi tạo trạng thái ban đầu
-    toggleDisplay(physicalCheckbox, physicalForm);
-    toggleDisplay(ebookCheckbox, ebookForm);
-    toggleDisplay(allowSampleCheckbox, sampleFileContainer);
+    if (physicalCheckbox && physicalForm) {
+        toggleDisplay(physicalCheckbox, physicalForm);
+    }
+    if (ebookCheckbox && ebookForm) {
+        toggleDisplay(ebookCheckbox, ebookForm);
+    }
+    if (allowSampleCheckbox && sampleFileContainer) {
+        toggleDisplay(allowSampleCheckbox, sampleFileContainer);
+    }
 
     // Lắng nghe sự kiện thay đổi checkbox
-    physicalCheckbox.addEventListener('change', function () {
-        toggleDisplay(this, physicalForm);
-    });
+    if (physicalCheckbox && physicalForm) {
+        physicalCheckbox.addEventListener('change', function () {
+            toggleDisplay(this, physicalForm);
+        });
+    }
 
-    ebookCheckbox.addEventListener('change', function () {
-        toggleDisplay(this, ebookForm);
-    });
+    if (ebookCheckbox && ebookForm) {
+        ebookCheckbox.addEventListener('change', function () {
+            toggleDisplay(this, ebookForm);
+        });
+    }
 
-    allowSampleCheckbox.addEventListener('change', function () {
-        toggleDisplay(this, sampleFileContainer);
-    });
+    if (allowSampleCheckbox && sampleFileContainer) {
+        allowSampleCheckbox.addEventListener('change', function () {
+            toggleDisplay(this, sampleFileContainer);
+        });
+    }
 });
 
 document.addEventListener('DOMContentLoaded', function () {
     const attrCheckboxes = document.querySelectorAll('.physical-attr');
     const priceSection = document.getElementById('physical_price_section');
 
-    function togglePriceSection() {
-        // Kiểm tra xem có checkbox thuộc tính nào được chọn không
-        const anyChecked = Array.from(attrCheckboxes).some(cb => cb.checked);
-        priceSection.style.display = anyChecked ? 'block' : 'none';
+    // Chỉ thực hiện nếu các element tồn tại
+    if (priceSection && attrCheckboxes.length > 0) {
+        function togglePriceSection() {
+            // Kiểm tra xem có checkbox thuộc tính nào được chọn không
+            const anyChecked = Array.from(attrCheckboxes).some(cb => cb.checked);
+            priceSection.style.display = anyChecked ? 'block' : 'none';
+        }
+
+        // Gán sự kiện change cho tất cả checkbox thuộc tính
+        attrCheckboxes.forEach(cb => {
+            cb.addEventListener('change', togglePriceSection);
+        });
+
+        // Khởi tạo trạng thái khi load trang
+        togglePriceSection();
     }
-
-    // Gán sự kiện change cho tất cả checkbox thuộc tính
-    attrCheckboxes.forEach(cb => {
-        cb.addEventListener('change', togglePriceSection);
-    });
-
-    // Khởi tạo trạng thái khi load trang
-    togglePriceSection();
 });
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -64,10 +81,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const selectedOption = this.options[this.selectedIndex];
             if (selectedOption.value) {
                 const valueName = selectedOption.getAttribute('data-value-name');
-                const extraPriceInput = this.closest('.input-group').querySelector('.attribute-extra-price');
+                const extraPriceInput = this.closest('.attribute-group').querySelector('.attribute-extra-price');
 
                 // Hiển thị giá trị đã chọn và giá thêm trong input
-                extraPriceInput.placeholder = `Giá thêm cho ${valueName}`;
+                if (extraPriceInput) {
+                    extraPriceInput.placeholder = `Giá thêm cho ${valueName}`;
+                }
             }
         });
     });
@@ -76,9 +95,16 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.add-attribute-value').forEach(button => {
         button.addEventListener('click', function () {
             const attributeGroup = this.closest('.attribute-group');
+            if (!attributeGroup) return;
+            
             const select = attributeGroup.querySelector('.attribute-select');
             const extraPriceInput = attributeGroup.querySelector('.attribute-extra-price');
             const selectedValuesContainer = attributeGroup.querySelector('.selected-values');
+            
+            if (!select || !extraPriceInput || !selectedValuesContainer) {
+                console.error('Không tìm thấy các element cần thiết trong attribute group');
+                return;
+            }
 
             const selectedOption = select.options[select.selectedIndex];
             if (!selectedOption.value) {
@@ -139,31 +165,41 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // chọn ảnh
-document.getElementById('cover_image').addEventListener('change', function (e) {
-    const preview = document.querySelector('#cover_preview .preview-container');
-    preview.innerHTML = ''; // clear
-    const file = e.target.files[0];
-    if (file) {
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        img.className = 'img-fluid';
-        preview.appendChild(img);
-    }
-});
-
-document.getElementById('images').addEventListener('change', function (e) {
-    const preview = document.getElementById('images_preview');
-    preview.innerHTML = ''; // clear
-    Array.from(e.target.files).forEach(file => {
-        const col = document.createElement('div');
-        col.className = 'col-4';
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        img.className = 'img-fluid rounded';
-        col.appendChild(img);
-        preview.appendChild(col);
+const coverImageInput = document.getElementById('cover_image');
+if (coverImageInput) {
+    coverImageInput.addEventListener('change', function (e) {
+        const preview = document.querySelector('#cover_preview .preview-container');
+        if (preview) {
+            preview.innerHTML = ''; // clear
+            const file = e.target.files[0];
+            if (file) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.className = 'img-fluid';
+                preview.appendChild(img);
+            }
+        }
     });
-});
+}
+
+const imagesInput = document.getElementById('images');
+if (imagesInput) {
+    imagesInput.addEventListener('change', function (e) {
+        const preview = document.getElementById('images_preview');
+        if (preview) {
+            preview.innerHTML = ''; // clear
+            Array.from(e.target.files).forEach(file => {
+                const col = document.createElement('div');
+                col.className = 'col-4';
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.className = 'img-fluid rounded';
+                col.appendChild(img);
+                preview.appendChild(col);
+            });
+        }
+    });
+}
 
 // xử lý thùng rác
 $(document).ready(function () {
@@ -228,7 +264,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (e.target.classList.contains('remove-value') || e.target.closest('.remove-value')) {
                 console.log('Remove value button clicked');
                 const button = e.target.classList.contains('remove-value') ? e.target : e.target.closest('.remove-value');
-                const inputGroup = button.closest('.input-group');
+                const inputGroup = button ? button.closest('.input-group') : null;
+                
+                if (!inputGroup) {
+                    console.error('Không tìm thấy input group');
+                    return;
+                }
 
                 if (container.querySelectorAll('.input-group').length > 1) {
                     inputGroup.remove();
@@ -260,6 +301,11 @@ document.addEventListener('DOMContentLoaded', function () {
 function toggleDescription() {
     const desc = document.getElementById('mota');
     const btn = document.getElementById('toggleDescription');
+    
+    if (!desc || !btn) {
+        console.error('Không tìm thấy element mô tả hoặc nút toggle');
+        return;
+    }
 
     if (desc.style.maxHeight === '150px' || desc.style.maxHeight === '') {
       desc.style.maxHeight = 'none'; // mở hết mô tả

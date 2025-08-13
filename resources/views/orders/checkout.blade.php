@@ -6,15 +6,41 @@
     $hasOnlyEbooks = true;
     $hasPhysicalBooks = false;
     
+    // Debug: Log cart items để kiểm tra
+    \Log::info('=== CHECKOUT DEBUG ===');
+    \Log::info('Cart items count: ' . $cartItems->count());
+    
     foreach($cartItems as $item) {
+        \Log::info('Item ID: ' . $item->id);
+        \Log::info('is_combo value: ' . ($item->is_combo ?? 'null'));
+        \Log::info('is_combo type: ' . gettype($item->is_combo));
+        \Log::info('collection_id: ' . ($item->collection_id ?? 'null'));
+        \Log::info('book_id: ' . ($item->book_id ?? 'null'));
+        \Log::info('book_format_id: ' . ($item->book_format_id ?? 'null'));
+        
+        // Kiểm tra combo - combo luôn là sách vật lý
+        if (isset($item->is_combo) && $item->is_combo) {
+            \Log::info('Found combo item - setting hasPhysicalBooks = true');
+            $hasPhysicalBooks = true;
+            $hasOnlyEbooks = false;
+            break;
+        }
+        
+        // Kiểm tra sách đơn lẻ
         if ($item->bookFormat) {
+            \Log::info('Book format: ' . $item->bookFormat->format_name);
             if (strtolower($item->bookFormat->format_name) !== 'ebook') {
+                \Log::info('Found physical book - setting hasPhysicalBooks = true');
                 $hasPhysicalBooks = true;
                 $hasOnlyEbooks = false;
                 break;
             }
         }
     }
+    
+    \Log::info('Final hasOnlyEbooks: ' . ($hasOnlyEbooks ? 'true' : 'false'));
+    \Log::info('Final hasPhysicalBooks: ' . ($hasPhysicalBooks ? 'true' : 'false'));
+    \Log::info('=== END CHECKOUT DEBUG ===');
 @endphp
 
 <div class="min-h-screen bg-white relative overflow-hidden">
@@ -593,8 +619,14 @@
                                          alt="{{ $item->collection ? $item->collection->name : 'Combo' }}" 
                                          class="w-16 h-20 object-cover rounded shadow-sm">
                                     <div class="absolute -top-1 -right-1">
-                                        <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-black rounded-full">
+                                        <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-green-600 rounded-full">
                                             {{ $item->quantity }}
+                                        </span>
+                                    </div>
+                                    <!-- Badge combo -->
+                                    <div class="absolute -bottom-1 -left-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-green-600 text-white">
+                                            COMBO
                                         </span>
                                     </div>
                                 </div>
@@ -603,19 +635,27 @@
                                         {{ $item->collection ? $item->collection->name : 'Combo không xác định' }}
                                     </h6>
                                     @if($item->collection && $item->collection->books && $item->collection->books->count() > 0)
-                                        <p class="text-xs text-gray-500 mt-1">
-                                            <span class="inline-flex items-center gap-1">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                                </svg>
-                                                {{ $item->collection->books->count() }} cuốn
-                                            </span>
-                                        </p>
+                                        <div class="mt-1 space-y-1">
+                                            <p class="text-xs text-gray-500">
+                                                <span class="inline-flex items-center gap-1">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                                    </svg>
+                                                    {{ $item->collection->books->count() }} cuốn sách
+                                                </span>
+                                            </p>
+                                            <p class="text-xs text-green-600 font-medium">
+                                                💰 Tiết kiệm so với mua lẻ
+                                            </p>
+                                        </div>
                                     @endif
                                 </div>
                                 <div class="text-right">
                                     <p class="font-bold text-green-600 text-sm">
                                         {{ number_format($finalPrice * $item->quantity) }}đ
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ number_format($finalPrice) }}đ/combo
                                     </p>
                                 </div>
                             @else
@@ -625,7 +665,7 @@
                                          alt="{{ $item->book ? $item->book->title : 'Sách' }}" 
                                          class="w-16 h-20 object-cover rounded shadow-sm">
                                     <div class="absolute -top-1 -right-1">
-                                        <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-black rounded-full">
+                                        <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full">
                                             {{ $item->quantity }}
                                         </span>
                                     </div>
@@ -634,15 +674,28 @@
                                     <h6 class="font-semibold text-gray-900 text-sm truncate">
                                         {{ $item->book ? $item->book->title : 'Sách không xác định' }}
                                     </h6>
-                                    <div class="mt-1">
+                                    <div class="mt-1 space-y-1">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $item->bookFormat && $item->bookFormat->format_name == 'Ebook' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' }}">
                                             {{ $item->bookFormat ? $item->bookFormat->format_name : 'N/A' }}
                                         </span>
+                                        @if($item->book && $item->book->authors && $item->book->authors->count() > 0)
+                                            <p class="text-xs text-gray-500">
+                                                <span class="inline-flex items-center gap-1">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                                    </svg>
+                                                    {{ $item->book->authors->pluck('name')->join(', ') }}
+                                                </span>
+                                            </p>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="text-right">
                                     <p class="font-bold text-green-600 text-sm">
                                         {{ number_format($finalPrice * $item->quantity) }}đ
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ number_format($finalPrice) }}đ/cuốn
                                     </p>
                                 </div>
                             @endif

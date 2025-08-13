@@ -120,6 +120,12 @@
                                 <i class="fas fa-book"></i> Chỉ sách vật lý
                             </span>
                         @endif
+                        <div class="mt-1">
+                            <span class="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                <i class="fas fa-sync-alt"></i>
+                                Giá được tự động cập nhật theo thời gian thực
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div class="flex gap-3">
@@ -164,8 +170,12 @@
                                         </div>
                                     @endif
                                     <!-- Combo Badge -->
-                                    <div class="absolute -top-2 -left-2 bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase">
+                                    <div class="absolute -top-2 -left-2 bg-green-600 text-white px-3 py-1 text-xs font-bold uppercase rounded-r">
                                         <i class="fas fa-layer-group mr-1"></i>COMBO
+                                    </div>
+                                    <!-- Quantity Badge -->
+                                    <div class="absolute -top-2 -right-2 bg-black text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                                        {{ $item->quantity }}
                                     </div>
                                 </div>
                                 
@@ -217,10 +227,7 @@
                                         <div>
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Đơn giá</span>
                                             <div class="text-lg font-bold text-black">
-                                                @php
-                                                    $finalPrice = ($item->price ?? 0) + ($attributeExtraPrice ?? 0);
-                                                @endphp
-                                                {{ number_format($finalPrice) }}đ
+                                                {{ number_format($item->price) }}đ
                                             </div>
                                         </div>
                                         
@@ -254,7 +261,7 @@
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Thành tiền</span>
                                             <div class="text-xl font-black text-black item-total">
                                                 @php
-                                                    $itemTotal = $finalPrice * $item->quantity;
+                                                    $itemTotal = $item->price * $item->quantity;
                                                 @endphp
                                                 {{ number_format($itemTotal) }}đ
                                             </div>
@@ -264,12 +271,21 @@
                             </div>
                         </div>
                     @else
+                        @php
+                            // Price is already calculated with attribute extra price in the database/controller
+                            // No need to add extra_price again as it causes duplicate pricing
+                            $isEbook = isset($item->format_name) && (stripos($item->format_name, 'ebook') !== false);
+                        @endphp
+                        
                         {{-- Individual Book Item --}}
                         <div class="cart-hover bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 p-6 cart-item" 
                              data-book-id="{{ $item->book_id }}" 
                              data-book-format-id="{{ $item->book_format_id }}"
                              data-attribute-value-ids="{{ $item->attribute_value_ids }}"
-                             data-price="{{ $item->price ?? 0 }}" 
+                             data-price="{{ $item->price }}" 
+                             data-base-price="{{ $item->original_price ?? $item->price }}"
+                             data-discount="{{ $item->discount ?? 0 }}"
+                             data-extra-price="0"
                              data-stock="{{ $item->stock ?? 0 }}"
                              data-format-name="{{ $item->format_name ?? '' }}"
                              data-is-combo="false">
@@ -295,9 +311,6 @@
                                         </div>
                                     @endif
                                     
-                                    @php
-                                        $isEbook = isset($item->format_name) && (stripos($item->format_name, 'ebook') !== false);
-                                    @endphp
                                     @if($isEbook)
                                         <div class="absolute -top-2 -left-2 bg-blue-600 text-white px-3 py-1 text-xs font-bold uppercase">
                                             <i class="fas fa-mobile-alt mr-1"></i>EBOOK
@@ -330,12 +343,12 @@
                                         </div>
                                     </div>
 
-                                    {{-- Attributes - Chỉ hiển thị thuộc tính ngôn ngữ cho ebooks --}}
+                                    {{-- Attributes - Hiển thị đầy đủ thông tin biến thể bao gồm stock và SKU --}}
                                     @if($item->attribute_value_ids && $item->attribute_value_ids !== '[]')
                                         @php
                                             $attributeIds = json_decode($item->attribute_value_ids, true);
                                             $attributes = collect();
-                                            $attributeExtraPrice = 0;
+                                            // Use the already calculated $attributeExtraPrice
                                             if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
                                                 $query = DB::table('attribute_values')
                                                     ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
@@ -357,11 +370,10 @@
                                                 $attributes = $query->select(
                                                     'attributes.name as attr_name', 
                                                     'attribute_values.value as attr_value',
-                                                    'book_attribute_values.extra_price'
+                                                    'book_attribute_values.extra_price',
+                                                    'book_attribute_values.stock',
+                                                    'book_attribute_values.sku'
                                                 )->get();
-                                                
-                                                // Calculate total extra price from attributes
-                                                $attributeExtraPrice = $attributes->sum('extra_price');
                                             }
                                         @endphp
                                         @if($attributes->count() > 0)
@@ -371,18 +383,62 @@
                                                     @if($isEbook)
                                                         Ngôn ngữ:
                                                     @else
-                                                        Thuộc tính:
+                                                        Thuộc tính sản phẩm:
                                                     @endif
                                                 </div>
-                                                <div class="flex flex-wrap gap-2">
+                                                <div class="space-y-2">
                                                     @foreach($attributes->unique(function($attr) { return $attr->attr_name . ':' . $attr->attr_value; }) as $attr)
-                                                        <span class="bg-white px-2 py-1 text-xs border border-gray-200 font-medium">
-                                                            @if($isEbook)
-                                                                {{ $attr->attr_value }}
-                                                            @else
-                                                                {{ $attr->attr_name }}: {{ $attr->attr_value }}
+                                                        <div class="flex items-center justify-between bg-white p-2 rounded border">
+                                                            <div class="flex items-center gap-2">
+                                                                <span class="text-sm font-medium text-gray-800">
+                                                                    @if($isEbook)
+                                                                        {{ $attr->attr_value }}
+                                                                    @else
+                                                                        {{ $attr->attr_name }}: <span class="font-bold">{{ $attr->attr_value }}</span>
+                                                                    @endif
+                                                                </span>
+                                                                @if($attr->extra_price > 0)
+                                                                    <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium">
+                                                                        +{{ number_format($attr->extra_price) }}đ
+                                                                    </span>
+                                                                @endif
+                                                            </div>
+                                                            
+                                                            {{-- Hiển thị stock và SKU cho sách vật lý --}}
+                                                            @if(!$isEbook)
+                                                                <div class="flex items-center gap-3 text-xs">
+                                                                    {{-- SKU --}}
+                                                                    @if($attr->sku)
+                                                                        <div class="flex items-center gap-1">
+                                                                            <i class="fas fa-barcode text-gray-500"></i>
+                                                                            <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded font-mono">
+                                                                                {{ $attr->sku }}
+                                                                            </span>
+                                                                        </div>
+                                                                    @endif
+                                                                    
+                                                                    {{-- Stock --}}
+                                                                    <div class="flex items-center gap-1">
+                                                                        <i class="fas fa-boxes text-gray-500"></i>
+                                                                        <span class="
+                                                                            @if($attr->stock > 10) 
+                                                                                bg-green-100 text-green-700 
+                                                                            @elseif($attr->stock > 0) 
+                                                                                bg-yellow-100 text-yellow-700 
+                                                                            @else 
+                                                                                bg-red-100 text-red-700 
+                                                                            @endif
+                                                                            px-2 py-1 rounded font-medium">
+                                                                            @if($attr->stock > 0)
+                                                                                {{ $attr->stock }} có sẵn
+                                                                            @else
+                                                                                Hết hàng
+                                                                            @endif
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
                                                             @endif
-                                                        </span>
+                                                        </div>
                                                     @endforeach
                                                 </div>
                                             </div>
@@ -414,11 +470,16 @@
                                         <div>
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Đơn giá</span>
                                             <div class="text-lg font-bold text-black">
-                                                @php
-                                                    $finalPrice = ($item->price ?? 0) + ($attributeExtraPrice ?? 0);
-                                                @endphp
-                                                {{ number_format($finalPrice) }}đ
+                                                {{ number_format($item->price) }}đ
                                             </div>
+                                            @if(isset($item->discount) && $item->discount > 0)
+                                                <div class="text-sm text-gray-500 line-through">
+                                                    {{ number_format($item->original_price) }}đ
+                                                </div>
+                                                <div class="text-xs text-red-600 font-bold">
+                                                    -{{ number_format($item->discount) }}đ
+                                                </div>
+                                            @endif
                                         </div>
                                         
                                         <!-- Quantity -->
@@ -479,7 +540,7 @@
                                             <span class="text-xs text-gray-500 uppercase tracking-wide font-bold">Thành tiền</span>
                                             <div class="text-xl font-black text-black item-total">
                                                 @php
-                                                    $itemTotal = $finalPrice * $item->quantity;
+                                                    $itemTotal = $item->price * $item->quantity;
                                                 @endphp
                                                 {{ number_format($itemTotal) }}đ
                                             </div>

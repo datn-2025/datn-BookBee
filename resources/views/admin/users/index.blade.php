@@ -122,12 +122,12 @@
                                                             <i class="ri-edit-2-line align-bottom"></i>
                                                         </a>
                                                         @endpermission
-                                                        @permission('user.manage-roles')
+                                                        {{-- @permission('user.manage-roles')
                                                         <a href="{{ route('admin.users.roles-permissions.edit', $user->id) }}"
                                                             class="link-success fs-15 ">
                                                             <i class="ri-lock-unlock-line align-bottom"></i>
                                                         </a>
-                                                    @endpermission
+                                                    @endpermission --}}
                                                     </td>
                                                 </tr>
                                             @endforeach

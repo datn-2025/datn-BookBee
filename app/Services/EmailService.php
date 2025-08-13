@@ -80,23 +80,18 @@ class EmailService
             'orderItems.collection'
         ]);
 
-        // Check if order contains any ebooks hoặc sách vật lý có ebook kèm theo
+        // Chỉ kiểm tra ebook được mua trực tiếp, không bao gồm sách vật lý có ebook kèm theo
         $hasEbooks = $order->orderItems->some(function ($item) {
-            // Trường hợp 1: Mua trực tiếp ebook
+            // Chỉ gửi email khi mua trực tiếp ebook
             if (!$item->is_combo && $item->bookFormat && $item->bookFormat->format_name === 'Ebook') {
                 return true;
-            }
-            
-            // Trường hợp 2: Mua sách vật lý nhưng sách đó có ebook kèm theo
-            if (!$item->is_combo && $item->book && $item->book->formats) {
-                return $item->book->formats->contains('format_name', 'Ebook');
             }
             
             return false;
         });
         
         if (!$hasEbooks) {
-            Log::info('No ebooks found in order', ['order_id' => $order->id]);
+            Log::info('No ebooks found in order (only direct ebook purchases)', ['order_id' => $order->id]);
             return;
         }
 

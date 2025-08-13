@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const incrementBtn = document.getElementById('incrementBtn');
     const decrementBtn = document.getElementById('decrementBtn');
     const discountText = document.getElementById('discountText');
-    const discountPercent = document.getElementById('discountPercent');
+    const discountAmount = document.getElementById('discountAmount');
 
     const quantityGroup = quantityInput?.closest('.mt-4.flex');
     const attributeGroups = document.querySelectorAll('[id^="attribute_"]');
@@ -76,11 +76,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const totalBase = basePrice + totalExtra;
 
+        // Giá cuối cùng đã được tính sẵn từ server, chỉ cần hiển thị
         let finalPrice = totalBase;
         if (discount > 0) {
-            // Discount giờ là số tiền VNĐ trực tiếp, không phải phần trăm
+            // Giá đã được tính sẵn, chỉ trừ discount để hiển thị
             finalPrice = totalBase - discount;
-            // Đảm bảo giá không âm
             finalPrice = Math.max(0, finalPrice);
         }
 
@@ -96,14 +96,27 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        if (discountText && discountPercent) {
+        if (discountText && discountAmount) {
+            console.log('Debug discount in quantity.js:', {
+                discount: discount,
+                discountAmount: discountAmount,
+                discountText: discountText
+            });
+            
             if (discount > 0) {
                 discountText.style.display = 'inline';
                 // Hiển thị discount như số tiền VNĐ với định dạng
-                discountPercent.textContent = discount.toLocaleString('vi-VN', { minimumFractionDigits: 0 }) + '₫';
+                const formattedDiscount = discount.toLocaleString('vi-VN', { minimumFractionDigits: 0 });
+                console.log('Setting discount amount in quantity.js:', formattedDiscount);
+                discountAmount.textContent = formattedDiscount;
             } else {
                 discountText.style.display = 'none';
             }
+        } else {
+            console.log('Discount elements not found in quantity.js:', {
+                discountText: discountText,
+                discountAmount: discountAmount
+            });
         }
 
         // Badge logic giống combo

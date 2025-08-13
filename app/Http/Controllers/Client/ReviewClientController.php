@@ -124,16 +124,30 @@ class ReviewClientController extends Controller
         Log::info('Review data:', $request->all());
         Log::info('User ID:', ['user_id' => Auth::id()]);
 
-        $request->validate([
+        // Validate for both book and combo reviews
+        $rules = [
             'order_id' => 'required|exists:orders,id',
-            'book_id' => 'required|exists:books,id',
             'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string|max:1000',
-        ], [
+            'comment' => 'nullable|string|max:1000',
+        ];
+        
+        // Either book_id or collection_id must be present
+        if ($request->has('book_id')) {
+            $rules['book_id'] = 'required|exists:books,id';
+        } elseif ($request->has('collection_id')) {
+            $rules['collection_id'] = 'required|exists:collections,id';
+        } else {
+            return response()->json([
+                'success' => false,
+                'error' => 'Phải có book_id hoặc collection_id'
+            ], 400);
+        }
+
+        $request->validate($rules, [
             'order_id.required' => 'Đơn hàng không hợp lệ',
             'book_id.required' => 'Sách không hợp lệ',
+            'collection_id.required' => 'Combo không hợp lệ',
             'rating.required' => 'Đánh giá không hợp lệ',
-            'comment.required' => 'Nội dung đánh giá không hợp lệ',
             'rating.min' => 'Đánh giá phải từ 1 đến 5',
             'rating.max' => 'Đánh giá phải từ 1 đến 5',
             'comment.max' => 'Nội dung đánh giá không hợp lệ'
@@ -149,45 +163,79 @@ class ReviewClientController extends Controller
             })
             ->firstOrFail();
 
-        // Check if the book is in the order
-        $order->orderItems()
-            ->where('book_id', $request->book_id)
-            ->firstOrFail();
-
-        // Check if review already exists
-        // $existingReview = Review::where('user_id', $user->id)
-        //     ->where('book_id', $request->book_id)
-        //     ->where('order_id', $order->id)
-        //     ->exists();
-
-        // if ($existingReview) {
-        //     return redirect()->back()->with('error', 'Bạn đã đánh giá sản phẩm này rồi');
-        // }
-        $existingReview = Review::withTrashed()
-            ->where('user_id', $user->id)
-            ->where('book_id', $request->book_id)
-            ->where('order_id', $order->id)
-            ->first();
+        // Check if the book/combo is in the order
+        if ($request->has('book_id')) {
+            $order->orderItems()
+                ->where('book_id', $request->book_id)
+                ->firstOrFail();
+                
+            // Check if review already exists for book
+            $existingReview = Review::withTrashed()
+                ->where('user_id', $user->id)
+                ->where('book_id', $request->book_id)
+                ->where('order_id', $order->id)
+                ->first();
+        } else {
+            $order->orderItems()
+                ->where('collection_id', $request->collection_id)
+                ->firstOrFail();
+                
+            // Check if review already exists for combo
+            $existingReview = Review::withTrashed()
+                ->where('user_id', $user->id)
+                ->where('collection_id', $request->collection_id)
+                ->where('order_id', $order->id)
+                ->first();
+        }
 
         if ($existingReview) {
             if ($existingReview->trashed()) {
-                return redirect()->back()->with('error', 'Bạn đã xóa đánh giá cho sản phẩm này và không thể đánh giá lại');
+                $message = $request->has('book_id') ? 
+                    'Bạn đã xóa đánh giá cho sản phẩm này và không thể đánh giá lại' :
+                    'Bạn đã xóa đánh giá cho combo này và không thể đánh giá lại';
+                    
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'error' => $message], 400);
+                }
+                return redirect()->back()->with('error', $message);
             }
-            return redirect()->back()->with('error', 'Bạn đã đánh giá sản phẩm này rồi');
+            
+            $message = $request->has('book_id') ? 
+                'Bạn đã đánh giá sản phẩm này rồi' :
+                'Bạn đã đánh giá combo này rồi';
+                
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'error' => $message], 400);
+            }
+            return redirect()->back()->with('error', $message);
         }
 
         // Create the review
-        Review::create([
+        $reviewData = [
             'id' => (string) Str::uuid(),
             'user_id' => $user->id,
-            'book_id' => $request->book_id,
             'order_id' => $order->id,
             'rating' => $request->rating,
-            'comment' => $request->comment,
-            'status' => 'approved', // or 'pending' if you want to moderate reviews
-        ]);
+            'comment' => $request->comment ?? '',
+            'status' => 'approved',
+        ];
+        
+        if ($request->has('book_id')) {
+            $reviewData['book_id'] = $request->book_id;
+        } else {
+            $reviewData['collection_id'] = $request->collection_id;
+        }
 
-        return redirect()->back()->with('success', 'Cảm ơn bạn đã đánh giá sản phẩm!');
+        Review::create($reviewData);
+
+        $successMessage = $request->has('book_id') ? 
+            'Cảm ơn bạn đã đánh giá sản phẩm!' :
+            'Cảm ơn bạn đã đánh giá combo!';
+            
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => $successMessage]);
+        }
+        return redirect()->back()->with('success', $successMessage);
     }
 
     public function update(Request $request, $id)
@@ -202,27 +250,37 @@ class ReviewClientController extends Controller
         // Kiểm tra thời gian (24h)
         $timeLimit = $review->created_at->addHours(24);
         if (now()->gt($timeLimit)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chỉ có thể cập nhật đánh giá trong vòng 24 giờ'
-            ], 403);
+            $message = 'Chỉ có thể cập nhật đánh giá trong vòng 24 giờ';
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message
+                ], 403);
+            }
+            return redirect()->back()->with('error', $message);
         }
 
         $validated = $request->validate([
             'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string|max:1000',
+            'comment' => 'nullable|string|max:1000',
         ]);
 
-        $review->update($validated);
+        $review->update([
+            'rating' => $validated['rating'],
+            'comment' => $validated['comment'] ?? '',
+        ]);
 
-        // return response()->json([
-        //     'success' => true,
-        //     'message' => 'Cập nhật đánh giá thành công'
-        // ]);
-        return redirect()->back()->with('success', 'Cập nhật đánh giá thành công');
+        $successMessage = 'Cập nhật đánh giá thành công';
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $successMessage
+            ]);
+        }
+        return redirect()->back()->with('success', $successMessage);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $review = Review::findOrFail($id);
 
@@ -234,42 +292,112 @@ class ReviewClientController extends Controller
         // Kiểm tra thời gian (7 ngày)
         $timeLimit = $review->created_at->addDays(7);
         if (now()->gt($timeLimit)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chỉ có thể xóa đánh giá trong vòng 7 ngày'
-            ], 403);
+            $message = 'Chỉ có thể xóa đánh giá trong vòng 7 ngày';
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message
+                ], 403);
+            }
+            return redirect()->back()->with('error', $message);
         }
 
         $review->delete();
 
-        // return response()->json([
-        //     'success' => true,
-        //     'message' => 'Đã xóa đánh giá'
-        // ]);
-        return redirect()->back()->with('success', 'Xóa đánh giá thành công');
+        $successMessage = 'Xóa đánh giá thành công';
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $successMessage
+            ]);
+        }
+        return redirect()->back()->with('success', $successMessage);
     }
 
-    public function createForm($orderId, $bookId)
+    public function createForm(Request $request, $orderId, $bookId = null, $collectionId = null)
     {
         $user = Auth::user();
-        $order = $user->orders()->with(['orderItems.book.authors', 'orderItems.book.brand', 'orderStatus', 'address', 'paymentMethod'])->where('id', $orderId)->firstOrFail();
-        $item = $order->orderItems->where('book_id', $bookId)->first();
-        if (!$item) abort(404);
-        // Kiểm tra đã đánh giá chưa
-        $review = $order->reviews()->where('book_id', $bookId)->first();
-        if ($review) {
-            return redirect()->route('account.reviews.edit', $review->id);
+        
+        // Get collectionId from request if not in URL (for combo route)
+        if (!$collectionId && $request->route()->getName() === 'account.reviews.create.combo') {
+            $collectionId = $request->route('collectionId');
         }
-        return view('clients.account.review_form', compact('order', 'item'));
+        
+        // Check if the order belongs to the user and is completed
+        $order = $user->orders()
+            ->where('id', $orderId)
+            ->whereHas('orderStatus', function ($q) {
+                $q->where('name', 'Thành công');
+            })
+            ->with(['orderItems.book', 'orderItems.collection'])
+            ->firstOrFail();
+
+        if ($bookId) {
+            // Check if the book is in the order
+            $orderItem = $order->orderItems()
+                ->where('book_id', $bookId)
+                ->with('book')
+                ->firstOrFail();
+
+            $product = $orderItem->book;
+            $productType = 'book';
+
+            // Check if review already exists
+            $existingReview = Review::where('user_id', $user->id)
+                ->where('book_id', $bookId)
+                ->where('order_id', $order->id)
+                ->first();
+        } elseif ($collectionId) {
+            // Check if the combo is in the order
+            $orderItem = $order->orderItems()
+                ->where('collection_id', $collectionId)
+                ->with('collection')
+                ->firstOrFail();
+
+            $product = $orderItem->collection;
+            $productType = 'combo';
+
+            // Check if review already exists
+            $existingReview = Review::where('user_id', $user->id)
+                ->where('collection_id', $collectionId)
+                ->where('order_id', $order->id)
+                ->first();
+        } else {
+            abort(400, 'Phải có book_id hoặc collection_id');
+        }
+
+        if ($existingReview) {
+            return redirect()->route('account.reviews.edit', $existingReview->id)
+                ->with('info', 'Bạn đã đánh giá sản phẩm này. Bạn có thể chỉnh sửa đánh giá.');
+        }
+
+        return view('clients.account.review_form', compact('order', 'product', 'orderItem', 'productType'));
     }
 
     public function editForm($reviewId)
     {
         $user = Auth::user();
         $review = $user->reviews()->where('id', $reviewId)->firstOrFail();
-        $order = $user->orders()->with(['orderItems.book.authors', 'orderItems.book.brand', 'orderStatus', 'address', 'paymentMethod'])->where('id', $review->order_id)->firstOrFail();
-        $item = $order->orderItems->where('book_id', $review->book_id)->first();
-        if (!$item) abort(404);
-        return view('clients.account.review_edit', compact('order', 'item', 'review'));
+        
+        $order = $user->orders()
+            ->with(['orderItems.book', 'orderItems.collection', 'orderStatus', 'address', 'paymentMethod'])
+            ->where('id', $review->order_id)
+            ->firstOrFail();
+
+        if ($review->book_id) {
+            $orderItem = $order->orderItems->where('book_id', $review->book_id)->first();
+            $product = $orderItem->book;
+            $productType = 'book';
+        } elseif ($review->collection_id) {
+            $orderItem = $order->orderItems->where('collection_id', $review->collection_id)->first();
+            $product = $orderItem->collection;
+            $productType = 'combo';
+        } else {
+            abort(404, 'Không tìm thấy sản phẩm trong đánh giá');
+        }
+        
+        if (!$orderItem) abort(404);
+        
+        return view('clients.account.review_edit', compact('order', 'orderItem', 'review', 'product', 'productType'));
     }
 }

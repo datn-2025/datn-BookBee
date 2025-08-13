@@ -52,4 +52,25 @@ class Collection extends Model
     {
         return $this->getRelationValue('summary');
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Lấy điểm đánh giá trung bình của combo
+     */
+    public function getAverageRatingAttribute()
+    {
+        return $this->reviews()->whereIn('status', ['approved', 'visible'])->avg('rating') ?? 0;
+    }
+
+    /**
+     * Lấy số lượng đánh giá của combo
+     */
+    public function getReviewCountAttribute()
+    {
+        return $this->reviews()->whereIn('status', ['approved', 'visible'])->count();
+    }
 }

@@ -263,13 +263,29 @@
                                             <div class="card-body">
                                                 <ul class="list-group list-group-flush">
                                                     @foreach($values as $value)
-                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                            {{ $value['value'] }}
-                                                            @if($value['extra_price'] > 0)
-                                                                <span class="badge rounded-pill" style="background-color:#405189; border-color: #405189">
-                                                                    +{{ number_format($value['extra_price']) }} đ
-                                                                </span>
-                                                            @endif
+                                                        <li class="list-group-item">
+                                                            <div class="d-flex justify-content-between align-items-start">
+                                                                <div class="flex-grow-1">
+                                                                    <h6 class="mb-1">{{ $value['value'] }}</h6>
+                                                                    @if($value['sku'])
+                                                                        <small class="text-muted">SKU: {{ $value['sku'] }}</small>
+                                                                    @endif
+                                                                </div>
+                                                                <div class="text-end">
+                                                                    @if($value['extra_price'] > 0)
+                                                                        <span class="badge rounded-pill mb-1" style="background-color:#405189; border-color: #405189">
+                                                                            +{{ number_format($value['extra_price']) }} đ
+                                                                        </span><br>
+                                                                    @endif
+                                                                    <span class="badge rounded-pill {{ $value['stock'] > 0 ? ($value['stock'] <= 10 ? 'bg-warning' : 'bg-success') : 'bg-danger' }}">
+                                                                        @if($value['stock'] > 0)
+                                                                            {{ $value['stock'] }} sp
+                                                                        @else
+                                                                            Hết hàng
+                                                                        @endif
+                                                                    </span>
+                                                                </div>
+                                                            </div>
                                                         </li>
                                                     @endforeach
                                                 </ul>
@@ -348,8 +364,17 @@
                                                 </td>
                                                 <td>{{ $review->comment ?? 'Không có bình luận' }}</td>
                                                 <td>
-                                                    <span class="badge {{ $review->status === 'approved' ? 'bg-success' : ($review->status === 'pending' ? 'bg-warning' : 'bg-danger') }}">
-                                                        {{ $review->status === 'approved' ? 'Đã duyệt' : ($review->status === 'pending' ? 'Chờ duyệt' : 'Từ chối') }}
+                                                    @php
+                                                        $statusConfig = match($review->status) {
+                                                            'approved' => ['class' => 'bg-success', 'text' => 'Đã duyệt'],
+                                                            'pending' => ['class' => 'bg-warning text-dark', 'text' => 'Chờ duyệt'],
+                                                            'hidden' => ['class' => 'bg-secondary', 'text' => 'Đã ẩn'],
+                                                            'visible' => ['class' => 'bg-info', 'text' => 'Hiển thị (Legacy)'],
+                                                            default => ['class' => 'bg-dark', 'text' => $review->status]
+                                                        };
+                                                    @endphp
+                                                    <span class="badge {{ $statusConfig['class'] }}">
+                                                        {{ $statusConfig['text'] }}
                                                     </span>
                                                 </td>
                                                 <td>{{ date('d/m/Y H:i', strtotime($review->created_at)) }}</td>
@@ -359,13 +384,25 @@
                                                             <i class="ri-more-2-fill"></i>
                                                         </button>
                                                         <ul class="dropdown-menu">
-                                                            @if($review->status !== 'approved')
-                                                                <li><a class="dropdown-item" href="#"><i class="ri-check-line text-success me-1"></i> Duyệt</a></li>
+                                                            <li><a class="dropdown-item" href="{{ route('admin.reviews.response', $review->id) }}"><i class="ri-eye-line text-primary me-1"></i> Xem chi tiết</a></li>
+                                                            @if(in_array($review->status, ['pending', 'hidden']))
+                                                                <li>
+                                                                    <form action="{{ route('admin.reviews.update-status', $review->id) }}" method="POST" style="display: inline;">
+                                                                        @csrf
+                                                                        @method('PATCH')
+                                                                        <button type="submit" class="dropdown-item"><i class="ri-check-line text-success me-1"></i> Duyệt</button>
+                                                                    </form>
+                                                                </li>
                                                             @endif
-                                                            @if($review->status !== 'rejected')
-                                                                <li><a class="dropdown-item" href="#"><i class="ri-close-line text-danger me-1"></i> Từ chối</a></li>
+                                                            @if(in_array($review->status, ['approved', 'visible']))
+                                                                <li>
+                                                                    <form action="{{ route('admin.reviews.update-status', $review->id) }}" method="POST" style="display: inline;">
+                                                                        @csrf
+                                                                        @method('PATCH')
+                                                                        <button type="submit" class="dropdown-item"><i class="ri-eye-off-line text-warning me-1"></i> Ẩn</button>
+                                                                    </form>
+                                                                </li>
                                                             @endif
-                                                            <li><a class="dropdown-item" href="#"><i class="ri-delete-bin-line text-danger me-1"></i> Xóa</a></li>
                                                         </ul>
                                                     </div>
                                                 </td>

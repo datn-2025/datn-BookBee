@@ -64,7 +64,12 @@
                                         {{ old('status', request('status')) === 'visible' ? 'selected' : '' }}>Hiện
                                     </option>
                                     <option value="hidden"
-                                        {{ old('status', request('status')) === 'hidden' ? 'selected' : '' }}>Ẩn</option>
+                                        {{ old('status', request('status')) === 'hidden' ? 'selected' : '' }}>Ẩn
+                                    </option> 
+                                    {{-- <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Đã duyệt</option>
+                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
+                                    <option value="hidden" {{ request('status') == 'hidden' ? 'selected' : '' }}>Ẩn</option>
+                                    <option value="visible" {{ request('status') == 'visible' ? 'selected' : '' }}>Hiện (Legacy)</option>  --}}
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -129,6 +134,7 @@
                                         <tr>
                                             <th>#</th>
                                             <th>Sản phẩm</th>
+                                            <th>Loại & Định dạng</th>
                                             <th>Bình luận</th>
                                             <th>Phản hồi Admin</th>
                                             <th class="text-center">Thao tác</th>
@@ -136,9 +142,10 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($reviews as $index => $review)
-                                            <tr class="{{ $review->status === 'hidden' ? 'table-light text-muted' : '' }}">
+                                            <tr class="{{ in_array($review->status, ['hidden', 'pending']) ? 'table-light text-muted' : '' }}">
                                                 <td>{{ $reviews->firstItem() + $index }}</td>
                                                 <td style="max-width: 200px; white-space: normal;">
+<<<<<<< HEAD
                                                     @if ($review->book)
                                                         @permission('review.show')
                                                             <a href="{{ route('admin.books.show', ['id' => $review->book->id, 'slug' => Str::slug($review->book->title)]) }}"
@@ -146,9 +153,49 @@
                                                                 {{ $review->book->title }}
                                                             </a>
                                                         @endpermission
+=======
+                                                    @if($review->isComboReview())
+                                                        @if($review->collection)
+                                                            <a href="{{ route('combos.show', $review->collection->id) }}" 
+                                                               class="text-decoration-none fw-medium text-success" 
+                                                               target="_blank">
+                                                                {{ $review->collection->name }}
+                                                            </a>
+                                                        @else
+                                                            <span class="text-muted">Combo đã bị xóa</span>
+                                                        @endif
+>>>>>>> master
                                                     @else
-                                                        <span class="text-muted">Sản phẩm đã xóa</span>
+                                                        @if ($review->book)
+                                                        @permission('review.show')
+                                                            <a href="{{ route('admin.books.show', ['id' => $review->book->id, 'slug' => Str::slug($review->book->title)]) }}"
+                                                                class="text-decoration-none fw-medium">
+                                                                {{ $review->book->title }}
+                                                            </a>
+                                                            @endpermission
+                                                        @else
+                                                            <span class="text-muted">Sản phẩm đã xóa</span>
+                                                        @endif
                                                     @endif
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex flex-column gap-1">
+                                                        <span class="badge {{ $review->isComboReview() ? 'bg-success' : 'bg-primary' }} text-white">
+                                                            {{ $review->product_type }}
+                                                        </span>
+                                                        @if($review->order && $review->order->orderItems->count() > 0)
+                                                            @php
+                                                                $orderItem = $review->isComboReview() 
+                                                                    ? $review->order->orderItems->where('collection_id', $review->collection_id)->first()
+                                                                    : $review->order->orderItems->where('book_id', $review->book_id)->first();
+                                                            @endphp
+                                                            @if($orderItem)
+                                                                <span class="badge {{ strtolower($orderItem->format) === 'ebook' ? 'bg-info' : 'bg-secondary' }} text-white">
+                                                                    {{ $orderItem->format }}
+                                                                </span>
+                                                            @endif
+                                                        @endif
+                                                    </div>
                                                 </td>
                                                 <td style="max-width: 400px;">
                                                     <div class="fw-semibold">
@@ -162,6 +209,18 @@
                                                             <i
                                                                 class="fas fa-star{{ $i <= $review->rating ? ' text-warning' : ' text-muted' }}"></i>
                                                         @endforeach
+                                                        @php
+                                                            $statusConfig = match($review->status) {
+                                                                'approved' => ['class' => 'bg-success', 'text' => 'Đã duyệt'],
+                                                                'pending' => ['class' => 'bg-warning text-dark', 'text' => 'Chờ duyệt'],
+                                                                'hidden' => ['class' => 'bg-secondary', 'text' => 'Đã ẩn'],
+                                                                'visible' => ['class' => 'bg-info', 'text' => 'Legacy'],
+                                                                default => ['class' => 'bg-dark', 'text' => $review->status]
+                                                            };
+                                                        @endphp
+                                                        <span class="badge {{ $statusConfig['class'] }} ms-2">
+                                                            {{ $statusConfig['text'] }}
+                                                        </span>
                                                     </div>
                                                     <div class="text-truncate small mt-1">{{ $review->comment }}</div>
                                                 </td>

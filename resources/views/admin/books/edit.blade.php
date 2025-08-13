@@ -1,470 +1,477 @@
 @extends('layouts.backend')
 
-@section('title', 'Sửa sách')
+@section('title', 'Chỉnh sửa sách')
 
 @section('content')
 <div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-md-12">
-            <!-- Breadcrumb -->
-            <div class="card mb-3">
-                <div class="card-body py-2">
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-0">
-                            <li class="breadcrumb-item"><a href="{{ route('admin.books.index') }}">Sách</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Sửa sách</li>
-                        </ol>
-                    </nav>
-                </div>
-            </div>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 text-dark fw-semibold">
+                <i class="ri-book-edit-line me-2 text-primary"></i>Chỉnh sửa sách
+            </h1>
+            <p class="text-muted mb-0">Cập nhật thông tin sách: <strong>{{ $book->title }}</strong></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('admin.books.show', [$book->id, $book->slug]) }}" 
+               class="btn btn-outline-info">
+                <i class="ri-eye-line me-2"></i>Xem chi tiết
+            </a>
+            <a href="{{ route('admin.books.index') }}" 
+               class="btn btn-outline-secondary">
+                <i class="ri-arrow-left-line me-2"></i>Quay lại
+            </a>
+        </div>
+    </div>
 
-            <form action="{{ route('admin.books.update', [$book->id, $book->slug]) }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                @method('PUT')
-                <div class="row">
-                    <!-- Thông tin cơ bản -->
-                    <div class="col-lg-8">
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Thông tin cơ bản</h5>
+    <form action="{{ route('admin.books.update', [$book->id, $book->slug]) }}" method="POST" enctype="multipart/form-data" id="bookForm">
+        @csrf
+        @method('PUT')
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Thông tin cơ bản -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 text-dark fw-semibold">
+                            <i class="ri-information-line me-2 text-primary"></i>Thông tin cơ bản
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="title" class="form-label fw-medium">Tên sách <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control @error('title') is-invalid @enderror" 
+                                       id="title" name="title" value="{{ old('title', $book->title) }}" 
+                                       placeholder="Nhập tên sách..." required>
+                                @error('title')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label for="title" class="form-label">Tiêu đề sách <span
-                                                class="text-danger">*</span></label>
-                                        <input type="text" name="title" class="form-control" id="title"
-                                            value="{{ old('title', $book->title) }}" required>
-                                    </div>
-                                    <div class="col-12">
-                                        <label for="description" class="form-label">Mô tả</label>
-                                        <textarea name="description" id="description" class="form-control"
-                                            rows="4">{!! nl2br(e(old('description', $book->description))) !!}</textarea>
-                                        <small class="text-muted">Mô tả chi tiết về nội dung sách</small>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="isbn" class="form-label">ISBN <span class="text-danger">*</span></label>
-                                        <input type="text" name="isbn" class="form-control @error('isbn') is-invalid @enderror" id="isbn"
-                                            value="{{ old('isbn', $book->isbn) }}">
-                                        @error('isbn')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="page_count" class="form-label">Số trang <span class="text-danger">*</span></label>
-                                        <input type="number" name="page_count" class="form-control @error('page_count') is-invalid @enderror" id="page_count"
-                                            value="{{ old('page_count', $book->page_count) }}">
-                                        @error('page_count')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Định dạng sách vật lý -->
-                        <div class="card mb-3">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="card-title mb-0">Sách vật lý</h5>
-                                <div class="form-check form-switch">
-                                    <input type="checkbox" class="form-check-input" id="has_physical"
-                                        name="has_physical" value="1" {{ old('has_physical', $physicalFormat ? 1 : 0) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="has_physical">Kích hoạt</label>
-                                </div>
-                            </div>
-                            <div class="card-body" id="physical_format" style="{{ old('has_physical', $physicalFormat ? 1 : 0) ? '' : 'display: none;' }}">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">Giá bán <span class="text-danger">*</span></label>
-                                            <input type="number" name="formats[physical][price]"
-                                                class="form-control physical-field @error('formats.physical.price') is-invalid @enderror" min="0" step="1000"
-                                                value="{{ old('formats.physical.price', $physicalFormat ? $physicalFormat->price : '') }}">
-                                            @error('formats.physical.price')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">Giảm giá (VNĐ)</label>
-                                            <input type="number" name="formats[physical][discount]"
-                                                class="form-control physical-field @error('formats.physical.discount') is-invalid @enderror" min="0" step="1000"
-                                                value="{{ old('formats.physical.discount', $physicalFormat ? $physicalFormat->discount : '') }}">
-                                            <small class="text-muted">Nhập số tiền giảm giá (VD: 10000 cho giảm 10.000đ)</small>
-                                            @error('formats.physical.discount')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">Số lượng <span class="text-danger">*</span></label>
-                                            <input type="number" name="formats[physical][stock]"
-                                                class="form-control physical-field @error('formats.physical.stock') is-invalid @enderror" min="0"
-                                                value="{{ old('formats.physical.stock', $physicalFormat ? $physicalFormat->stock : '') }}">
-                                            @error('formats.physical.stock')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Định dạng Ebook -->
-                        <div class="card mb-3">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="card-title mb-0">Ebook</h5>
-                                <div class="form-check form-switch">
-                                    <input type="checkbox" class="form-check-input" id="has_ebook" name="has_ebook"
-                                        value="1" {{ old('has_ebook', $ebookFormat ? 1 : 0) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="has_ebook">Kích hoạt</label>
-                                </div>
-                            </div>
-                            <div class="card-body" id="ebook_format" style="{{ old('has_ebook', $ebookFormat ? 1 : 0) ? '' : 'display: none;' }}">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Giá bán <span class="text-danger">*</span></label>
-                                            <input type="number" name="formats[ebook][price]"
-                                                class="form-control ebook-field @error('formats.ebook.price') is-invalid @enderror" min="0" step="1000"
-                                                value="{{ old('formats.ebook.price', $ebookFormat ? $ebookFormat->price : '') }}">
-                                            @error('formats.ebook.price')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Giảm giá (VNĐ)</label>
-                                            <input type="number" name="formats[ebook][discount]"
-                                                class="form-control ebook-field @error('formats.ebook.discount') is-invalid @enderror" min="0" step="1000"
-                                                value="{{ old('formats.ebook.discount', $ebookFormat ? $ebookFormat->discount : '') }}">
-                                            <small class="text-muted">Nhập số tiền giảm giá (VD: 5000 cho giảm 5.000đ)</small>
-                                            @error('formats.ebook.discount')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">File Ebook</label>
-                                    <input type="file" name="formats[ebook][file]" class="form-control ebook-field @error('formats.ebook.file') is-invalid @enderror"
-                                        accept=".pdf,.epub">
-                                    @if($ebookFormat && $ebookFormat->file_url)
-                                    <div class="mt-2">
-                                        <span class="badge bg-success">
-                                            <i class="ri-file-pdf-line me-1"></i> File hiện tại: {{ basename($ebookFormat->file_url) }}
-                                        </span>
-                                        <small class="text-muted d-block mt-1">Tải lên file mới để thay thế file hiện tại</small>
-                                    </div>
-                                    @endif
-                                    <small class="text-muted">Hỗ trợ định dạng PDF, EPUB</small>
-                                    @error('formats.ebook.file')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="form-check mb-3">
-                                    <input type="checkbox" class="form-check-input" id="allow_sample_read"
-                                        name="formats[ebook][allow_sample_read]" value="1"
-                                        {{ old('formats.ebook.allow_sample_read', $ebookFormat && $ebookFormat->allow_sample_read ? 1 : 0) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="allow_sample_read">
-                                        Cho phép đọc thử
-                                    </label>
-                                </div>
-
-                                <div class="mb-3" id="sample_file_container" style="{{ (old('formats.ebook.allow_sample_read', $ebookFormat && $ebookFormat->allow_sample_read ? 1 : 0)) ? '' : 'display: none;' }}">
-                                    <label class="form-label">File xem thử</label>
-                                    <input type="file" name="formats[ebook][sample_file]"
-                                        class="form-control ebook-field @error('formats.ebook.sample_file') is-invalid @enderror" accept=".pdf,.epub">
-                                    @if($ebookFormat && $ebookFormat->sample_file_url)
-                                    <div class="mt-2">
-                                        <span class="badge bg-info">
-                                            <i class="ri-file-pdf-line me-1"></i> File hiện tại: {{ basename($ebookFormat->sample_file_url) }}
-                                        </span>
-                                        <small class="text-muted d-block mt-1">Tải lên file mới để thay thế file hiện tại</small>
-                                    </div>
-                                    @endif
-                                    <small class="text-muted">File xem thử cho khách hàng</small>
-                                    @error('formats.ebook.sample_file')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="alert alert-info mb-3">
-                            <i class="ri-information-line me-2"></i>
-                            <strong>Lưu ý:</strong> Bạn có thể chọn một hoặc cả hai định dạng sách (Sách vật lý và/hoặc Ebook).
-                        </div>
-
-                        {{-- Hiển thị thuộc tính sản phẩm đã chọn --}}
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Thuộc tính sản phẩm</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    @php
-                                        $oldAttributeValues = old('attribute_values');
-                                    @endphp
-                                    @foreach($attributes as $attribute)
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">{{ $attribute->name }}</label>
-                                        <div class="attribute-group">
-                                            <div class="input-group mb-2">
-                                    <select class="form-select attribute-select"
-                                        data-attribute-name="{{ $attribute->name }}"
-                                        data-attribute-id="{{ $attribute->id }}">
-                                        <option value="">-- Chọn {{ strtolower($attribute->name) }} --</option>
-                                        @foreach($attribute->values as $value)
-                                            <option value="{{ $value->id }}">{{ $value->value }}</option>
-                                        @endforeach
-                                    </select>
-                                    <div class="input-group-text bg-light border-0 px-2">
-                                        <i class="ri-money-dollar-circle-line text-success me-1"></i>
-                                        <small class="text-muted">Giá thêm (VNĐ)</small>
-                                    </div>
-                                    <input type="number" class="form-control attribute-extra-price"
-                                        placeholder="0" min="0" value="0" style="max-width: 120px;">
-                                    <button type="button" class="btn btn-primary add-attribute-value"><i class="ri-add-line me-1"></i>Thêm</button>
-                                </div>
-                                <div class="mb-2">
-                                    <small class="text-info"><i class="ri-information-line me-1"></i>Nhập giá thêm cho thuộc tính này (ví dụ: màu đỏ +5000đ, size XL +10000đ)</small>
-                                </div>
-                                            <div class="selected-values mt-2">
-                                                {{-- Ưu tiên render lại từ old input nếu có, nếu không thì lấy từ model --}}
-                                                @if($oldAttributeValues)
-                                                    @foreach($oldAttributeValues as $attrId => $data)
-                                                        @php
-                                                            $attrValue = \App\Models\AttributeValue::find($data['id']);
-                                                        @endphp
-                                                        @if($attrValue && $attrValue->attribute_id == $attribute->id)
-                                                        <div class="selected-attribute-value d-inline-flex align-items-center mb-1" style="background:#1677ff;color:#fff;border-radius:6px;padding:4px 12px 4px 12px;font-size:15px;max-width:100%;">
-                                                            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;">{{ $attrValue->value }}</span>
-                                                            <span style="margin-left:4px;">+{{ number_format($data['extra_price'] ?? 0) }}đ</span>
-                                                            <button type="button" class="btn btn-link p-0 ms-2 remove-attribute-value" style="color:#86b7fe;font-size:18px;line-height:1;"><i class="fa-solid fa-xmark"></i></button>
-                                                            <input type="hidden" name="attribute_values[{{ $attrValue->id }}][id]" value="{{ $attrValue->id }}">
-                                                            <input type="hidden" name="attribute_values[{{ $attrValue->id }}][extra_price]" value="{{ $data['extra_price'] ?? 0 }}">
-                                                        </div>
-                                                        @endif
-                                                    @endforeach
-                                                @else
-                                                    @foreach($book->attributeValues as $attributeValue)
-                                                        @if($attributeValue->attribute_id == $attribute->id)
-                                                        <div class="selected-attribute-value d-inline-flex align-items-center mb-1" style="background:#1677ff;color:#fff;border-radius:6px;padding:4px 12px 4px 12px;font-size:15px;max-width:100%;">
-                                                            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;">{{ $attributeValue->value }}</span>
-                                                            <span style="margin-left:4px;">+{{ number_format($attributeValue->pivot->extra_price) }}đ</span>
-                                                            <button type="button" class="btn btn-link p-0 ms-2 remove-attribute-value" style="color:#86b7fe;font-size:18px;line-height:1;"><i class="fa-solid fa-xmark"></i></button>
-                                                            <input type="hidden" name="attribute_values[{{ $attributeValue->id }}][id]" value="{{ $attributeValue->id }}">
-                                                            <input type="hidden" name="attribute_values[{{ $attributeValue->id }}][extra_price]" value="{{ $attributeValue->pivot->extra_price }}">
-                                                        </div>
-                                                        @endif
-                                                    @endforeach
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
+                            
+                            <div class="col-md-6">
+                                <label for="category_id" class="form-label fw-medium">Danh mục <span class="text-danger">*</span></label>
+                                <select class="form-select @error('category_id') is-invalid @enderror" 
+                                        id="category_id" name="category_id" required>
+                                    <option value="">-- Chọn danh mục --</option>
+                                    @foreach($categories as $category)
+                                        <option value="{{ $category->id }}" 
+                                            {{ old('category_id', $book->category_id) == $category->id ? 'selected' : '' }}>
+                                            {{ $category->name }}
+                                        </option>
                                     @endforeach
+                                </select>
+                                @error('category_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="brand_id" class="form-label fw-medium">Thương hiệu</label>
+                                <select class="form-select @error('brand_id') is-invalid @enderror" 
+                                        id="brand_id" name="brand_id">
+                                    <option value="">-- Chọn thương hiệu --</option>
+                                    @foreach($brands as $brand)
+                                        <option value="{{ $brand->id }}" 
+                                            {{ old('brand_id', $book->brand_id) == $brand->id ? 'selected' : '' }}>
+                                            {{ $brand->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('brand_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            
+                            <div class="col-12">
+                                <label for="description" class="form-label fw-medium">Mô tả sách</label>
+                                <textarea class="form-control @error('description') is-invalid @enderror" 
+                                          id="description" name="description" rows="4" 
+                                          placeholder="Nhập mô tả sách...">{{ old('description', $book->description) }}</textarea>
+                                @error('description')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thông tin chi tiết -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 text-dark fw-semibold">
+                            <i class="ri-file-text-line me-2 text-info"></i>Chi tiết sách
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="isbn" class="form-label fw-medium">ISBN</label>
+                                <input type="text" class="form-control @error('isbn') is-invalid @enderror" 
+                                       id="isbn" name="isbn" value="{{ old('isbn', $book->isbn) }}" 
+                                       placeholder="Mã ISBN...">
+                                @error('isbn')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="page_count" class="form-label fw-medium">Số trang</label>
+                                <input type="number" class="form-control @error('page_count') is-invalid @enderror" 
+                                       id="page_count" name="page_count" value="{{ old('page_count', $book->page_count) }}" 
+                                       placeholder="Số trang..." min="1">
+                                @error('page_count')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="publication_date" class="form-label fw-medium">Ngày xuất bản</label>
+                                <input type="date" class="form-control @error('publication_date') is-invalid @enderror" 
+                                       id="publication_date" name="publication_date" 
+                                       value="{{ old('publication_date', $book->publication_date ? $book->publication_date->format('Y-m-d') : '') }}">
+                                @error('publication_date')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            
+                            {{-- <div class="col-md-6">
+                                <label for="language" class="form-label fw-medium">Ngôn ngữ</label>
+                                <select class="form-select @error('language') is-invalid @enderror" 
+                                        id="language" name="language">
+                                    <option value="">-- Chọn ngôn ngữ --</option>
+                                    <option value="Tiếng Việt" {{ old('language', $book->language) == 'Tiếng Việt' ? 'selected' : '' }}>Tiếng Việt</option>
+                                    <option value="Tiếng Anh" {{ old('language', $book->language) == 'Tiếng Anh' ? 'selected' : '' }}>Tiếng Anh</option>
+                                    <option value="Tiếng Trung" {{ old('language', $book->language) == 'Tiếng Trung' ? 'selected' : '' }}>Tiếng Trung</option>
+                                    <option value="Tiếng Nhật" {{ old('language', $book->language) == 'Tiếng Nhật' ? 'selected' : '' }}>Tiếng Nhật</option>
+                                    <option value="Tiếng Hàn" {{ old('language', $book->language) == 'Tiếng Hàn' ? 'selected' : '' }}>Tiếng Hàn</option>
+                                </select>
+                                @error('language')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div> --}}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tác giả -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 text-dark fw-semibold">
+                            <i class="ri-user-line me-2 text-success"></i>Tác giả
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <label for="author_ids" class="form-label fw-medium">Chọn tác giả</label>
+                        <select class="form-select select2-authors @error('author_ids') is-invalid @enderror" 
+                                id="author_ids" name="author_ids[]" multiple>
+                            @foreach($authors as $author)
+                                <option value="{{ $author->id }}" 
+                                    {{ in_array($author->id, old('author_ids', $book->authors->pluck('id')->toArray())) ? 'selected' : '' }}>
+                                    {{ $author->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('author_ids')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+
+                <!-- Quà tặng -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 text-dark fw-semibold">
+                            <i class="ri-gift-line me-2 text-warning"></i>Quà tặng kèm theo
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @php
+                            $currentGift = $book->gifts->first();
+                        @endphp
+                        
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="has_gift" name="has_gift" 
+                                   value="1" {{ old('has_gift', $currentGift ? '1' : '') ? 'checked' : '' }}>
+                            <label class="form-check-label fw-medium" for="has_gift">
+                                Sách có kèm quà tặng
+                            </label>
+                        </div>
+                        
+                        <div id="gift_section" style="display: {{ $currentGift ? 'block' : 'none' }};">
+                            <div class="p-3 bg-light rounded border">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Chọn sách nhận quà tặng</label>
+                                        <select class="form-select @error('gift_book_id') is-invalid @enderror" 
+                                                name="gift_book_id">
+                                            <option value="" {{ old('gift_book_id', $currentGift->book_id ?? '') == '' ? 'selected' : '' }}>Sách hiện tại</option>
+                                            @foreach($books ?? [] as $bookOption)
+                                                <option value="{{ $bookOption->id }}" 
+                                                    {{ old('gift_book_id', $currentGift->book_id ?? '') == $bookOption->id ? 'selected' : '' }}>
+                                                    {{ $bookOption->title }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('gift_book_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        <div class="form-text">Để trống để tạo quà tặng cho sách hiện tại</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Tên quà tặng <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control @error('gift_name') is-invalid @enderror" 
+                                               name="gift_name" value="{{ old('gift_name', $currentGift->gift_name ?? '') }}" 
+                                               placeholder="Ví dụ: Bookmark đặc biệt, Postcard...">
+                                        @error('gift_name')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Số lượng quà tặng</label>
+                                        <input type="number" class="form-control @error('quantity') is-invalid @enderror" 
+                                               name="quantity" value="{{ old('quantity', $currentGift->quantity ?? 1) }}" 
+                                               placeholder="1" min="1">
+                                        @error('quantity')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <label class="form-label fw-medium">Mô tả quà tặng</label>
+                                        <textarea class="form-control @error('gift_description') is-invalid @enderror" 
+                                                  name="gift_description" rows="3" 
+                                                  placeholder="Mô tả chi tiết về quà tặng...">{{ old('gift_description', $currentGift->gift_description ?? '') }}</textarea>
+                                        @error('gift_description')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <label class="form-label fw-medium">Thời gian khuyến mãi quà tặng</label>
+                                        <input type="text" class="form-control @error('gift_date_range') is-invalid @enderror" 
+                                               id="gift_date_range" name="gift_date_range" 
+                                               placeholder="Chọn khoảng thời gian khuyến mãi..." 
+                                               value="@if($currentGift && $currentGift->start_date && $currentGift->end_date){{ $currentGift->start_date->format('Y-m-d') }} to {{ $currentGift->end_date->format('Y-m-d') }}@endif">
+                                        
+                                        <!-- Hidden inputs để lưu giá trị ngày -->
+                                        <input type="hidden" id="gift_start_date" name="gift_start_date" 
+                                               value="{{ old('gift_start_date', $currentGift && $currentGift->start_date ? $currentGift->start_date->format('Y-m-d') : '') }}">
+                                        <input type="hidden" id="gift_end_date" name="gift_end_date" 
+                                               value="{{ old('gift_end_date', $currentGift && $currentGift->end_date ? $currentGift->end_date->format('Y-m-d') : '') }}">
+                                        
+                                        @error('gift_date_range')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        @error('gift_start_date')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        @error('gift_end_date')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        
+                                        <div class="form-text">
+                                            <i class="ri-information-line me-1"></i>
+                                            Chọn khoảng thời gian áp dụng khuyến mãi quà tặng. Nhấp vào ô để chọn ngày bắt đầu và kết thúc.
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <label class="form-label fw-medium">Hình ảnh quà tặng</label>
+                                        @if($currentGift && $currentGift->gift_image)
+                                            <div class="mb-2">
+                                                <img src="{{ asset('storage/' . $currentGift->gift_image) }}" 
+                                                     class="img-thumbnail" style="max-height: 150px;" alt="Ảnh quà tặng hiện tại">
+                                                <div class="small text-muted mt-1">Ảnh quà tặng hiện tại</div>
+                                            </div>
+                                        @endif
+                                        <input type="file" class="form-control @error('gift_image') is-invalid @enderror" 
+                                               name="gift_image" accept="image/*">
+                                        @error('gift_image')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        <div class="form-text">Chấp nhận file ảnh JPG, PNG, GIF. Tối đa 2MB. Để trống nếu không muốn thay đổi.</div>
+                                        <div id="gift_image_preview" class="mt-2"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Sidebar -->
-                    <div class="col-lg-4">
-                        <!-- Trạng thái và phân loại -->
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Trạng thái & Phân loại</h5>
+                <!-- Định dạng sách -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 text-dark fw-semibold">
+                            <i class="ri-book-open-line me-2 text-warning"></i>Định dạng & Giá bán
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @php
+                            $physicalFormat = $book->formats->where('format_name', 'Sách Vật Lý')->first();
+                            $ebookFormat = $book->formats->where('format_name', 'Ebook')->first();
+                        @endphp
+                        
+                        @error('format_required')
+                            <div class="alert alert-danger mb-3">
+                                <i class="ri-error-warning-line me-2"></i>{{ $message }}
                             </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="status" class="form-label">Trạng thái</label>
-                                    <select name="status" class="form-select">
-                                        <option value="Còn Hàng" {{ $book->status == 'Còn Hàng' ? 'selected' : '' }}>Còn Hàng</option>
-                                        <option value="Hết Hàng Tồn Kho" {{ $book->status == 'Hết Hàng Tồn Kho' ? 'selected' : '' }}>Hết Hàng Tồn Kho</option>
-                                        <option value="Sắp Ra Mắt" {{ $book->status == 'Sắp Ra Mắt' ? 'selected' : '' }}>Sắp Ra Mắt</option>
-                                        <option value="Ngừng Kinh Doanh" {{ $book->status == 'Ngừng Kinh Doanh' ? 'selected' : '' }}>Ngừng Kinh Doanh</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="category_id" class="form-label">Danh mục <span
-                                            class="text-danger">*</span></label>
-                                    <select name="category_id" id="category_id" class="form-select" required>
-                                        <option value="">-- Chọn danh mục --</option>
-                                        @foreach($categories as $category)
-                                        <option value="{{ $category->id }}" {{ old('category_id', $book->category_id) == $category->id ? 'selected' : '' }}>
-                                            {{ $category->name }}
-                                        </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="author_id" class="form-label"><i class="ri-user-line me-1"></i>Tác giả <span class="text-danger">*</span></label>
-                                    {{-- Hiển thị tác giả đã chọn --}}
-                                    @php
-                                        // Lấy danh sách tác giả đã chọn: ưu tiên old input, nếu không thì lấy từ model
-                                        $selectedAuthors = old('author_ids');
-                                        if ($selectedAuthors === null) {
-                                            $selectedAuthors = ($book->author && $book->author->count()) ? $book->author->pluck('id')->toArray() : [];
-                                        }
-                                    @endphp
-                                    <select name="author_ids[]" id="author_id" class="form-select select2-authors @error('author_ids') is-invalid @enderror" multiple>
-                                        @foreach($authors as $author)
-                                            <option value="{{ $author->id }}" {{ in_array($author->id, $selectedAuthors) ? 'selected' : '' }}>{{ $author->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <small class="text-muted"><i class="ri-information-line me-1"></i>Có thể chọn một hoặc nhiều tác giả. Gõ để tìm kiếm nhanh.</small>
-                                    @error('author_ids')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="mb-3">
-                                    <label for="brand_id" class="form-label">Thương hiệu <span
-                                            class="text-danger">*</span></label>
-                                    <select name="brand_id" id="brand_id" class="form-select" required>
-                                        <option value="">-- Chọn thương hiệu --</option>
-                                        @foreach($brands as $brand)
-                                        <option value="{{ $brand->id }}" {{ old('brand_id', $book->brand_id) == $brand->id ? 'selected' : '' }}>
-                                            {{ $brand->name }}
-                                        </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="publication_date" class="form-label">Ngày xuất bản <span class="text-danger">*</span></label>
-                                    <input type="date" name="publication_date" class="form-control @error('publication_date') is-invalid @enderror"
-                                        id="publication_date" value="{{ old('publication_date', $book->publication_date ? $book->publication_date->format('Y-m-d') : '') }}">
-                                    @error('publication_date')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
+                        @enderror
+                        
+                        <!-- Sách vật lý -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="has_physical" name="has_physical" 
+                                       value="1" {{ old('has_physical', $physicalFormat ? '1' : '') ? 'checked' : '' }}>
+                                <label class="form-check-label fw-medium" for="has_physical">
+                                    <i class="ri-book-line me-1"></i>Sách vật lý
+                                </label>
                             </div>
-                        </div>
-
-                        <!-- Hình ảnh -->
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Hình ảnh bìa</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="cover_image" class="form-label">Ảnh bìa</label>
-                                    <input type="file" name="cover_image" class="form-control" id="cover_image"
-                                        accept="image/*">
-                                    @if($book->cover_image)
-                                    <div class="mt-2">
-                                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}"
-                                            class="img-thumbnail" style="max-height: 200px;">
-                                        <small class="text-muted d-block mt-1">Tải lên ảnh mới để thay thế ảnh hiện tại</small>
+                            
+                            <div id="physical_format" style="display: {{ $physicalFormat ? 'block' : 'none' }};">
+                                <div class="border rounded p-3 bg-light">
+                                    <!-- Thông tin cơ bản sách vật lý -->
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-medium">Giá bán (VNĐ)</label>
+                                            <input type="number" class="form-control" name="formats[physical][price]" 
+                                                   value="{{ old('formats.physical.price', $physicalFormat->price ?? '') }}" 
+                                                   placeholder="0" min="0">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
+                                            <input type="number" class="form-control" name="formats[physical][discount]" 
+                                                   value="{{ old('formats.physical.discount', $physicalFormat->discount ?? '') }}" 
+                                                   placeholder="0" min="0">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-medium">Số lượng</label>
+                                            <input type="number" class="form-control" name="formats[physical][stock]" 
+                                                   value="{{ old('formats.physical.stock', $physicalFormat->stock ?? '') }}" 
+                                                   placeholder="0" min="0">
+                                        </div>
                                     </div>
-                                    @else
-                                    <div id="cover_preview" class="mt-2">
-                                        <div class="preview-container" style="max-width: 200px;"></div>
-                                    </div>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Thư viện ảnh -->
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Thư viện ảnh</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="images" class="form-label">Thêm ảnh mới</label>
-                                    <input type="file" name="images[]" class="form-control" id="images" multiple
-                                        accept="image/*">
-                                    <div class="mt-2">
-                                        <div id="images_preview" class="row g-2"></div>
-                                    </div>
-                                </div>
-
-                                @if($book->images->count() > 0)
-                                <div class="mt-3">
-                                    <h6 class="mb-2">Ảnh hiện tại</h6>
-                                    <div class="row g-2">
-                                        @foreach($book->images as $image)
-                                        <div class="col-md-6 col-sm-6 col-6 mb-2">
-                                            <div class="position-relative">
-                                                <img src="{{ asset('storage/' . $image->image_url) }}" alt="Ảnh sách"
-                                                    class="img-thumbnail" style="height: 100px; object-fit: cover; width: 100%;">
-                                                <div class="form-check position-absolute" style="top: 5px; right: 5px;">
-                                                    <input class="form-check-input" type="checkbox" name="delete_images[]" value="{{ $image->id }}" id="delete_image_{{ $image->id }}">
-                                                    <label class="form-check-label" for="delete_image_{{ $image->id }}">
-                                                        <span class="badge bg-danger">Xóa</span>
-                                                    </label>
+                                    
+                                    <!-- Thuộc tính sách vật lý -->
+                                    <div class="border-top pt-4">
+                                        <h6 class="fw-bold text-dark mb-3">
+                                            <i class="ri-price-tag-3-line me-2 text-primary"></i>Thuộc tính sách vật lý
+                                        </h6>
+                                        
+                                        <div class="mb-3">
+                                            <div class="alert alert-info border-0 bg-light">
+                                                <div class="d-flex align-items-start">
+                                                    <i class="ri-information-line me-2 mt-1 text-info"></i>
+                                                    <div>
+                                                        <h6 class="mb-1 text-dark fw-semibold">Thuộc tính biến thể</h6>
+                                                        <p class="mb-0 text-muted small">
+                                                            Các thuộc tính như màu sắc, kích thước, loại bìa sẽ tạo ra các biến thể khác nhau với giá và tồn kho riêng biệt.
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        @endforeach
-                                    </div>
-                                    <small class="text-muted">Đánh dấu vào ô để xóa ảnh</small>
-                                </div>
-                                @endif
-                            </div>
-                        </div>
-
-                        <!-- Quà tặng -->
-                        <div class="card mb-3">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="card-title mb-0">Quà tặng kèm theo</h5>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="toggle-gift-section" {{ $book->gifts->count() ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="toggle-gift-section">Kích hoạt</label>
-                                </div>
-                            </div>
-                            <div class="card-body" id="gift-section" style="display:{{ $book->gifts->count() ? '' : 'none' }};">
-                                @php $gift = $book->gifts->first(); @endphp
-                                <div class="alert alert-info mb-3">
-                                    <i class="ri-gift-line me-2"></i>
-                                    <strong>Thông tin quà tặng kèm theo sách</strong>
-                                    <p class="mb-0 mt-1">Thiết lập quà tặng đặc biệt cho khách hàng mua sách trong khoảng thời gian nhất định.</p>
-                                </div>
-
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label"><i class="ri-calendar-line me-1"></i>Thời gian áp dụng quà tặng</label>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <input type="date" name="start_date" class="form-control" value="{{ $gift?->start_date }}" placeholder="Ngày bắt đầu">
-                                                <small class="text-muted">Ngày bắt đầu tặng quà</small>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <input type="date" name="end_date" class="form-control" value="{{ $gift?->end_date }}" placeholder="Ngày kết thúc">
-                                                <small class="text-muted">Ngày kết thúc tặng quà</small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label"><i class="ri-gift-2-line me-1"></i>Tên quà tặng</label>
-                                        <input type="text" name="gift_name" class="form-control" value="{{ $gift?->gift_name }}" placeholder="Ví dụ: Bookmark đặc biệt, Túi canvas...">
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label"><i class="ri-stack-line me-1"></i>Số lượng quà tặng</label>
-                                        <input type="number" name="quantity" class="form-control" value="{{ $gift?->quantity }}" placeholder="100" min="0">
-                                        <small class="text-muted">Số lượng quà tặng có sẵn</small>
-                                    </div>
-
-                                    <div class="col-md-8">
-                                        <label class="form-label"><i class="ri-file-text-line me-1"></i>Mô tả quà tặng</label>
-                                        <textarea name="gift_description" class="form-control" rows="2" placeholder="Mô tả chi tiết về quà tặng (màu sắc, chất liệu, kích thước...)">{{ $gift?->gift_description }}</textarea>
-                                    </div>
-
-                                    <div class="col-md-4">
-                                        <label class="form-label"><i class="ri-image-line me-1"></i>Hình ảnh quà tặng</label>
-                                        <input type="file" name="gift_image" class="form-control" accept="image/*">
-                                        @if($gift && $gift->gift_image)
-                                            <div class="mt-2">
-                                                <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="gift" class="img-thumbnail" style="max-height: 80px;">
-                                                <small class="text-muted d-block">Hình ảnh hiện tại</small>
+                                        
+                                        @if($attributes->count() > 0)
+                                            @foreach($attributes as $attribute)
+                                                <div class="attribute-group mb-4 p-3 border rounded bg-white">
+                                                    <h6 class="fw-bold text-primary mb-3">
+                                                        <i class="ri-bookmark-line me-1"></i>{{ $attribute->name }}
+                                                    </h6>
+                                                    
+                                    <!-- Hiển thị thuộc tính hiện có -->
+                                    @php
+                                        // Lấy BookAttributeValue records cho attribute này với debug
+                                        $bookAttributes = $book->bookAttributeValues->filter(function($bookAttributeValue) use ($attribute) {
+                                            return $bookAttributeValue->attributeValue && 
+                                                   $bookAttributeValue->attributeValue->attribute &&
+                                                   $bookAttributeValue->attributeValue->attribute->id == $attribute->id;
+                                        });
+                                        
+                                        // Debug thông tin - hiển thị trong môi trường debug
+                                    @endphp
+                                    
+                                                   @if($bookAttributes->count() > 0)
+                                                        <div class="mb-3">
+                                                            <h6 class="text-success mb-2">Thuộc tính hiện có:</h6>
+                                                            @foreach($bookAttributes as $bookAttr)
+                                                                <div class="d-flex justify-content-between align-items-center p-2 mb-2 bg-light rounded">
+                                                                    <div>
+                                                                        <span class="badge bg-primary me-2">{{ $bookAttr->attributeValue ? $bookAttr->attributeValue->value : 'N/A' }}</span>
+                                                                        <small class="text-muted">
+                                                                            Giá thêm: {{ number_format($bookAttr->extra_price  ?? 0) }}đ | 
+                                                                            Tồn kho: {{ $bookAttr->stock ?? 0 }} |
+                                                                            SKU: {{ $bookAttr->sku ?? 'Chưa có' }}
+                                                                        </small>
+                                                                    </div>
+                                                                    <div>
+                                                                        <input type="hidden" name="existing_attributes[{{ $bookAttr->id }}][attribute_value_id]" value="{{ $bookAttr->attribute_value_id }}">
+                                                                        <input type="hidden" name="existing_attributes[{{ $bookAttr->id }}][keep]" value="1" class="keep-attribute">
+                                                                        <input type="number" name="existing_attributes[{{ $bookAttr->id }}][extra_price]" 
+                                                                               value="{{ $bookAttr->extra_price ?? 0 }}" class="form-control form-control-sm d-inline-block me-2" 
+                                                                               style="width: 100px;" placeholder="Giá thêm" min="0" step="1000">
+                                                                        <input type="number" name="existing_attributes[{{ $bookAttr->id }}][stock]" 
+                                                                               value="{{ $bookAttr->stock ?? 0 }}" class="form-control form-control-sm d-inline-block me-2" 
+                                                                               style="width: 80px;" placeholder="Tồn kho" min="0">
+                                                                        <button type="button" class="btn btn-sm btn-danger remove-existing-attribute" 
+                                                                                data-attribute-id="{{ $bookAttr->id }}">
+                                                                            <i class="ri-delete-bin-line"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    <!-- Form thêm thuộc tính mới -->
+                                                    <div class="row g-3 mb-3">
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-medium">Thêm giá trị mới</label>
+                                                            <select class="form-select attribute-select" 
+                                                                    data-attribute-id="{{ $attribute->id }}" 
+                                                                    data-attribute-name="{{ $attribute->name }}">
+                                                                <option value="">-- Chọn {{ $attribute->name }} --</option>
+                                                                @foreach($attribute->values as $value)
+                                                                    <option value="{{ $value->id }}" data-value-name="{{ $value->value }}">
+                                                                        {{ $value->value }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                        
+                                                        <div class="col-md-3">
+                                                            <label class="form-label fw-medium">Giá thêm (VNĐ)</label>
+                                                            <input type="number" class="form-control attribute-extra-price" 
+                                                                   placeholder="0" min="0">
+                                                        </div>
+                                                        
+                                                        <div class="col-md-3">
+                                                            <label class="form-label fw-medium">Số lượng</label>
+                                                            <input type="number" class="form-control attribute-stock" 
+                                                                   placeholder="0" min="0">
+                                                        </div>
+                                                        
+                                                        <div class="col-md-2">
+                                                            <label class="form-label fw-medium">&nbsp;</label>
+                                                            <button type="button" class="btn btn-primary d-block add-attribute-btn">
+                                                                <i class="ri-add-line"></i> Thêm
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Container hiển thị các thuộc tính mới đã chọn -->
+                                                    <div class="selected-variants-container" data-attribute-id="{{ $attribute->id }}">
+                                                        <!-- Các thuộc tính mới đã chọn sẽ hiển thị ở đây -->
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        @else
+                                            <div class="text-center py-4">
+                                                <i class="ri-price-tag-3-line text-muted" style="font-size: 48px;"></i>
+                                                <p class="text-muted mt-2">Chưa có thuộc tính nào được tạo.</p>
+                                                <small class="text-muted">Vui lòng tạo thuộc tính trong phần quản lý thuộc tính trước.</small>
                                             </div>
                                         @endif
                                     </div>
@@ -472,130 +479,470 @@
                             </div>
                         </div>
 
-                        <!-- Nút submit -->
-                        <div class="card">
-                            <div class="card-body">
-                                <button type="submit" class="btn btn-primary w-100 mb-2">
-                                    <i class="ri-save-line align-bottom me-1"></i> Cập nhật sách
-                                </button>
-                                <a href="{{ route('admin.books.show', [$book->id, $book->slug]) }}" class="btn btn-light w-100">
-                                    <i class="ri-arrow-left-line align-bottom me-1"></i> Quay lại
-                                </a>
+                        <!-- Ebook -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="has_ebook" name="has_ebook" 
+                                       value="1" {{ old('has_ebook', $ebookFormat ? '1' : '') ? 'checked' : '' }}>
+                                <label class="form-check-label fw-medium" for="has_ebook">
+                                    <i class="ri-file-text-line me-1"></i>Sách điện tử (Ebook)
+                                </label>
+                            </div>
+                            
+                            <div id="ebook_format" style="display: {{ $ebookFormat ? 'block' : 'none' }};">
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-medium">Giá bán (VNĐ)</label>
+                                            <input type="number" class="form-control" name="formats[ebook][price]" 
+                                                   value="{{ old('formats.ebook.price', $ebookFormat->price ?? '') }}" 
+                                                   placeholder="0" min="0">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
+                                            <input type="number" class="form-control" name="formats[ebook][discount]" 
+                                                   value="{{ old('formats.ebook.discount', $ebookFormat->discount ?? '') }}" 
+                                                   placeholder="0" min="0">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-medium">File Ebook</label>
+                                            @if($ebookFormat && $ebookFormat->file_url)
+                                                <div class="mb-2">
+                                                    <small class="text-success">
+                                                        <i class="ri-file-check-line me-1"></i>
+                                                        File hiện tại: {{ basename($ebookFormat->file_url) }}
+                                                    </small>
+                                                </div>
+                                            @endif
+                                            <input type="file" class="form-control" name="formats[ebook][file]" 
+                                                   accept=".pdf,.epub">
+                                            <div class="form-text">Chấp nhận file PDF hoặc EPUB, tối đa 50MB. Để trống nếu không muốn thay đổi.</div>
+                                        </div>
+                                        
+                                        <div class="col-12">
+                                            <label class="form-label fw-medium">File đọc thử</label>
+                                            @if($ebookFormat && $ebookFormat->sample_file_url)
+                                                <div class="mb-2">
+                                                    <small class="text-success">
+                                                        <i class="ri-file-check-line me-1"></i>
+                                                        File đọc thử hiện tại: {{ basename($ebookFormat->sample_file_url) }}
+                                                    </small>
+                                                </div>
+                                            @endif
+                                            <input type="file" class="form-control" name="formats[ebook][sample_file]" 
+                                                   accept=".pdf,.epub">
+                                            <div class="form-text">File đọc thử cho khách hàng. Chấp nhận file PDF hoặc EPUB, tối đa 10MB. Để trống nếu không muốn thay đổi.</div>
+                                        </div>
+                                        
+                                        <div class="col-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="allow_sample_read" 
+                                                       name="formats[ebook][allow_sample_read]" value="1" 
+                                                       {{ old('formats.ebook.allow_sample_read', $ebookFormat->allow_sample_read ?? false) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="allow_sample_read">
+                                                    <i class="ri-eye-line me-1"></i>Cho phép đọc thử trực tuyến
+                                                </label>
+                                            </div>
+                                            <div class="form-text">Khách hàng có thể đọc thử một phần nội dung sách trước khi mua.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @error('format')
+                            <div class="alert alert-danger">
+                                <i class="ri-error-warning-line me-2"></i>{{ $message }}
+                            </div>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Hình ảnh -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 text-dark fw-semibold">
+                            <i class="ri-image-line me-2 text-primary"></i>Hình ảnh
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Ảnh bìa -->
+                        <div class="mb-4">
+                            <label for="cover_image" class="form-label fw-medium">Ảnh bìa</label>
+                            @if($book->cover_image)
+                                <div class="mb-2">
+                                    <img src="{{ asset('storage/' . $book->cover_image) }}" 
+                                         class="img-thumbnail" style="max-height: 200px;" alt="Ảnh bìa hiện tại">
+                                    <div class="small text-muted mt-1">Ảnh bìa hiện tại</div>
+                                </div>
+                            @endif
+                            <input type="file" class="form-control @error('cover_image') is-invalid @enderror" 
+                                   id="cover_image" name="cover_image" accept="image/*">
+                            @error('cover_image')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <div class="form-text">Để trống nếu không muốn thay đổi ảnh bìa</div>
+                            <div id="cover_preview" class="mt-2"></div>
+                        </div>
+                        
+                        <!-- Ảnh phụ -->
+                        <div>
+                            <label for="images" class="form-label fw-medium">Ảnh phụ</label>
+                            @if($book->images->count() > 0)
+                                <div class="mb-2">
+                                    <div class="row">
+                                        @foreach($book->images as $image)
+                                            <div class="col-6 mb-2">
+                                                <img src="{{ asset('storage/' . $image->image_path) }}" 
+                                                     class="img-thumbnail w-100" style="height: 80px; object-fit: cover;" 
+                                                     alt="Ảnh phụ">
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    <div class="small text-muted">Ảnh phụ hiện tại</div>
+                                </div>
+                            @endif
+                            <input type="file" class="form-control @error('images') is-invalid @enderror" 
+                                   id="images" name="images[]" accept="image/*" multiple>
+                            @error('images')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <div class="form-text">Có thể chọn nhiều ảnh. Ảnh mới sẽ thay thế ảnh cũ.</div>
+                            <div id="images_preview" class="row mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trạng thái -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 text-dark fw-semibold">
+                            <i class="ri-settings-line me-2 text-secondary"></i>Trạng thái
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <label for="status" class="form-label fw-medium">Trạng thái sách</label>
+                        <select class="form-select @error('status') is-invalid @enderror" id="status" name="status">
+                            <option value="Còn Hàng" {{ old('status', $book->status) == 'Còn Hàng' ? 'selected' : '' }}>Còn Hàng</option>
+                            <option value="Hết Hàng Tồn Kho" {{ old('status', $book->status) == 'Hết Hàng Tồn Kho' ? 'selected' : '' }}>Hết Hàng Tồn Kho</option>
+                            <option value="Sắp Ra Mắt" {{ old('status', $book->status) == 'Sắp Ra Mắt' ? 'selected' : '' }}>Sắp Ra Mắt</option>
+                            <option value="Ngừng Kinh Doanh" {{ old('status', $book->status) == 'Ngừng Kinh Doanh' ? 'selected' : '' }}>Ngừng Kinh Doanh</option>
+                        </select>
+                        @error('status')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+
+                <!-- Thống kê -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h6 class="mb-0 text-dark fw-semibold">
+                            <i class="ri-bar-chart-line me-2 text-info"></i>Thống kê
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 text-center">
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded">
+                                    <div class="fw-bold text-primary">{{ $book->images->count() }}</div>
+                                    <small class="text-muted">Ảnh phụ</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded">
+                                    <div class="fw-bold text-success">{{ $book->bookAttributeValues->count() }}</div>
+                                    <small class="text-muted">Biến thể</small>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </form>
-        </div>
-    </div>
-</div>
-@endsection
 
-@push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-@endpush
+                <!-- Nút hành động -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="ri-save-line me-2"></i>Cập nhật sách
+                            </button>
+                            {{-- <a href="{{ route('admin.books.show', ['id' => $book->id, 'slug' => $book->slug]) }}" 
+                               class="btn btn-outline-info btn-lg">
+                                <i class="ri-eye-line me-2"></i>Xem chi tiết
+                            </a> --}}
+                            <a href="{{ route('admin.books.index') }}" 
+                               class="btn btn-outline-secondary btn-lg">
+                                <i class="ri-arrow-left-line me-2"></i>Quay lại
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
 
 @push('scripts')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    document.getElementById('toggle-gift-section').addEventListener('change', function() {
-        document.getElementById('gift-section').style.display = this.checked ? '' : 'none';
-    });
-    function initFlatpickr() {
-        flatpickr('.datepicker', {dateFormat: 'Y-m-d'});
-    }
-    initFlatpickr();
-
-    // Khởi tạo Select2 cho chọn tác giả
-    $(document).ready(function() {
+$(document).ready(function() {
+    // Initialize Select2
+    if (typeof $.fn.select2 !== 'undefined') {
         $('.select2-authors').select2({
             theme: 'bootstrap-5',
             placeholder: 'Tìm kiếm và chọn tác giả...',
             allowClear: true,
-            width: '100%',
-            language: {
-                noResults: function() {
-                    return 'Không tìm thấy tác giả nào';
-                },
-                searching: function() {
-                    return 'Đang tìm kiếm...';
-                },
-                removeAllItems: function() {
-                    return 'Xóa tất cả';
+            width: '100%'
+        });
+    }
+
+    // Toggle format sections
+    function toggleFormatSections() {
+        const physicalCheckbox = document.getElementById('has_physical');
+        const physicalForm = document.getElementById('physical_format');
+        const ebookCheckbox = document.getElementById('has_ebook');
+        const ebookForm = document.getElementById('ebook_format');
+        
+        if (physicalCheckbox && physicalForm) {
+            physicalForm.style.display = physicalCheckbox.checked ? 'block' : 'none';
+        }
+        
+        if (ebookCheckbox && ebookForm) {
+            ebookForm.style.display = ebookCheckbox.checked ? 'block' : 'none';
+        }
+    }
+
+    // Toggle gift section
+    function toggleGiftSection() {
+        const giftCheckbox = document.getElementById('has_gift');
+        const giftSection = document.getElementById('gift_section');
+        
+        if (giftCheckbox && giftSection) {
+            giftSection.style.display = giftCheckbox.checked ? 'block' : 'none';
+        }
+    }
+
+    // Event listeners
+    const physicalCheckbox = document.getElementById('has_physical');
+    const ebookCheckbox = document.getElementById('has_ebook');
+    const giftCheckbox = document.getElementById('has_gift');
+    
+    if (physicalCheckbox) {
+        physicalCheckbox.addEventListener('change', toggleFormatSections);
+    }
+    
+    if (ebookCheckbox) {
+        ebookCheckbox.addEventListener('change', toggleFormatSections);
+    }
+    
+    if (giftCheckbox) {
+        giftCheckbox.addEventListener('change', toggleGiftSection);
+    }
+    
+    // Initial toggle
+    toggleFormatSections();
+    toggleGiftSection();
+
+    // Image preview
+    const coverInput = document.getElementById('cover_image');
+    const imagesInput = document.getElementById('images');
+    const giftImageInput = document.querySelector('input[name="gift_image"]');
+    
+    if (coverInput) {
+        coverInput.addEventListener('change', function(e) {
+            const preview = document.getElementById('cover_preview');
+            preview.innerHTML = '';
+            
+            if (e.target.files[0]) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(e.target.files[0]);
+                img.className = 'img-thumbnail';
+                img.style.maxHeight = '200px';
+                preview.appendChild(img);
+            }
+        });
+    }
+    
+    if (imagesInput) {
+        imagesInput.addEventListener('change', function(e) {
+            const preview = document.getElementById('images_preview');
+            preview.innerHTML = '';
+            
+            Array.from(e.target.files).forEach(file => {
+                const col = document.createElement('div');
+                col.className = 'col-6 mb-2';
+                
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.className = 'img-thumbnail w-100';
+                img.style.height = '100px';
+                img.style.objectFit = 'cover';
+                
+                col.appendChild(img);
+                preview.appendChild(col);
+            });
+        });
+    }
+
+    if (giftImageInput) {
+        giftImageInput.addEventListener('change', function(e) {
+            const preview = document.getElementById('gift_image_preview');
+            preview.innerHTML = '';
+            
+            if (e.target.files[0]) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(e.target.files[0]);
+                img.className = 'img-thumbnail';
+                img.style.maxHeight = '150px';
+                preview.appendChild(img);
+            }
+        });
+    }
+
+    // Handle attribute value addition with event delegation
+    $(document).on('click', '.add-attribute-btn', function(e) {
+        e.preventDefault();
+        console.log('Add attribute button clicked');
+        
+        const button = $(this);
+        const attributeGroup = button.closest('.attribute-group');
+        
+        if (attributeGroup.length === 0) {
+            console.error('Không tìm thấy attribute-group');
+            return;
+        }
+        
+        const select = attributeGroup.find('.attribute-select')[0];
+        const extraPriceInput = attributeGroup.find('.attribute-extra-price')[0];
+        const stockInput = attributeGroup.find('.attribute-stock')[0];
+        const selectedValuesContainer = attributeGroup.find('.selected-variants-container')[0];
+        
+        if (!select || !extraPriceInput || !stockInput || !selectedValuesContainer) {
+            console.error('Không tìm thấy các element cần thiết');
+            return;
+        }
+        
+        const selectedOption = select.options[select.selectedIndex];
+        if (!selectedOption.value) {
+            alert('Vui lòng chọn một giá trị thuộc tính');
+            return;
+        }
+        
+        const attributeId = select.getAttribute('data-attribute-id');
+        const attributeName = select.getAttribute('data-attribute-name');
+        const valueId = selectedOption.value;
+        const valueName = selectedOption.getAttribute('data-value-name');
+        const extraPrice = parseFloat(extraPriceInput.value) || 0;
+        const stock = parseInt(stockInput.value) || 0;
+        
+        // Kiểm tra xem thuộc tính này đã được thêm chưa
+        const existingValue = attributeGroup.find(`input[name="attribute_values[${valueId}][id]"]`);
+        if (existingValue.length > 0) {
+            alert(`Thuộc tính ${valueName} đã được thêm`);
+            return;
+        }
+        
+        // Tạo element hiển thị thuộc tính đã chọn
+        const selectedDiv = $(`
+            <div class="selected-attribute-value mb-2 p-3 border rounded bg-white shadow-sm">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="fw-medium text-dark mb-1">
+                            <i class="ri-bookmark-line me-1 text-primary"></i>${valueName}
+                        </div>
+                        <div class="small text-muted">
+                            <span class="badge bg-success-subtle text-success me-2">
+                                <i class="ri-money-dollar-circle-line me-1"></i>+${extraPrice.toLocaleString('vi-VN')}đ
+                            </span>
+                            <span class="badge bg-info-subtle text-info me-2">
+                                <i class="ri-archive-line me-1"></i>${stock} sp
+                            </span>
+                            <span class="badge bg-secondary-subtle text-secondary">
+                                <i class="ri-barcode-line me-1"></i>SKU: Tự động tạo
+                            </span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-attribute-value">
+                        <i class="ri-delete-bin-line"></i>
+                    </button>
+                </div>
+                <input type="hidden" name="attribute_values[${valueId}][id]" value="${valueId}">
+                <input type="hidden" name="attribute_values[${valueId}][extra_price]" value="${extraPrice}">
+                <input type="hidden" name="attribute_values[${valueId}][stock]" value="${stock}">
+            </div>
+        `);
+        
+        $(selectedValuesContainer).append(selectedDiv);
+        
+        // Reset form
+        select.selectedIndex = 0;
+        extraPriceInput.value = '0';
+        stockInput.value = '0';
+        
+        console.log('Attribute added successfully');
+    });
+    
+    // Handle attribute value removal
+    $(document).on('click', '.remove-attribute-value', function(e) {
+        e.preventDefault();
+        const selectedDiv = $(this).closest('.selected-attribute-value');
+        if (selectedDiv.length > 0) {
+            selectedDiv.remove();
+        }
+    });
+    
+    // Handle existing attribute removal
+    $(document).on('click', '.remove-existing-attribute', function(e) {
+        e.preventDefault();
+        const button = $(this);
+        const attributeDiv = button.closest('.d-flex');
+        
+        if (attributeDiv.length > 0 && confirm('Bạn có chắc chắn muốn xóa thuộc tính này?')) {
+            // Thay vì xóa element, đánh dấu để xóa bằng cách set keep = 0
+            const keepInput = attributeDiv.find('.keep-attribute');
+            if (keepInput.length > 0) {
+                keepInput.val('0');
+            }
+            // Ẩn element thay vì xóa hoàn toàn
+            attributeDiv.hide();
+        }
+    });
+    
+    // Initialize gift date range picker
+    const giftDateRangePicker = document.getElementById('gift_date_range');
+    if (giftDateRangePicker) {
+        flatpickr(giftDateRangePicker, {
+            mode: 'range',
+            dateFormat: 'Y-m-d',
+            onChange: function(selectedDates, dateStr, instance) {
+                const startInput = document.getElementById('gift_start_date');
+                const endInput = document.getElementById('gift_end_date');
+                if (selectedDates.length === 2) {
+                    startInput.value = instance.formatDate(selectedDates[0], 'Y-m-d');
+                    endInput.value = instance.formatDate(selectedDates[1], 'Y-m-d');
+                } else {
+                    startInput.value = '';
+                    endInput.value = '';
                 }
             }
         });
-    });
-
-    // 3. JS preview ảnh bìa/ảnh phụ, lưu base64 vào localStorage, tự động hiển thị lại sau validate lỗi
-    function previewImage(input, previewContainer, storageKey) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewContainer.innerHTML = `<img src="${e.target.result}" class='img-thumbnail' style='max-height:200px;'>`;
-                localStorage.setItem(storageKey, e.target.result);
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
     }
-    const coverInput = document.getElementById('cover_image');
-    const coverPreview = document.getElementById('cover_preview')?.querySelector('.preview-container');
-    if (coverInput && coverPreview) {
-        coverInput.addEventListener('change', function() {
-            previewImage(this, coverPreview, 'edit_cover_image');
-        });
-        // Hiển thị lại preview nếu có trong localStorage
-        const saved = localStorage.getItem('edit_cover_image');
-        if (saved) {
-            coverPreview.innerHTML = `<img src="${saved}" class='img-thumbnail' style='max-height:200px;'>`;
-        }
-    }
-    // Preview ảnh phụ
-    const imagesInput = document.getElementById('images');
-    const imagesPreview = document.getElementById('images_preview');
-    if (imagesInput && imagesPreview) {
-        imagesInput.addEventListener('change', function() {
-            imagesPreview.innerHTML = '';
-            Array.from(this.files).forEach((file, idx) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imagesPreview.innerHTML += `<div class='col-4'><img src='${e.target.result}' class='img-thumbnail' style='height:100px;object-fit:cover;width:100%;'></div>`;
-                    let arr = JSON.parse(localStorage.getItem('edit_images') || '[]');
-                    arr[idx] = e.target.result;
-                    localStorage.setItem('edit_images', JSON.stringify(arr));
-                };
-                reader.readAsDataURL(file);
-            });
-        });
-        // Hiển thị lại preview nếu có trong localStorage
-        const savedArr = JSON.parse(localStorage.getItem('edit_images') || '[]');
-        if (savedArr.length) {
-            imagesPreview.innerHTML = '';
-            savedArr.forEach(src => {
-                imagesPreview.innerHTML += `<div class='col-4'><img src='${src}' class='img-thumbnail' style='height:100px;object-fit:cover;width:100%;'></div>`;
-            });
-        }
-    }
-    // Xóa preview khi submit thành công
-    document.querySelector('form').addEventListener('submit', function() {
-        localStorage.removeItem('edit_cover_image');
-        localStorage.removeItem('edit_images');
-    });
-    // 4. JS xóa thuộc tính sản phẩm (badge xanh, nút xóa)
-    document.querySelectorAll('.selected-values').forEach(function(container) {
-        container.addEventListener('click', function(e) {
-            if (e.target.closest('.remove-attribute-value')) {
-                e.target.closest('.selected-attribute-value').remove();
+    
+    // Đảm bảo khi submit form luôn lấy lại giá trị nếu user không chọn lại ngày
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            const giftDateRange = document.getElementById('gift_date_range');
+            if (giftDateRange && giftDateRange.value && giftDateRange.value.includes(' to ')) {
+                const parts = giftDateRange.value.split(' to ');
+                document.getElementById('gift_start_date').value = parts[0].trim();
+                document.getElementById('gift_end_date').value = parts[1].trim();
             }
         });
-    });
+    }
+});
 </script>
 @endpush
-
-{{-- 5. Thông báo dưới input ảnh --}}
-<div class="form-text text-danger">Nếu form báo lỗi, bạn cần chọn lại ảnh bìa/ảnh phụ.</div>
-
+@endsection

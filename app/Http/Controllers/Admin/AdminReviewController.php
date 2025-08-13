@@ -14,9 +14,12 @@ class AdminReviewController extends Controller
      */
     public function index(Request $request)
     {
-        $reviews = Review::with(['book', 'user'])
-            ->when($request->filled('status'), fn ($q) =>
-            $q->where('status', $request->string('status'))
+        $reviews = Review::with(['book', 'user', 'collection', 'order.orderItems'])
+            ->when($request->status, fn($q) => $q->where('status', $request->status))
+
+            ->when($request->admin_response, fn($q) =>
+                $q->when($request->admin_response === 'responded', fn($q) => $q->whereNotNull('admin_response'))
+                  ->when($request->admin_response === 'not_responded', fn($q) => $q->whereNull('admin_response'))
             )
 
             ->when($request->filled('admin_response'), function ($q) use ($request) {
@@ -76,14 +79,25 @@ class AdminReviewController extends Controller
                   ->withSum('orderItems as sold_count', 'quantity')
                   ->with(['authors', 'brand', 'category']);
             },
-            'user'
+            'user',
+            'collection',
+            'order.orderItems'
         ]);
 
-        $otherReviews = Review::where('book_id', $review->book_id)
-            ->where('id', '!=', $review->id)
-            ->with(['user' => fn($query) => $query->withTrashed()])
-            ->latest()
-            ->paginate(5);
+        // Lấy các đánh giá khác của cùng sản phẩm (sách hoặc combo)
+        if ($review->isComboReview()) {
+            $otherReviews = Review::where('collection_id', $review->collection_id)
+                ->where('id', '!=', $review->id)
+                ->with(['user' => fn($query) => $query->withTrashed(), 'collection', 'order.orderItems'])
+                ->latest()
+                ->paginate(5);
+        } else {
+            $otherReviews = Review::where('book_id', $review->book_id)
+                ->where('id', '!=', $review->id)
+                ->with(['user' => fn($query) => $query->withTrashed(), 'book', 'order.orderItems'])
+                ->latest()
+                ->paginate(5);
+        }
 
         return view('admin.reviews.response', compact('review', 'otherReviews'));
     }
@@ -93,15 +107,30 @@ class AdminReviewController extends Controller
      */
     public function updateStatus(Review $review)
     {
-        if (!in_array($review->status, ['visible', 'hidden'])) {
+        $validStatuses = ['visible', 'hidden', 'approved', 'pending'];
+        if (!in_array($review->status, $validStatuses)) {
             Toastr::error('Trạng thái không hợp lệ.', 'Lỗi');
             return redirect()->route('admin.reviews.response', $review);
         }
 
-        $newStatus = $review->status === 'visible' ? 'hidden' : 'visible';
+        // Logic chuyển đổi trạng thái
+        $newStatus = match($review->status) {
+            'approved', 'visible' => 'hidden',
+            'hidden' => 'approved',
+            'pending' => 'approved',
+            default => 'approved'
+        };
+        
         $review->update(['status' => $newStatus]);
 
-        Toastr::success('Cập nhật trạng thái đánh giá thành công.', 'Thành công');
+        $statusText = match($newStatus) {
+            'approved' => 'hiển thị',
+            'hidden' => 'ẩn',
+            'pending' => 'chờ duyệt',
+            default => $newStatus
+        };
+
+        Toastr::success("Đã cập nhật trạng thái đánh giá thành '{$statusText}' thành công.", 'Thành công');
         return redirect()->route('admin.reviews.response', $review);
     }
 

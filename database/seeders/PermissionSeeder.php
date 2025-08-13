@@ -90,6 +90,13 @@ class PermissionSeeder extends Seeder
             ['name' => 'Sửa người dùng', 'slug' => 'user.edit', 'module' => 'user'],
             ['name' => 'Xóa người dùng', 'slug' => 'user.delete', 'module' => 'user'],
             ['name' => 'Quản lý vai trò người dùng', 'slug' => 'user.manage-roles', 'module' => 'user'],
+            // Staff (nhân viên)
+            ['name' => 'Xem nhân viên', 'slug' => 'staff.view', 'module' => 'staff'],
+            ['name' => 'Xem chi tiết nhân viên', 'slug' => 'staff.show', 'module' => 'staff'],
+            ['name' => 'Thêm nhân viên', 'slug' => 'staff.create', 'module' => 'staff'],
+            ['name' => 'Sửa nhân viên', 'slug' => 'staff.edit', 'module' => 'staff'],
+            ['name' => 'Xóa nhân viên', 'slug' => 'staff.delete', 'module' => 'staff'],
+            ['name' => 'Quản lý vai trò nhân viên', 'slug' => 'staff.manage-roles', 'module' => 'staff'],
             // Permissions
             ['name' => 'Xem quyền', 'slug' => 'permission.view', 'module' => 'permission'],
             ['name' => 'Thêm quyền', 'slug' => 'permission.create', 'module' => 'permission'],
