@@ -49,7 +49,7 @@
                                 <label class="form-label fw-medium">Tìm kiếm</label>
                                 <div class="position-relative">
                                     <input type="text" name="search" class="form-control ps-4"
-                                        placeholder="Tìm theo tiêu đề hoặc ISBN..." value="{{ request('search') }}">
+                                        placeholder="  Tìm theo tiêu đề hoặc ISBN..." value="{{ request('search') }}">
                                     <i class="ri-search-line position-absolute start-0 top-50 translate-middle-y ms-3 text-muted"></i>
                                 </div>
                             </div>
