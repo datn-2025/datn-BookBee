@@ -256,6 +256,7 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/trash', [AdminBookController::class, 'trash'])->name('trash')->middleware('checkpermission:book.trash');
         Route::post('/restore/{id}', [AdminBookController::class, 'restore'])->name('restore')->middleware('checkpermission:book.restore');
         Route::delete('/force-delete/{id}', [AdminBookController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:book.force-delete');
+        Route::delete('/delete-image/{imageId}', [AdminBookController::class, 'deleteImage'])->name('delete-image')->middleware('checkpermission:book.edit');
     });
 
     // Payment Methods
