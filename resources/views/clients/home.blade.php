@@ -779,7 +779,7 @@
                         @endforeach
                     </div>
                     
-                    <!-- Call to Action -->
+                    {{-- <!-- Call to Action -->
                     @if(count($saleBooks) > 8)
                         <div class="text-center mt-8">
                             <button id="showMoreSaleBooks" 
@@ -802,7 +802,7 @@
                                 THU GỌN
                             </button>
                         </div>
-                    @endif
+                    @endif --}}
                 </div>
             </div>
         </div>
