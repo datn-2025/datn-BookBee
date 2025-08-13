@@ -337,13 +337,13 @@
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][price]" 
-                                                   value="{{ old('formats.physical.price', $physicalFormat->price ?? '') }}" 
+                                                   id="physical_price" value="{{ old('formats.physical.price', $physicalFormat->price ?? '') }}" 
                                                    placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][discount]" 
-                                                   value="{{ old('formats.physical.discount', $physicalFormat->discount ?? '') }}" 
+                                                   id="physical_discount" value="{{ old('formats.physical.discount', $physicalFormat->discount ?? '') }}" 
                                                    placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-4">
@@ -495,13 +495,13 @@
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][price]" 
-                                                   value="{{ old('formats.ebook.price', $ebookFormat->price ?? '') }}" 
+                                                   id="ebook_price" value="{{ old('formats.ebook.price', $ebookFormat->price ?? '') }}" 
                                                    placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][discount]" 
-                                                   value="{{ old('formats.ebook.discount', $ebookFormat->discount ?? '') }}" 
+                                                   id="ebook_discount" value="{{ old('formats.ebook.discount', $ebookFormat->discount ?? '') }}" 
                                                    placeholder="0" min="0">
                                         </div>
                                         <div class="col-12">
@@ -1107,6 +1107,56 @@ $(document).ready(function() {
             imageItem.removeClass('border-danger');
         }, 3000);
     }
+
+    // Price discount validation
+    function validateDiscountPrice() {
+        // Physical format validation
+        const physicalPriceInput = document.getElementById('physical_price');
+        const physicalDiscountInput = document.getElementById('physical_discount');
+        
+        if (physicalPriceInput && physicalDiscountInput) {
+            function validatePhysicalDiscount() {
+                const price = parseFloat(physicalPriceInput.value) || 0;
+                const discount = parseFloat(physicalDiscountInput.value) || 0;
+                
+                if (discount > price) {
+                    physicalDiscountInput.setCustomValidity('Giá giảm không được lớn hơn giá bán');
+                    physicalDiscountInput.classList.add('is-invalid');
+                } else {
+                    physicalDiscountInput.setCustomValidity('');
+                    physicalDiscountInput.classList.remove('is-invalid');
+                }
+            }
+            
+            physicalPriceInput.addEventListener('input', validatePhysicalDiscount);
+            physicalDiscountInput.addEventListener('input', validatePhysicalDiscount);
+        }
+        
+        // Ebook format validation
+        const ebookPriceInput = document.getElementById('ebook_price');
+        const ebookDiscountInput = document.getElementById('ebook_discount');
+        
+        if (ebookPriceInput && ebookDiscountInput) {
+            function validateEbookDiscount() {
+                const price = parseFloat(ebookPriceInput.value) || 0;
+                const discount = parseFloat(ebookDiscountInput.value) || 0;
+                
+                if (discount > price) {
+                    ebookDiscountInput.setCustomValidity('Giá giảm không được lớn hơn giá bán');
+                    ebookDiscountInput.classList.add('is-invalid');
+                } else {
+                    ebookDiscountInput.setCustomValidity('');
+                    ebookDiscountInput.classList.remove('is-invalid');
+                }
+            }
+            
+            ebookPriceInput.addEventListener('input', validateEbookDiscount);
+            ebookDiscountInput.addEventListener('input', validateEbookDiscount);
+        }
+    }
+    
+    // Initialize price validation
+    validateDiscountPrice();
 });
 </script>
 @endpush
