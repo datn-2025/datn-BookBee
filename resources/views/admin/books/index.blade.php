@@ -204,7 +204,7 @@
                                                 <div class="fw-medium mb-1">{{ $book->title }}</div>
                                                 <div class="text-muted small">
                                                     <div>Tác giả:
-                                                        {{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
+                                                        {{ $book->authors && $book->authors->count() ? $book->authors->pluck('name')->join(', ') : 'N/A' }}
                                                     </div>
                                                     <div>NXB: {{ $book->brand->name }}</div>
                                                 </div>
