@@ -75,6 +75,9 @@ class OrderService
         $totalAmount = $subtotal - $discount + $shippingFee;
         Log::info('Order creation - Total amount calculation: ' . $subtotal . ' - ' . $discount . ' + ' . $shippingFee . ' = ' . $totalAmount);
 
+        // Log giá trị discount trước khi tạo đơn hàng
+        Log::info('Creating order with discount: ' . $discount . ', total_amount: ' . $totalAmount);
+        
         // Tạo đơn hàng
         $order = Order::create([
             'id' => (string) Str::uuid(),
@@ -83,11 +86,19 @@ class OrderService
             'address_id' => $data['address_id'],
             'voucher_id' => $voucher ? $voucher->id : null,
             'total_amount' => $totalAmount,
+            'discount_amount' => $discount, // Đảm bảo lưu đúng giá trị giảm giá
             'shipping_fee' => $shippingFee,
             'note' => $data['note'] ?? null,
             'order_status_id' => OrderStatus::where('name', 'Chờ Xác Nhận')->first()->id,
             'payment_method_id' => $data['payment_method_id'],
             'payment_status_id' => PaymentStatus::where('name', 'Chờ Thanh Toán')->first()->id
+        ]);
+        
+        // Log thông tin đơn hàng sau khi tạo
+        Log::info('Order created', [
+            'order_id' => $order->id,
+            'discount_amount' => $order->discount_amount,
+            'total_amount' => $order->total_amount
         ]);
         Log::info('Order created with ID: ' . $order->id);
 
@@ -1023,8 +1034,8 @@ class OrderService
             $addressId, 
             $voucherData['voucher_id'], 
             $subtotal,
-            $shipping_method,
-            $actualDiscountAmount
+            $actualDiscountAmount,
+            $shipping_method
         );
 
         // 8. Nếu là thanh toán ví, kiểm tra số dư trước khi tạo đơn hàng
