@@ -66,8 +66,8 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
-                                <p class="text-uppercase fw-medium text-muted mb-0">Đã giao hàng</p>
-                                <h4 class="fs-22 fw-semibold mb-0">{{ $orderCounts['Đã Giao Thành Công'] }}</h4>
+                                <p class="text-uppercase fw-medium text-muted mb-0">Thành công</p>
+                                <h4 class="fs-22 fw-semibold mb-0">{{ $orderCounts['Thành Công'] }}</h4>
                             </div>
                             <div class="avatar-sm flex-shrink-0">
                                 <span class="avatar-title bg-soft-success rounded fs-3">
@@ -171,7 +171,6 @@
                                 <thead class="text-muted table-light">
                                     <tr>
                                         <th scope="col">Mã đơn hàng</th>
-                                        <th scope="col">QR Code</th>
                                         <th scope="col">Khách hàng</th>
                                         <th scope="col">Địa chỉ</th>
                                         <th scope="col">Phương thức nhận hàng</th>
@@ -213,14 +212,6 @@
                                                 @endif
                                             </div>
                                         </td>
-                                        <td class="text-center">
-                                            @if($order->qr_code)
-                                            <img src="{{ url('storage/private/' . $order->qr_code) }}" alt="QR Code"
-                                                class="avatar-sm rounded">
-                                            @else
-                                            <span class="badge bg-light text-muted">Không có</span>
-                                            @endif
-                                        </td>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="flex-shrink-0 me-2">
@@ -242,7 +233,7 @@
                                         <td>
                                             <span class="text-muted">
                                                 @if($order->delivery_method === 'ebook')
-                                                    Ebook
+                                                    Nhận qua email
                                                 @elseif($order->address)
                                                     {{ $order->address->district ?? 'N/A' }},
                                                     {{ $order->address->city ?? '' }}
@@ -255,9 +246,9 @@
                                             <div class="d-flex align-items-center justify-content-center">
                                                 @if($order->delivery_method === 'ebook')
                                                     <span class="order-type-icon order-type-ebook">
-                                                        <i class="ri-smartphone-line"></i>
+                                                        <i class="ri-mail-line"></i>
                                                     </span>
-                                                    <span>Ebook</span>
+                                                    <span>Nhận qua email</span>
                                                 @elseif($order->delivery_method === 'pickup')
                                                     <span class="order-type-icon order-type-pickup">
                                                         <i class="ri-store-2-line"></i>
