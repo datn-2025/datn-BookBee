@@ -1497,18 +1497,27 @@
                                                 ($book->status === 'Còn Hàng' && $defaultStock > 0) ||
                                                 $isEbook
                                             )
+                                            @if(!in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho']))
                                             <span id="stockQuantityDisplay"
                                                 class="text-xs sm:text-sm text-gray-600 adidas-font whitespace-nowrap">
                                                 (<span class="font-bold text-black" id="productQuantity">{{ $defaultStock }}</span> cuốn
                                                 còn lại)
                                             </span>
+                                            @endif
                                         @endif
                                     </div>
                             </div>
 
-                            <!-- Quà tặng kèm -->
+                            <!-- Quà tặng kèm - Chỉ hiển thị khi chọn định dạng sách vật lý -->
+                            @if(!in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho']))
+                            @php
+                                $selectedFormat = $book->formats->first(); // Lấy định dạng mặc định hoặc đầu tiên
+                                
+                                // Kiểm tra xem định dạng đang chọn có phải là sách vật lý không
+                                $isPhysicalFormatSelected = $selectedFormat && str_contains($selectedFormat->format_name, 'Sách Vật Lý');
+                            @endphp
                             @if(isset($bookGifts) && $bookGifts->count())
-                                <div class="book-gifts-section mt-8">
+                                <div id="giftsSection" class="book-gifts-section mt-8" @if(!$isPhysicalFormatSelected) style="display: none;" @endif>
                                     <h3
                                         class="text-lg font-bold text-black mb-3 flex items-center adidas-font uppercase tracking-wider">
                                         <i class="fas fa-gift text-base mr-2 text-black"></i>Quà tặng kèm
@@ -1549,16 +1558,18 @@
                                     </ul>
                                 </div>
                             @endif
+                            @endif
 
 
 
                             <!-- Enhanced Format Selection -->
                             @if ($book->formats->count())
-                                <div class="format-selection space-y-3">
+                                <div class="format-selection space-y-3" @if(in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho'])) style="display: none;" @endif>
                                     <label for="bookFormatSelect"
                                         class="block text-sm font-bold text-black uppercase tracking-wider">Định dạng sách</label>
                                     <div class="relative">
-                                        <select id="bookFormatSelect"
+                                        <select id="bookFormatSelect" 
+                                            data-gifts-section="giftsSection"
                                             class="adidas-select w-full px-6 py-4 text-lg font-semibold appearance-none bg-white border-2 border-gray-300 focus:border-black rounded-none transition-colors duration-300">
                                             @php
                                                 $ebookFormat = $book->formats->first(function ($f) {
@@ -1608,7 +1619,7 @@
                             <!-- Enhanced Attributes -->
                             {{-- Thuộc tính --}}
                             @if($book->attributeValues->count())
-                                <div id="bookAttributesGroup" class="attribute-group space-y-4">
+                                <div id="bookAttributesGroup" class="attribute-group space-y-4" @if(in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho'])) style="display: none;" @endif>
                                     <h3 class="text-sm font-bold text-black uppercase tracking-wider adidas-font">Tuỳ chọn sản phẩm</h3>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         @foreach($book->attributeValues->unique('attribute_id') as $attrVal)
@@ -1790,8 +1801,9 @@
                                     if (isset($defaultFormat->format_name)) {
                                         $isEbook = stripos($defaultFormat->format_name, 'ebook') !== false;
                                     }
+                                    $isSpecialStatus = in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho']);
                                 @endphp
-                                <div class="quantity-section space-y-3" @if($isEbook) style="display:none" @endif>
+                                <div class="quantity-section space-y-3" @if($isEbook || $isSpecialStatus) style="display:none" @endif>
                                     <label for="quantity"
                                         class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">Số
                                         lượng</label>
@@ -2384,6 +2396,27 @@
     </div>
 
     @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const formatSelect = document.getElementById('bookFormatSelect');
+            const giftsSection = document.getElementById('giftsSection');
+            
+            if (formatSelect && giftsSection) {
+                // Kiểm tra ngay khi trang tải
+                const checkFormat = () => {
+                    const selectedOption = formatSelect.options[formatSelect.selectedIndex];
+                    const isPhysicalFormat = selectedOption.text.includes('Sách Vật Lý');
+                    giftsSection.style.display = isPhysicalFormat ? 'block' : 'none';
+                };
+                
+                // Chạy kiểm tra lần đầu
+                checkFormat();
+                
+                // Lắng nghe sự kiện thay đổi
+                formatSelect.addEventListener('change', checkFormat);
+            }
+        });
+    </script>
         <script>
             // Ensure DOM is fully loaded
             document.addEventListener('DOMContentLoaded', function () {
@@ -3160,46 +3193,59 @@
 
                 // Show/hide attributes based on format type
                 const attributesGroup = document.getElementById('bookAttributesGroup');
+                const quantitySection = document.querySelector('.quantity-section');
+                const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
+
+                // Kiểm tra trạng thái đặc biệt
+                const isSpecialStatus = bookStatus === 'Ngừng Kinh Doanh' || 
+                                      bookStatus === 'Sắp Ra Mắt' || 
+                                      bookStatus === 'Hết Hàng Tồn Kho';
+
                 if (attributesGroup) {
                     const attributeItems = attributesGroup.querySelectorAll('.attribute-item');
 
-                    attributeItems.forEach(item => {
-                        if (isEbook) {
-                            // For ebooks, hide all attributes/variants
-                            item.style.display = 'none';
-                        } else {
-                            // For physical books, initially show all attributes
-                            // updateAttributeOptionsDisplay will handle hiding based on stock
-                            item.style.display = 'block';
-                        }
-                    });
-
-                    // Hide entire attributes group for ebooks
-                    if (isEbook) {
+                    if (isSpecialStatus) {
+                        // Ẩn toàn bộ phần thuộc tính
+                        attributesGroup.style.display = 'none';
+                        
+                        // Ẩn tất cả các dropdown chọn thuộc tính
+                        document.querySelectorAll('[name^="attributes["]').forEach(select => {
+                            select.style.display = 'none';
+                            const parent = select.closest('.attribute-item');
+                            if (parent) parent.style.display = 'none';
+                        });
+                        
+                        // Ẩn nhãn thuộc tính
+                        const attributeLabels = document.querySelectorAll('.attribute-item label');
+                        attributeLabels.forEach(label => {
+                            label.style.display = 'none';
+                        });
+                        
+                        // Ẩn thông tin biến thể nếu có
+                        document.querySelectorAll('[id^="variant_info_"]').forEach(el => {
+                            el.style.display = 'none';
+                        });
+                    } else if (isEbook) {
+                        // For ebooks, hide all attributes/variants
                         attributesGroup.style.display = 'none';
                     } else {
                         attributesGroup.style.display = 'block';
-
                         // Update group title for physical books
                         const groupTitle = attributesGroup.querySelector('h3');
                         if (groupTitle) {
                             groupTitle.textContent = 'Tuỳ chọn sản phẩm';
                         }
-
                         // Update dropdown options display for physical books
-                        // This will handle hiding attributes with no available variants
                         updateAttributeOptionsDisplay(isEbook);
                     }
                 }
 
                 // Show/hide Add to Cart button and quantity controls based on product status
                 const addToCartBtn = document.getElementById('addToCartBtn');
-                const quantitySection = document.querySelector('.quantity-section');
-                const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
 
                 if (addToCartBtn) {
                     // Hide button for discontinued, coming soon, or out of stock products
-                    if (bookStatus === 'Ngừng Kinh Doanh' || bookStatus === 'Sắp Ra Mắt' || bookStatus === 'Hết Hàng Tồn Kho') {
+                    if (isSpecialStatus) {
                         addToCartBtn.style.display = 'none';
                     } else {
                         addToCartBtn.style.display = 'block';
@@ -3208,19 +3254,15 @@
 
                 // Show/hide quantity controls based on product status and stock
                 if (quantitySection) {
-                    const shouldHideQuantityControls =
-                        bookStatus === 'Ngừng Kinh Doanh' ||
-                        bookStatus === 'Sắp Ra Mắt' ||
-                        bookStatus === 'Hết Hàng Tồn Kho' ||
-                        (bookStatus === 'Còn Hàng' && stock <= 0 && !isEbook);
-
-                    if (shouldHideQuantityControls) {
+                    if (isSpecialStatus) {
                         quantitySection.style.display = 'none';
-                    } else if (!isEbook) {
-                        // Only show for physical books that are available
+                    } else if (isEbook) {
+                        // For ebooks, always hide quantity section
+                        quantitySection.style.display = 'none';
+                    } else {
+                        // For physical books that are available
                         quantitySection.style.display = 'block';
                     }
-                    // For ebooks, quantity section is already handled in the ebook section above
                 }
 
                 // Update preview section visibility after stock/status changes
