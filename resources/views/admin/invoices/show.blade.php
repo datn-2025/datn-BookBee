@@ -80,9 +80,25 @@
                                 <i class="fas fa-map-marker-alt me-2"></i>Địa chỉ giao hàng
                             </div>
                             <div class="ps-3">
-                                <p class="mb-0">
-                                    {{ $invoice->order->address->full_address ?? 'N/A' }}
-                                </p>
+                                @if($invoice->order->delivery_method === 'ebook')
+                                    <p class="mb-0">
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-envelope me-1"></i>Nhận qua email
+                                        </span>
+                                    </p>
+                                @elseif($invoice->order->delivery_method === 'pickup')
+                                    <p class="mb-0">
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-store me-1"></i>Nhận tại cửa hàng
+                                        </span>
+                                    </p>
+                                @elseif($invoice->order->address)
+                                    <p class="mb-0">
+                                        {{ $invoice->order->address->full_address }}
+                                    </p>
+                                @else
+                                    <p class="mb-0 text-muted">N/A</p>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -133,10 +149,12 @@
                         <table class="table table-sm">
                             @php
                                 $totalQuantity = 0;
+                                $subtotal = 0;
                             @endphp
                             @foreach ($invoice->items as $item)
                                 @php
                                     $totalQuantity += $item->quantity;
+                                    $subtotal += $item->price * $item->quantity;
                                 @endphp
                             @endforeach
                             <tr>
@@ -145,7 +163,7 @@
                             </tr>
                             <tr>
                                 <td class="border-0 ps-0">Tạm tính:</td>
-                                <td class="border-0 text-end">{{ number_format($invoice->subtotal) }}đ</td>
+                                <td class="border-0 text-end">{{ number_format($subtotal) }}đ</td>
                             </tr>
                             @if ($invoice->order->discount_amount > 0)
                                 <tr>
@@ -193,7 +211,7 @@
                                     <td class="ps-4">
                                         @if($item->book)
                                             <div class="d-flex align-items-center">
-                                                <img src="{{ $item->book->thumbnail ?? 'https://via.placeholder.com/60x80' }}"
+                                                <img src="{{ $item->book->cover_image ? asset('storage/' . $item->book->cover_image) : asset('images/default-book.svg') }}"
                                                     alt="{{ $item->book->title }}" class="me-3"
                                                     style="width: 60px; height: 80px; object-fit: cover;">
                                                 <div>
