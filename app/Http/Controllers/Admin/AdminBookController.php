@@ -268,11 +268,11 @@ class AdminBookController extends Controller
             'attribute_values.*.stock' => 'nullable|integer|min:0',
             'has_physical' => 'boolean',
             'formats.physical.price' => 'required_if:has_physical,true|nullable|numeric|min:0',
-            'formats.physical.discount' => 'nullable|numeric|min:0',
+            'formats.physical.discount' => 'nullable|numeric|min:0|lte:formats.physical.price',
             'formats.physical.stock' => 'required_if:has_physical,true|nullable|integer|min:0',
             'has_ebook' => 'boolean',
             'formats.ebook.price' => 'required_if:has_ebook,true|nullable|numeric|min:0',
-            'formats.ebook.discount' => 'nullable|numeric|min:0',
+            'formats.ebook.discount' => 'nullable|numeric|min:0|lte:formats.ebook.price',
             'formats.ebook.allow_sample_read' => 'boolean',
             'status' => 'required|string|max:50',
             'category_id' => 'required|uuid|exists:categories,id',
@@ -337,10 +337,16 @@ class AdminBookController extends Controller
             'cover_image.max' => 'Kích thước ảnh bìa không được vượt quá 2MB',
             'formats.physical.price.required_if' => 'Vui lòng nhập giá bán cho sách vật lý',
             'formats.physical.price.numeric' => 'Giá bán sách vật lý phải là số',
+            'formats.physical.discount.numeric' => 'Giá giảm sách vật lý phải là số',
+            'formats.physical.discount.min' => 'Giá giảm sách vật lý không được âm',
+            'formats.physical.discount.lte' => 'Giá giảm sách vật lý không được lớn hơn giá bán',
             'formats.physical.stock.required_if' => 'Vui lòng nhập số lượng cho sách vật lý',
             'formats.physical.stock.integer' => 'Số lượng sách vật lý phải là số nguyên',
             'formats.ebook.price.required_if' => 'Vui lòng nhập giá bán cho ebook',
             'formats.ebook.price.numeric' => 'Giá bán ebook phải là số',
+            'formats.ebook.discount.numeric' => 'Giá giảm ebook phải là số',
+            'formats.ebook.discount.min' => 'Giá giảm ebook không được âm',
+            'formats.ebook.discount.lte' => 'Giá giảm ebook không được lớn hơn giá bán',
             'formats.ebook.file.required_if' => 'Vui lòng chọn file ebook',
             'formats.ebook.file.mimes' => 'File ebook phải có định dạng PDF hoặc EPUB',
             'formats.ebook.file.max' => 'Kích thước file ebook không được vượt quá 50MB',
@@ -738,13 +744,13 @@ class AdminBookController extends Controller
     public function trash(Request $request)
     {
         $query = Book::onlyTrashed()
-            ->with([
-                'category:id,name',
-                'author:id,name',
-                'brand:id,name',
-                'formats:id,book_id,format_name,price,discount,stock',
-                'images:id,book_id,image_url'
-            ]);
+        ->with([
+            'category:id,name',
+            'authors:id,name',
+            'brand:id,name',
+            'formats:id,book_id,format_name,price,discount,stock',
+            'images:id,book_id,image_url'
+        ]);
 
         // Tìm kiếm theo tiêu đề sách hoặc mã ISBN
         if ($request->filled('search')) {
@@ -765,6 +771,32 @@ class AdminBookController extends Controller
 
         Toastr::success('Sách đã được khôi phục thành công!', 'Thành công');
         return redirect()->route('admin.books.trash');
+    }
+
+    public function deleteImage($imageId)
+    {
+        try {
+            $image = \App\Models\BookImage::findOrFail($imageId);
+            
+            // Xóa file từ storage
+            if ($image->image_url && Storage::disk('public')->exists($image->image_url)) {
+                Storage::disk('public')->delete($image->image_url);
+            }
+            
+            // Xóa record từ database
+            $image->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Ảnh đã được xóa thành công!'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xóa ảnh: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function forceDelete($id)

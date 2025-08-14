@@ -37,7 +37,7 @@
                                                     <tr>
                                                         <td>{{ $permission->name }}</td>
                                                         <td>{{ $permission->slug }}</td>
-                                                        <td>{{ $permission->description }}</td>
+                                                        <td>{!! $permission->description !!}</td>
                                                         <td>
                                                             @permission('permission.edit')
                                                             <a href="{{ route('admin.permissions.edit', $permission) }}"

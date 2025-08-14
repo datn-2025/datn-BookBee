@@ -82,7 +82,7 @@
                                                     <small class="text-muted">ISBN: {{ $book->isbn ?? 'N/A' }}</small>
                                                 </td>
                                                 <td>{{ $book->category->name ?? 'N/A' }}</td>
-                                                <td>{{ $book->author && $book->author->count() ? $book->author->pluck('name')->join(', ') : 'N/A' }}
+                                                <td>{{ $book->authors && $book->authors->count() ? $book->authors->pluck('name')->join(', ') : 'N/A' }}
                                                 </td>
                                                 <td>{{ $book->deleted_at->format('d/m/Y H:i') }}</td>
                                                 <td>

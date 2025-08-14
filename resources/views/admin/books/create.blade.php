@@ -307,12 +307,12 @@
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][price]" 
-                                                   value="{{ old('formats.physical.price') }}" placeholder="0" min="0">
+                                                   id="physical_price" value="{{ old('formats.physical.price') }}" placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][discount]" 
-                                                   value="{{ old('formats.physical.discount') }}" placeholder="0" min="0">
+                                                   id="physical_discount" value="{{ old('formats.physical.discount') }}" placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Số lượng</label>
@@ -417,12 +417,12 @@
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][price]" 
-                                                   value="{{ old('formats.ebook.price') }}" placeholder="0" min="0">
+                                                   id="ebook_price" value="{{ old('formats.ebook.price') }}" placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][discount]" 
-                                                   value="{{ old('formats.ebook.discount') }}" placeholder="0" min="0">
+                                                   id="ebook_discount" value="{{ old('formats.ebook.discount') }}" placeholder="0" min="0">
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label fw-medium">File Ebook</label>
@@ -841,26 +841,105 @@ $(document).ready(function() {
         }
     });
 
+    // Store selected files for manipulation
+    let selectedFiles = [];
+
     $('#images').on('change', function() {
-        const files = this.files;
+        const files = Array.from(this.files);
+        selectedFiles = files;
+        updateImagePreview();
+    });
+
+    function updateImagePreview() {
         const preview = $('#images_preview');
         preview.empty();
         
-        if (files.length > 0) {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
+        if (selectedFiles.length > 0) {
+            selectedFiles.forEach((file, index) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     preview.append(`
-                        <div class="col-6 col-md-4 mb-2">
-                            <img src="${e.target.result}" class="img-thumbnail" style="height: 100px; width: 100%; object-fit: cover;">
+                        <div class="col-6 col-md-4 mb-2" data-index="${index}">
+                            <div class="position-relative">
+                                <img src="${e.target.result}" class="img-thumbnail" style="height: 100px; width: 100%; object-fit: cover;">
+                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-image" 
+                                        data-index="${index}" style="transform: translate(25%, -25%); border-radius: 50%; width: 25px; height: 25px; padding: 0;">
+                                    <i class="ri-close-line" style="font-size: 12px;"></i>
+                                </button>
+                                <div class="text-center mt-1">
+                                    <small class="text-muted">${file.name}</small>
+                                </div>
+                            </div>
                         </div>
                     `);
                 };
                 reader.readAsDataURL(file);
-            }
+            });
         }
+    }
+
+    // Handle image removal
+    $(document).on('click', '.remove-image', function() {
+        const index = parseInt($(this).data('index'));
+        selectedFiles.splice(index, 1);
+        
+        // Update the file input
+        const dt = new DataTransfer();
+        selectedFiles.forEach(file => dt.items.add(file));
+        document.getElementById('images').files = dt.files;
+        
+        updateImagePreview();
     });
+
+    // Price discount validation
+    function validateDiscountPrice() {
+        // Physical format validation
+        const physicalPriceInput = document.getElementById('physical_price');
+        const physicalDiscountInput = document.getElementById('physical_discount');
+        
+        if (physicalPriceInput && physicalDiscountInput) {
+            function validatePhysicalDiscount() {
+                const price = parseFloat(physicalPriceInput.value) || 0;
+                const discount = parseFloat(physicalDiscountInput.value) || 0;
+                
+                if (discount > price) {
+                    physicalDiscountInput.setCustomValidity('Giá giảm không được lớn hơn giá bán');
+                    physicalDiscountInput.classList.add('is-invalid');
+                } else {
+                    physicalDiscountInput.setCustomValidity('');
+                    physicalDiscountInput.classList.remove('is-invalid');
+                }
+            }
+            
+            physicalPriceInput.addEventListener('input', validatePhysicalDiscount);
+            physicalDiscountInput.addEventListener('input', validatePhysicalDiscount);
+        }
+        
+        // Ebook format validation
+        const ebookPriceInput = document.getElementById('ebook_price');
+        const ebookDiscountInput = document.getElementById('ebook_discount');
+        
+        if (ebookPriceInput && ebookDiscountInput) {
+            function validateEbookDiscount() {
+                const price = parseFloat(ebookPriceInput.value) || 0;
+                const discount = parseFloat(ebookDiscountInput.value) || 0;
+                
+                if (discount > price) {
+                    ebookDiscountInput.setCustomValidity('Giá giảm không được lớn hơn giá bán');
+                    ebookDiscountInput.classList.add('is-invalid');
+                } else {
+                    ebookDiscountInput.setCustomValidity('');
+                    ebookDiscountInput.classList.remove('is-invalid');
+                }
+            }
+            
+            ebookPriceInput.addEventListener('input', validateEbookDiscount);
+            ebookDiscountInput.addEventListener('input', validateEbookDiscount);
+        }
+    }
+    
+    // Initialize price validation
+    validateDiscountPrice();
 });
 </script>
 @endpush

@@ -56,7 +56,7 @@
                                     <div class="col-md-6 mb-3">
                                         <p class="text-muted mb-1">Tác giả:</p>
                                         <h6>
-                                            {{ $book->author ? $book->author->pluck('name')->join(', ') : '' }}
+                                            {{ $book->authors ? $book->authors->pluck('name')->join(', ') : '' }}
                                         </h6>
                                     </div>
                                     <div class="col-md-6 mb-3">

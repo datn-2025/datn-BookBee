@@ -148,8 +148,8 @@
                                         <th scope="col">Người dùng</th>
                                         <th scope="col">Loại giao dịch</th>
                                         <th scope="col">Số tiền</th>
-                                        {{-- <th scope="col">Số dư sau giao dịch</th> --}}
                                         <th scope="col">Thời gian</th>
+                                        <th scope="col">Trạng thái</th>
                                         <th scope="col">Phương thức</th>
                                         <th scope="col">In PDF</th>
                                     </tr>
@@ -191,16 +191,22 @@
                                                 <span class="text-danger">{{ number_format($transaction->amount, 0, ',', '.') }} đ</span>
                                             @endif
                                         </td>
-                                        {{-- <td>
-                                            <span class="fw-medium">
-                                                {{ isset($afterBalances[$transaction->id]) ? number_format($afterBalances[$transaction->id], 0, ',', '.') . ' đ' : '-' }}
-                                            </span>
-                                        </td> --}}
                                         <td>
                                             <div class="text-muted">
                                                 {{ $transaction->created_at->format('d/m/Y H:i') }}
                                                 <small class="d-block text-muted">{{ $transaction->created_at->diffForHumans() }}</small>
                                             </div>
+                                        </td>
+                                        <td>
+                                            @if($transaction->status == 'completed')
+                                                <span class="badge bg-success">Thành công</span>
+                                            @elseif($transaction->status == 'pending')
+                                                <span class="badge bg-warning">Đang xử lý</span>
+                                            @elseif($transaction->status == 'failed')
+                                                <span class="badge bg-danger">Thất bại</span>
+                                            @else
+                                                <span class="badge bg-secondary">{{ ucfirst($transaction->status) }}</span>
+                                            @endif
                                         </td>
                                         <td>
                                             <h4 class="badge fw-medium text-black ">
@@ -215,7 +221,7 @@
                                         </td>
                                         <td>
                                             <div class="dropdown">
-                                                        <a class="dropdown-item" href="">
+                                                        <a class="dropdown-item" href="{{ route('admin.wallets.transaction.pdf', $transaction->id) }}">
                                                             <i class="ri-printer-fill align-bottom me-2 text-muted"></i> Xuất PDF
                                                         </a>
                                             </div>
@@ -223,7 +229,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="9" class="text-center">
+                                        <td colspan="8" class="text-center">
                                             <div class="py-4">
                                                 <div class="avatar-md mx-auto mb-4">
                                                     <div class="avatar-title bg-light text-secondary rounded-circle fs-24">
