@@ -788,19 +788,19 @@
                         @endphp
                         
                         <!-- Refund Request Section -->
-                        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8 border-2 border-gray-200">
                             <!-- Header -->
                             <div class="bg-black text-white px-6 py-4">
                                 <div class="flex items-center gap-3">
-                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
                                     </svg>
-                                    <h4 class="text-lg font-bold uppercase tracking-wide">YÊU CẦU HOÀN TIỀN</h4>
+                                    <h4 class="text-lg font-bold uppercase tracking-wide text-white">YÊU CẦU HOÀN TIỀN</h4>
                                 </div>
                             </div>
                             
                             <!-- Content -->
-                            <div class="p-6">
+                            <div class="p-6 bg-white">
                                 @if(!$hasRefundRequest)
                                     <div class="text-center py-8">
                                         <div class="mb-4">
@@ -811,11 +811,13 @@
                                         <h3 class="text-lg font-semibold text-gray-900 mb-2">Chưa có yêu cầu hoàn tiền</h3>
                                         <p class="text-gray-600 mb-6">Bạn có thể yêu cầu hoàn tiền cho đơn hàng này nếu có vấn đề với sản phẩm.</p>
                                         <a href="{{ route('account.orders.refund.create', $order->id) }}"
-                                           class="inline-flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
-                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                           class="inline-flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+                                           style="display: inline-flex !important; visibility: visible !important; opacity: 1 !important; color: white !important; background: linear-gradient(to right, #f97316, #ef4444) !important;">
+                                            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                 style="color: white !important; stroke: white !important;">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                             </svg>
-                                            TẠO YÊU CẦU HOÀN TIỀN
+                                            <span class="text-white font-bold" style="color: white !important; font-weight: bold !important;">TẠO YÊU CẦU HOÀN TIỀN</span>
                                         </a>
                                     </div>
                                 @else
@@ -828,12 +830,14 @@
                                         <h3 class="text-lg font-semibold text-gray-900 mb-2">Đã có yêu cầu hoàn tiền</h3>
                                         <p class="text-gray-600 mb-6">Bạn đã gửi yêu cầu hoàn tiền cho đơn hàng này. Nhấn vào nút bên dưới để xem trạng thái.</p>
                                         <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                           class="inline-flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
-                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                           class="inline-flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+                                           style="display: inline-flex !important; visibility: visible !important; opacity: 1 !important; color: white !important; background: linear-gradient(to right, #3b82f6, #6366f1) !important;">
+                                            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                 style="color: white !important; stroke: white !important;">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                             </svg>
-                                            XEM TRẠNG THÁI HOÀN TIỀN
+                                            <span class="text-white font-bold" style="color: white !important; font-weight: bold !important;">XEM TRẠNG THÁI HOÀN TIỀN</span>
                                         </a>
                                     </div>
                                 @endif
@@ -841,8 +845,6 @@
                         </div>
                     @endif
 
-                    
-                    
                     @if($latestRefundRequest && in_array($order->delivery_method, ['delivery', 'pickup', 'mixed']))
                         <!-- Refund Status Section -->
                         {{-- <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
