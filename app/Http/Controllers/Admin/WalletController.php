@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class WalletController extends Controller
 {
@@ -227,6 +228,15 @@ class WalletController extends Controller
         });
         
         return back()->with('success', 'Từ chối giao dịch thành công!');
+    }
+
+    public function generateTransactionPdf($id)
+    {
+        $transaction = WalletTransaction::with(['wallet.user'])->findOrFail($id);
+        
+        $pdf = PDF::loadView('admin.wallets.transaction-pdf', compact('transaction'));
+        
+        return $pdf->download('wallet-transaction-' . $transaction->id . '.pdf');
     }
 
 //    public function show(Wallet $wallet)
