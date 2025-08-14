@@ -81,8 +81,8 @@ class OrderController extends Controller
             'Chờ Xác Nhận' => Order::whereHas('orderStatus', function ($q) {
                 $q->where('name', 'Chờ Xác Nhận');
             })->count(),
-            'Đã Giao Thành Công' => Order::whereHas('orderStatus', function ($q) {
-                $q->where('name', 'Đã Giao Thành Công');
+            'Thành Công' => Order::whereHas('orderStatus', function ($q) {
+                $q->where('name', 'Thành công');
             })->count(),
             'Đã Hủy' => Order::whereHas('orderStatus', function ($q) {
                 $q->where('name', 'Đã Hủy');
