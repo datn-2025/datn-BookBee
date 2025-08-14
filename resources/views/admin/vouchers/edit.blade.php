@@ -156,7 +156,7 @@
                                 <div class="form-group">
                                     <label id="condition_objects_label">Chọn đối tượng</label>
                                     <div class="input-group mb-2">
-                                        <input type="text" class="form-control" id="search_object" placeholder="Tìm kiếm...">
+                                        <input type="text" class="form-control" id="search_object" placeholder="Tìm kiếm....">
                                         <div class="input-group-append">
                                             <button class="btn btn-outline-secondary" type="button" id="select_all">Chọn tất cả</button>
                                             <button class="btn btn-outline-secondary" type="button" id="deselect_all">Bỏ chọn tất cả</button>
