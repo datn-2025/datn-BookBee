@@ -82,6 +82,42 @@ class OrderController extends Controller
         // Lấy thông tin chi tiết giỏ hàng với relationships
         $cartItems = $user->cart()->with(['book.images', 'bookFormat', 'collection.books'])->where('is_selected', 1)->get();
 
+        // Sau khi validateCartItems, cập nhật lại trường gifts cho từng item
+        foreach ($cartItems as $item) {
+            // Nếu là combo thì không có quà tặng
+            if (isset($item->is_combo) && $item->is_combo) {
+                $item->gifts = collect();
+            } else {
+                // Kiểm tra ebook
+                $isEbook = $item->bookFormat && stripos($item->bookFormat->format_name, 'ebook') !== false;
+                if ($isEbook) {
+                    $item->gifts = collect();
+                } else {
+                    // Lấy quà tặng cho sách vật lý
+                    $item->gifts = DB::table('book_gifts')
+                        ->where('book_id', $item->book_id)
+                        ->where(function ($query) {
+                            $query->whereNull('start_date')
+                                ->orWhere('start_date', '<=', now());
+                        })
+                        ->where(function ($query) {
+                            $query->whereNull('end_date')
+                                ->orWhere('end_date', '>=', now());
+                        })
+                        ->where('quantity', '>', 0)
+                        ->select('gift_name as name', 'gift_description as description', 'gift_image as image')
+                        ->get()
+                        ->map(function ($gift) {
+                            return (object) [
+                                'name' => $gift->name ?? 'Quà tặng',
+                                'description' => $gift->description ?? '',
+                                'image' => $gift->image ?? null
+                            ];
+                        });
+                }
+            }
+        }
+
         // Kiểm tra nếu giỏ hàng có cả sách vật lý và sách ebook
         $hasPhysicalBook = false;
         $hasEbook = false;

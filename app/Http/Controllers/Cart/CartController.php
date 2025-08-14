@@ -116,28 +116,35 @@ class CartController extends Controller
                     ->first();
 
                 if ($bookInfo) {
-                    // Lấy thông tin gifts cho sách đơn lẻ
-                    $gifts = DB::table('book_gifts')
-                        ->where('book_id', $cartItem->book_id)
-                        ->where(function ($query) {
-                            $query->whereNull('start_date')
-                                ->orWhere('start_date', '<=', now());
-                        })
-                        ->where(function ($query) {
-                            $query->whereNull('end_date')
-                                ->orWhere('end_date', '>=', now());
-                        })
-                        ->where('quantity', '>', 0)
-                        ->select('gift_name as name', 'gift_description as description', 'gift_image as image')
-                        ->get()
-                        ->map(function ($gift) {
-                            // Đảm bảo tất cả các đối tượng gift có các thuộc tính mong đợi
-                            return (object) [
-                                'name' => $gift->name ?? 'Quà tặng',
-                                'description' => $gift->description ?? '',
-                                'image' => $gift->image ?? null
-                            ];
-                        });
+                    // Kiểm tra ebook
+                    $isEbook = $bookInfo->format_name && stripos($bookInfo->format_name, 'ebook') !== false;
+                    // Nếu là ebook thì không lấy quà tặng
+                    if ($isEbook) {
+                        $gifts = collect();
+                    } else {
+                        // Lấy thông tin gifts cho sách đơn lẻ (chỉ sách vật lý)
+                        $gifts = DB::table('book_gifts')
+                            ->where('book_id', $cartItem->book_id)
+                            ->where(function ($query) {
+                                $query->whereNull('start_date')
+                                    ->orWhere('start_date', '<=', now());
+                            })
+                            ->where(function ($query) {
+                                $query->whereNull('end_date')
+                                    ->orWhere('end_date', '>=', now());
+                            })
+                            ->where('quantity', '>', 0)
+                            ->select('gift_name as name', 'gift_description as description', 'gift_image as image')
+                            ->get()
+                            ->map(function ($gift) {
+                                // Đảm bảo tất cả các đối tượng gift có các thuộc tính mong đợi
+                                return (object) [
+                                    'name' => $gift->name ?? 'Quà tặng',
+                                    'description' => $gift->description ?? '',
+                                    'image' => $gift->image ?? null
+                                ];
+                            });
+                    }
 
                     // Calculate the correct stock considering variants
                     $availableStock = $bookInfo->stock; // Start with format stock
