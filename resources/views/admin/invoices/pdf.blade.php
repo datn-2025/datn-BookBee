@@ -119,7 +119,7 @@
         }
 
         .totals {
-            float: right;
+            float: left;
             width: 350px;
         }
 
