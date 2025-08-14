@@ -83,7 +83,7 @@
                     <form method="GET" action="{{ route('books.search') }}" style="position: relative;">
                         <input type="text" 
                                name="search"
-                               placeholder="Tìm kiếm...."
+                               placeholder="Tìm kiếm..."
                                value="{{ request('search') }}"
                                style="width: 16rem; padding-left: 1rem; padding-right: 2.5rem; padding-top: 0.5rem; padding-bottom: 0.5rem; font-size: 0.875rem; border: 1px solid #d1d5db; border-radius: 0; outline: none; transition: border-color 0.2s ease;"
                                autocomplete="off"
@@ -247,7 +247,7 @@
                     <form method="GET" action="{{ route('books.search') }}" style="position: relative;">
                         <input type="text" 
                                name="search"
-                               placeholder="Tìm kiếm...."
+                               placeholder="Tìm kiếm..."
                                value="{{ request('search') }}"
                                style="width: 100%; padding-left: 1rem; padding-right: 2.5rem; padding-top: 0.5rem; padding-bottom: 0.5rem; font-size: 0.875rem; border: 1px solid #d1d5db; border-radius: 0; outline: none; transition: border-color 0.2s ease;"
                                autocomplete="off"
