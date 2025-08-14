@@ -377,6 +377,19 @@ select:focus, button:focus {
                             <!-- Hover overlay -->
                             <div class="absolute inset-0 bg-gradient-to-br from-black/0 to-black/0 group-hover:from-black/5 group-hover:to-transparent transition-all duration-500"></div>
                             
+                            <!-- Book Cover Image -->
+                            <div clclass="aspect-[3/4] overflow-hidden bg-gray-50">
+                                @if($item->cover_image)
+                                    <img src="{{ asset('storage/' . $item->cover_image) }}" 
+                                         alt="{{ $item->title }}" 
+                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                @else
+                                    <div class="text-gray-400">
+                                        <i class="fas fa-book text-5xl"></i>
+                                    </div>
+                                @endif
+                            </div>
+                            
                             <!-- Content -->
                             <div class="p-6 relative z-10">
                                 <!-- Book Info -->

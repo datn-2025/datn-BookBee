@@ -337,13 +337,13 @@
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][price]" 
-                                                   value="{{ old('formats.physical.price', $physicalFormat->price ?? '') }}" 
+                                                   id="physical_price" value="{{ old('formats.physical.price', $physicalFormat->price ?? '') }}" 
                                                    placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][discount]" 
-                                                   value="{{ old('formats.physical.discount', $physicalFormat->discount ?? '') }}" 
+                                                   id="physical_discount" value="{{ old('formats.physical.discount', $physicalFormat->discount ?? '') }}" 
                                                    placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-4">
@@ -495,13 +495,13 @@
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][price]" 
-                                                   value="{{ old('formats.ebook.price', $ebookFormat->price ?? '') }}" 
+                                                   id="ebook_price" value="{{ old('formats.ebook.price', $ebookFormat->price ?? '') }}" 
                                                    placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][discount]" 
-                                                   value="{{ old('formats.ebook.discount', $ebookFormat->discount ?? '') }}" 
+                                                   id="ebook_discount" value="{{ old('formats.ebook.discount', $ebookFormat->discount ?? '') }}" 
                                                    placeholder="0" min="0">
                                         </div>
                                         <div class="col-12">
@@ -593,16 +593,32 @@
                             <label for="images" class="form-label fw-medium">Ảnh phụ</label>
                             @if($book->images->count() > 0)
                                 <div class="mb-2">
-                                    <div class="row">
+                                    <div class="row" id="existing-images">
                                         @foreach($book->images as $image)
-                                            <div class="col-6 mb-2">
-                                                <img src="{{ asset('storage/' . $image->image_path) }}" 
-                                                     class="img-thumbnail w-100" style="height: 80px; object-fit: cover;" 
-                                                     alt="Ảnh phụ">
+                                            <div class="col-6 mb-2" id="image-item-{{ $image->id }}">
+                                                <div class="card border-0 shadow-sm">
+                                                    <div class="position-relative">
+                                                        <img src="{{ asset('storage/' . $image->image_url) }}" 
+                                                             class="card-img-top" style="height: 100px; object-fit: cover;" 
+                                                             alt="Ảnh phụ">
+                                                        <div class="position-absolute top-0 end-0 p-1">
+                                                            <button type="button" class="btn btn-danger btn-sm rounded-circle delete-image-btn" 
+                                                                    data-image-id="{{ $image->id }}"
+                                                                    style="width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="ri-delete-bin-line" style="font-size: 14px;"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body p-2">
+                                                        <small class="text-muted">Ảnh {{ $loop->iteration }}</small>
+                                                    </div>
+                                                </div>
                                             </div>
                                         @endforeach
                                     </div>
                                     <div class="small text-muted">Ảnh phụ hiện tại</div>
+                                    <!-- Hidden inputs to track deleted images -->
+                                    <div id="deleted-images-inputs"></div>
                                 </div>
                             @endif
                             <input type="file" class="form-control @error('images') is-invalid @enderror" 
@@ -688,6 +704,11 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
+    console.log('jQuery is loaded and ready!'); // Debug log
+    
+    // Test if delete buttons exist
+    console.log('Delete buttons found:', $('.delete-existing-image').length);
+    
     // Initialize Select2
     if (typeof $.fn.select2 !== 'undefined') {
         $('.select2-authors').select2({
@@ -942,6 +963,200 @@ $(document).ready(function() {
             }
         });
     }
+
+    // Image preview functionality
+    $('#cover_image').on('change', function() {
+        const file = this.files[0];
+        const preview = $('#cover_preview');
+        preview.empty();
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.html(`<img src="${e.target.result}" class="img-thumbnail mt-2" style="max-height: 200px;">`);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Store selected files for manipulation
+    let selectedFiles = [];
+
+    $('#images').on('change', function() {
+        const files = Array.from(this.files);
+        selectedFiles = files;
+        updateImagePreview();
+    });
+
+    function updateImagePreview() {
+        const preview = $('#images_preview');
+        preview.empty();
+        
+        if (selectedFiles.length > 0) {
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.append(`
+                        <div class="col-6 col-md-4 mb-2" data-index="${index}">
+                            <div class="position-relative">
+                                <img src="${e.target.result}" class="img-thumbnail" style="height: 100px; width: 100%; object-fit: cover;">
+                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-image" 
+                                        data-index="${index}" style="transform: translate(25%, -25%); border-radius: 50%; width: 25px; height: 25px; padding: 0;">
+                                    <i class="ri-close-line" style="font-size: 12px;"></i>
+                                </button>
+                                <div class="text-center mt-1">
+                                    <small class="text-muted">${file.name}</small>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    }
+
+    // Handle image removal
+    $(document).on('click', '.remove-image', function() {
+        const index = parseInt($(this).data('index'));
+        selectedFiles.splice(index, 1);
+        
+        // Update the file input
+        const dt = new DataTransfer();
+        selectedFiles.forEach(file => dt.items.add(file));
+        document.getElementById('images').files = dt.files;
+        
+        updateImagePreview();
+    });
+
+    // New enhanced image deletion logic
+    $(document).on('click', '.delete-image-btn', function() {
+        const button = $(this);
+        const imageId = button.data('image-id');
+        const imageItem = $(`#image-item-${imageId}`);
+        
+        // Show confirmation with SweetAlert2 style (if available) or default confirm
+        const confirmMessage = 'Bạn có chắc chắn muốn xóa ảnh này?\nHành động này không thể hoàn tác!';
+        
+        if (confirm(confirmMessage)) {
+            // Disable button and show loading
+            button.prop('disabled', true);
+            button.html('<i class="ri-loader-4-line" style="animation: spin 1s linear infinite;"></i>');
+            
+            // Add loading overlay to image item
+            imageItem.css('opacity', '0.6');
+            
+            // Make AJAX request
+            $.ajax({
+                url: `/admin/books/delete-image/${imageId}`,
+                type: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Success animation
+                        imageItem.addClass('border-success');
+                        imageItem.fadeOut(400, function() {
+                            $(this).remove();
+                            
+                            // Show success notification
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success(response.message || 'Ảnh đã được xóa thành công!');
+                            }
+                            
+                            // Check if no images left
+                            if ($('#existing-images .col-6').length === 0) {
+                                $('#existing-images').parent().append(
+                                    '<div class="text-center text-muted py-3"><i class="ri-image-line me-2"></i>Không có ảnh phụ nào</div>'
+                                );
+                            }
+                        });
+                    } else {
+                        // Handle error
+                        handleDeleteError(button, imageItem, response.message || 'Có lỗi xảy ra khi xóa ảnh');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', error);
+                    handleDeleteError(button, imageItem, 'Không thể kết nối đến server. Vui lòng thử lại!');
+                }
+            });
+        }
+    });
+    
+    // Helper function to handle delete errors
+    function handleDeleteError(button, imageItem, message) {
+        // Restore button state
+        button.prop('disabled', false);
+        button.html('<i class="ri-delete-bin-line"></i>');
+        
+        // Restore image opacity
+        imageItem.css('opacity', '1');
+        imageItem.addClass('border-danger');
+        
+        // Show error message
+        if (typeof toastr !== 'undefined') {
+            toastr.error(message);
+        } else {
+            alert('Lỗi: ' + message);
+        }
+        
+        // Remove error border after 3 seconds
+        setTimeout(() => {
+            imageItem.removeClass('border-danger');
+        }, 3000);
+    }
+
+    // Price discount validation
+    function validateDiscountPrice() {
+        // Physical format validation
+        const physicalPriceInput = document.getElementById('physical_price');
+        const physicalDiscountInput = document.getElementById('physical_discount');
+        
+        if (physicalPriceInput && physicalDiscountInput) {
+            function validatePhysicalDiscount() {
+                const price = parseFloat(physicalPriceInput.value) || 0;
+                const discount = parseFloat(physicalDiscountInput.value) || 0;
+                
+                if (discount > price) {
+                    physicalDiscountInput.setCustomValidity('Giá giảm không được lớn hơn giá bán');
+                    physicalDiscountInput.classList.add('is-invalid');
+                } else {
+                    physicalDiscountInput.setCustomValidity('');
+                    physicalDiscountInput.classList.remove('is-invalid');
+                }
+            }
+            
+            physicalPriceInput.addEventListener('input', validatePhysicalDiscount);
+            physicalDiscountInput.addEventListener('input', validatePhysicalDiscount);
+        }
+        
+        // Ebook format validation
+        const ebookPriceInput = document.getElementById('ebook_price');
+        const ebookDiscountInput = document.getElementById('ebook_discount');
+        
+        if (ebookPriceInput && ebookDiscountInput) {
+            function validateEbookDiscount() {
+                const price = parseFloat(ebookPriceInput.value) || 0;
+                const discount = parseFloat(ebookDiscountInput.value) || 0;
+                
+                if (discount > price) {
+                    ebookDiscountInput.setCustomValidity('Giá giảm không được lớn hơn giá bán');
+                    ebookDiscountInput.classList.add('is-invalid');
+                } else {
+                    ebookDiscountInput.setCustomValidity('');
+                    ebookDiscountInput.classList.remove('is-invalid');
+                }
+            }
+            
+            ebookPriceInput.addEventListener('input', validateEbookDiscount);
+            ebookDiscountInput.addEventListener('input', validateEbookDiscount);
+        }
+    }
+    
+    // Initialize price validation
+    validateDiscountPrice();
 });
 </script>
 @endpush

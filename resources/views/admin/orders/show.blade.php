@@ -155,6 +155,7 @@
                                                     </div>
                                                 </li>
                                                 @endif
+                                                @if($order->delivery_method !== 'ebook')
                                                 <li>
                                                     <div class="d-flex">
                                                         <div class="flex-shrink-0 text-muted">
@@ -166,6 +167,7 @@
                                                         </div>
                                                     </div>
                                                 </li>
+                                                @endif
                                                 <li>
                                                     <div class="d-flex">
                                                         <div class="flex-shrink-0 text-muted">
@@ -176,6 +178,8 @@
                                                             <p class="text-muted mb-0">
                                                                 @if($order->delivery_method === 'pickup')
                                                                     <span class="badge bg-info">Nhận tại cửa hàng</span>
+                                                                @elseif($order->delivery_method === 'ebook')
+                                                                    <span class="badge bg-success">Nhận qua email</span>
                                                                 @else
                                                                     <span class="badge bg-primary">Giao hàng tận nơi</span>
                                                                 @endif
@@ -184,26 +188,6 @@
                                                     </div>
                                                 </li>
                                             </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-4">
-                                <div class="mb-4">
-                                    <h5 class="text-muted mb-3">Mã QR đơn hàng</h5>
-                                    <div class="card border shadow-none mb-2">
-                                        <div class="card-body text-center">
-                                            @if($order->qr_code)
-                                                <img src="{{ url('storage/private/' . $order->qr_code) }}" alt="QR Code" class="img-fluid rounded" style="max-width: 150px">
-                                                <p class="text-muted mt-3 mb-0">Quét mã QR để xem thông tin đơn hàng</p>
-                                            @else
-                                                <div class="avatar-lg mx-auto">
-                                                    <div class="avatar-title bg-light text-secondary rounded-circle fs-1">
-                                                        <i class="ri-qr-code-line"></i>
-                                                    </div>
-                                                </div>
-                                                <p class="text-muted mt-3 mb-0">Chưa có mã QR cho đơn hàng này</p>
-                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -1034,18 +1018,6 @@
                                 @endif
                             </div>
                         @endif
-                    </div>
-                </div>
-                @endif
-                
-                {{-- QR Code Display --}}
-                @if ($order->qr_code_path)
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Mã QR Đơn Hàng</h5>
-                    </div>
-                    <div class="card-body text-center">
-                        <img src="{{ asset('storage/' . $order->qr_code_path) }}" alt="Order QR Code" class="img-fluid" style="max-width: 200px; border: 1px solid #ddd; padding: 5px;">
                     </div>
                 </div>
                 @endif

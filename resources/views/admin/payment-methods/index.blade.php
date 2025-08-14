@@ -92,7 +92,7 @@
                                             <th>Mô tả</th>
                                             <th>Ngày tạo</th>
                                             <th>Trạng thái</th>
-                                            <th>Hành động</th>
+                                            <th>Thao Tác</th>
                                         </tr>
                                     </thead>
                                     <tbody>

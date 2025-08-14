@@ -477,29 +477,58 @@
                     </div>
                     <div class="bg-gray-50 border-2 border-gray-200 p-6">
                         <div class="space-y-4">
+                            @php
+                                // Tính toán lại tổng tiền tạm tính (trước khi giảm giá)
+                                $subtotal = $order->orderItems->sum(function($item) {
+                                    return $item->price * $item->quantity;
+                                });
+                                
+                                $discountAmount = 0;
+                                $appliedVoucher = null;
+                                $voucherDiscount = 0;
+                                
+                                // Kiểm tra nếu có áp dụng voucher
+                                if ($order->voucher) {
+                                    $appliedVoucher = $order->voucher;
+                                    // Tính toán giảm giá dựa trên phần trăm hoặc số tiền cố định
+                                    if ($appliedVoucher->discount_percent > 0) {
+                                        // Giảm giá theo phần trăm
+                                        $discountByPercent = $subtotal * ($appliedVoucher->discount_percent / 100);
+                                        $voucherDiscount = $appliedVoucher->max_discount > 0 
+                                            ? min($discountByPercent, $appliedVoucher->max_discount)
+                                            : $discountByPercent;
+                                    } else {
+                                        // Giảm giá cố định
+                                        $voucherDiscount = $appliedVoucher->discount_amount;
+                                    }
+                                    $discountAmount = $voucherDiscount;
+                                } else {
+                                    // Nếu không có voucher, sử dụng giá trị discount_amount từ đơn hàng
+                                    $discountAmount = $order->discount_amount;
+                                }
+                                
+                                // Đảm bảo giảm giá không vượt quá tổng tiền
+                                $discountAmount = min($discountAmount, $subtotal);
+                            @endphp
+                            
                             <div class="flex justify-between">
                                 <span class="text-gray-600 uppercase tracking-wide">Tạm tính</span>
-                                <span class="font-bold text-black">{{ number_format($order->total_amount - $order->shipping_fee + $order->discount_amount) }}đ</span>
+                                <span class="font-bold text-black" id="subtotal-amount">{{ number_format($subtotal) }}đ</span>
                             </div>
-                            @if($order->voucher)
-                                @php
-                                    $discountAmount = 0;
-                                    $discountByPercent = $order->total_amount * ($order->voucher->discount_percent / 100);
-                                    $discountAmount = min($discountByPercent, $order->voucher->max_discount);
-                                @endphp
+                            
+                            @if($discountAmount > 0)
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 uppercase tracking-wide">
-                                        Mã giảm giá ({{ $order->voucher->code }})
-                                        @if($order->voucher->discount_percent)
-                                            - {{ $order->voucher->discount_percent }}%
+                                        @if($appliedVoucher)
+                                            Mã giảm giá ({{ $appliedVoucher->code }})
+                                            @if($appliedVoucher->discount_percent > 0)
+                                                - {{ $appliedVoucher->discount_percent }}%
+                                            @endif
+                                        @else
+                                            Giảm giá
                                         @endif
                                     </span>
-                                    <span class="text-red-600 font-bold">-{{ number_format($discountAmount) }}đ</span>
-                                </div>
-                            @elseif($order->discount_amount > 0)
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600 uppercase tracking-wide">Giảm giá</span>
-                                    <span class="text-red-600 font-bold">-{{ number_format($order->discount_amount) }}đ</span>
+                                    <span class="text-red-600 font-bold" id="discount-amount">-{{ number_format($discountAmount) }}đ</span>
                                 </div>
                             @endif
                             <div class="flex justify-between">

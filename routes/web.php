@@ -256,6 +256,7 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/trash', [AdminBookController::class, 'trash'])->name('trash')->middleware('checkpermission:book.trash');
         Route::post('/restore/{id}', [AdminBookController::class, 'restore'])->name('restore')->middleware('checkpermission:book.restore');
         Route::delete('/force-delete/{id}', [AdminBookController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:book.force-delete');
+        Route::delete('/delete-image/{imageId}', [AdminBookController::class, 'deleteImage'])->name('delete-image')->middleware('checkpermission:book.edit');
     });
 
     // Payment Methods
@@ -285,6 +286,7 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/', [WalletController::class, 'index'])->name('index')->middleware('checkpermission:wallet.view');
         Route::get('/deposit-history', [WalletController::class, 'depositHistory'])->name('depositHistory')->middleware('checkpermission:wallet.deposit-history');
         Route::get('/withdraw-history', [WalletController::class, 'withdrawHistory'])->name('withdrawHistory')->middleware('checkpermission:wallet.withdraw-history');
+        Route::get('/transaction/{id}/pdf', [WalletController::class, 'generateTransactionPdf'])->name('transaction.pdf')->middleware('checkpermission:wallet.view');
         Route::post('/approve/{id}', [WalletController::class, 'approveTransaction'])->name('approveTransaction')->middleware('checkpermission:wallet.approve');
         Route::post('/reject/{id}', [WalletController::class, 'rejectTransaction'])->name('rejectTransaction')->middleware('checkpermission:wallet.reject');
     });
@@ -383,16 +385,16 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::prefix('collections')->name('collections.')->middleware('checkpermission:collection.view')->group(function () {
         Route::get('/', [CollectionController::class, 'index'])->name('index')->middleware('checkpermission:collection.view');
         Route::get('/create', [CollectionController::class, 'create'])->name('create')->middleware('checkpermission:collection.create');
+        Route::get('/trash', [CollectionController::class, 'trash'])->name('trash')->middleware('checkpermission:collection.trash');
+        Route::get('/export', [CollectionController::class, 'export'])->name('export')->middleware('checkpermission:collection.export');
         Route::post('/', [CollectionController::class, 'store'])->name('store')->middleware('checkpermission:collection.create');
         Route::get('/{collection}', [CollectionController::class, 'show'])->name('show')->middleware('checkpermission:collection.show');
         Route::get('/{collection}/edit', [CollectionController::class, 'edit'])->name('edit')->middleware('checkpermission:collection.edit');
         Route::put('/{collection}', [CollectionController::class, 'update'])->name('update')->middleware('checkpermission:collection.edit');
         Route::delete('/{collection}', [CollectionController::class, 'destroy'])->name('destroy')->middleware('checkpermission:collection.delete');
         Route::post('/{collection}/restore', [CollectionController::class, 'restore'])->name('restore')->middleware('checkpermission:collection.restore');
-        Route::delete('/{collection}/force', [CollectionController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:collection.force-delete');
+        Route::delete('/{collection}/force', [CollectionController::class, 'forceDelete'])->name('forceDelete')->middleware('checkpermission:collection.force-delete');
         Route::post('/{collection}/attach-books', [CollectionController::class, 'attachBooks'])->name('attach-books')->middleware('checkpermission:collection.attach-books');
-        Route::get('/trash', [CollectionController::class, 'trash'])->name('trash')->middleware('checkpermission:collection.trash');
-        Route::get('/export', [CollectionController::class, 'export'])->name('export')->middleware('checkpermission:collection.export');
     });
     // Vouchers
     Route::prefix('vouchers')->name('vouchers.')->middleware('checkpermission:voucher.view')->group(function () {

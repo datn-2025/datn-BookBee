@@ -79,7 +79,7 @@ class AdminInvoiceController extends Controller
 
     public function show($id)
     {
-        $invoice = Invoice::with(['order', 'order.user', 'items.book', 'items.collection'])
+        $invoice = Invoice::with(['order.orderStatus', 'order.user', 'order.address', 'order.paymentMethod', 'order.paymentStatus', 'items.book.authors', 'items.collection.books'])
             ->findOrFail($id);
 
         return view('admin.invoices.show', compact('invoice'));
@@ -87,7 +87,7 @@ class AdminInvoiceController extends Controller
 
     public function generatePdf($id)
     {
-        $invoice = Invoice::with(['order', 'order.user', 'items.book', 'items.collection'])
+        $invoice = Invoice::with(['order.orderStatus', 'order.user', 'order.address', 'order.paymentMethod', 'order.paymentStatus', 'items.book.authors', 'items.collection.books'])
             ->findOrFail($id);
 
         $pdf = PDF::loadView('admin.invoices.pdf', compact('invoice'));
