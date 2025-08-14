@@ -27,7 +27,7 @@
                 <form action="{{ route('admin.users.index') }}" method="GET">
                     <div class="row">
                         <div class="col-md-3">
-                            <input type="text" name="search" class="form-control" placeholder=" Tìm kiếm thông tin "
+                            <input type="text" name="search" class="form-control" placeholder="Tìm kiếm thông tin "
                                 value="{{ request('search') }}">
                         </div>
                         <div class="col-md-3">
