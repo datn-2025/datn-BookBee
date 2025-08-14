@@ -811,7 +811,8 @@
                                         <h3 class="text-lg font-semibold text-gray-900 mb-2">Chưa có yêu cầu hoàn tiền</h3>
                                         <p class="text-gray-600 mb-6">Bạn có thể yêu cầu hoàn tiền cho đơn hàng này nếu có vấn đề với sản phẩm.</p>
                                         <a href="{{ route('account.orders.refund.create', $order->id) }}"
-                                           class="inline-flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                           class="inline-flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg refund-request-btn"
+                                           style="background: linear-gradient(90deg, #ff9800 0%, #f44336 100%) !important; color: #fff !important; display:inline-flex !important; opacity:1 !important; visibility:visible !important; border: none !important;">
                                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                             </svg>
