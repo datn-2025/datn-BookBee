@@ -40,11 +40,13 @@
         100% { background-position: -200% 0; }
     }
     
+    /* Enhanced news hero with better image handling */
     .news-hero {
         position: relative;
         overflow: hidden;
         background: #fff;
         border-bottom: 2px solid #000;
+        min-height: 500px;
     }
     
     .news-hero::before {
@@ -57,6 +59,75 @@
         background: #000;
         opacity: 0.05;
         transform: skewX(-15deg);
+    }
+    
+    /* Banner image effects */
+    .banner-image-container {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .banner-image-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(0,0,0,0.1) 0%, transparent 50%);
+        z-index: 1;
+        pointer-events: none;
+    }
+    
+    .banner-image {
+        transition: all 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    .banner-image:hover {
+        transform: scale(1.05) rotate(1deg);
+    }
+    
+    /* Dynamic badge styling */
+    .dynamic-badge {
+        background: linear-gradient(135deg, #000 0%, #333 100%);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        backdrop-filter: blur(10px);
+    }
+    
+    .dynamic-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    }
+    
+    /* Content overlay for better text readability */
+    .content-overlay {
+        position: relative;
+        z-index: 2;
+    }
+    
+    /* Responsive banner adjustments */
+    @media (max-width: 1024px) {
+        .news-hero {
+            min-height: 400px;
+        }
+        
+        .banner-image {
+            height: 350px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .news-hero {
+            min-height: 300px;
+        }
+        
+        .banner-image {
+            height: 280px;
+        }
+        
+        .dynamic-badge {
+            transform: scale(0.9);
+        }
     }
     
     /* Enhanced parallax effect */
@@ -441,101 +512,172 @@
             <div class="absolute top-1/2 left-10 w-1 h-32 bg-black opacity-20"></div>
         </div>
 
-        @if($featuredNews = $news->firstWhere('is_featured', true))
+        @php
+            // Logic để chọn banner hiển thị
+            $featuredNews = $news->where('is_featured', true)->first();
+            $latestNews = $news->first();
+            $bannerNews = $featuredNews ?? $latestNews;
+            
+            // Nếu có tin nổi bật thì hiển thị banner đầy đủ, không thì hiển thị banner đơn giản
+            $hasFullBanner = $featuredNews !== null;
+        @endphp
+
+        @if($bannerNews)
             <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 items-center gap-10">
-                    {{-- Left text - Adidas Typography Style --}}
-                    <div class="space-y-8 text-gray-900">
-                        <!-- Pre-title với Adidas style -->
-                        <div class="flex items-center gap-4 mb-2">
-                            <div class="w-8 h-0.5 bg-black"></div>
-                            <span class="featured-badge text-xs uppercase tracking-[0.2em]">
-                                TIN NỔI BẬT
-                            </span>
-                        </div>
+                @if($hasFullBanner && $bannerNews->thumbnail)
+                    {{-- Banner đầy đủ với ảnh cho tin nổi bật --}}
+                    <div class="grid grid-cols-1 lg:grid-cols-2 items-center gap-12">
+                        {{-- Left content --}}
+                        <div class="space-y-8 text-gray-900 order-2 lg:order-1">
+                            <!-- Pre-title -->
+                            <div class="flex items-center gap-4 mb-2">
+                                <div class="w-8 h-0.5 bg-black"></div>
+                                <span class="featured-badge text-xs uppercase tracking-[0.2em]">
+                                    {{ $bannerNews->category ?? 'TIN NỔI BẬT' }}
+                                </span>
+                            </div>
 
-                        <!-- Main headline - Bold Adidas typography -->
-                        <h1 class="text-4xl md:text-6xl font-black uppercase leading-[0.9] tracking-tight text-black">
-                            <span class="block">TIN TỨC</span>
-                            <span class="block text-gray-400">&</span>
-                            <span class="block">SỰ KIỆN</span>
-                        </h1>
+                            <!-- Main headline -->
+                            <h1 class="text-3xl md:text-5xl lg:text-6xl font-black uppercase leading-[0.9] tracking-tight text-black">
+                                {{ Str::limit($bannerNews->title, 50) }}
+                            </h1>
 
-                        <!-- Subtitle -->
-                        <div class="space-y-4">
-                            <p class="text-lg md:text-xl font-medium text-gray-700 max-w-lg">
-                                {{ $featuredNews->title }}
-                            </p>
+                            <!-- Summary -->
+                            @if($bannerNews->summary)
+                            <div class="space-y-4">
+                                <p class="text-lg md:text-xl font-medium text-gray-700 leading-relaxed">
+                                    {{ Str::limit($bannerNews->summary, 120) }}
+                                </p>
+                            </div>
+                            @endif
 
-                            <!-- Meta info - Clean Adidas style -->
-                            <div class="flex items-center gap-4">
+                            <!-- Meta info -->
+                            <div class="flex items-center gap-6">
                                 <div class="flex items-center text-gray-600">
                                     <div class="w-2 h-2 bg-black mr-2"></div>
-                                    {{ $featuredNews->created_at->format('d M Y') }}
+                                    <span class="text-sm font-medium">{{ $bannerNews->created_at->format('d M Y') }}</span>
                                 </div>
+                                @if($bannerNews->category)
+                                <div class="flex items-center text-gray-600">
+                                    <div class="w-2 h-2 bg-black mr-2"></div>
+                                    <span class="text-sm font-medium uppercase">{{ $bannerNews->category }}</span>
+                                </div>
+                                @endif
+                            </div>
+
+                            <!-- CTA Button -->
+                            <div class="pt-4">
+                                <a href="{{ route('news.show', $bannerNews->id) }}"
+                                    class="read-more-btn group inline-flex items-center px-8 py-4 font-bold text-sm uppercase tracking-[0.1em] hover:shadow-lg transition-all duration-300">
+                                    <span>ĐỌC NGAY</span>
+                                    <div class="w-4 h-0.5 bg-white ml-3 transform group-hover:w-8 transition-all duration-300"></div>
+                                </a>
                             </div>
                         </div>
 
-                        <!-- CTA Button - Adidas style -->
-                        <div class="pt-4">
-                            <a href="{{ route('news.show', $featuredNews->id) }}"
-                                class="read-more-btn group inline-flex items-center px-8 py-4 font-bold text-sm uppercase tracking-[0.1em] hover:shadow-lg transition-all duration-300">
-                                <span>ĐỌC NGAY</span>
-                                <div class="w-4 h-0.5 bg-white ml-3 transform group-hover:w-8 transition-all duration-300"></div>
-                            </a>
-                        </div>
-                    </div>
+                        {{-- Right image --}}
+                        <div class="flex justify-center order-1 lg:order-2">
+                            <div class="relative group w-full max-w-lg">
+                                <!-- Main image container -->
+                                <div class="banner-image-container relative overflow-hidden">
+                                    <img src="{{ $bannerNews->thumbnail }}"
+                                        class="banner-image w-full h-80 md:h-96 lg:h-[500px] object-cover border-2 border-black"
+                                        alt="{{ $bannerNews->title }}">
 
-                    {{-- Right image - Clean presentation --}}
-                    <div class="flex justify-center">
-                        <div class="relative group">
-                            <!-- Main image với clean style -->
-                            <div class="relative">
-                                <img src="{{ $featuredNews->thumbnail ?? '/images/news-default.jpg' }}"
-                                    class="h-80 md:h-96 w-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-                                    alt="{{ $featuredNews->title }}">
+                                    <!-- Image overlay với gradient -->
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                                <!-- Clean badge thay vì rounded -->
-                                <div class="absolute -top-6 -left-6 bg-black text-white px-6 py-3 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-500">
-                                    <div class="text-center">
-                                        <div class="text-sm font-bold uppercase tracking-wide">NEW</div>
-                                        <div class="text-xs uppercase tracking-wider text-gray-300">Article</div>
+                                    <!-- Featured badge -->
+                                    @if($bannerNews->is_featured)
+                                    <div class="dynamic-badge absolute -top-4 -left-4 text-white px-6 py-3 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-500 z-10">
+                                        <div class="text-center">
+                                            <div class="text-sm font-bold uppercase tracking-wide">HOT</div>
+                                            <div class="text-xs uppercase tracking-wider text-gray-300">News</div>
+                                        </div>
+                                    </div>
+                                    @endif
+
+                                    <!-- Date badge -->
+                                    <div class="absolute -bottom-4 -right-4 bg-white border-2 border-black px-4 py-2 transform group-hover:translate-x-1 group-hover:translate-y-1 transition-transform duration-500 z-10">
+                                        <div class="text-center">
+                                            <div class="text-xs font-bold uppercase tracking-wide text-black">{{ $bannerNews->created_at->format('d') }}</div>
+                                            <div class="text-xs uppercase tracking-wider text-gray-600">{{ $bannerNews->created_at->format('M') }}</div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Minimal accent -->
-                                <div class="absolute -bottom-4 -right-4 bg-white border-2 border-black px-4 py-2 transform group-hover:translate-x-1 group-hover:translate-y-1 transition-transform duration-500">
-                                    <span class="text-xs font-bold uppercase tracking-wide text-black">Featured</span>
-                                </div>
+                                <!-- Background decorative shape -->
+                                <div class="absolute inset-0 -z-10 bg-gradient-to-br from-gray-100 to-gray-200 transform translate-x-6 translate-y-6 group-hover:translate-x-3 group-hover:translate-y-3 transition-transform duration-700"></div>
+                                
+                                <!-- Secondary decorative element -->
+                                <div class="absolute -top-8 -right-8 w-24 h-24 bg-black opacity-10 transform rotate-45 group-hover:rotate-90 transition-transform duration-700 -z-10"></div>
                             </div>
-
-                            <!-- Background geometric shape -->
-                            <div class="absolute inset-0 -z-10 bg-gray-100 transform translate-x-4 translate-y-4 group-hover:translate-x-2 group-hover:translate-y-2 transition-transform duration-700"></div>
                         </div>
                     </div>
-                </div>
+                @else
+                    {{-- Banner đơn giản khi không có ảnh hoặc không phải tin nổi bật --}}
+                    <div class="text-center">
+                        <!-- Pre-title -->
+                        <div class="flex items-center justify-center gap-4 mb-6">
+                            <div class="w-8 h-0.5 bg-black"></div>
+                            <span class="featured-badge text-xs uppercase tracking-[0.2em]">
+                                {{ $bannerNews ? ($bannerNews->category ?? 'TIN TỨC MỚI NHẤT') : 'BOOKBEE NEWS' }}
+                            </span>
+                            <div class="w-8 h-0.5 bg-black"></div>
+                        </div>
+                        
+                        @if($bannerNews)
+                            <!-- Title từ bài viết mới nhất -->
+                            <h1 class="text-4xl md:text-6xl font-black uppercase leading-[0.9] tracking-tight text-black mb-8">
+                                {{ Str::limit($bannerNews->title, 80) }}
+                            </h1>
+                            
+                            <!-- Summary nếu có -->
+                            @if($bannerNews->summary)
+                            <p class="text-lg md:text-xl font-medium text-gray-700 max-w-3xl mx-auto mb-8">
+                                {{ Str::limit($bannerNews->summary, 150) }}
+                            </p>
+                            @endif
+
+                            <!-- Meta info -->
+                            <div class="flex items-center justify-center gap-6 mb-8">
+                                <div class="flex items-center text-gray-600">
+                                    <div class="w-2 h-2 bg-black mr-2"></div>
+                                    <span class="text-sm font-medium">{{ $bannerNews->created_at->format('d M Y') }}</span>
+                                </div>
+                                @if($bannerNews->category)
+                                <div class="flex items-center text-gray-600">
+                                    <div class="w-2 h-2 bg-black mr-2"></div>
+                                    <span class="text-sm font-medium uppercase">{{ $bannerNews->category }}</span>
+                                </div>
+                                @endif
+                            </div>
+
+                            <!-- CTA Button -->
+                            <div>
+                                <a href="{{ route('news.show', $bannerNews->id) }}"
+                                    class="read-more-btn group inline-flex items-center px-8 py-4 font-bold text-sm uppercase tracking-[0.1em] hover:shadow-lg transition-all duration-300">
+                                    <span>ĐỌC NGAY</span>
+                                    <div class="w-4 h-0.5 bg-white ml-3 transform group-hover:w-8 transition-all duration-300"></div>
+                                </a>
+                            </div>
+                        @else
+                            <!-- Fallback khi không có tin tức nào -->
+                            <h1 class="text-4xl md:text-6xl font-black uppercase leading-[0.9] tracking-tight text-black mb-8">
+                                <span class="block">TIN TỨC</span>
+                                <span class="block text-gray-400">&</span>
+                                <span class="block">SỰ KIỆN</span>
+                            </h1>
+                            
+                            <p class="text-lg md:text-xl font-medium text-gray-700 max-w-2xl mx-auto">
+                                Khám phá những câu chuyện thú vị và cập nhật mới nhất từ thế giới sách
+                            </p>
+                        @endif
+                    </div>
+                @endif
             </div>
         @else
-            <!-- Fallback khi không có featured news -->
-            <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <div class="flex items-center justify-center gap-4 mb-6">
-                    <div class="w-8 h-0.5 bg-black"></div>
-                    <span class="featured-badge text-xs uppercase tracking-[0.2em]">
-                        BOOKBEE NEWS
-                    </span>
-                    <div class="w-8 h-0.5 bg-black"></div>
-                </div>
-                
-                <h1 class="text-4xl md:text-6xl font-black uppercase leading-[0.9] tracking-tight text-black mb-8">
-                    <span class="block">TIN TỨC</span>
-                    <span class="block text-gray-400">&</span>
-                    <span class="block">SỰ KIỆN</span>
-                </h1>
-                
-                <p class="text-lg md:text-xl font-medium text-gray-700 max-w-2xl mx-auto">
-                    Khám phá những câu chuyện thú vị và cập nhật mới nhất từ thế giới sách
-                </p>
-            </div>
+            <!-- Logic động sẽ được xử lý ở trên -->
         @endif
     </section>
 
@@ -555,26 +697,44 @@
                 </div>
                 
                 <h2 class="text-3xl md:text-4xl font-black uppercase text-black mb-4 tracking-tight">
-                    BÀI VIẾT NỔI BẬT
+                    TẤT CẢ BÀI VIẾT
                 </h2>
                 
                 <div class="section-divider mb-6"></div>
                 
                 <p class="text-lg text-gray-600 max-w-2xl mx-auto font-medium mb-8">
-                    Khám phá những câu chuyện thú vị và cập nhật mới nhất từ thế giới sách
+                    Danh sách đầy đủ các bài viết và tin tức mới nhất
                 </p>
                 
-                <!-- Simplified header without search/filter since controller doesn't support it -->
+                <!-- Info về phân trang -->
                 <div class="text-center mb-8">
                     <p class="text-sm text-gray-500 uppercase tracking-wide">
-                        Xem tất cả bài viết mới nhất
+                        Trang {{ $news->currentPage() }} / {{ $news->lastPage() }} 
+                        - Hiển thị {{ $news->count() }} / {{ $news->total() }} bài viết
                     </p>
                 </div>
             </div>
 
             <!-- News Cards Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                @foreach($news->where('is_featured', false) as $index => $item)
+                @php
+                    // Lấy tin tức để hiển thị trong grid (loại trừ tin đã hiển thị trong banner)
+                    $gridNews = $news->filter(function($item) use ($bannerNews) {
+                        return !$bannerNews || $item->id !== $bannerNews->id;
+                    });
+                @endphp
+                
+                @if($gridNews->isEmpty())
+                    <div class="col-span-full text-center py-12">
+                        <div class="text-gray-500">
+                            <i class="fas fa-newspaper text-4xl mb-4"></i>
+                            <p class="text-lg font-medium">Không có bài viết nào khác để hiển thị</p>
+                            <p class="text-sm mt-2">Vui lòng quay lại trang trước hoặc xem các bài viết nổi bật</p>
+                        </div>
+                    </div>
+                @endif
+                
+                @foreach($gridNews as $index => $item)
                 <article class="news-card group fade-in fade-in-delay-{{ ($index % 4) + 1 }}">
                     <!-- Image Container -->
                     <div class="image-container relative overflow-hidden">
@@ -591,7 +751,12 @@
                         <div class="absolute top-4 left-4">
                             <span class="category-tag">{{ $item->category ?? 'TIN TỨC' }}</span>
                         </div>
-
+                        <!-- Featured badge nếu là tin nổi bật -->
+                        @if($item->is_featured)
+                        <div class="absolute top-4 right-4">
+                            <span class="bg-red-600 text-white px-2 py-1 text-xs font-bold">HOT</span>
+                        </div>
+                        @endif
                     </div>
                     
                     <!-- Content -->
@@ -683,7 +848,14 @@
                     <h3 class="text-lg font-bold text-black uppercase tracking-wide">TIN NỔI BẬT</h3>
                 </div>
                 
-                @foreach($news->where('is_featured', true)->take(3) as $featured)
+                @php
+                    // Lấy tin nổi bật cho sidebar (loại trừ tin đã hiển thị trong banner nếu có)
+                    $featuredForSidebar = $news->where('is_featured', true)->filter(function($item) use ($bannerNews) {
+                        return !$bannerNews || $item->id !== $bannerNews->id;
+                    })->take(3);
+                @endphp
+                
+                @forelse($featuredForSidebar as $featured)
                 <div class="mb-6 last:mb-0">
                     <a href="{{ route('news.show', $featured->id) }}" class="group block">
                         <div class="overflow-hidden mb-3">
@@ -700,7 +872,9 @@
                         </div>
                     </a>
                 </div>
-                @endforeach
+                @empty
+                <p class="text-gray-500 text-sm">Không có tin nổi bật khác</p>
+                @endforelse
             </div>
 
             <!-- Latest News Section -->
@@ -710,7 +884,14 @@
                     <h3 class="text-lg font-bold text-black uppercase tracking-wide">CẬP NHẬT MỚI</h3>
                 </div>
                 
-                @foreach($news->sortByDesc('created_at')->take(5) as $latest)
+                @php
+                    // Lấy tin mới nhất cho sidebar (loại trừ tin đã hiển thị trong banner nếu có)
+                    $latestForSidebar = $news->filter(function($item) use ($bannerNews) {
+                        return !$bannerNews || $item->id !== $bannerNews->id;
+                    })->sortByDesc('created_at')->take(5);
+                @endphp
+                
+                @foreach($latestForSidebar as $latest)
                 <div class="flex items-center space-x-4 mb-6 last:mb-0 group">
                     <div class="flex-shrink-0 w-16 h-16">
                         <img src="{{ $latest->thumbnail ?? '/images/news-default.jpg' }}"
@@ -857,19 +1038,61 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Enhanced image loading with fade-in
-    const images = document.querySelectorAll('img');
-    images.forEach(img => {
+    // Enhanced image loading với lazy loading cho banner
+    const bannerImages = document.querySelectorAll('.banner-image');
+    bannerImages.forEach(img => {
         if (img.complete) {
             img.style.opacity = '1';
+            img.classList.add('loaded');
         } else {
             img.style.opacity = '0';
             img.addEventListener('load', function() {
-                this.style.transition = 'opacity 0.3s ease';
+                this.style.transition = 'opacity 0.5s ease';
                 this.style.opacity = '1';
+                this.classList.add('loaded');
+                
+                // Thêm hiệu ứng sau khi load xong
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 100);
             });
         }
     });
+    
+    // Dynamic badge hover effects
+    const dynamicBadges = document.querySelectorAll('.dynamic-badge');
+    dynamicBadges.forEach(badge => {
+        badge.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px) scale(1.05)';
+        });
+        
+        badge.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    });
+    
+    // Banner parallax effect (subtle)
+    const bannerContainers = document.querySelectorAll('.banner-image-container');
+    
+    window.addEventListener('scroll', function() {
+        const scrolled = window.pageYOffset;
+        const rate = scrolled * 0.3;
+        
+        bannerContainers.forEach(function(container) {
+            const rect = container.getBoundingClientRect();
+            if (rect.top < window.innerHeight && rect.bottom > 0) {
+                const img = container.querySelector('.banner-image');
+                if (img) {
+                    img.style.transform = `translateY(${rate}px) scale(1)`;
+                }
+            }
+        });
+    });
+    
+    // Auto refresh banner content (optional - có thể bật nếu cần)
+    // setInterval(function() {
+    //     // Logic để refresh banner content từ API nếu cần
+    // }, 300000); // 5 phút
     
     // Page transition loading
     const links = document.querySelectorAll('a[href^="/"]');

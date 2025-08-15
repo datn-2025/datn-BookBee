@@ -10,7 +10,11 @@ class NewsController extends \App\Http\Controllers\Controller
     // Trang danh sách tin tức
     public function index(Request $request)
     {
-        $news = NewsArticle::orderByDesc('created_at')->paginate(8);
+        // Lấy tin tức với phân trang, ưu tiên tin nổi bật trước
+        $news = NewsArticle::orderByDesc('is_featured')
+            ->orderByDesc('created_at')
+            ->paginate(10); // Tăng lên 10 để có đủ tin hiển thị
+            
         return view('news.index', compact('news'));
     }
 
