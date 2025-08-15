@@ -100,6 +100,8 @@ Route::get('/wishlist/count', [WishlistController::class, 'getWishlistCount'])->
 Route::post('/wishlist/add', [WishlistController::class, 'add'])->name('wishlist.add');
 Route::post('/wishlist/delete', [WishlistController::class, 'delete'])->name('wishlist.delete');
 Route::post('/wishlist/delete-all', [WishlistController::class, 'deleteAll'])->name('wishlist.delete-all');
+Route::post('/wishlist/check-deleted', [WishlistController::class, 'checkDeletedBooks'])->name('wishlist.check-deleted');
+Route::post('/wishlist/test-observer', [WishlistController::class, 'testBookObserver'])->name('wishlist.test-observer');
 Route::post('/wishlist/add-to-cart', [WishlistController::class, 'addToCartFromWishlist'])->name('wishlist.addToCart');
 
 // lien he

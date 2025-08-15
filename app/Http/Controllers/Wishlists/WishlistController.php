@@ -81,6 +81,20 @@ class WishlistController extends Controller
 
       $user = Auth::user();
 
+      // Trước tiên, xóa các wishlist items có sách đã bị xóa
+      $deletedWishlistItems = DB::table('wishlists')
+        ->leftJoin('books', 'wishlists.book_id', '=', 'books.id')
+        ->where('wishlists.user_id', $user->id)
+        ->where(function($query) {
+          $query->whereNull('books.id') // Sách không tồn tại
+                ->orWhereNotNull('books.deleted_at'); // Hoặc sách bị soft delete
+        })
+        ->delete();
+
+      if ($deletedWishlistItems > 0) {
+        Log::info("Đã tự động xóa {$deletedWishlistItems} wishlist items có sách bị xóa cho user {$user->id}");
+      }
+
       $wishlist = DB::table('wishlists')
         ->join('books', 'wishlists.book_id', '=', 'books.id')
         ->leftJoin('brands', 'books.brand_id', '=', 'brands.id')
@@ -88,6 +102,8 @@ class WishlistController extends Controller
         ->leftJoin('author_books', 'books.id', '=', 'author_books.book_id')
         ->leftJoin('authors', 'author_books.author_id', '=', 'authors.id')
         ->where('wishlists.user_id', $user->id)
+        ->whereNotNull('books.id') // Chỉ lấy sách còn tồn tại
+        ->whereNull('books.deleted_at') // Và chưa bị soft delete
         ->select(
           'books.id as book_id',
           'books.slug',
@@ -233,6 +249,68 @@ class WishlistController extends Controller
       ], 500);
     }
   }
+
+  /**
+   * Check for deleted books in wishlist and return them
+   */
+  public function checkDeletedBooks(Request $request)
+  {
+    try {
+      if (!Auth::check()) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Bạn cần đăng nhập để thực hiện chức năng này'
+        ], 401);
+      }
+
+      $user = Auth::user();
+      
+      // Lấy danh sách wishlist items có sách đã bị xóa (soft deleted)
+      $deletedBooks = DB::table('wishlists')
+        ->leftJoin('books', 'wishlists.book_id', '=', 'books.id')
+        ->where('wishlists.user_id', $user->id)
+        ->where(function($query) {
+          $query->whereNull('books.id') // Sách không tồn tại
+                ->orWhereNotNull('books.deleted_at'); // Hoặc sách bị soft delete
+        })
+        ->select('wishlists.book_id')
+        ->get();
+
+      if ($deletedBooks->isNotEmpty()) {
+        // Xóa các wishlist items có sách đã bị xóa
+        $deletedBookIds = $deletedBooks->pluck('book_id')->toArray();
+        DB::table('wishlists')
+          ->where('user_id', $user->id)
+          ->whereIn('book_id', $deletedBookIds)
+          ->delete();
+
+        // Lấy số lượng wishlist còn lại
+        $remainingCount = DB::table('wishlists')->where('user_id', $user->id)->count();
+
+        return response()->json([
+          'success' => true,
+          'has_deleted_books' => true,
+          'deleted_count' => count($deletedBookIds),
+          'remaining_count' => $remainingCount,
+          'message' => 'Đã phát hiện ' . count($deletedBookIds) . ' sách không còn tồn tại và đã xóa khỏi danh sách yêu thích.'
+        ]);
+      }
+
+      return response()->json([
+        'success' => true,
+        'has_deleted_books' => false,
+        'message' => 'Tất cả sách trong danh sách yêu thích đều còn tồn tại.'
+      ]);
+
+    } catch (\Exception $e) {
+      Log::error('Lỗi khi kiểm tra sách bị xóa trong wishlist: ' . $e->getMessage());
+      return response()->json([
+        'success' => false,
+        'message' => 'Lỗi server: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
   public function addToCartFromWishlist(Request $request)
   {
     try {

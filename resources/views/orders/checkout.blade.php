@@ -616,7 +616,7 @@
                             // Sử dụng trực tiếp giá từ cart item (đã bao gồm discount và extra price)
                             $finalPrice = $item->price ?? 0;
                         @endphp
-                        <div class="group flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-black transition-all duration-300">
+                        <div class="group flex items-start gap-3 p-3 border border-gray-200 rounded-lg hover:border-black transition-all duration-300 hover:shadow-md relative">
                             @if(isset($item->is_combo) && $item->is_combo)
                                 <!-- Hiển thị combo -->
                                 <div class="relative flex-shrink-0">
@@ -692,6 +692,18 @@
                                                     {{ $item->book->authors->pluck('name')->join(', ') }}
                                                 </span>
                                             </p>
+                                        @endif
+                                        
+                                        <!-- Hiển thị quà tặng kèm theo -->
+                                        @if(isset($item->gifts) && $item->gifts && $item->gifts->count() > 0)
+                                            <div class="mt-2 p-2 bg-orange-50 border border-orange-200 rounded">
+                                                <div class="flex items-center gap-1 text-xs text-orange-700">
+                                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                    <span class="font-medium">{{ $item->gifts->count() }} quà tặng kèm</span>
+                                                </div>
+                                            </div>
                                         @endif
                                     </div>
                                 </div>
