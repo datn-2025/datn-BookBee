@@ -104,56 +104,74 @@
                     @csrf
 
                     <div class="form-group mb-3">
-                        <label for="current_password" class="form-label">
-                            <i class="fas fa-lock text-primary me-1"></i>
+                        <label for="current_password" class="form-label text-gray-700 font-medium">
+                            <i class="fas fa-lock text-blue-500 me-1"></i>
                             Mật khẩu hiện tại
                         </label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                            <input id="current_password" type="password" 
-                                   class="form-control @error('current_password') is-invalid @enderror" 
-                                   name="current_password" required>
-                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('current_password')">
-                                <i class="fas fa-eye"></i>
-                            </button>
+                        <div class="relative">
+                            <div class="flex">
+                                <span class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md">
+                                    <i class="fas fa-lock text-gray-500"></i>
+                                </span>
+                                <input id="current_password" type="password" 
+                                       class="rounded-none rounded-r-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm p-2.5 @error('current_password') border-red-500 @enderror" 
+                                       name="current_password" required>
+                                <button class="inline-flex items-center px-3 text-sm font-medium text-gray-900 bg-gray-200 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-200 transition-colors duration-200" 
+                                        type="button" 
+                                        onclick="togglePassword('current_password')">
+                                    <i class="fas fa-eye text-gray-600" id="current_password_icon"></i>
+                                </button>
+                            </div>
                         </div>
                         @error('current_password')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                            <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="form-group mb-3">
-                        <label for="password" class="form-label">
-                            <i class="fas fa-key text-primary me-1"></i>
+                        <label for="password" class="form-label text-gray-700 font-medium">
+                            <i class="fas fa-key text-blue-500 me-1"></i>
                             Mật khẩu mới
                         </label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-key"></i></span>
-                            <input id="password" type="password" 
-                                   class="form-control @error('password') is-invalid @enderror" 
-                                   name="password" required>
-                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password')">
-                                <i class="fas fa-eye"></i>
-                            </button>
+                        <div class="relative">
+                            <div class="flex">
+                                <span class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md">
+                                    <i class="fas fa-key text-gray-500"></i>
+                                </span>
+                                <input id="password" type="password" 
+                                       class="rounded-none rounded-r-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm p-2.5 @error('password') border-red-500 @enderror" 
+                                       name="password" required>
+                                <button class="inline-flex items-center px-3 text-sm font-medium text-gray-900 bg-gray-200 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-200 transition-colors duration-200" 
+                                        type="button" 
+                                        onclick="togglePassword('password')">
+                                    <i class="fas fa-eye text-gray-600" id="password_icon"></i>
+                                </button>
+                            </div>
                         </div>
                         @error('password')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                            <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="form-group mb-4">
-                        <label for="password_confirmation" class="form-label">
-                            <i class="fas fa-check-circle text-primary me-1"></i>
+                        <label for="password_confirmation" class="form-label text-gray-700 font-medium">
+                            <i class="fas fa-check-circle text-blue-500 me-1"></i>
                             Xác nhận mật khẩu mới
                         </label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-check-circle"></i></span>
-                            <input id="password_confirmation" type="password" 
-                                   class="form-control" 
-                                   name="password_confirmation" required>
-                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password_confirmation')">
-                                <i class="fas fa-eye"></i>
-                            </button>
+                        <div class="relative">
+                            <div class="flex">
+                                <span class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md">
+                                    <i class="fas fa-check-circle text-gray-500"></i>
+                                </span>
+                                <input id="password_confirmation" type="password" 
+                                       class="rounded-none rounded-r-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm p-2.5" 
+                                       name="password_confirmation" required>
+                                <button class="inline-flex items-center px-3 text-sm font-medium text-gray-900 bg-gray-200 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-200 transition-colors duration-200" 
+                                        type="button" 
+                                        onclick="togglePassword('password_confirmation')">
+                                    <i class="fas fa-eye text-gray-600" id="password_confirmation_icon"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -161,7 +179,7 @@
                         <a href="{{ route('account.profile') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left me-1"></i>Quay lại
                         </a>
-                        <button type="submit" class="btn btn-save">
+                        <button type="submit" class="btn text-white fw-bold py-2 px-4 rounded" style="background-color: #3b82f6; border: none;">
                             <i class="fas fa-key me-2"></i>Cập nhật mật khẩu
                         </button>
                     </div>
@@ -589,6 +607,98 @@
             }
         });
     });
+
+    // Function to toggle password visibility
+    function togglePassword(fieldId) {
+        const field = document.getElementById(fieldId);
+        const icon = document.getElementById(fieldId + '_icon');
+        
+        if (field && icon) {
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    }
 </script>
+@endpush
+
+@push('styles')
+<style>
+/* Custom styles for password toggle buttons */
+.password-toggle-btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.password-toggle-btn:hover {
+    background-color: #e5e7eb !important;
+    transform: scale(1.05);
+}
+
+/* Enhanced input focus styles */
+.form-control:focus,
+input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #3b82f6;
+}
+
+/* Button hover effects */
+.btn-outline-gray-300 {
+    border: 1px solid #d1d5db;
+    color: #6b7280;
+}
+
+.btn-outline-gray-300:hover {
+    background-color: #f3f4f6;
+    border-color: #9ca3af;
+    color: #4b5563;
+}
+
+/* Gradient button enhancements */
+.bg-gradient-to-r {
+    background: linear-gradient(to right, #3b82f6, #2563eb);
+    border: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.bg-gradient-to-r:hover {
+    background: linear-gradient(to right, #2563eb, #1d4ed8);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Error message styles */
+.text-red-500 {
+    color: #ef4444;
+    font-size: 0.875rem;
+}
+
+/* Input group enhancements */
+.input-group-modern {
+    display: flex;
+    align-items: stretch;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.input-group-modern input {
+    border-radius: 0;
+}
+
+.input-group-modern .input-group-text {
+    background-color: #f9fafb;
+    border-right: none;
+}
+
+.input-group-modern .btn {
+    border-left: none;
+}
+</style>
 @endpush
 @endsection

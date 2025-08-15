@@ -6,8 +6,10 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use App\Models\Payment;
 use App\Models\BookFormat;
+use App\Models\Book;
 use App\Observers\PaymentObserver;
 use App\Observers\BookFormatObserver;
+use App\Observers\BookObserver;
 use App\Http\ViewComposers\CartComposer;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
@@ -31,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Payment::observe(PaymentObserver::class);
         BookFormat::observe(BookFormatObserver::class);
+        Book::observe(BookObserver::class);
         
         Blade::if('permission', function ($permission) {
             return Auth::check() && Auth::user()->hasPermission($permission);

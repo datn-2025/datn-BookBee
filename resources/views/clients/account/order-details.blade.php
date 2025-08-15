@@ -171,7 +171,7 @@
                                                                         @endif
                                                                     @else
                                                                         @if($item->book && $item->book->images->isNotEmpty())
-                                                                            <img src="{{ asset('storage/' . $item->book->images->first()->path) }}" 
+                                                                            <img src="{{ asset('storage/' . $item->book->images->first()->image_url) }}" 
                                                                                  alt="{{ $item->book->title }}" 
                                                                                  class="h-full w-full object-cover">
                                                                         @else
@@ -405,18 +405,17 @@
                                                     <div class="h-full w-full bg-black flex items-center justify-center">
                                                         <span class="text-white text-xs font-bold">COMBO</span>
                                                     </div>
-                                                @endif
-                                            @else
-                                                @if($item->book && $item->book->images->isNotEmpty())
-                                                    <img src="{{ asset('storage/' . $item->book->images->first()->path) }}" 
-                                                         alt="{{ $item->book->title }}" 
-                                                         class="h-full w-full object-cover">
-                                                @else
-                                                    <div class="h-full w-full bg-gray-300 flex items-center justify-center">
-                                                        <span class="text-gray-600 text-xs">IMG</span>
-                                                    </div>
-                                                @endif
-                                            @endif
+                                                @endif                            @else
+                                @if($item->book && $item->book->images->isNotEmpty())
+                                    <img src="{{ asset('storage/' . $item->book->images->first()->image_url) }}" 
+                                         alt="{{ $item->book->title }}" 
+                                         class="h-full w-full object-cover">
+                                @else
+                                    <div class="h-full w-full bg-gray-300 flex items-center justify-center">
+                                        <span class="text-gray-600 text-xs">IMG</span>
+                                    </div>
+                                @endif
+                            @endif
                                         </div>
                                     </div>
                                     

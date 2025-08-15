@@ -847,34 +847,36 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($articles->take(3) as $article)
                     <article class="group bg-white border-2 border-gray-100 hover:border-black transition-all duration-300">
-                        <!-- Image -->
-                        <div class="aspect-[4/3] bg-gray-100 overflow-hidden relative">
-                            <img src="{{ asset('storage/' . $article->thumbnail) }}" 
-                                 alt="{{ $article->title }}"
-                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                            <div class="absolute top-3 left-3 bg-indigo-600 text-white px-2 py-1 text-xs font-bold uppercase">
-                                <i class="fas fa-newspaper mr-1"></i>
-                                TIN TỨC
+                        <a href="{{ route('news.show', $article->id) }}" class="block">
+                            <!-- Image -->
+                            <div class="aspect-[4/3] bg-gray-100 overflow-hidden relative">
+                                <img src="{{ asset('storage/' . $article->thumbnail) }}" 
+                                     alt="{{ $article->title }}"
+                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <div class="absolute top-3 left-3 bg-indigo-600 text-white px-2 py-1 text-xs font-bold uppercase">
+                                    <i class="fas fa-newspaper mr-1"></i>
+                                    TIN TỨC
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Content -->
-                        <div class="p-6 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-500 uppercase tracking-wider font-bold">
-                                    {{ $article->created_at->format('d.m.Y') }}
-                                </span>
-                                <div class="w-6 h-0.5 bg-black group-hover:w-8 transition-all duration-300"></div>
+                            <!-- Content -->
+                            <div class="p-6 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-500 uppercase tracking-wider font-bold">
+                                        {{ $article->created_at->format('d.m.Y') }}
+                                    </span>
+                                    <div class="w-6 h-0.5 bg-black group-hover:w-8 transition-all duration-300"></div>
+                                </div>
+                                
+                                <h3 class="font-bold text-lg text-black leading-tight group-hover:opacity-70 transition-opacity">
+                                    {{ $article->title }}
+                                </h3>
+                                
+                                <p class="text-gray-600 text-sm leading-relaxed">
+                                    {{ Str::limit($article->summary, 100) }}
+                                </p>
                             </div>
-                            
-                            <h3 class="font-bold text-lg text-black leading-tight group-hover:opacity-70 transition-opacity">
-                                {{ $article->title }}
-                            </h3>
-                            
-                            <p class="text-gray-600 text-sm leading-relaxed">
-                                {{ Str::limit($article->summary, 100) }}
-                            </p>
-                        </div>
+                        </a>
                     </article>
                 @empty
                     <div class="col-span-full text-center py-12">
@@ -1041,6 +1043,25 @@
                 transform: scale(4);
                 opacity: 0;
             }
+        }
+
+        /* News Article Card Enhancement */
+        .bookbee-home-page article {
+            cursor: pointer;
+        }
+        
+        .bookbee-home-page article a {
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .bookbee-home-page article:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .bookbee-home-page article:active {
+            transform: translateY(0);
         }
     </style>
 
