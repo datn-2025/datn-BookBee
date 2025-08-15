@@ -650,11 +650,38 @@
                                 <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">TRẠNG
                                         THÁI</span>
-                                    @php
-                                        $statusText = $combo->status === 'active' ? 'Đang mở bán' : 'Ngừng bán';
-                                        $statusClass = $combo->status === 'active' ? 'status-in-stock' : 'status-out-of-stock';
-                                    @endphp
-                                    <span class="font-semibold adidas-font {{ $statusClass }} truncate">{{ $statusText }}</span>
+                                     @php
+                                    $now = now();
+                                    $startDate = $combo->start_date ? \Carbon\Carbon::parse($combo->start_date) : null;
+                                    $endDate = $combo->end_date ? \Carbon\Carbon::parse($combo->end_date) : null;
+                                    $isActive = $combo->status === 'active' &&
+                                        (!$startDate || $now >= $startDate) &&
+                                        (!$endDate || $now <= $endDate);
+
+                                    if (!$isActive) {
+                                        if ($combo->status !== 'active') {
+                                            $statusText = 'Ngừng bán';
+                                            $statusDot = 'bg-gray-500';
+                                            $badgeClass = 'bg-gray-50 text-gray-700 border-gray-200';
+                                        } elseif ($startDate && $now < $startDate) {
+                                            $statusText = 'Chưa bắt đầu';
+                                            $statusDot = 'bg-yellow-500';
+                                            $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                                        } elseif ($endDate && $now > $endDate) {
+                                            $statusText = 'Đã kết thúc';
+                                            $statusDot = 'bg-red-500';
+                                            $badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                        }
+                                    } else {
+                                        $statusText = 'Đang mở bán';
+                                        $statusDot = 'bg-green-500';
+                                        $badgeClass = 'bg-green-50 text-green-700 border-green-200';
+                                    }
+                                @endphp
+                                <span
+                                    class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }} whitespace-nowrap">
+                                    <span class="truncate">{{ $statusText }}</span>
+                                </span>
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">GIÁ
@@ -702,7 +729,12 @@
                                     <span class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block flex-shrink-0"></span>
                                     <span class="truncate">{{ $statusText }}</span>
                                 </span>
-                                @if($combo->combo_stock > 0)
+                                @php
+                                $now = now();
+                                $endDate = $combo->end_date ? \Carbon\Carbon::parse($combo->end_date) : null;
+                                $isEnded = $endDate && $now > $endDate;
+                            @endphp
+                            @if($combo->combo_stock > 0 && !$isEnded)
                                     <span class="text-sm text-gray-600 adidas-font">(<span
                                             class="font-bold text-black">{{ $combo->combo_stock }}</span> combo còn lại)</span>
                                 @endif
@@ -764,6 +796,7 @@
                             @csrf
                             <input type="hidden" name="combo_id" value="{{ $combo->id }}">
                             <input type="hidden" name="type" value="combo">
+                            @if(!$isEnded)
                             <div class="mb-6">
                                 <label class="block text-sm font-bold text-black uppercase tracking-wider mb-3 adidas-font">Số
                                     lượng</label>
@@ -778,6 +811,9 @@
                                     </button>
                                 </div>
                             </div>
+                            @else
+                            <input type="hidden" name="quantity" value="1">
+                            @endif
                             <button type="submit"
                                 class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font"
                                 @php
