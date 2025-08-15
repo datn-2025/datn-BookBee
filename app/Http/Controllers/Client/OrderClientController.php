@@ -29,10 +29,16 @@ class OrderClientController extends Controller
             'paymentStatus',
             'shippingAddress',
             'billingAddress',
+            'address', // Thêm address relationship
+            'paymentMethod', // Thêm payment method relationship
             'voucher',
+            'parentOrder', // Thêm parent order relationship
+            'parentOrder.voucher', // Thêm voucher của parent order
             'childOrders.orderItems.book.images',
             'childOrders.orderItems.collection',
             'childOrders.orderItems.bookFormat',
+            'childOrders.orderStatus',
+            'childOrders.paymentStatus',
             'refundRequests' // Thêm để load thông tin yêu cầu hoàn tiền
         ])->where('user_id', Auth::id())
           ->findOrFail($id);

@@ -478,37 +478,78 @@
                     <div class="bg-gray-50 border-2 border-gray-200 p-6">
                         <div class="space-y-4">
                             @php
-                                // Tính toán lại tổng tiền tạm tính (trước khi giảm giá)
-                                $subtotal = $order->orderItems->sum(function($item) {
-                                    return $item->price * $item->quantity;
-                                });
-                                
+                                // Tính toán tạm tính dựa trên loại đơn hàng
+                                $subtotal = 0;
                                 $discountAmount = 0;
                                 $appliedVoucher = null;
                                 $voucherDiscount = 0;
                                 
-                                // Kiểm tra nếu có áp dụng voucher
-                                if ($order->voucher) {
-                                    $appliedVoucher = $order->voucher;
-                                    // Tính toán giảm giá dựa trên phần trăm hoặc số tiền cố định
-                                    if ($appliedVoucher->discount_percent > 0) {
-                                        // Giảm giá theo phần trăm
-                                        $discountByPercent = $subtotal * ($appliedVoucher->discount_percent / 100);
-                                        $voucherDiscount = $appliedVoucher->max_discount > 0 
-                                            ? min($discountByPercent, $appliedVoucher->max_discount)
-                                            : $discountByPercent;
-                                    } else {
-                                        // Giảm giá cố định
-                                        $voucherDiscount = $appliedVoucher->discount_amount;
+                                // Kiểm tra loại đơn hàng và tính subtotal
+                                if ($order->delivery_method === 'mixed' && is_null($order->parent_order_id) && $order->childOrders->count() > 0) {
+                                    // Đơn hàng cha của mixed order - tính tổng từ các đơn con
+                                    $subtotal = $order->childOrders->sum(function($childOrder) {
+                                        return $childOrder->orderItems->sum(function($item) {
+                                            return $item->price * $item->quantity;
+                                        });
+                                    });
+                                    
+                                    // Nếu vẫn = 0, dùng fallback
+                                    if ($subtotal == 0 && $order->total_amount > 0) {
+                                        $subtotal = $order->total_amount - $order->shipping_fee + $order->discount_amount;
                                     }
-                                    $discountAmount = $voucherDiscount;
-                                } else {
-                                    // Nếu không có voucher, sử dụng giá trị discount_amount từ đơn hàng
+                                    
+                                    // Lấy voucher và discount từ đơn cha
+                                    if ($order->voucher) {
+                                        $appliedVoucher = $order->voucher;
+                                    }
                                     $discountAmount = $order->discount_amount;
+                                } elseif ($order->parent_order_id) {
+                                    // Đây là đơn hàng con - tính từ orderItems của chính nó
+                                    $subtotal = $order->orderItems->sum(function($item) {
+                                        return $item->price * $item->quantity;
+                                    });
+                                    
+                                    // Lấy thông tin voucher từ đơn cha
+                                    $parentOrder = $order->parentOrder;
+                                    if ($parentOrder && $parentOrder->voucher) {
+                                        $appliedVoucher = $parentOrder->voucher;
+                                    }
+                                    // Sử dụng discount_amount được phân bổ cho đơn con
+                                    $discountAmount = $order->discount_amount;
+                                } else {
+                                    // Đơn hàng đơn lẻ bình thường
+                                    $subtotal = $order->orderItems->sum(function($item) {
+                                        return $item->price * $item->quantity;
+                                    });
+                                    
+                                    // Fallback nếu subtotal từ orderItems = 0
+                                    if ($subtotal == 0 && $order->total_amount > 0) {
+                                        $calculatedSubtotal = $order->total_amount - $order->shipping_fee + $order->discount_amount;
+                                        $subtotal = max(0, $calculatedSubtotal); // Đảm bảo không âm
+                                    }
+                                    
+                                    if ($order->voucher) {
+                                        $appliedVoucher = $order->voucher;
+                                        // Tính toán giảm giá dựa trên phần trăm hoặc số tiền cố định
+                                        if ($appliedVoucher->discount_percent > 0) {
+                                            // Giảm giá theo phần trăm
+                                            $discountByPercent = $subtotal * ($appliedVoucher->discount_percent / 100);
+                                            $voucherDiscount = $appliedVoucher->max_discount > 0 
+                                                ? min($discountByPercent, $appliedVoucher->max_discount)
+                                                : $discountByPercent;
+                                        } else {
+                                            // Giảm giá cố định
+                                            $voucherDiscount = $appliedVoucher->discount_amount;
+                                        }
+                                        $discountAmount = $voucherDiscount;
+                                    } else {
+                                        // Nếu không có voucher, sử dụng giá trị discount_amount từ đơn hàng
+                                        $discountAmount = $order->discount_amount;
+                                    }
                                 }
                                 
-                                // Đảm bảo giảm giá không vượt quá tổng tiền
-                                $discountAmount = min($discountAmount, $subtotal);
+                                // Đảm bảo giảm giá không vượt quá tổng tiền và không âm
+                                $discountAmount = max(0, min($discountAmount, $subtotal));
                             @endphp
                             
                             <div class="flex justify-between">
@@ -523,9 +564,22 @@
                                             Mã giảm giá ({{ $appliedVoucher->code }})
                                             @if($appliedVoucher->discount_percent > 0)
                                                 - {{ $appliedVoucher->discount_percent }}%
+                                                @if($appliedVoucher->max_discount > 0)
+                                                    (tối đa {{ number_format($appliedVoucher->max_discount) }}đ)
+                                                @endif
+                                            @endif
+                                            @if($order->parent_order_id)
+                                                <small class="block text-xs text-gray-500 mt-1">
+                                                    (Phân bổ từ đơn hàng hỗn hợp)
+                                                </small>
                                             @endif
                                         @else
                                             Giảm giá
+                                            @if($order->parent_order_id)
+                                                <small class="block text-xs text-gray-500 mt-1">
+                                                    (Phân bổ từ đơn hàng hỗn hợp)
+                                                </small>
+                                            @endif
                                         @endif
                                     </span>
                                     <span class="text-red-600 font-bold" id="discount-amount">-{{ number_format($discountAmount) }}đ</span>
