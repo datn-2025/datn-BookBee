@@ -254,13 +254,13 @@
                                         <input type="text" class="form-control @error('gift_date_range') is-invalid @enderror" 
                                                id="gift_date_range" name="gift_date_range" 
                                                placeholder="Chọn khoảng thời gian khuyến mãi..." 
-                                               value="@if($currentGift && $currentGift->start_date && $currentGift->end_date){{ $currentGift->start_date->format('Y-m-d') }} to {{ $currentGift->end_date->format('Y-m-d') }}@endif">
+                                               value="@if($currentGift && $currentGift->start_date && $currentGift->end_date){{ $currentGift->start_date }} to {{ $currentGift->end_date }}@endif">
                                         
                                         <!-- Hidden inputs để lưu giá trị ngày -->
                                         <input type="hidden" id="gift_start_date" name="gift_start_date" 
-                                               value="{{ old('gift_start_date', $currentGift && $currentGift->start_date ? $currentGift->start_date->format('Y-m-d') : '') }}">
+                                               value="{{ old('gift_start_date', $currentGift && $currentGift->start_date ? $currentGift->start_date : '') }}">
                                         <input type="hidden" id="gift_end_date" name="gift_end_date" 
-                                               value="{{ old('gift_end_date', $currentGift && $currentGift->end_date ? $currentGift->end_date->format('Y-m-d') : '') }}">
+                                               value="{{ old('gift_end_date', $currentGift && $currentGift->end_date ? $currentGift->end_date : '') }}">
                                         
                                         @error('gift_date_range')
                                             <div class="invalid-feedback">{{ $message }}</div>
