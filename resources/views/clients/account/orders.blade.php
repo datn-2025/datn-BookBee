@@ -591,7 +591,7 @@
                                                     @endif
                                                 @else
                                                     @if($item->book && $item->book->images->isNotEmpty())
-                                                        <img src="{{ asset('storage/' . $item->book->images->first()->path) }}" 
+                                                        <img src="{{ asset('storage/' . $item->book->images->first()->image_url) }}" 
                                                              alt="{{ $item->book->title }}" 
                                                              class="w-full h-full object-cover">
                                                     @else
