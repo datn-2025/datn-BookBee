@@ -329,45 +329,6 @@
         box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     }
     
-    /* Search suggestion dropdown */
-    .search-suggestions {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        border: 2px solid #000;
-        border-top: none;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 1000;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(-10px);
-        transition: all 0.3s ease;
-    }
-    
-    .search-suggestions.active {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-    }
-    
-    .search-suggestion-item {
-        padding: 12px;
-        border-bottom: 1px solid #f0f0f0;
-        cursor: pointer;
-        transition: background 0.2s ease;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-size: 0.9rem;
-    }
-    
-    .search-suggestion-item:hover {
-        background: #f8f8f8;
-    }
-    
     /* Smooth scrolling */
     html {
         scroll-behavior: smooth;
@@ -438,45 +399,6 @@
     .tooltip:hover .tooltiptext {
         visibility: visible;
         opacity: 1;
-    }
-    
-    /* Filter buttons */
-    .filter-btn {
-        background: #fff;
-        border: 2px solid #000;
-        color: #000;
-        padding: 8px 16px;
-        text-transform: uppercase;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        font-size: 0.75rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .filter-btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: #000;
-        transition: left 0.3s ease;
-        z-index: -1;
-    }
-    
-    .filter-btn:hover::before,
-    .filter-btn.active::before {
-        left: 0;
-    }
-    
-    .filter-btn:hover,
-    .filter-btn.active {
-        color: #fff;
-        transform: translateY(-2px);
     }
     
     /* Responsive improvements */
@@ -550,10 +472,6 @@
                                 <div class="flex items-center text-gray-600">
                                     <div class="w-2 h-2 bg-black mr-2"></div>
                                     {{ $featuredNews->created_at->format('d M Y') }}
-                                </div>
-                                <div class="flex items-center text-gray-600">
-                                    <div class="w-2 h-2 bg-black mr-2"></div>
-                                    5 phút đọc
                                 </div>
                             </div>
                         </div>
@@ -646,33 +564,11 @@
                     Khám phá những câu chuyện thú vị và cập nhật mới nhất từ thế giới sách
                 </p>
                 
-                <!-- Search and Filter Section -->
-                <div class="max-w-md mx-auto mb-8">
-                    <div class="relative">
-                        <input type="text" 
-                               id="newsSearch" 
-                               placeholder="Tìm kiếm tin tức..."
-                               class="w-full px-4 py-3 pr-12 border-2 border-gray-300 focus:border-black focus:outline-none text-sm font-medium uppercase tracking-wide">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                        </div>
-                        <!-- Search suggestions dropdown -->
-                        <div class="search-suggestions" id="searchSuggestions">
-                            <div class="search-suggestion-item">Sách mới</div>
-                            <div class="search-suggestion-item">Tác giả nổi tiếng</div>
-                            <div class="search-suggestion-item">Khuyến mãi</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Category Filter -->
-                <div class="flex flex-wrap justify-center gap-2 mb-8">
-                    <button class="filter-btn active" data-category="all">TẤT CẢ</button>
-                    <button class="filter-btn" data-category="sach-moi">SÁCH MỚI</button>
-                    <button class="filter-btn" data-category="khuyen-mai">KHUYẾN MÃI</button>
-                    <button class="filter-btn" data-category="su-kien">SỰ KIỆN</button>
+                <!-- Simplified header without search/filter since controller doesn't support it -->
+                <div class="text-center mb-8">
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">
+                        Xem tất cả bài viết mới nhất
+                    </p>
                 </div>
             </div>
 
@@ -695,13 +591,7 @@
                         <div class="absolute top-4 left-4">
                             <span class="category-tag">{{ $item->category ?? 'TIN TỨC' }}</span>
                         </div>
-                        <!-- Reading Time Badge -->
-                        <div class="absolute top-4 right-4">
-                            <div class="tooltip">
-                                <span class="bg-black text-white px-2 py-1 text-xs font-bold">5 MIN</span>
-                                <span class="tooltiptext">Thời gian đọc ước tính</span>
-                            </div>
-                        </div>
+
                     </div>
                     
                     <!-- Content -->
@@ -711,10 +601,6 @@
                             <div class="flex items-center text-gray-500 text-sm font-medium">
                                 <div class="w-2 h-2 bg-black mr-2"></div>
                                 {{ $item->created_at->format('d/m/Y') }}
-                            </div>
-                            <div class="flex items-center text-gray-500 text-sm font-medium">
-                                <div class="w-2 h-2 bg-black mr-2"></div>
-                                5 phút đọc
                             </div>
                         </div>
                         
@@ -727,7 +613,9 @@
                         </h3>
                         
                         <!-- Summary -->
-                        <p class="text-gray-600 line-clamp-3 mb-6 leading-relaxed">{{ $item->summary }}</p>
+                        <p class="text-gray-600 line-clamp-3 mb-6 leading-relaxed">
+                            {{ $item->summary ?? Str::limit(strip_tags($item->content), 150) }}
+                        </p>
                         
                         <!-- Read More -->
                         <div class="flex items-center justify-between">
@@ -1027,81 +915,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 behavior: 'smooth'
             });
         }
-    });
-    
-    // Search functionality
-    const searchInput = document.getElementById('newsSearch');
-    const searchSuggestions = document.getElementById('searchSuggestions');
-    const newsCards = document.querySelectorAll('.news-card');
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            
-            // Filter news cards
-            newsCards.forEach(card => {
-                const title = card.querySelector('h3 a').textContent.toLowerCase();
-                const summary = card.querySelector('p').textContent.toLowerCase();
-                
-                if (title.includes(searchTerm) || summary.includes(searchTerm) || searchTerm === '') {
-                    card.style.display = 'block';
-                    card.style.animation = 'fadeInUp 0.5s ease';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-            
-            // Show/hide suggestions
-            if (searchTerm.length > 0) {
-                searchSuggestions.classList.add('active');
-            } else {
-                searchSuggestions.classList.remove('active');
-            }
-        });
-        
-        // Hide suggestions when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
-                searchSuggestions.classList.remove('active');
-            }
-        });
-    }
-    
-    // Filter functionality
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            // Remove active class from all buttons
-            filterBtns.forEach(b => b.classList.remove('active'));
-            // Add active class to clicked button
-            this.classList.add('active');
-            
-            const category = this.dataset.category;
-            
-            // Filter news cards based on category
-            newsCards.forEach(card => {
-                const cardCategory = card.querySelector('.category-tag').textContent.toLowerCase();
-                
-                if (category === 'all' || cardCategory.includes(category.replace('-', ' '))) {
-                    card.style.display = 'block';
-                    card.style.animation = 'fadeInUp 0.5s ease';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        });
-    });
-    
-    // Search suggestions click
-    const suggestionItems = document.querySelectorAll('.search-suggestion-item');
-    suggestionItems.forEach(item => {
-        item.addEventListener('click', function() {
-            searchInput.value = this.textContent;
-            searchSuggestions.classList.remove('active');
-            // Trigger search
-            searchInput.dispatchEvent(new Event('input'));
-        });
     });
     
     // Smooth scroll for internal links
