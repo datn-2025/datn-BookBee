@@ -1142,7 +1142,7 @@
                                         </div>
                                     @endif
 
-                                    <!-- Admin Response -->
+                                    {{-- <!-- Admin Response -->
                                     @if($review->admin_response)
                                         <div
                                             class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-r-lg admin-response">
@@ -1163,7 +1163,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    @endif
+                                    @endif --}}
 
                                     <!-- Product Info & Format -->
                                     <div class="mt-4 p-3 bg-gray-50 border-l-4 border-black product-info">
@@ -1183,7 +1183,7 @@
                                     <!-- Bottom Accent -->
                                     <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
                                         <div
-                                            class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider verified-badge">
+                                            class="flex items-center space-x-2 text-xs text-black uppercase tracking-wider bg-gray-200">
                                             <i class="fas fa-check-circle w-3"></i>
                                             <span>Đánh giá đã xác thực</span>
                                         </div>
@@ -1387,14 +1387,14 @@
                                         </span>
                                     </div>
                                 @endif
-                                <!-- Wishlist Button -->
+                                {{-- <!-- Wishlist Button -->
                                 <div class="absolute top-2 right-2">
                                     <button
                                         class="w-10 h-10 bg-white bg-opacity-90 flex items-center justify-center border border-gray-200 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition-all duration-300 transform hover:scale-110"
-                                        onclick="event.stopPropagation();">>
+                                        onclick="event.stopPropagation();">
                                         <i class="far fa-heart text-sm"></i>
                                     </button>
-                                </div>
+                                </div> --}}
                             </div>
                             <div class="p-2">
                                 <h3
@@ -2172,9 +2172,9 @@
                                         </div>
 
                                         <!-- Bottom Accent -->
-                                        <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+                                        <div class="flex items-center justify-between mt-6 pt-4 border-t">
                                             <div
-                                                class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider verified-badge">
+                                                class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider bg-gray-200">
                                                 <i class="fas fa-check-circle w-3"></i>
                                                 <span>Đánh giá đã xác thực</span>
                                             </div>
@@ -2293,14 +2293,14 @@
                                             </div>
                                         @endif
 
-                                        <!-- Wishlist Button -->
-                                        <div class="absolute top-2 right-2">
+                                        {{-- <!-- Wishlist Button -->
+                                        <div class="absolute top-2 right-2" >
                                             <button
                                                 class="w-10 h-10 bg-white bg-opacity-90 flex items-center justify-center border border-gray-200 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition-all duration-300 transform hover:scale-110"
-                                                onclick="event.stopPropagation();">>
+                                                onclick="event.stopPropagation();">
                                                 <i class="far fa-heart text-sm"></i>
                                             </button>
-                                        </div>
+                                        </div> --}}
 
                                         <!-- Quick View Button -->
                                         <div
