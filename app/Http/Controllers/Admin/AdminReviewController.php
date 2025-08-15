@@ -22,27 +22,37 @@ class AdminReviewController extends Controller
                   ->when($request->admin_response === 'not_responded', fn($q) => $q->whereNull('admin_response'))
             )
 
-            ->when($request->product_name, fn($q) =>
-                $q->whereHas('book', fn($bq) =>
-                    $bq->where('title', 'like', '%' . $request->product_name . '%')
+            ->when($request->filled('admin_response'), function ($q) use ($request) {
+                match ($request->string('admin_response')) {
+                    'responded'     => $q->whereNotNull('admin_response'),
+                    'not_responded' => $q->whereNull('admin_response'),
+                    default         => null
+                };
+            })
+
+            ->when($request->filled('product_name'), fn ($q) =>
+                $q->whereHas('book', fn ($bq) =>
+                    $bq->where('title', 'like', '%' . $request->string('product_name')->trim() . '%')
                 )
             )
 
-            ->when($request->customer_name, fn($q) =>
-                $q->whereHas('user', fn($uq) =>
-                    $uq->where('name', 'like', '%' . $request->customer_name . '%')
+            ->when($request->filled('customer_name'), fn ($q) =>
+                $q->whereHas('user', fn ($uq) =>
+                    $uq->where('name', 'like', '%' . $request->string('customer_name')->trim() . '%')
                 )
             )
 
-            ->when($request->rating, fn($q) => $q->where('rating', $request->rating))
+            ->when($request->filled('rating'), fn ($q) =>
+                $q->where('rating', (int) $request->input('rating'))
+            )
 
-            ->when($request->cmt, fn($q) =>
-                $q->where(function ($q) use ($request) {
-                    $q->where('comment', 'like', '%' . $request->cmt . '%')
-                      ->orWhere('admin_response', 'like', '%' . $request->cmt . '%');
+            ->when($request->filled('cmt'), fn ($q) =>
+                $q->where(function ($query) use ($request) {
+                    $cmt = '%' . $request->string('cmt')->trim() . '%';
+                    $query->where('comment', 'like', $cmt)
+                        ->orWhere('admin_response', 'like', $cmt);
                 })
             )
-
             ->latest()
             ->paginate(10);
 

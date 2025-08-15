@@ -46,11 +46,13 @@
                                 <label class="form-label">Trạng thái phản hồi</label>
                                 <select name="admin_response" class="form-select">
                                     <option value="">Tất cả</option>
-                                    <option value="responded"
-                                        {{ request('admin_response') == 'responded' ? 'selected' : '' }}>Đã phản hồi
+                                    <option value="responded" value="responded"
+                                        {{ old('admin_response', request('admin_response')) === 'responded' ? 'selected' : '' }}>
+                                        Đã phản hồi
                                     </option>
-                                    <option value="not_responded"
-                                        {{ request('admin_response') == 'not_responded' ? 'selected' : '' }}>Chưa phản hồi
+                                    <option value="not_responded" value="not_responded"
+                                        {{ old('admin_response', request('admin_response')) === 'not_responded' ? 'selected' : '' }}>
+                                        Chưa phản hồi
                                     </option>
                                 </select>
                             </div>
@@ -58,21 +60,28 @@
                                 <label class="form-label">Trạng thái hiển thị</label>
                                 <select name="status" class="form-select">
                                     <option value="">Tất cả</option>
-                                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Đã duyệt</option>
+                                    <option value="visible"
+                                        {{ old('status', request('status')) === 'visible' ? 'selected' : '' }}>Hiện
+                                    </option>
+                                    <option value="hidden"
+                                        {{ old('status', request('status')) === 'hidden' ? 'selected' : '' }}>Ẩn
+                                    </option> 
+                                    {{-- <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Đã duyệt</option>
                                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
                                     <option value="hidden" {{ request('status') == 'hidden' ? 'selected' : '' }}>Ẩn</option>
-                                    <option value="visible" {{ request('status') == 'visible' ? 'selected' : '' }}>Hiện (Legacy)</option>
+                                    <option value="visible" {{ request('status') == 'visible' ? 'selected' : '' }}>Hiện (Legacy)</option>  --}}
                                 </select>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Tên Sách</label>
                                 <input type="text" name="product_name" class="form-control"
-                                    value="{{ request('product_name') }}" placeholder="Tên sản phẩm">
+                                    value="{{ old('product_name', request('product_name')) }}" placeholder="Tên sản phẩm">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Tên khách hàng</label>
                                 <input type="text" name="customer_name" class="form-control"
-                                    value="{{ request('customer_name') }}" placeholder="Tên khách hàng">
+                                    value="{{ old('customer_name', request('customer_name')) }}"
+                                    placeholder="Tên khách hàng">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Số sao đánh giá</label>
@@ -80,7 +89,7 @@
                                     <option value="">Tất cả</option>
                                     @foreach (range(5, 1) as $i)
                                         <option value="{{ $i }}"
-                                            {{ request('rating') == $i ? 'selected' : '' }}>
+                                            {{ (int) old('rating', request('rating')) === $i ? 'selected' : '' }}>
                                             {{ str_repeat('★', $i) }}{{ str_repeat('☆', 5 - $i) }} ({{ $i }}
                                             sao)
                                         </option>
@@ -89,7 +98,8 @@
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label">Nội dung bình luận</label>
-                                <input type="text" name="cmt" class="form-control" value="{{ request('cmt') }}"
+                                <input type="text" name="cmt" class="form-control"
+                                    value="{{ old('cmt', request('cmt')) }}"
                                     placeholder="Tìm theo nội dung đánh giá hoặc phản hồi">
                             </div>
                             <div class="col-md-3 d-flex align-items-end">
@@ -135,6 +145,15 @@
                                             <tr class="{{ in_array($review->status, ['hidden', 'pending']) ? 'table-light text-muted' : '' }}">
                                                 <td>{{ $reviews->firstItem() + $index }}</td>
                                                 <td style="max-width: 200px; white-space: normal;">
+<<<<<<< HEAD
+                                                    @if ($review->book)
+                                                        @permission('review.show')
+                                                            <a href="{{ route('admin.books.show', ['id' => $review->book->id, 'slug' => Str::slug($review->book->title)]) }}"
+                                                                class="text-decoration-none fw-medium">
+                                                                {{ $review->book->title }}
+                                                            </a>
+                                                        @endpermission
+=======
                                                     @if($review->isComboReview())
                                                         @if($review->collection)
                                                             <a href="{{ route('combos.show', $review->collection->id) }}" 
@@ -145,6 +164,7 @@
                                                         @else
                                                             <span class="text-muted">Combo đã bị xóa</span>
                                                         @endif
+>>>>>>> master
                                                     @else
                                                         @if ($review->book)
                                                         @permission('review.show')
@@ -236,10 +256,10 @@
                                                 </td>
                                                 <td class="text-center">
                                                     @permission('review.response')
-                                                    <a href="{{ route('admin.reviews.response', $review) }}"
-                                                        class="btn btn-sm btn-outline-primary" title="Xem & phản hồi">
-                                                        <i class="ri-chat-3-fill"></i>
-                                                    </a>
+                                                        <a href="{{ route('admin.reviews.response', $review) }}"
+                                                            class="btn btn-sm btn-outline-primary" title="Xem & phản hồi">
+                                                            <i class="ri-chat-3-fill"></i>
+                                                        </a>
                                                     @endpermission
                                                 </td>
                                             </tr>
@@ -255,7 +275,7 @@
                                         <strong>{{ $reviews->total() }}</strong> đánh giá
                                     </div>
                                     <div>
-                                        {{ $reviews->appends(request()->query())->links('pagination::bootstrap-4') }}
+                                        {{ $reviews->withQueryString()->links('pagination::bootstrap-4') }}
                                     </div>
                                 </div>
                             @endif
