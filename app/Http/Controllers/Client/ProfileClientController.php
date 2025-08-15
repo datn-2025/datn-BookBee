@@ -104,7 +104,14 @@ class ProfileClientController extends Controller
             Log::error('Không thể gửi email thông báo đổi mật khẩu: ' . $e->getMessage());
         }
 
-        session()->flash('success', 'Bạn đã thay đổi mật khẩu thành công!');
-        return redirect()->route('account.profile');
+        // Logout người dùng để đảm bảo tính bảo mật
+        Auth::logout();
+
+        // Xóa tất cả session
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        Toastr::success('Đổi mật khẩu thành công! Vui lòng đăng nhập lại với mật khẩu mới.', 'Thành công');
+        return redirect()->route('login');
     }
 }
