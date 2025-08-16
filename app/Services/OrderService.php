@@ -28,6 +28,12 @@ class OrderService
     protected $paymentRefundService;
     protected $ghnService;
     // protected $refundValidationService;
+    
+    /**
+     * Track books that have already had their gift stock decreased in current order session
+     * to avoid double processing when the same book has multiple variants
+     */
+    private $processedGiftBooks = [];
 
     public function __construct(
         PaymentRefundService $paymentRefundService,
@@ -425,6 +431,9 @@ class OrderService
      */
     public function createOrderWithItems(array $orderData, $cartItems)
     {
+        // Reset gift processing tracker for new order
+        $this->processedGiftBooks = [];
+        
         // dd($orderData['delivery_method']);
         // 1. Tạo Order
         $order = Order::create([
@@ -611,6 +620,7 @@ class OrderService
 
     /**
      * Trừ số lượng quà tặng khi tạo đơn hàng
+     * Fixed to handle total book quantity across variants properly
      */
     private function decreaseGiftStock($cartItem)
     {
@@ -623,6 +633,22 @@ class OrderService
         if ($cartItem->bookFormat && stripos($cartItem->bookFormat->format_name, 'ebook') !== false) {
             return; // Ebook không có quà tặng
         }
+
+        // Check if gift stock for this book has already been decreased in this order session
+        if (!isset($this->processedGiftBooks)) {
+            $this->processedGiftBooks = [];
+        }
+
+        if (in_array($cartItem->book_id, $this->processedGiftBooks)) {
+            Log::info('Gift stock already decreased for this book in current order', [
+                'book_id' => $cartItem->book_id,
+                'current_item_quantity' => $cartItem->quantity
+            ]);
+            return;
+        }
+
+        // Calculate total quantity of this book across all variants
+        $totalBookQuantity = $this->getTotalBookQuantityInCart($cartItem->book_id);
 
         // Lấy các quà tặng có sẵn cho sách này
         $availableGifts = BookGift::where('book_id', $cartItem->book_id)
@@ -637,44 +663,46 @@ class OrderService
             ->where('quantity', '>', 0)
             ->get();
 
-        // Trừ số lượng quà tặng cho mỗi sản phẩm đặt hàng
+        // Trừ số lượng quà tặng dựa trên tổng số lượng sách (không phải từng item)
         foreach ($availableGifts as $gift) {
-            if ($gift->quantity >= $cartItem->quantity) {
-                $gift->decrement('quantity', $cartItem->quantity);
+            if ($gift->quantity >= $totalBookQuantity) {
+                $gift->decrement('quantity', $totalBookQuantity);
                 
-                Log::info('Decreased gift stock:', [
+                Log::info('Decreased gift stock (total book quantity):', [
                     'gift_id' => $gift->id,
                     'gift_name' => $gift->gift_name,
                     'book_id' => $cartItem->book_id,
-                    'quantity_decreased' => $cartItem->quantity,
+                    'total_book_quantity_decreased' => $totalBookQuantity,
+                    'current_item_quantity' => $cartItem->quantity,
                     'remaining_quantity' => $gift->fresh()->quantity
                 ]);
             } else {
-                Log::warning('Insufficient gift stock:', [
+                Log::warning('Insufficient gift stock for total book quantity:', [
                     'gift_id' => $gift->id,
                     'gift_name' => $gift->gift_name,
                     'book_id' => $cartItem->book_id,
                     'available_quantity' => $gift->quantity,
-                    'requested_quantity' => $cartItem->quantity
+                    'total_book_quantity_needed' => $totalBookQuantity,
+                    'current_item_quantity' => $cartItem->quantity
                 ]);
                 
-                // Nếu không đủ quà tặng, có thể:
-                // 1. Trừ hết số lượng còn lại và log warning
-                // 2. Hoặc throw exception tùy theo business logic
-                
-                // Tạm thời trừ hết số lượng còn lại
+                // Nếu không đủ quà tặng, trừ hết số lượng còn lại
                 if ($gift->quantity > 0) {
                     $remainingQuantity = $gift->quantity;
                     $gift->update(['quantity' => 0]);
                     
-                    Log::info('Used remaining gift stock:', [
+                    Log::info('Used remaining gift stock (insufficient for total quantity):', [
                         'gift_id' => $gift->id,
                         'gift_name' => $gift->gift_name,
-                        'quantity_used' => $remainingQuantity
+                        'quantity_used' => $remainingQuantity,
+                        'quantity_still_needed' => $totalBookQuantity - $remainingQuantity
                     ]);
                 }
             }
         }
+
+        // Mark this book as processed to avoid double processing
+        $this->processedGiftBooks[] = $cartItem->book_id;
     }
 
     /**
@@ -1042,24 +1070,66 @@ class OrderService
 
     /**
      * Validate gift stock availability
+     * Checks total quantity of the same book across all variants in cart
      */
     private function validateGiftStock($cartItem, $freshBook)
     {
         $gifts = BookGift::where('book_id', $cartItem->book_id)->get();
         
+        if ($gifts->isEmpty()) {
+            return;
+        }
+
+        // Calculate total quantity of the same book across all variants in the user's cart
+        $totalBookQuantity = $this->getTotalBookQuantityInCart($cartItem->book_id);
+        
         foreach ($gifts as $gift) {
-            if ($gift->quantity !== null && $gift->quantity < $cartItem->quantity) {
-                throw new \Exception('Quà tặng "' . $gift->gift_name . '" cho sách "' . $freshBook->title . '" không đủ số lượng. Còn lại: ' . $gift->quantity);
+            if ($gift->quantity !== null && $gift->quantity < $totalBookQuantity) {
+                throw new \Exception('Quà tặng "' . $gift->gift_name . '" cho sách "' . $freshBook->title . '" không đủ số lượng. Tổng số lượng sách trong giỏ: ' . $totalBookQuantity . ', quà tặng còn lại: ' . $gift->quantity);
             }
         }
 
-        if ($gifts->isNotEmpty()) {
-            Log::info('OrderService - Gift stock validation passed', [
-                'book_id' => $cartItem->book_id,
-                'gifts_count' => $gifts->count(),
-                'requested_quantity' => $cartItem->quantity
-            ]);
+        Log::info('OrderService - Gift stock validation passed', [
+            'book_id' => $cartItem->book_id,
+            'gifts_count' => $gifts->count(),
+            'current_item_quantity' => $cartItem->quantity,
+            'total_book_quantity_in_cart' => $totalBookQuantity
+        ]);
+    }
+
+    /**
+     * Calculate total quantity of a specific book across all variants in user's cart
+     */
+    private function getTotalBookQuantityInCart($bookId)
+    {
+        // Get the current user from the cart item being validated
+        $userId = null;
+        
+        // Find user_id from any cart item with this book_id that is selected
+        $cartItem = Cart::where('book_id', $bookId)
+            ->where('is_selected', 1)
+            ->first();
+            
+        if (!$cartItem) {
+            return 0;
         }
+        
+        $userId = $cartItem->user_id;
+        
+        // Sum all quantities for this book_id across different variants
+        $totalQuantity = Cart::where('user_id', $userId)
+            ->where('book_id', $bookId)
+            ->where('is_selected', 1)
+            ->where('is_combo', 0) // Exclude combo items
+            ->sum('quantity');
+            
+        Log::info('OrderService - Calculated total book quantity in cart', [
+            'book_id' => $bookId,
+            'user_id' => $userId,
+            'total_quantity' => $totalQuantity
+        ]);
+        
+        return $totalQuantity;
     }
 
     /**
