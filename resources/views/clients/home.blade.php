@@ -785,6 +785,11 @@
                         <div class="w-16 h-0.5 bg-purple-600 mt-2"></div>
                     </div>
                 </div>
+                <a href="{{ route('combos.index') }}" 
+                   class="bg-slate-600 text-white px-6 py-3 font-bold text-sm uppercase tracking-wider hover:bg-slate-700 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>
+                    XEM TẤT CẢ
+                </a>
             </div>
             
             <!-- Grid -->
