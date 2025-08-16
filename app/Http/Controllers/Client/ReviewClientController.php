@@ -14,110 +14,56 @@ use Illuminate\Support\Str;
 
 class ReviewClientController extends Controller
 {
-    // public function index(Request $request)
-    // {
-    //     if (!Auth::check()) {
-    //         return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để xem đánh giá');
-    //     }
-
-    //     $user = Auth::user();
-    //     $type = $request->query('type', '1');
-
-    //     // Get completed orders (assuming status 'Thành công' means completed)
-    //     $completedStatus = OrderStatus::where('name', 'Thành công')->first();
-
-    //     if (!$completedStatus) {
-    //         return redirect()->back()->with('error', 'Không tìm thấy trạng thái đơn hàng đã hoàn thành');
-    //     }
-
-    //     $query = $user->orders()
-    //         ->with(['orderItems.book', 'reviews'])
-    //         ->where('order_status_id', $completedStatus->id);
-
-    //     // Filter based on review status
-    //     switch ($type) {
-    //         case '2': // Not reviewed
-    //             $query->whereDoesntHave('reviews');
-    //             break;
-    //         case '3': // Already reviewed
-    //             $query->whereHas('reviews');
-    //             break;
-    //             // Default (type=1): Show all
-    //     }
-
-    //     // Sắp xếp: đơn hàng chưa đánh giá lên đầu, sau đó mới đến đơn hàng đã đánh giá
-    //     // $orders = $query->select('orders.*')
-    //     //     ->leftJoin('reviews', function ($join) {
-    //     //         $join->on('orders.id', '=', 'reviews.order_id')
-    //     //             ->whereNull('reviews.deleted_at');
-    //     //     })
-    //     //     ->groupBy('orders.id')
-    //     //     ->orderByRaw('COUNT(reviews.id) = 0 DESC') // Sắp xếp đơn hàng chưa đánh giá lên đầu
-    //     //     ->latest('orders.created_at') // Sau đó sắp xếp theo thời gian tạo mới nhất
-    //     //     ->paginate(10);
-
-    //     $orders = $query->withCount(['reviews' => function ($q) {
-    //         $q->whereNull('deleted_at');
-    //     }])
-    //         ->orderBy('reviews_count', 'asc') // Sắp xếp đơn hàng chưa đánh giá lên đầu
-    //         ->latest('orders.created_at') // Sau đó sắp xếp theo thời gian tạo mới nhất
-    //         ->paginate(10);
-            
-    //     return view('clients.account.purchases', [
-    //         'orders' => $orders,
-    //         'currentType' => $type,
-    //     ]);
-    // }
     public function index(Request $request)
-{
-    if (!Auth::check()) {
-        return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để xem đánh giá');
-    }
+    {
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để xem đánh giá');
+        }
 
-    $user = Auth::user();
-    $type = $request->query('type', '1');
+        $user = Auth::user();
+        $type = $request->query('type', '1');
 
-    // Get completed orders (assuming status 'Thành công' means completed)
-    $completedStatus = OrderStatus::where('name', 'Thành công')->first();
+        // Get completed orders (assuming status 'Thành công' means completed)
+        $completedStatus = OrderStatus::where('name', 'Thành công')->first();
 
-    if (!$completedStatus) {
-        return redirect()->back()->with('error', 'Không tìm thấy trạng thái đơn hàng đã hoàn thành');
-    }
+        if (!$completedStatus) {
+            return redirect()->back()->with('error', 'Không tìm thấy trạng thái đơn hàng đã hoàn thành');
+        }
 
-    // Thêm eager loading cho paymentMethod và các quan hệ cần thiết
-    $query = $user->orders()
-        ->with([
-            'orderItems.book',
-            'reviews',
-            'paymentMethod',  // Thêm quan hệ paymentMethod
-            'orderStatus',    // Thêm quan hệ orderStatus
-            'address'        // Thêm quan hệ địa chỉ nếu cần
-        ])
-        ->where('order_status_id', $completedStatus->id);
+        // Thêm eager loading cho paymentMethod và các quan hệ cần thiết
+        $query = $user->orders()
+            ->with([
+                'orderItems.book',
+                'reviews',
+                'paymentMethod',  // Thêm quan hệ paymentMethod
+                'orderStatus',    // Thêm quan hệ orderStatus
+                'address'        // Thêm quan hệ địa chỉ nếu cần
+            ])
+            ->where('order_status_id', $completedStatus->id);
 
-    // Filter based on review status
-    switch ($type) {
-        case '2': // Not reviewed
-            $query->whereDoesntHave('reviews');
-            break;
-        case '3': // Already reviewed
-            $query->whereHas('reviews');
-            break;
-            // Default (type=1): Show all
-    }
+        // Filter based on review status
+        switch ($type) {
+            case '2': // Not reviewed
+                $query->whereDoesntHave('reviews');
+                break;
+            case '3': // Already reviewed
+                $query->whereHas('reviews');
+                break;
+                // Default (type=1): Show all
+        }
 
-    $orders = $query->withCount(['reviews' => function ($q) {
+        $orders = $query->withCount(['reviews' => function ($q) {
             $q->whereNull('deleted_at');
         }])
-        ->orderBy('reviews_count', 'asc') // Sắp xếp đơn hàng chưa đánh giá lên đầu
-        ->latest('orders.created_at') // Sau đó sắp xếp theo thời gian tạo mới nhất
-        ->paginate(10);
-        
-    return view('clients.account.purchases', [
-        'orders' => $orders,
-        'currentType' => $type,
-    ]);
-}
+            ->orderBy('reviews_count', 'asc') // Sắp xếp đơn hàng chưa đánh giá lên đầu
+            ->latest('orders.created_at') // Sau đó sắp xếp theo thời gian tạo mới nhất
+            ->paginate(10);
+
+        return view('clients.account.purchases', [
+            'orders' => $orders,
+            'currentType' => $type,
+        ]);
+    }
 
     public function storeReview(Request $request)
     {
@@ -132,7 +78,7 @@ class ReviewClientController extends Controller
             'images' => 'nullable|array|max:5',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
-        
+
         // Either book_id or collection_id must be present
         if ($request->has('book_id')) {
             $rules['book_id'] = 'required|exists:books,id';
@@ -174,7 +120,7 @@ class ReviewClientController extends Controller
             $order->orderItems()
                 ->where('book_id', $request->book_id)
                 ->firstOrFail();
-                
+
             // Check if review already exists for book
             $existingReview = Review::withTrashed()
                 ->where('user_id', $user->id)
@@ -185,7 +131,7 @@ class ReviewClientController extends Controller
             $order->orderItems()
                 ->where('collection_id', $request->collection_id)
                 ->firstOrFail();
-                
+
             // Check if review already exists for combo
             $existingReview = Review::withTrashed()
                 ->where('user_id', $user->id)
@@ -196,20 +142,20 @@ class ReviewClientController extends Controller
 
         if ($existingReview) {
             if ($existingReview->trashed()) {
-                $message = $request->has('book_id') ? 
+                $message = $request->has('book_id') ?
                     'Bạn đã xóa đánh giá cho sản phẩm này và không thể đánh giá lại' :
                     'Bạn đã xóa đánh giá cho combo này và không thể đánh giá lại';
-                    
+
                 if ($request->expectsJson()) {
                     return response()->json(['success' => false, 'error' => $message], 400);
                 }
                 return redirect()->back()->with('error', $message);
             }
-            
-            $message = $request->has('book_id') ? 
+
+            $message = $request->has('book_id') ?
                 'Bạn đã đánh giá sản phẩm này rồi' :
                 'Bạn đã đánh giá combo này rồi';
-                
+
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'error' => $message], 400);
             }
@@ -236,7 +182,7 @@ class ReviewClientController extends Controller
             'images' => !empty($imagePaths) ? $imagePaths : null,
             'status' => 'approved',
         ];
-        
+
         if ($request->has('book_id')) {
             $reviewData['book_id'] = $request->book_id;
         } else {
@@ -245,10 +191,10 @@ class ReviewClientController extends Controller
 
         Review::create($reviewData);
 
-        $successMessage = $request->has('book_id') ? 
+        $successMessage = $request->has('book_id') ?
             'Cảm ơn bạn đã đánh giá sản phẩm!' :
             'Cảm ơn bạn đã đánh giá combo!';
-            
+
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'message' => $successMessage]);
         }
@@ -300,7 +246,7 @@ class ReviewClientController extends Controller
                     }
                 }
             }
-            
+
             // Upload new images
             $imagePaths = [];
             foreach ($request->file('images') as $image) {
@@ -363,12 +309,12 @@ class ReviewClientController extends Controller
     public function createForm(Request $request, $orderId, $bookId = null, $collectionId = null)
     {
         $user = Auth::user();
-        
+
         // Get collectionId from request if not in URL (for combo route)
         if (!$collectionId && $request->route()->getName() === 'account.reviews.create.combo') {
             $collectionId = $request->route('collectionId');
         }
-        
+
         // Check if the order belongs to the user and is completed
         $order = $user->orders()
             ->where('id', $orderId)
@@ -424,7 +370,7 @@ class ReviewClientController extends Controller
     {
         $user = Auth::user();
         $review = $user->reviews()->where('id', $reviewId)->firstOrFail();
-        
+
         $order = $user->orders()
             ->with(['orderItems.book', 'orderItems.collection', 'orderStatus', 'address', 'paymentMethod'])
             ->where('id', $review->order_id)
@@ -441,9 +387,9 @@ class ReviewClientController extends Controller
         } else {
             abort(404, 'Không tìm thấy sản phẩm trong đánh giá');
         }
-        
+
         if (!$orderItem) abort(404);
-        
+
         return view('clients.account.review_edit', compact('order', 'orderItem', 'review', 'product', 'productType'));
     }
 }
