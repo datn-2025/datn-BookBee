@@ -580,7 +580,7 @@
                             <div class="relative group w-full max-w-lg">
                                 <!-- Main image container -->
                                 <div class="banner-image-container relative overflow-hidden">
-                                    <img src="{{ $bannerNews->thumbnail }}"
+                                    <img src="{{ asset('storage/' . $bannerNews->thumbnail) }}"
                                         class="banner-image w-full h-80 md:h-96 lg:h-[500px] object-cover border-2 border-black"
                                         alt="{{ $bannerNews->title }}">
 
@@ -739,9 +739,18 @@
                     <!-- Image Container -->
                     <div class="image-container relative overflow-hidden">
                         <a href="{{ route('news.show', $item->id) }}" class="block">
-                            <img src="{{ $item->thumbnail ?? '/images/news-default.jpg' }}"
-                                 alt="{{ $item->title }}"
-                                 class="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110">
+                            @if($item->thumbnail)
+                                <img src="{{ asset('storage/' . $item->thumbnail) }}"
+                                     alt="{{ $item->title }}"
+                                     class="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110">
+                            @else
+                                <div class="w-full h-64 bg-gray-200 flex items-center justify-center">
+                                    <div class="text-center text-gray-500">
+                                        <i class="fas fa-image text-3xl mb-2"></i>
+                                        <p class="text-sm">Chưa có ảnh</p>
+                                    </div>
+                                </div>
+                            @endif
                         </a>
                         <!-- Image Overlay -->
                         <div class="image-overlay">
@@ -859,9 +868,15 @@
                 <div class="mb-6 last:mb-0">
                     <a href="{{ route('news.show', $featured->id) }}" class="group block">
                         <div class="overflow-hidden mb-3">
-                            <img src="{{ $featured->thumbnail ?? '/images/news-default.jpg' }}"
-                                 alt="{{ $featured->title }}"
-                                 class="w-full h-32 object-cover transform transition duration-500 group-hover:scale-110">
+                            @if($featured->thumbnail)
+                                <img src="{{ asset('storage/' . $featured->thumbnail) }}"
+                                     alt="{{ $featured->title }}"
+                                     class="w-full h-32 object-cover transform transition duration-500 group-hover:scale-110">
+                            @else
+                                <div class="w-full h-32 bg-gray-200 flex items-center justify-center">
+                                    <i class="fas fa-image text-gray-400 text-lg"></i>
+                                </div>
+                            @endif
                         </div>
                         <h4 class="font-bold text-black group-hover:text-gray-600 transition-colors duration-200 line-clamp-2 uppercase text-sm tracking-wide">
                             {{ $featured->title }}
@@ -894,9 +909,15 @@
                 @foreach($latestForSidebar as $latest)
                 <div class="flex items-center space-x-4 mb-6 last:mb-0 group">
                     <div class="flex-shrink-0 w-16 h-16">
-                        <img src="{{ $latest->thumbnail ?? '/images/news-default.jpg' }}"
-                             alt="{{ $latest->title }}"
-                             class="w-full h-full object-cover">
+                        @if($latest->thumbnail)
+                            <img src="{{ asset('storage/' . $latest->thumbnail) }}"
+                                 alt="{{ $latest->title }}"
+                                 class="w-full h-full object-cover">
+                        @else
+                            <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-image text-gray-400 text-xs"></i>
+                            </div>
+                        @endif
                     </div>
                     <div>
                         <a href="{{ route('news.show', $latest->id) }}" 
