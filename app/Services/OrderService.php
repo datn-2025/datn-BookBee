@@ -551,10 +551,22 @@ class OrderService
     {
         $attributeValueIds = $cartItem->attribute_value_ids ?? [];
         
+        // Xử lý attribute_value_ids có thể là JSON string hoặc array
+        if (is_string($attributeValueIds) && !empty($attributeValueIds) && $attributeValueIds !== '[]') {
+            $decoded = json_decode($attributeValueIds, true);
+            if (is_array($decoded)) {
+                $attributeValueIds = $decoded;
+            } else {
+                $attributeValueIds = [];
+            }
+        } elseif (!is_array($attributeValueIds)) {
+            $attributeValueIds = [];
+        }
+        
         if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
             foreach ($attributeValueIds as $attributeValueId) {
-                // Kiểm tra attributeValueId hợp lệ (không phải 0, null, hoặc empty)
-                if ($attributeValueId && is_numeric($attributeValueId) && $attributeValueId > 0) {
+                // Kiểm tra attributeValueId hợp lệ (không phải null, empty, hoặc 0)
+                if ($attributeValueId && !empty(trim($attributeValueId)) && $attributeValueId !== '0') {
                     $bookAttributeValue = BookAttributeValue::where('book_id', $cartItem->book_id)
                         ->where('attribute_value_id', $attributeValueId)
                         ->first();
