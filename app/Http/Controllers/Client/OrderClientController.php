@@ -21,10 +21,10 @@ class OrderClientController extends Controller
     public function show($id)
     {
         $order = Order::with([
-            'orderItems.book.images',
+            'orderItems.book.gifts',
             'orderItems.collection',
             'orderItems.bookFormat',
-            'orderItems.attributeValues',
+            'orderItems.attributeValues.attribute',
             'orderStatus',
             'paymentStatus',
             'shippingAddress',
@@ -34,9 +34,10 @@ class OrderClientController extends Controller
             'voucher',
             'parentOrder', // Thêm parent order relationship
             'parentOrder.voucher', // Thêm voucher của parent order
-            'childOrders.orderItems.book.images',
+            'childOrders.orderItems.book.gifts',
             'childOrders.orderItems.collection',
             'childOrders.orderItems.bookFormat',
+            'childOrders.orderItems.attributeValues.attribute',
             'childOrders.orderStatus',
             'childOrders.paymentStatus',
             'refundRequests' // Thêm để load thông tin yêu cầu hoàn tiền
@@ -195,9 +196,10 @@ class OrderClientController extends Controller
         $status = $request->query('status', 'all');
         
         $query = Order::with([
-            'orderItems.book.images',
+            'orderItems.book.gifts',
             'orderItems.collection', 
             'orderItems.bookFormat',
+            'orderItems.attributeValues.attribute',
             'orderStatus', 
             'paymentStatus',
             'paymentMethod',
@@ -205,9 +207,10 @@ class OrderClientController extends Controller
             'voucher',
             'reviews',
             'refundRequests',
-            'childOrders.orderItems.book.images',
+            'childOrders.orderItems.book.gifts',
             'childOrders.orderItems.collection',
             'childOrders.orderItems.bookFormat',
+            'childOrders.orderItems.attributeValues.attribute',
             'childOrders.orderStatus',
             'childOrders.paymentStatus',
             'childOrders.refundRequests'
