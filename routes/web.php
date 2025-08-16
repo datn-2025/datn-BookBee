@@ -195,6 +195,7 @@ Route::post('/addresses/{id}/set-default', [AddressClientController::class, 'set
         Route::post('/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('cancel');
         Route::post('/store', [\App\Http\Controllers\OrderController::class, 'store'])->name('store');
         Route::post('/apply-voucher', [\App\Http\Controllers\OrderController::class, 'applyVoucher'])->name('apply-voucher');
+        Route::post('/check-stock', [\App\Http\Controllers\OrderController::class, 'checkStockStatus'])->name('check-stock');
     });
     
     // Preorder routes

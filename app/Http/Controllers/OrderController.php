@@ -75,6 +75,14 @@ class OrderController extends Controller
         try {
             $cartItems = $this->orderService->validateCartItems($user);
         } catch (\Exception $e) {
+            // Log detailed stock information for debugging
+            try {
+                $stockReport = $this->orderService->getCartStockReport($user);
+                Log::warning('Checkout validation failed - Stock Report:', $stockReport);
+            } catch (\Exception $reportException) {
+                Log::error('Failed to generate stock report:', ['error' => $reportException->getMessage()]);
+            }
+            
             toastr()->error($e->getMessage());
             return redirect()->route('cart.index');
         }
@@ -199,6 +207,14 @@ class OrderController extends Controller
         try {
             $selectedCartItems = $this->orderService->validateCartItems($user);
         } catch (\Exception $e) {
+            // Log detailed stock information for debugging
+            try {
+                $stockReport = $this->orderService->getCartStockReport($user);
+                Log::warning('Order creation validation failed - Stock Report:', $stockReport);
+            } catch (\Exception $reportException) {
+                Log::error('Failed to generate stock report during order creation:', ['error' => $reportException->getMessage()]);
+            }
+            
             toastr()->error($e->getMessage());
             return redirect()->route('cart.index');
         }
@@ -985,7 +1001,7 @@ class OrderController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Preorder error: ' . $e->getMessage());
+            Log::error('Preorder error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => 'Có lỗi xảy ra khi đặt trước sách.'
@@ -1038,6 +1054,67 @@ class OrderController extends Controller
                     $bookAttributeValue->increment('stock', $orderItem->quantity);
                 }
             }
+        }
+    }
+
+    /**
+     * API endpoint to check cart stock status before checkout
+     */
+    public function checkStockStatus(Request $request)
+    {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Người dùng chưa đăng nhập'
+            ], 401);
+        }
+        
+        // Get cart from session for this implementation
+        $cart = session('cart', []);
+        
+        if (empty($cart)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Giỏ hàng trống'
+            ], 400);
+        }
+        
+        try {
+            // Validate cart items using session cart
+            $validationResult = $this->orderService->validateCartItems($cart);
+            
+            if ($validationResult['is_valid']) {
+                // If validation passes, get detailed stock report
+                $stockReport = $this->orderService->getCartStockReport($cart);
+                
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Tất cả sản phẩm đều có đủ tồn kho',
+                    'stock_report' => $stockReport
+                ]);
+            } else {
+                // If validation fails, provide detailed error information
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Tồn kho không đủ cho một số sản phẩm',
+                    'stock_report' => $validationResult
+                ], 422);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Stock validation error in checkStockStatus', [
+                'user_id' => $user->id,
+                'cart_count' => count($cart),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Lỗi hệ thống khi kiểm tra tồn kho: ' . $e->getMessage()
+            ], 500);
         }
     }
 }
