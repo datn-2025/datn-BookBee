@@ -450,7 +450,7 @@
                 <!-- Featured Image -->
                 @if($article->thumbnail)
                 <div class="mb-12 fade-in">
-                    <img src="{{ $article->thumbnail }}" 
+                    <img src="{{ asset('storage/' . $article->thumbnail) }}" 
                          alt="{{ $article->title }}" 
                          class="w-full h-64 md:h-96 object-cover border-2 border-black">
                 </div>
@@ -525,11 +525,17 @@
                     @foreach($latestNews as $latest)
                     <div class="mb-6 last:mb-0">
                         <div class="flex gap-4">
-                            @if($latest->thumbnail)
-                            <img src="{{ $latest->thumbnail }}" 
-                                 alt="{{ $latest->title }}" 
-                                 class="w-16 h-16 object-cover border border-gray-300">
-                            @endif
+                            <div class="flex-shrink-0 w-16 h-16">
+                                @if($latest->thumbnail)
+                                    <img src="{{ asset('storage/' . $latest->thumbnail) }}" 
+                                         alt="{{ $latest->title }}" 
+                                         class="w-full h-full object-cover border border-gray-300">
+                                @else
+                                    <div class="w-full h-full bg-gray-200 flex items-center justify-center border border-gray-300">
+                                        <i class="fas fa-image text-gray-400 text-xs"></i>
+                                    </div>
+                                @endif
+                            </div>
                             <div class="flex-1">
                                 <h4 class="font-bold text-sm uppercase leading-tight mb-2">
                                     <a href="{{ route('news.show', $latest->id) }}" 
@@ -575,9 +581,18 @@
                     <!-- Image -->
                     <div class="relative overflow-hidden">
                         <a href="{{ route('news.show', $item->id) }}" class="block">
-                            <img src="{{ $item->thumbnail ?? '/images/news-default.jpg' }}" 
-                                 alt="{{ $item->title }}" 
-                                 class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500">
+                            @if($item->thumbnail)
+                                <img src="{{ asset('storage/' . $item->thumbnail) }}" 
+                                     alt="{{ $item->title }}" 
+                                     class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500">
+                            @else
+                                <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                    <div class="text-center text-gray-500">
+                                        <i class="fas fa-image text-2xl mb-2"></i>
+                                        <p class="text-xs">Chưa có ảnh</p>
+                                    </div>
+                                </div>
+                            @endif
                         </a>
                         <!-- Category Badge -->
                         <div class="absolute top-4 left-4">
