@@ -9,6 +9,7 @@ use App\Models\PaymentStatus;
 use App\Models\Voucher;
 use App\Models\OrderItemAttributeValue;
 use App\Models\BookAttributeValue;
+use App\Models\BookGift;
 use App\Models\Address;
 use App\Models\User;
 use App\Models\PaymentMethod;
@@ -535,6 +536,9 @@ class OrderService
         // ✨ THÊM MỚI: Trừ stock thuộc tính sản phẩm
         $this->decreaseAttributeStock($cartItem);
 
+        // ✨ THÊM MỚI: Trừ số lượng quà tặng
+        $this->decreaseGiftStock($cartItem);
+
         Log::info('Created book order item:', [
             'order_item_id' => $orderItem->id,
             'book_id' => $cartItem->book_id,
@@ -599,6 +603,74 @@ class OrderService
                             'attribute_value_id' => $attributeValueId
                         ]);
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Trừ số lượng quà tặng khi tạo đơn hàng
+     */
+    private function decreaseGiftStock($cartItem)
+    {
+        // Chỉ xử lý quà tặng cho sách vật lý (không phải ebook hoặc combo)
+        if (isset($cartItem->is_combo) && $cartItem->is_combo) {
+            return; // Combo không có quà tặng
+        }
+
+        // Kiểm tra xem có phải ebook không
+        if ($cartItem->bookFormat && stripos($cartItem->bookFormat->format_name, 'ebook') !== false) {
+            return; // Ebook không có quà tặng
+        }
+
+        // Lấy các quà tặng có sẵn cho sách này
+        $availableGifts = BookGift::where('book_id', $cartItem->book_id)
+            ->where(function ($query) {
+                $query->whereNull('start_date')
+                    ->orWhere('start_date', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', now());
+            })
+            ->where('quantity', '>', 0)
+            ->get();
+
+        // Trừ số lượng quà tặng cho mỗi sản phẩm đặt hàng
+        foreach ($availableGifts as $gift) {
+            if ($gift->quantity >= $cartItem->quantity) {
+                $gift->decrement('quantity', $cartItem->quantity);
+                
+                Log::info('Decreased gift stock:', [
+                    'gift_id' => $gift->id,
+                    'gift_name' => $gift->gift_name,
+                    'book_id' => $cartItem->book_id,
+                    'quantity_decreased' => $cartItem->quantity,
+                    'remaining_quantity' => $gift->fresh()->quantity
+                ]);
+            } else {
+                Log::warning('Insufficient gift stock:', [
+                    'gift_id' => $gift->id,
+                    'gift_name' => $gift->gift_name,
+                    'book_id' => $cartItem->book_id,
+                    'available_quantity' => $gift->quantity,
+                    'requested_quantity' => $cartItem->quantity
+                ]);
+                
+                // Nếu không đủ quà tặng, có thể:
+                // 1. Trừ hết số lượng còn lại và log warning
+                // 2. Hoặc throw exception tùy theo business logic
+                
+                // Tạm thời trừ hết số lượng còn lại
+                if ($gift->quantity > 0) {
+                    $remainingQuantity = $gift->quantity;
+                    $gift->update(['quantity' => 0]);
+                    
+                    Log::info('Used remaining gift stock:', [
+                        'gift_id' => $gift->id,
+                        'gift_name' => $gift->gift_name,
+                        'quantity_used' => $remainingQuantity
+                    ]);
                 }
             }
         }

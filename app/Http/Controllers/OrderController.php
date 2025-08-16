@@ -19,13 +19,13 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
 use App\Services\InvoiceService;
+use Illuminate\Support\Facades\Log;
 use App\Services\MixedOrderService;
 use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Services\QrCodeService;
 use App\Services\VoucherService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -105,13 +105,15 @@ class OrderController extends Controller
                                 ->orWhere('end_date', '>=', now());
                         })
                         ->where('quantity', '>', 0)
-                        ->select('gift_name as name', 'gift_description as description', 'gift_image as image')
+                        ->select('id', 'gift_name as name', 'gift_description as description', 'gift_image as image', 'quantity')
                         ->get()
                         ->map(function ($gift) {
                             return (object) [
+                                'id' => $gift->id,
                                 'name' => $gift->name ?? 'Quà tặng',
                                 'description' => $gift->description ?? '',
-                                'image' => $gift->image ?? null
+                                'image' => $gift->image ?? null,
+                                'quantity' => $gift->quantity
                             ];
                         });
                 }
