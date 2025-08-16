@@ -1424,16 +1424,16 @@
                                     </span>
                                 </div>
                                 <div class="pt-1">
-                                    <button onclick="event.stopPropagation(); addRelatedToCart('{{ $related->id }}')"
-                                        class="adidas-btn-enhanced w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center {{ $relatedStock <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800' }}"
-                                        {{ $relatedStock <= 0 ? 'disabled' : '' }}>
+                                    <a href="{{ route('combos.show', $related->slug ?? $related->id) }}"
+                                        onclick="event.stopPropagation();"
+                                        class="adidas-btn-enhanced w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center hover:bg-gray-800">
                                         <span class="relative flex items-center space-x-1">
-                                            <i class="fas fa-shopping-cart text-xs"></i>
-                                            <span>{{ $relatedStock <= 0 ? 'HẾT HÀNG' : 'THÊM VÀO GIỎ' }}</span>
+                                            <i class="fas fa-eye text-xs"></i>
+                                            <span>XEM CHI TIẾT</span>
                                             <i
                                                 class="fas fa-arrow-right text-xs transform group-hover/btn:translate-x-1 transition-transform duration-300"></i>
                                         </span>
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -2376,25 +2376,14 @@
                                         </div>
 
                                         <div class="mt-3">
-                                            @if($defaultFormat)
-                                                <button onclick="event.stopPropagation(); addRelatedToCart('{{ $related->id }}')"
-                                                    class="adidas-btn-enhanced w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center {{ $stock <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800' }}"
-                                                    {{ $stock <= 0 ? 'disabled' : '' }}>
-                                                    <span class="relative flex items-center space-x-1">
-                                                        <i class="fas fa-shopping-cart text-xs"></i>
-                                                        <span>{{ $stock > 0 ? 'THÊM VÀO GIỎ' : 'HẾT HÀNG' }}</span>
-                                                    </span>
-                                                </button>
-                                            @else
-                                                <button
-                                                    class="adidas-btn-enhanced w-full h-10 bg-gray-400 text-white font-bold text-xs uppercase tracking-wider cursor-not-allowed opacity-50"
-                                                    disabled>
-                                                    <span class="relative flex items-center space-x-1">
-                                                        <i class="fas fa-exclamation-circle text-xs"></i>
-                                                        <span>KHÔNG KHẢ DỤNG</span>
-                                                    </span>
-                                                </button>
-                                            @endif
+                                            <a href="{{ route('books.show', $related->slug ?? $related->id) }}"
+                                                onclick="event.stopPropagation();"
+                                                class="adidas-btn-enhanced w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center hover:bg-gray-800">
+                                                <span class="relative flex items-center space-x-1">
+                                                    <i class="fas fa-eye text-xs"></i>
+                                                    <span>XEM CHI TIẾT</span>
+                                                </span>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
