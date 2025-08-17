@@ -5,20 +5,29 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use App\Models\Preorder;
 use App\Models\BookFormat;
+use App\Models\PaymentMethod;
+use App\Models\PaymentStatus;
+use App\Models\Payment;
+use App\Models\Wallet;
+use App\Models\WalletTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PreorderConfirmation;
 use App\Services\GhnService;
+use App\Services\PaymentService;
 
 class PreorderController extends Controller
 {
     protected $ghnService;
+    protected $paymentService;
 
-    public function __construct(GhnService $ghnService)
+    public function __construct(GhnService $ghnService, PaymentService $paymentService)
     {
         $this->ghnService = $ghnService;
+        $this->paymentService = $paymentService;
     }
 
     /**
@@ -33,7 +42,19 @@ class PreorderController extends Controller
         $formats = $book->formats()->get();
         $attributes = $book->bookAttributeValues()->with('attributeValue.attribute')->get();
         
-        return view('preorders.create', compact('book', 'formats', 'attributes'));
+        // Chỉ hiển thị VNPay và Ví điện tử cho preorder
+        $paymentMethods = PaymentMethod::where('is_active', true)
+            ->where(function($query) {
+                $query->where('name', 'like', '%vnpay%')
+                      ->orWhere('name', 'like', '%ví điện tử%')
+                      ->orWhere('name', 'like', '%Ví điện tử%')
+                      ->orWhere('name', 'like', '%wallet%');
+            })
+            ->get();
+            
+        $wallet = Wallet::where('user_id', Auth::id())->first();
+        
+        return view('preorders.create', compact('book', 'formats', 'attributes', 'paymentMethods', 'wallet'));
     }
 
     /**
@@ -56,11 +77,13 @@ class PreorderController extends Controller
             'district_name' => 'nullable|string',
             'ward_code' => 'nullable|string',
             'ward_name' => 'nullable|string',
-            'notes' => 'nullable|string|max:1000'
+            'notes' => 'nullable|string|max:1000',
+            'payment_method_id' => 'required|exists:payment_methods,id'
         ]);
 
         $book = Book::findOrFail($validated['book_id']);
         $bookFormat = $validated['book_format_id'] ? BookFormat::findOrFail($validated['book_format_id']) : null;
+        $paymentMethod = PaymentMethod::findOrFail($validated['payment_method_id']);
 
         if (!$book->canPreorder()) {
             return back()->with('error', 'Sách này không thể đặt trước.');
@@ -73,7 +96,7 @@ class PreorderController extends Controller
         if (!$isEbook && (!$validated['address'] || !$validated['province_code'])) {
             return back()->with('error', 'Vui lòng nhập đầy đủ địa chỉ giao hàng cho sách vật lý.');
         }
-
+        //  dd($request->all());
         try {
             DB::beginTransaction();
 
@@ -106,6 +129,12 @@ class PreorderController extends Controller
             // Thêm phí ship nếu có (miễn phí cho preorder)
             $shippingFee = 0; // Miễn phí ship cho đặt trước
 
+            // Lấy trạng thái thanh toán mặc định
+            $paymentStatus = PaymentStatus::where('name', 'Chờ Xử Lý')->first();
+            if (!$paymentStatus) {
+                $paymentStatus = PaymentStatus::first(); // Fallback
+            }
+
             $preorderData = [
                 'user_id' => Auth::id(),
                 'book_id' => $book->id,
@@ -119,7 +148,9 @@ class PreorderController extends Controller
                 'selected_attributes' => $validated['selected_attributes'] ?? [],
                 'status' => 'pending',
                 'notes' => $validated['notes'],
-                'expected_delivery_date' => $book->release_date
+                'expected_delivery_date' => $book->release_date,
+                'payment_method_id' => $validated['payment_method_id'],
+                'payment_status' => 'pending'
             ];
 
             // Chỉ lưu địa chỉ nếu không phải ebook
@@ -134,8 +165,68 @@ class PreorderController extends Controller
                     'ward_name' => $validated['ward_name']
                 ]);
             }
-
             $preorder = Preorder::create($preorderData);
+            // dd($preorder);
+
+            // Xử lý thanh toán ví điện tử
+            if (str_contains(strtolower($paymentMethod->name), 'ví điện tử') || str_contains(strtolower($paymentMethod->name), 'wallet')) {
+                $user = Auth::user();
+                // dd(1);
+                $wallet = Wallet::where('user_id', $user->id)->first();
+                // dd($wallet);
+                // Kiểm tra số dư ví
+                if (!$wallet || $wallet->balance < $totalAmount) {
+                    DB::rollback();
+                    return back()->with('error', 'Số dư ví không đủ để thanh toán. Vui lòng nạp thêm tiền hoặc chọn phương thức thanh toán khác.');
+                }
+                // dd($totalAmount);
+                // Trừ tiền từ ví
+                $wallet->decrement('balance', $totalAmount);
+                // dd(2);
+                // Tạo bản ghi lịch sử giao dịch ví
+               
+                $a = WalletTransaction::create([
+                    'wallet_id' => $wallet->id,
+                    'amount' => $totalAmount,
+                    'type' => 'Đặt trước sách',
+                    'description' => 'Thanh toán đặt trước sách: ' . $book->title,
+                    'status' => 'Thành công',
+                    'payment_method' => 'wallet'
+                ]);
+                // dd($a);
+                // Cập nhật trạng thái thanh toán preorder
+                $preorder->update([
+                    'payment_status' => 'paid',
+                ]);
+                
+                DB::commit();
+                
+                // Gửi email xác nhận
+                try {
+                    Mail::to($preorder->email)->send(new PreorderConfirmation($preorder));
+                } catch (\Exception $e) {
+                    Log::error('Lỗi gửi email preorder: ' . $e->getMessage());
+                }
+                
+                return redirect()->route('preorders.show', $preorder)
+                    ->with('success', 'Đặt trước và thanh toán bằng ví thành công! Chúng tôi đã gửi email xác nhận đến bạn.');
+            }
+
+            // Xử lý thanh toán VNPay cho preorder
+            if ($paymentMethod->name == 'Thanh toán vnpay') {
+                DB::commit();
+                
+                $vnpayData = [
+                    'preorder_id' => $preorder->id,
+                    'payment_status_id' => $paymentStatus->id,
+                    'payment_method_id' => $validated['payment_method_id'],
+                    'order_code' => 'PRE' . $preorder->id . time(),
+                    'amount' => $totalAmount,
+                    'order_info' => "Thanh toán đặt trước sách " . $book->title,
+                ];
+                
+                return $this->vnpay_payment($vnpayData);
+            }
 
             DB::commit();
 
@@ -220,5 +311,162 @@ class PreorderController extends Controller
             'formats' => $formats,
             'attributes' => $attributes
         ]);
+    }
+
+    /**
+     * Xử lý thanh toán VNPay cho preorder
+     */
+    public function vnpay_payment($data)
+    {
+        $vnp_TmnCode = config('services.vnpay.tmn_code');
+        $vnp_HashSecret = config('services.vnpay.hash_secret');
+        $vnp_Url = config('services.vnpay.url');
+        $vnp_Returnurl = route("preorder.vnpay.return");
+        $vnp_TxnRef = $data['order_code'];
+        $vnp_OrderInfo = $data['order_info'];
+        $vnp_Amount = (int)($data['amount'] * 100);
+        $vnp_Locale = "vn";
+        $vnp_BankCode = "NCB";
+        $vnp_IpAddr = $_SERVER['REMOTE_ADDR'];
+
+        $inputData = array(
+            "vnp_Version" => "2.1.0",
+            "vnp_TmnCode" => $vnp_TmnCode,
+            "vnp_Amount" => $vnp_Amount,
+            "vnp_Command" => "pay",
+            "vnp_CreateDate" => date('YmdHis'),
+            "vnp_CurrCode" => "VND",
+            "vnp_IpAddr" => $vnp_IpAddr,
+            "vnp_Locale" => $vnp_Locale,
+            "vnp_OrderInfo" => $vnp_OrderInfo,
+            "vnp_ReturnUrl" => $vnp_Returnurl,
+            "vnp_TxnRef" => $vnp_TxnRef,
+            "vnp_OrderType" => "other",
+        );
+
+        ksort($inputData);
+
+        $query = http_build_query($inputData);
+        $hashdata = $query;
+
+        $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
+        $vnp_Url = $vnp_Url . "?" . $query . "&vnp_SecureHash=" . $vnpSecureHash;
+
+        // Lưu thông tin thanh toán vào preorder record thay vì tạo payment record
+        // (theo memory về lỗi constraint violation)
+        $preorder = Preorder::find($data['preorder_id']);
+        if ($preorder) {
+            $preorder->update([
+                'vnpay_transaction_id' => $data['order_code'],
+                'payment_status' => 'processing'
+            ]);
+        }
+
+        return redirect($vnp_Url);
+    }
+
+    /**
+     * Xử lý callback từ VNPay cho preorder
+     */
+    public function vnpayReturn(Request $request)
+    {
+        $vnp_HashSecret = config('services.vnpay.hash_secret');
+        $vnp_SecureHash = $request->vnp_SecureHash;
+
+        // Lấy tất cả tham số trừ vnp_SecureHash
+        $inputData = [];
+        foreach ($request->all() as $key => $value) {
+            if ($key !== 'vnp_SecureHash') {
+                $inputData[$key] = $value;
+            }
+        }
+
+        // Sắp xếp theo key
+        ksort($inputData);
+
+        // Tạo hash string
+        $hashData = http_build_query($inputData);
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+
+        // Kiểm tra tính hợp lệ của chữ ký
+        if ($secureHash !== $vnp_SecureHash) {
+            Log::error('VNPay signature verification failed for preorder', [
+                'expected' => $secureHash,
+                'received' => $vnp_SecureHash
+            ]);
+            return redirect()->route('preorders.index')->with('error', 'Có lỗi xảy ra trong quá trình thanh toán');
+        }
+
+        // Lấy thông tin từ VNPay response
+        $vnp_ResponseCode = $request->vnp_ResponseCode;
+        $vnp_TxnRef = $request->vnp_TxnRef;
+        $vnp_Amount = $request->vnp_Amount / 100;
+        $vnp_TransactionNo = $request->vnp_TransactionNo;
+
+        try {
+            DB::beginTransaction();
+
+            // Tìm preorder theo transaction reference
+            $preorder = Preorder::where('vnpay_transaction_id', $vnp_TxnRef)->first();
+
+            if (!$preorder) {
+                DB::rollBack();
+                Log::error('Preorder not found for VNPay return', ['transaction_ref' => $vnp_TxnRef]);
+                return redirect()->route('preorders.index')->with('error', 'Không tìm thấy đơn đặt trước');
+            }
+
+            if ($vnp_ResponseCode === '00') {
+                // Thanh toán thành công
+                $preorder->update([
+                    'payment_status' => 'paid',
+                    'vnpay_transaction_id' => $vnp_TransactionNo,
+                    'status' => 'Đã xác nhận'
+                ]);
+                
+                Log::info('Preorder payment successful', [
+                    'preorder_id' => $preorder->id,
+                    'transaction_id' => $vnp_TransactionNo,
+                    'amount' => $vnp_Amount
+                ]);
+
+                // Gửi email xác nhận thanh toán thành công
+                try {
+                    Mail::to($preorder->email)->send(new PreorderConfirmation($preorder));
+                } catch (\Exception $e) {
+                    Log::error('Lỗi gửi email xác nhận thanh toán preorder: ' . $e->getMessage());
+                }
+
+                DB::commit();
+                
+                return redirect()->route('preorders.show', $preorder)
+                    ->with('success', 'Thanh toán đặt trước thành công! Chúng tôi đã gửi email xác nhận đến bạn.');
+            } else {
+                // Thanh toán thất bại
+                $preorder->update([
+                    'payment_status' => 'failed'
+                ]);
+                
+                Log::warning('Preorder payment failed', [
+                    'preorder_id' => $preorder->id,
+                    'response_code' => $vnp_ResponseCode,
+                    'transaction_ref' => $vnp_TxnRef
+                ]);
+
+                DB::commit();
+                
+                return redirect()->route('preorders.show', $preorder)
+                    ->with('error', 'Thanh toán không thành công. Vui lòng thử lại hoặc chọn phương thức thanh toán khác.');
+            }
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error processing VNPay return for preorder', [
+                'error' => $e->getMessage(),
+                'transaction_ref' => $vnp_TxnRef
+            ]);
+            
+            return redirect()->route('preorders.index')
+                ->with('error', 'Có lỗi xảy ra khi xử lý thanh toán. Vui lòng liên hệ hỗ trợ.');
+        }
     }
 }
