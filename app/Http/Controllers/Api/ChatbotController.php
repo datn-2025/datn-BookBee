@@ -45,6 +45,24 @@ class ChatbotController extends Controller
                 ]);
             }
             
+            // Nếu không có GEMINI_API_KEY, trả về response mặc định
+            $apiKey = env('GEMINI_API_KEY');
+            if (!$apiKey) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'type' => 'text',
+                        'content' => 'Tôi hiểu bạn đang tìm kiếm thông tin. Để tôi giúp bạn tốt hơn, bạn có thể sử dụng các từ khóa như "sách bán chạy", "sách mới", hoặc tên danh mục cụ thể.',
+                        'quick_replies' => [
+                            'Sách bán chạy',
+                            'Sách mới', 
+                            'Sách giảm giá',
+                            'Xem danh mục'
+                        ]
+                    ]
+                ]);
+            }
+            
             // Lấy dữ liệu từ database
             $books = Book::with(['authors', 'formats', 'reviews'])->latest()->take(20)->get()->toArray();
             $categories = Category::get()->toArray();
@@ -302,6 +320,20 @@ EOT;
     {
         $prompt = mb_strtolower(trim($userPrompt), 'UTF-8');
         
+        // Chào hỏi
+        if (preg_match('/(xin chào|chào|hello|hi|hey|chào bạn)/i', $prompt)) {
+            return [
+                'type' => 'greeting',
+                'content' => '👋 Xin chào! Tôi là trợ lý BookBee. Tôi có thể giúp bạn tìm sách, tư vấn hoặc trả lời câu hỏi về sản phẩm. Bạn cần hỗ trợ gì?',
+                'quick_replies' => [
+                    'Sách bán chạy',
+                    'Sách mới',
+                    'Sách giảm giá',
+                    'Xem danh mục'
+                ]
+            ];
+        }
+        
         // Sách bán chạy
         if (preg_match('/(sách bán chạy|bán chạy nhất|bestseller|best seller)/i', $prompt)) {
             $books = Book::select('books.*')
@@ -402,6 +434,45 @@ EOT;
                         'products' => $products
                     ];
                 }
+            }
+        }
+        
+        // Tìm kiếm tổng quát
+        if (preg_match('/(tìm|search|find|kiếm)/i', $prompt) || strlen($prompt) > 3) {
+            // Tìm kiếm trong tiêu đề và mô tả sách
+            $books = Book::where(function($query) use ($prompt) {
+                        $query->where('title', 'like', '%' . $prompt . '%')
+                              ->orWhere('description', 'like', '%' . $prompt . '%');
+                    })
+                    ->orWhereHas('authors', function($query) use ($prompt) {
+                        $query->where('name', 'like', '%' . $prompt . '%');
+                    })
+                    ->with(['authors', 'formats', 'reviews'])
+                    ->take(6)
+                    ->get();
+            
+            if ($books->count() > 0) {
+                $products = [];
+                foreach ($books as $book) {
+                    $products[] = $this->formatBookCard($book);
+                }
+                
+                return [
+                    'type' => 'product_list',
+                    'content' => "🔍 Tôi tìm thấy {$books->count()} sách phù hợp với '{$userPrompt}':",
+                    'products' => $products
+                ];
+            } else {
+                return [
+                    'type' => 'text',
+                    'content' => "😔 Xin lỗi, tôi không tìm thấy sách nào phù hợp với '{$userPrompt}'. Bạn có thể thử tìm kiếm với từ khóa khác hoặc xem các danh mục sách của chúng tôi.",
+                    'quick_replies' => [
+                        'Xem danh mục',
+                        'Sách bán chạy',
+                        'Sách mới',
+                        'Sách giảm giá'
+                    ]
+                ];
             }
         }
         
