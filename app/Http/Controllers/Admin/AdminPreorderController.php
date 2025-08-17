@@ -14,6 +14,8 @@ use App\Models\District;
 use App\Models\Ward;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PreorderStatusUpdate;
 
@@ -188,7 +190,7 @@ class AdminPreorderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Lỗi tạo preorder từ admin: ' . $e->getMessage());
+            Log::error('Lỗi tạo preorder từ admin: ' . $e->getMessage());
             return back()->withInput()->with('error', 'Có lỗi xảy ra khi tạo đơn đặt trước.');
         }
     }
@@ -208,8 +210,9 @@ class AdminPreorderController extends Controller
      */
     public function updateStatus(Request $request, Preorder $preorder)
     {
+        // dd(1);
         $validated = $request->validate([
-            'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled',
+            'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled,Chờ xử lý,Đã xác nhận,Đang xử lý,Đã gửi,Đã giao,Đã hủy',
             'notes' => 'nullable|string|max:1000'
         ]);
 
@@ -226,12 +229,15 @@ class AdminPreorderController extends Controller
             // Cập nhật timestamp tương ứng
             switch ($validated['status']) {
                 case 'confirmed':
+                case 'Đã xác nhận':
                     $preorder->update(['confirmed_at' => now()]);
                     break;
                 case 'shipped':
+                case 'Đã gửi':
                     $preorder->update(['shipped_at' => now()]);
                     break;
                 case 'delivered':
+                case 'Đã giao':
                     $preorder->update(['delivered_at' => now()]);
                     break;
             }
@@ -261,8 +267,18 @@ class AdminPreorderController extends Controller
      */
     public function approvePreorder(Request $request, Preorder $preorder)
     {
+        Log::info('Approve preorder called', [
+            'preorder_id' => $preorder->id,
+            'current_status' => $preorder->status,
+            'request_data' => $request->all()
+        ]);
+
         // Kiểm tra trạng thái đơn hàng - chỉ cho phép duyệt đơn đang chờ xử lý
-        if ($preorder->status !== 'pending') {
+        if ($preorder->status !== 'pending' && $preorder->status !== 'Chờ xác nhận') {
+            Log::warning('Cannot approve preorder - invalid status', [
+                'preorder_id' => $preorder->id,
+                'current_status' => $preorder->status
+            ]);
             return back()->with('error', 'Chỉ có thể duyệt đơn đang chờ xử lý.');
         }
 
@@ -280,11 +296,22 @@ class AdminPreorderController extends Controller
 
         try {
             // Cập nhật trạng thái preorder từ pending sang confirmed
-            $preorder->update(['status' => 'confirmed']);
+            $preorder->update([
+                'status' => 'Đã xác nhận',
+                'confirmed_at' => now()
+            ]);
+
+            Log::info('Preorder approved successfully', [
+                'preorder_id' => $preorder->id,
+                'new_status' => 'Đã xác nhận'
+            ]);
 
             return back()->with('success', 'Đã duyệt đơn đặt trước thành công!');
 
         } catch (\Exception $e) {
+            Log::error('Error approving preorder: ' . $e->getMessage(), [
+                'preorder_id' => $preorder->id
+            ]);
             return back()->with('error', 'Có lỗi xảy ra khi duyệt đơn hàng: ' . $e->getMessage());
         }
     }
@@ -294,14 +321,18 @@ class AdminPreorderController extends Controller
      */
     public function convertToOrder(Request $request, Preorder $preorder)
     {
-        // Kiểm tra trạng thái đơn hàng - chỉ cho phép chuyển đổi đơn đã xác nhận
-        if ($preorder->status !== 'confirmed') {
+        if ($preorder->status !== 'Đã xác nhận' && $preorder->status !== 'confirmed') {
             return back()->with('error', 'Chỉ có thể chuyển đổi đơn đã được xác nhận.');
         }
 
-        // Kiểm tra sách đã phát hành
+        // Allow conversion even if book is not released yet, with a warning
         if (!$preorder->book->isReleased()) {
-            return back()->with('error', 'Không thể chuyển đổi đơn hàng khi sách chưa được phát hành.');
+            Log::info("Converting preorder to order before release date", [
+                'preorder_id' => $preorder->id,
+                'book_title' => $preorder->book->title,
+                'release_date' => $preorder->book->release_date,
+                'converted_by' => Auth::user()->email ?? 'system'
+            ]);
         }
 
         try {
@@ -323,13 +354,13 @@ class AdminPreorderController extends Controller
                 'updated_at' => now()
             ]);
             
-            // Tạo hoặc lấy order status và payment status
-            $orderStatusId = \DB::table('order_statuses')->where('name', 'Đã Thanh Toán')->value('id');
+            // Lấy order status "Chờ xác nhận" làm mặc định
+            $orderStatusId = \DB::table('order_statuses')->where('name', 'Chờ xác nhận')->value('id');
             if (!$orderStatusId) {
                 $orderStatusId = \Illuminate\Support\Str::uuid();
                 \DB::table('order_statuses')->insert([
                     'id' => $orderStatusId,
-                    'name' => 'Đã Thanh Toán',
+                    'name' => 'Chờ xác nhận',
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
