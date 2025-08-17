@@ -54,7 +54,10 @@ class PreorderController extends Controller
             
         $wallet = Wallet::where('user_id', Auth::id())->first();
         
-        return view('preorders.create', compact('book', 'formats', 'attributes', 'paymentMethods', 'wallet'));
+        // Truyền thêm preorder_discount_percent để tính toán giá
+        $preorderDiscountPercent = $book->preorder_discount_percent ?? 0;
+        
+        return view('preorders.create', compact('book', 'formats', 'attributes', 'paymentMethods', 'wallet', 'preorderDiscountPercent'));
     }
 
     /**
@@ -103,10 +106,20 @@ class PreorderController extends Controller
             // Tính giá cơ bản
             $basePrice = $book->getPreorderPrice($bookFormat);
             
-            // Tính giá thêm từ thuộc tính
-             $attributeExtraPrice = 0;
-             if (!empty($validated['selected_attributes']) && !$isEbook) {
-                 foreach ($validated['selected_attributes'] as $attributeName => $attributeValue) {
+            // Làm sạch thuộc tính được chọn: loại bỏ giá trị rỗng/null
+            $selectedAttributes = [];
+            if (!empty($validated['selected_attributes']) && is_array($validated['selected_attributes'])) {
+                foreach ($validated['selected_attributes'] as $k => $v) {
+                    if ($v !== null && $v !== '') {
+                        $selectedAttributes[$k] = $v;
+                    }
+                }
+            }
+
+            // Tính giá thêm từ thuộc tính (chỉ với sách vật lý)
+            $attributeExtraPrice = 0;
+            if (!empty($selectedAttributes) && !$isEbook) {
+                foreach ($selectedAttributes as $attributeName => $attributeValue) {
                      // Tìm BookAttributeValue tương ứng
                      $bookAttributeValue = $book->bookAttributeValues()
                          ->whereHas('attributeValue', function($query) use ($attributeValue) {
@@ -145,7 +158,7 @@ class PreorderController extends Controller
                 'quantity' => $validated['quantity'],
                 'unit_price' => $unitPrice,
                 'total_amount' => $totalAmount,
-                'selected_attributes' => $validated['selected_attributes'] ?? [],
+                'selected_attributes' => $selectedAttributes,
                 'status' => 'pending',
                 'notes' => $validated['notes'],
                 'expected_delivery_date' => $book->release_date,
