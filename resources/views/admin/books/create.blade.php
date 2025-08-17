@@ -181,11 +181,12 @@
                                                     @enderror
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label for="pre_order_price" class="form-label fw-medium">Giá ưu đãi đặt trước</label>
-                                                    <input type="number" class="form-control @error('pre_order_price') is-invalid @enderror" 
-                                                           id="pre_order_price" name="pre_order_price" value="{{ old('pre_order_price') }}" 
-                                                           placeholder="Ví dụ: 150000" min="0" step="1000">
-                                                    @error('pre_order_price')
+                                                    <label for="preorder_discount_percent" class="form-label fw-medium">Phần trăm giảm giá đặt trước (%)</label>
+                                                    <input type="number" class="form-control @error('preorder_discount_percent') is-invalid @enderror" 
+                                                           id="preorder_discount_percent" name="preorder_discount_percent" value="{{ old('preorder_discount_percent') }}" 
+                                                           placeholder="Ví dụ: 20" min="0" max="100" step="1">
+                                                    <div class="form-text">Nhập phần trăm giảm giá (0-100%)</div>
+                                                    @error('preorder_discount_percent')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
                                                 </div>
