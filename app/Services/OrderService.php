@@ -834,7 +834,7 @@ class OrderService
 
         // Lấy tất cả items trong giỏ hàng (cả sách lẻ và combo) chỉ những item được chọn
         $cartItems = $user->cart()
-            ->with(['book', 'bookFormat', 'collection'])
+            ->with(['book', 'bookFormat', 'collection', 'collection.books'])
             ->where('is_selected', 1) // Chỉ lấy items được chọn
             ->where(function($query) {
                 // Sách lẻ: có book_id và book_format_id

@@ -48,9 +48,9 @@ class VoucherService
     //     return $discount;
     // }
 
-    public function calculateDiscount(Voucher $voucher, $subtotal)
-{
-        $validationResult = $this->isVoucherValid($voucher, $subtotal);
+    public function calculateDiscount(Voucher $voucher, $subtotal, $cartItems = null)
+    {
+        $validationResult = $this->isVoucherValid($voucher, $subtotal, $cartItems);
         
         if (!$validationResult['valid']) {
             return [
@@ -66,7 +66,7 @@ class VoucherService
         return ['discount' => $discount];
     }
 
-    public function validateVoucher(string $code, User $user, $subtotal = 0)
+    public function validateVoucher(string $code, User $user, $subtotal = 0, $cartItems = null)
     {
         $voucher = Voucher::where('code', $code)->first();
 
@@ -77,10 +77,12 @@ class VoucherService
             ];
         }
 
-        if (!$this->isVoucherValid($voucher, $subtotal)) {
+        $validationResult = $this->isVoucherValid($voucher, $subtotal, $cartItems);
+        if (!$validationResult['valid']) {
             return [
                 'valid' => false,
-                'message' => 'Mã giảm giá không còn hiệu lực'
+                'message' => 'Mã giảm giá không còn hiệu lực',
+                'errors' => $validationResult['errors']
             ];
         }
 
@@ -127,7 +129,7 @@ class VoucherService
     //     return true;
     // }
 
-    protected function isVoucherValid(Voucher $voucher, $subtotal = 0)
+    protected function isVoucherValid(Voucher $voucher, $subtotal = 0, $cartItems = null)
     {
         $now = now();
         $failReasons = [];
@@ -154,6 +156,11 @@ class VoucherService
             $failReasons[] = 'Voucher Đã Sử Dụng Hết';
         }
 
+        // Kiểm tra điều kiện áp dụng sản phẩm cụ thể
+        if ($cartItems && !$this->checkVoucherProductConditions($voucher, $cartItems)) {
+            $failReasons[] = 'Voucher không áp dụng được cho các sản phẩm trong giỏ hàng của bạn';
+        }
+
         if (!empty($failReasons)) {
             Log::debug('Voucher validation failed: '.$voucher->code, [
                 'reasons' => $failReasons,
@@ -165,5 +172,60 @@ class VoucherService
         }
 
         return ['valid' => true];
+    }
+
+    /**
+     * Kiểm tra điều kiện áp dụng voucher cho sản phẩm cụ thể
+     */
+    protected function checkVoucherProductConditions(Voucher $voucher, $cartItems)
+    {
+        // Nếu voucher áp dụng cho tất cả sản phẩm (type = 'all')
+        if ($voucher->conditions()->where('type', 'all')->exists()) {
+            return true;
+        }
+
+        // Load voucher conditions với eager loading
+        $voucher->load('conditions');
+
+        // Kiểm tra từng item trong giỏ hàng
+        foreach ($cartItems as $item) {
+            $canApply = false;
+
+            // Xử lý combo
+            if (isset($item->is_combo) && $item->is_combo && isset($item->collection)) {
+                // Với combo, kiểm tra từng sách trong collection
+                if ($item->collection && $item->collection->books) {
+                    foreach ($item->collection->books as $book) {
+                        if ($voucher->canApplyToBook($book)) {
+                            $canApply = true;
+                            break;
+                        }
+                    }
+                }
+            } elseif (isset($item->book)) {
+                // Với sách đơn lẻ
+                $canApply = $voucher->canApplyToBook($item->book);
+            }
+
+            // Nếu có ít nhất 1 sản phẩm có thể áp dụng voucher thì OK
+            if ($canApply) {
+                Log::debug('Voucher can apply to item', [
+                    'voucher_code' => $voucher->code,
+                    'item_type' => isset($item->is_combo) && $item->is_combo ? 'combo' : 'book',
+                    'item_id' => isset($item->collection_id) ? $item->collection_id : ($item->book_id ?? 'unknown')
+                ]);
+                return true;
+            }
+        }
+
+        // Log khi không có sản phẩm nào match
+        Log::debug('Voucher cannot apply to any cart items', [
+            'voucher_code' => $voucher->code,
+            'cart_items_count' => $cartItems->count(),
+            'voucher_conditions' => $voucher->conditions->pluck('type', 'condition_id')->toArray()
+        ]);
+
+        // Nếu không có sản phẩm nào có thể áp dụng voucher
+        return false;
     }
 }

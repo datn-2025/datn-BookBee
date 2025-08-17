@@ -620,7 +620,18 @@ class OrderController extends Controller
             ]);
         }
 
-        $discountResult = $this->voucherService->calculateDiscount($voucher, $request->subtotal);
+        // Lấy thông tin giỏ hàng của user để kiểm tra điều kiện sản phẩm
+        $user = Auth::user();
+        try {
+            $cartItems = $this->orderService->validateCartItems($user);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['Giỏ hàng không hợp lệ: ' . $e->getMessage()]
+            ]);
+        }
+
+        $discountResult = $this->voucherService->calculateDiscount($voucher, $request->subtotal, $cartItems);
 
         if (isset($discountResult['errors'])) {
             return response()->json([
