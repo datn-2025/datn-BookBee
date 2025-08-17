@@ -381,6 +381,21 @@ class AdminPreorderController extends Controller
             $orderId = \Illuminate\Support\Str::uuid();
             $orderCode = 'ORD-' . time() . '-' . rand(1000, 9999);
             
+            // Lấy payment method ID dựa trên payment status của preorder
+            $paymentMethodId = null;
+            if ($preorder->payment_status === 'paid') {
+                // Nếu đã thanh toán, kiểm tra phương thức thanh toán
+                if ($preorder->vnpay_transaction_id) {
+                    $paymentMethodId = 'af9f9127-c1e9-45bf-83b4-63982ddbe77b'; // VNPay
+                } else {
+                    // Nếu đã thanh toán nhưng không có vnpay_transaction_id thì là thanh toán bằng ví
+                    $paymentMethodId = '4cd0fda9-dd7f-444c-99dd-a636c3d26fd5'; // Ví điện tử
+                }
+            } else {
+                // Chưa thanh toán - mặc định là thanh toán khi nhận hàng (không nên xảy ra với preorder)
+                $paymentMethodId = '50f01c1d-bfae-4e95-a528-6768e1652815'; // COD
+            }
+
             \DB::table('orders')->insert([
                 'id' => $orderId,
                 'user_id' => $preorder->user_id,
@@ -389,6 +404,7 @@ class AdminPreorderController extends Controller
                 'address_id' => $addressId,
                 'order_status_id' => $orderStatusId,
                 'payment_status_id' => $paymentStatusId,
+                'payment_method_id' => $paymentMethodId,
                 'note' => 'Chuyển đổi từ đơn đặt trước #' . $preorder->id,
                 'created_at' => now(),
                 'updated_at' => now()
