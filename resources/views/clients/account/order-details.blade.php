@@ -101,9 +101,13 @@
                                         'Chờ xác nhận' => 'bg-yellow-500 text-white',
                                         'Đã xác nhận' => 'bg-blue-500 text-white',
                                         'Đang chuẩn bị' => 'bg-indigo-500 text-white',
+                                        'Đang đóng gói' => 'bg-orange-500 text-white',
                                         'Đang giao hàng' => 'bg-purple-500 text-white',
+                                        'Đã giao hàng' => 'bg-green-500 text-white',
+                                        'Đã giao thành công' => 'bg-green-500 text-white',
                                         'Đã giao', 'Thành công' => 'bg-green-500 text-white',
                                         'Đã hủy' => 'bg-red-500 text-white',
+                                        'Hoàn trả' => 'bg-gray-500 text-white',
                                         default => 'bg-gray-500 text-white'
                                     };
                                 @endphp
