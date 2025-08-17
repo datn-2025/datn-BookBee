@@ -352,8 +352,8 @@
                                                     <label for="tinh" class="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">
                                                         TỈNH/THÀNH PHỐ *
                                                     </label>
-                                                    <select id="tinh" name="new_address_city_id"
-                                                            class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
+                                                    <select id="tinh" name="new_address_city_id" required
+                                                            class="w-full border-2 border-gray-300 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
                                                         <option value="">Chọn Tỉnh/Thành phố</option>
                                                     </select>
                                                     <input type="hidden" name="new_address_city_name" id="ten_tinh">
@@ -364,8 +364,8 @@
                                                     <label for="quan" class="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">
                                                         QUẬN/HUYỆN *
                                                     </label>
-                                                    <select id="quan" name="new_address_district_id"
-                                                            class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
+                                                    <select id="quan" name="new_address_district_id" required
+                                                            class="w-full border-2 border-gray-300 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
                                                         <option value="">Chọn Quận/Huyện</option>
                                                     </select>
                                                     <input type="hidden" name="new_address_district_name" id="ten_quan">
@@ -376,8 +376,8 @@
                                                     <label for="phuong" class="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">
                                                         PHƯỜNG/XÃ *
                                                     </label>
-                                                    <select id="phuong" name="new_address_ward_id"
-                                                            class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
+                                                    <select id="phuong" name="new_address_ward_id" required
+                                                            class="w-full border-2 border-gray-300 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
                                                         <option value="">Chọn Phường/Xã</option>
                                                     </select>
                                                     <input type="hidden" name="new_address_ward_name" id="ten_phuong">
@@ -392,7 +392,8 @@
                                                      ĐỊA CHỈ CỤ THỂ *
                                                  </label>
                                                  <input type="text" name="new_address_detail" id="new_address_detail"
-                                                        class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg"
+                                                        class="w-full border-2 border-gray-300 px-4 py-3 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg"
+                                                        style="height: 3.5rem; line-height: 1.75; font-size: 14px;"
                                                         placeholder="Ví dụ: Số 123, Đường ABC, Tòa nhà XYZ" value="{{ old('new_address_detail') }}">
                                                  @error('new_address_detail') <p class="text-red-500 text-sm mt-2 font-medium">{{ $message }}</p> @enderror
                                              </div>
@@ -684,6 +685,17 @@
                                                     {{ $item->book->authors->pluck('name')->join(', ') }}
                                                 </span>
                                             </p>
+                                        @endif
+                                        
+                                        <!-- Hiển thị thuộc tính biến thể -->
+                                        @if(!$item->isCombo() && $item->attributeValues && $item->attributeValues->count() > 0)
+                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                @foreach($item->attributeValues as $attributeValue)
+                                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded border">
+                                                        {{ $attributeValue->attribute->name ?? 'Thuộc tính' }}: {{ $attributeValue->value }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
                                         @endif
                                         
                                         <!-- Hiển thị quà tặng kèm theo -->
@@ -2251,5 +2263,75 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 </script>
+
+<style>
+/* Custom styling for select fields to ensure text visibility */
+select#tinh, select#quan, select#phuong {
+    line-height: 1.75 !important;
+    height: 3.5rem !important;
+    min-height: 3.5rem !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    color: #374151 !important;
+    vertical-align: middle !important;
+    display: flex !important;
+    align-items: center !important;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E") !important;
+    background-position: right 0.75rem center !important;
+    background-repeat: no-repeat !important;
+    background-size: 1.25em 1.25em !important;
+    padding: 0.875rem 2.5rem 0.875rem 1rem !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    box-sizing: border-box !important;
+}
+
+select#tinh option, select#quan option, select#phuong option {
+    padding: 0.75rem 1rem !important;
+    color: #374151 !important;
+    background-color: white !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    min-height: 2.5rem !important;
+}
+
+/* Ensure proper display for placeholder text */
+select#tinh:invalid, select#quan:invalid, select#phuong:invalid {
+    color: #9CA3AF !important;
+}
+
+select#tinh:valid, select#quan:valid, select#phuong:valid {
+    color: #374151 !important;
+}
+
+/* Fix for different browsers */
+select#tinh, select#quan, select#phuong {
+    -webkit-box-sizing: border-box !important;
+    -moz-box-sizing: border-box !important;
+    box-sizing: border-box !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+}
+
+/* Ensure text is visible on different devices */
+@media (max-width: 768px) {
+    select#tinh, select#quan, select#phuong {
+        height: 3.75rem !important;
+        min-height: 3.75rem !important;
+        font-size: 16px !important;
+        padding: 1rem 2.5rem 1rem 1rem !important;
+    }
+}
+
+/* Additional fixes for text positioning */
+select#tinh, select#quan, select#phuong {
+    text-align: left !important;
+    text-align-last: left !important;
+    direction: ltr !important;
+}
+</style>
+
 @endpush
 @endsection
