@@ -57,6 +57,7 @@ Route::get('storage/private/{filename}', function ($filename) {
 
 // VNPay routes
 Route::get('/vnpay/return', [\App\Http\Controllers\OrderController::class, 'vnpayReturn'])->name('vnpay.return');
+Route::get('/preorder/vnpay/return', [\App\Http\Controllers\PreorderController::class, 'vnpayReturn'])->name('preorder.vnpay.return');
 // Route public cho books (categoryId optional)
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about', [HomeController::class, 'about'])->name('about');
