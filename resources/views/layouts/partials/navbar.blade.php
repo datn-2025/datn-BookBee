@@ -1,4 +1,4 @@
-<nav style="background-color: white; border-bottom: 1px solid #f3f4f6; position: relative; z-index: 50;">
+<nav style="background-color: white; border-bottom: 1px solid #f3f4f6; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; transition: all 0.3s ease-in-out;" id="main-navbar">
     <div class="nav-container" style="max-width: 1280px; margin: 0 auto; padding: 0 1rem;">
         <div class="nav-content" style="display: flex; justify-content: space-between; align-items: center; height: 4rem;">
             {{-- Logo --}}
@@ -266,6 +266,22 @@
 </nav>
 
 <style>
+    /* Fixed navbar với shadow khi scroll */
+    #main-navbar {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    #main-navbar.scrolled {
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        background-color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Padding top cho body để tránh bị che bởi fixed navbar */
+    body {
+        padding-top: 4rem;
+    }
+
     /* Responsive styles với pure CSS */
     @media (min-width: 768px) {
         .md-hidden { display: none !important; }
@@ -414,6 +430,25 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const navbar = document.getElementById('main-navbar');
+        let lastScrollY = window.scrollY;
+
+        // Thêm class 'scrolled' khi cuộn xuống
+        function handleScroll() {
+            const currentScrollY = window.scrollY;
+            
+            if (currentScrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+            
+            lastScrollY = currentScrollY;
+        }
+
+        // Lắng nghe sự kiện scroll
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
         // Mobile menu toggle
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
