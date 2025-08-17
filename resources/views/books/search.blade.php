@@ -53,26 +53,23 @@
     .search-tag {
         background: #000000;
         color: white;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 0.75rem;
         font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.1em;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
         margin: 0.25rem 0.25rem 0.25rem 0;
-        position: relative;
-        padding-right: 2.5rem;
         transition: all 0.2s ease;
+        border-radius: 2px;
     }
     
     .search-tag .remove-filter {
-        position: absolute;
-        right: 0.75rem;
-        top: 50%;
-        transform: translateY(-50%);
         background: rgba(255,255,255,0.2);
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -80,11 +77,18 @@
         cursor: pointer;
         transition: all 0.2s;
         font-weight: bold;
+        border-radius: 50%;
+        line-height: 1;
+        color: white;
+        text-decoration: none;
+        flex-shrink: 0;
     }
     
     .search-tag .remove-filter:hover {
         background: rgba(255,255,255,0.4);
-        transform: translateY(-50%) scale(1.1);
+        transform: scale(1.1);
+        color: white;
+        text-decoration: none;
     }
     
     /* Adidas Style Book Cards */
@@ -159,6 +163,20 @@
         top: 12px;
         left: 12px;
         background: #dc2626;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    /* Combo Badge */
+    .combo-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        background: #7c3aed;
         color: white;
         padding: 0.25rem 0.5rem;
         font-size: 0.7rem;
@@ -864,8 +882,21 @@
                         <div class="w-1 h-12 bg-black"></div>
                         <div>
                             <h5>
-                                @if($books->count() > 0)
-                                    HIỂN THỊ {{ $books->count() }} KẾT QUẢ
+                                @php
+                                    $totalResults = $books->count();
+                                    if(isset($combos)) {
+                                        $totalResults += $combos->count();
+                                    }
+                                @endphp
+                                @if($totalResults > 0)
+                                    HIỂN THỊ {{ $totalResults }} KẾT QUẢ
+                                    @if($books->count() > 0 && isset($combos) && $combos->count() > 0)
+                                        ({{ $books->count() }} SÁCH + {{ $combos->count() }} COMBO)
+                                    @elseif($books->count() > 0)
+                                        ({{ $books->count() }} SÁCH)
+                                    @elseif(isset($combos) && $combos->count() > 0)
+                                        ({{ $combos->count() }} COMBO)
+                                    @endif
                                 @else
                                     KHÔNG TÌM THẤY KẾT QUẢ
                                 @endif
@@ -887,11 +918,31 @@
                 </div>
             </div>
             
-            <!-- Active Filters Display - Adidas Style -->
-            @if($filters['category'] || $filters['author'] || $filters['brand'] || ($filters['min_price'] > 0) || ($filters['max_price'] > 0))
-                <div class="mb-8">
-                    <div class="flex items-center flex-wrap gap-2">
-                        <span class="text-gray-500 text-sm uppercase tracking-wider font-medium mr-4">BỘ LỌC ĐANG ÁP DỤNG:</span>
+            <!-- Active Filters Display - Always Show When Filters Applied -->
+            @if($filters['category'] || $filters['author'] || $filters['brand'] || ($filters['min_price'] > 0) || ($filters['max_price'] > 0) || ($filters['sort'] && $filters['sort'] != 'newest'))
+                <div class="mb-6 p-4 bg-gray-50 rounded-lg border">
+                    <div class="flex items-center flex-wrap gap-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-filter text-gray-600"></i>
+                            <span class="text-gray-700 text-sm font-medium uppercase tracking-wider">BỘ LỌC ĐANG ÁP DỤNG:</span>
+                        </div>
+                        
+                        @if($filters['sort'] && $filters['sort'] != 'newest')
+                            <span class="search-tag">
+                                SẮP XẾP: 
+                                @switch($filters['sort'])
+                                    @case('price_asc') GIÁ THẤP ĐẾN CAO @break
+                                    @case('price_desc') GIÁ CAO ĐẾN THẤP @break  
+                                    @case('name_asc') TÊN A-Z @break
+                                    @case('name_desc') TÊN Z-A @break
+                                    @case('oldest') CŨ NHẤT @break
+                                    @default {{ strtoupper($filters['sort']) }}
+                                @endswitch
+                                <a href="{{ route('books.search', array_merge(request()->query(), ['sort' => 'newest'])) }}" 
+                                   class="remove-filter text-decoration-none">×</a>
+                            </span>
+                        @endif
+                        
                         @if($filters['category'])
                             <span class="search-tag">
                                 DANH MỤC: {{ strtoupper($categories->firstWhere('id', $filters['category'])->name ?? '') }}
@@ -899,6 +950,7 @@
                                    class="remove-filter text-decoration-none">×</a>
                             </span>
                         @endif
+                        
                         @if($filters['author'])
                             <span class="search-tag">
                                 TÁC GIẢ: {{ strtoupper($authors->firstWhere('id', $filters['author'])->name ?? '') }}
@@ -906,16 +958,18 @@
                                    class="remove-filter text-decoration-none">×</a>
                             </span>
                         @endif
+                        
                         @if($filters['brand'])
                             <span class="search-tag">
-                                NXB: {{ strtoupper($brands->firstWhere('id', $filters['brand'])->name ?? '') }}
+                                NHÀ XUẤT BẢN: {{ strtoupper($brands->firstWhere('id', $filters['brand'])->name ?? '') }}
                                 <a href="{{ route('books.search', array_merge(request()->query(), ['brand' => null])) }}" 
                                    class="remove-filter text-decoration-none">×</a>
                             </span>
                         @endif
+                        
                         @if($filters['min_price'] > 0 || $filters['max_price'] > 0)
                             <span class="search-tag">
-                                GIÁ: 
+                                KHOẢNG GIÁ: 
                                 @if($filters['min_price'] > 0 && $filters['max_price'] > 0)
                                     {{ number_format($filters['min_price']) }}Đ - {{ number_format($filters['max_price']) }}Đ
                                 @elseif($filters['min_price'] > 0)
@@ -927,19 +981,21 @@
                                    class="remove-filter text-decoration-none">×</a>
                             </span>
                         @endif
-                        @if($filters['category'] || $filters['author'] || $filters['brand'] || ($filters['min_price'] > 0) || ($filters['max_price'] > 0))
-                            <a href="{{ route('books.search', ['search' => $searchTerm]) }}" 
-                               class="text-gray-500 text-decoration-none hover:text-black transition-colors duration-200 text-xs uppercase tracking-wider font-medium">
-                                <i class="fas fa-times mr-1"></i>XÓA TẤT CẢ
-                            </a>
-                        @endif
+                        
+                        <a href="{{ route('books.search', ['search' => $searchTerm]) }}" 
+                           class="bg-black text-white px-4 py-1 text-xs uppercase tracking-wider font-medium hover:bg-gray-800 transition-colors text-decoration-none rounded">
+                            <i class="fas fa-times mr-1"></i>XÓA TẤT CẢ
+                        </a>
                     </div>
                 </div>
             @endif
 
             <!-- Books Grid - Adidas Style -->
-            @if($books->count() > 0)
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            @if($books->count() > 0 || (isset($combos) && $combos->count() > 0))
+                @if($books->count() > 0)
+                    <div class="mb-8">
+                        <h3 class="text-xl font-bold mb-4 uppercase tracking-wider">SÁCH</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     @foreach($books as $book)
                         <div class="adidas-book-card group" onclick="window.location='{{ route('books.show', $book->slug) }}'">
                             <div class="book-image-adidas">
@@ -1067,16 +1123,57 @@
                             </div>
                         </div>
                     @endforeach
-                </div>
+                        </div>
+                    </div>
+                @endif
             @else
                 <div class="no-results-adidas">
                     <i class="fas fa-search"></i>
-                    <h4>KHÔNG TÌM THẤY SÁCH NÀO</h4>
+                    <h4>KHÔNG TÌM THẤY SẢN PHẨM NÀO</h4>
                     <p>HÃY THỬ TÌM KIẾM VỚI TỪ KHÓA KHÁC HOẶC BỎ BỚT BỘ LỌC</p>
                     <a href="{{ route('books.search', ['search' => $searchTerm]) }}" 
                        class="bg-black text-white px-8 py-3 font-bold text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors inline-block">
                         <i class="fas fa-times mr-2"></i>XÓA BỘ LỌC
                     </a>
+                </div>
+            @endif
+
+            <!-- Combos Section -->
+            @if(isset($combos) && $combos->count() > 0)
+                <div class="mt-8">
+                    <h3 class="text-xl font-bold mb-4 uppercase tracking-wider">COMBO SÁCH</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        @foreach($combos as $combo)
+                            <div class="adidas-book-card group" onclick="window.location='{{ route('combos.show', $combo->slug) }}'">
+                                <div class="book-image-adidas">
+                                    <img src="{{ $combo->cover_image ? asset('storage/' . $combo->cover_image) : asset('images/no-image.png') }}" 
+                                         alt="{{ $combo->name }}">
+                                    
+                                    <div class="combo-badge">
+                                        COMBO
+                                    </div>
+                                </div>
+                                
+                                <div class="book-content-adidas">
+                                    <div class="book-info-adidas">
+                                        <h3 class="book-title-adidas">{{ $combo->name }}</h3>
+                                        @if($combo->description)
+                                            <p class="book-description-adidas">{{ Str::limit($combo->description, 100) }}</p>
+                                        @endif
+                                    </div>
+                                    
+                                    <div class="book-actions-adidas">
+                                        <div class="price-adidas">
+                                            <div class="price-current">
+                                                {{ number_format($combo->combo_price, 0, ',', '.') }}đ
+                                            </div>
+                                        </div>
+                                        <div class="w-6 h-0.5 bg-black group-hover:w-8 transition-all duration-300"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             @endif
         </div>
@@ -1122,6 +1219,10 @@
                 <div class="adidas-filter-option {{ ($filters['sort'] ?? '') == 'name_desc' ? 'active' : '' }}" 
                      onclick="selectSort('name_desc')">
                     TÊN Z-A
+                </div>
+                <div class="adidas-filter-option {{ ($filters['sort'] ?? '') == 'oldest' ? 'active' : '' }}" 
+                     onclick="selectSort('oldest')">
+                    CŨ NHẤT
                 </div>
             </div>
         </div>
