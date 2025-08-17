@@ -120,13 +120,13 @@
                                                     <p class="text-muted mb-2">Người nhận</p>
                                                     <div class="d-flex align-items-center">
                                                         <i class="fa-solid fa-signature"></i>
-                                                        <h6 class="fs-15 mb-0 ms-2">{{ $order->recipient_name ?? $order->user->name ?? 'N/A' }}</h6>
+                                                        <h6 class="fs-15 mb-0 ms-2">{{ $order->recipient_name ?? 'N/A' }}</h6>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="d-flex align-items-center">
                                                 <i class="ri-phone-line me-2 fs-16 text-muted"></i>
-                                                <span>{{ $order->recipient_phone ?? $order->user->phone ?? 'N/A' }}</span>
+                                                <span>{{ $order->recipient_phone ?? 'N/A' }}</span>
                                             </div>
                                             @endif
                                         </div>
@@ -172,19 +172,6 @@
                                                         <div class="flex-grow-1">
                                                             <h6 class="mb-1 fs-14">Số điện thoại:</h6>
                                                             <p class="text-muted mb-0">{{ $order->user->phone ?? 'N/A' }}</p>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div class="d-flex">
-                                                        <div class="flex-shrink-0 text-muted">
-                                                            <i class="ri-map-pin-line me-1 fs-16 align-middle"></i>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <h6 class="mb-1 fs-14">Địa chỉ giao hàng:</h6>
-                                                            <p class="text-muted mb-0">
-                                                                <span class="badge bg-info"><i class="ri-mail-line me-1"></i>Nhận qua email</span>
-                                                            </p>
                                                         </div>
                                                     </div>
                                                 </li>
