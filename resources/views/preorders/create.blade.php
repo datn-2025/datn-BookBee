@@ -178,6 +178,45 @@
                                       placeholder="Ghi chú thêm cho đơn hàng (tùy chọn)"></textarea>
                         </div>
 
+                        <!-- Phương thức thanh toán -->
+                        <hr class="my-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="ri-wallet-line me-1"></i>Phương thức thanh toán
+                        </h6>
+                        
+                        <div class="row g-3">
+                            @foreach($paymentMethods as $method)
+                                <div class="col-md-6">
+                                    <div class="card border payment-method-card" style="cursor: pointer;">
+                                        <div class="card-body p-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="payment_method_id" 
+                                                       value="{{ $method->id }}" id="payment_{{ $method->id }}" required>
+                                                <label class="form-check-label w-100" for="payment_{{ $method->id }}">
+                                                    <div class="d-flex align-items-center">
+                                                        @if(str_contains(strtolower($method->name), 'ví điện tử'))
+                                                            <i class="ri-wallet-3-line text-success me-2 fs-5"></i>
+                                                        @elseif(str_contains(strtolower($method->name), 'vnpay'))
+                                                            <i class="ri-bank-card-line text-primary me-2 fs-5"></i>
+                                                        @else
+                                                            <i class="ri-money-dollar-circle-line me-2 fs-5"></i>
+                                                        @endif
+                                                        <div class="flex-grow-1">
+                                                            <div class="fw-medium">{{ $method->name }}</div>
+                                                            @if(str_contains(strtolower($method->name), 'ví điện tử'))
+                                                                <small class="text-success">
+                                                                    Số dư: {{ $wallet ? number_format($wallet->balance) : '0' }}đ
+                                                                </small>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                         <!-- Tổng tiền -->
                         <div class="mt-4 p-3 bg-light rounded">
                             <div class="row g-2">
