@@ -19,16 +19,17 @@ class Book extends Model
         'title',
         'slug',
         'description',
-        'brand_id',
-        'category_id',
-        'status',
         'cover_image',
+        'category_id',
+        'brand_id',
+        'status',
         'isbn',
         'publication_date',
         'page_count',
         'release_date',
         'pre_order',
         'pre_order_price',
+        'preorder_discount_percent',
         'stock_preorder_limit',
         'preorder_count',
         'preorder_description'
@@ -39,6 +40,7 @@ class Book extends Model
         'release_date' => 'date',
         'page_count' => 'integer',
         'pre_order' => 'boolean',
+        'preorder_discount_percent' => 'decimal:2',
         'pre_order_price' => 'decimal:2',
         'stock_preorder_limit' => 'integer',
         'preorder_count' => 'integer'
@@ -235,35 +237,46 @@ class Book extends Model
     }
 
     /**
-     * Lấy giá hiển thị (ưu tiên giá đặt trước nếu có)
+     * Lấy giá hiển thị (ưu tiên preorder nếu có)
      */
     public function getDisplayPrice(): float
     {
-        if ($this->isPreOrder() && $this->pre_order_price) {
-            return $this->pre_order_price;
+        if ($this->isPreOrder()) {
+            return $this->getPreorderPrice();
         }
         
         // Lấy giá từ format đầu tiên
-        $firstFormat = $this->formats()->first();
-        return $firstFormat ? $firstFormat->price : 0;
+        $format = $this->formats->first();
+        return $format ? $format->price : 0;
     }
 
     /**
-     * Lấy giá preorder (ưu tiên pre_order_price, nếu không có thì lấy từ format)
+     * Lấy giá preorder (áp dụng phần trăm giảm giá nếu có)
      */
     public function getPreorderPrice($format = null): float
     {
+        // Lấy giá gốc từ format
+        $originalPrice = 0;
+        if ($format && $format->price) {
+            $originalPrice = $format->price;
+        } else {
+            // Fallback: lấy giá từ format đầu tiên
+            $firstFormat = $this->formats->first();
+            $originalPrice = $firstFormat ? $firstFormat->price : 0;
+        }
+
+        // Ưu tiên áp dụng phần trăm giảm giá nếu có
+        if ($this->preorder_discount_percent && $this->preorder_discount_percent > 0) {
+            $discountAmount = ($originalPrice * $this->preorder_discount_percent) / 100;
+            return max(0, $originalPrice - $discountAmount);
+        }
+
+        // Nếu không có phần trăm giảm, dùng giá cố định preorder (legacy) nếu được cấu hình
         if ($this->pre_order_price) {
             return $this->pre_order_price;
         }
 
-        if ($format && $format->price) {
-            return $format->price;
-        }
-
-        // Lấy giá từ format đầu tiên
-        $firstFormat = $this->formats()->first();
-        return $firstFormat ? $firstFormat->price : 0;
+        return $originalPrice;
     }
 
     /**
