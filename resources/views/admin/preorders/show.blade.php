@@ -19,7 +19,7 @@
             <a href="{{ route('admin.preorders.index') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Quay lại
             </a>
-            @if($preorder->status === 'pending')
+            @if($preorder->status === 'pending' || $preorder->status === 'Chờ xác nhận')
                 <form action="{{ route('admin.preorders.approve', $preorder) }}" method="POST" class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-warning" 
@@ -28,7 +28,7 @@
                         Duyệt đơn hàng
                     </button>
                 </form>
-            @elseif($preorder->status === 'confirmed' && $preorder->book->isReleased())
+            @elseif(($preorder->status === 'confirmed' || $preorder->status === 'Đã xác nhận') && $preorder->book->isReleased())
                 <form action="{{ route('admin.preorders.convert-to-order', $preorder) }}" method="POST" class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-success" 
@@ -54,7 +54,13 @@
                             'processing' => 'primary',
                             'shipped' => 'success',
                             'delivered' => 'success',
-                            'cancelled' => 'danger'
+                            'cancelled' => 'danger',
+                            'Chờ xác nhận' => 'warning',
+                            'Đã xác nhận' => 'info',
+                            'Đang xử lý' => 'primary',
+                            'Đã gửi' => 'success',
+                            'Đã giao' => 'success',
+                            'Đã hủy' => 'danger'
                         ];
                     @endphp
                     <span class="badge bg-{{ $statusColors[$preorder->status] ?? 'secondary' }} fs-6">
@@ -449,11 +455,38 @@ $(document).ready(function() {
         const url = $(this).attr('href');
         if (url.includes('approve')) {
             if (confirm('Xác nhận duyệt đơn hàng này?')) {
-                window.location.href = url;
+                // Tạo form POST để gửi request
+                const form = $('<form>', {
+                    'method': 'POST',
+                    'action': url
+                });
+                form.append($('<input>', {
+                    'type': 'hidden',
+                    'name': '_token',
+                    'value': $('meta[name="csrf-token"]').attr('content')
+                }));
+                form.append($('<input>', {
+                    'type': 'hidden',
+                    'name': 'force_approve',
+                    'value': '1'
+                }));
+                $('body').append(form);
+                form.submit();
             }
         } else {
             if (confirm('Xác nhận chuyển đổi đơn hàng thành đơn hàng chính thức?')) {
-                window.location.href = url;
+                // Tạo form POST để gửi request
+                const form = $('<form>', {
+                    'method': 'POST',
+                    'action': url
+                });
+                form.append($('<input>', {
+                    'type': 'hidden',
+                    'name': '_token',
+                    'value': $('meta[name="csrf-token"]').attr('content')
+                }));
+                $('body').append(form);
+                form.submit();
             }
         }
     });
