@@ -1767,7 +1767,7 @@
                                             <div class="space-y-2 col-span-1 attribute-item"
                                                 data-attribute-name="{{ strtolower($attributeName) }}"
                                                 data-is-language="{{ $isLanguageAttribute ? 'true' : 'false' }}">
-                                                <label for="attribute_{{ $attrVal->id }}"
+                                                <label for="attribute_{{ $attrVal->attribute_id }}"
                                                     class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">
                                                     {{ $attributeName ?: 'Không rõ' }}
                                                 </label>
@@ -1780,7 +1780,7 @@
                                                         ->get();
                                                 @endphp
                                                 <div class="relative">
-                                                    <select name="attributes[{{ $attrVal->id }}]" id="attribute_{{ $attrVal->id }}"
+                                                    <select name="attributes[{{ $attrVal->attribute_id }}]" id="attribute_{{ $attrVal->attribute_id }}"
                                                         class="adidas-select w-full appearance-none bg-white">
                                                         @foreach($filteredValues as $bookAttrVal) @php
                                                                 $variantStock = $bookAttrVal->stock ?? 0;
@@ -1814,7 +1814,7 @@
                                                     </div>
                                                 </div>
                                                 {{-- Thông tin biến thể đã chọn --}}
-                                                <div id="variant_info_{{ $attrVal->id }}" class="mt-4 hidden">
+                                                <div id="variant_info_{{ $attrVal->attribute_id }}" class="mt-4 hidden">
                                                     <div
                                                         class="variant-info-card bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 shadow-sm">
                                                         <div class="variant-info-header bg-black text-white px-4 py-3 flex items-center">
@@ -1824,7 +1824,7 @@
                                                         </div>
 
                                                         <!-- For Physical Books -->
-                                                        <div id="physical_variant_info_{{ $attrVal->id }}" class="p-4 space-y-3">
+                                                        <div id="physical_variant_info_{{ $attrVal->attribute_id }}" class="p-4 space-y-3">
                                                             <div
                                                                 class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
                                                                 <div class="flex items-center">
@@ -1836,7 +1836,7 @@
                                                                         class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Số
                                                                         lượng:</span>
                                                                 </div>
-                                                                <span id="selected_stock_{{ $attrVal->id }}"
+                                                                <span id="selected_stock_{{ $attrVal->attribute_id }}"
                                                                     class="variant-info-value font-bold text-green-700 bg-white px-3 py-1 border border-green-300 text-sm">-</span>
                                                             </div>
                                                             <div
@@ -1850,13 +1850,13 @@
                                                                         class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Phí
                                                                         cộng thêm:</span>
                                                                 </div>
-                                                                <span id="selected_extra_price_{{ $attrVal->id }}"
+                                                                <span id="selected_extra_price_{{ $attrVal->attribute_id }}"
                                                                     class="variant-info-value font-bold text-yellow-700 bg-white px-3 py-1 border border-yellow-300 text-sm">0₫</span>
                                                             </div>
                                                         </div>
 
                                                         <!-- For Ebooks -->
-                                                        <div id="ebook_variant_info_{{ $attrVal->id }}" class="p-4 space-y-3 hidden">
+                                                        <div id="ebook_variant_info_{{ $attrVal->attribute_id }}" class="p-4 space-y-3 hidden">
                                                             <div
                                                                 class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
                                                                 <div class="flex items-center">
