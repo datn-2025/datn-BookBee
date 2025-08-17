@@ -337,14 +337,6 @@
                                         <div class="space-y-6">
                                             <!-- Quick Actions -->
                                             <div class="flex flex-wrap gap-3 mb-6">
-                                                <button type="button" id="detect-location-btn" 
-                                                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-colors duration-300">
-                                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                    </svg>
-                                                    Phát hiện vị trí
-                                                </button>
                                                 <button type="button" id="clear-form-btn" 
                                                         class="inline-flex items-center px-4 py-2 bg-gray-600 text-white font-medium text-sm rounded-lg hover:bg-gray-700 transition-colors duration-300">
                                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1597,62 +1589,7 @@ document.addEventListener('DOMContentLoaded', function () {
     window.switchToNewAddressTab = switchToNewAddressTab;
     
     // ===== QUICK ACTIONS =====
-    const detectLocationBtn = document.getElementById('detect-location-btn');
     const clearFormBtn = document.getElementById('clear-form-btn');
-    
-    // Detect location functionality
-    if (detectLocationBtn) {
-        detectLocationBtn.addEventListener('click', function() {
-            if (navigator.geolocation) {
-                this.disabled = true;
-                this.innerHTML = `
-                    <svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    Đang phát hiện...
-                `;
-                
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        // Simulate address detection (in real app, use reverse geocoding API)
-                        setTimeout(() => {
-                            if (typeof toastr !== 'undefined') {
-                                toastr.success('Đã phát hiện vị trí! Vui lòng chọn tỉnh/thành phố từ danh sách.');
-                            }
-                            // Focus on city select
-                            document.getElementById('tinh')?.focus();
-                            
-                            this.disabled = false;
-                            this.innerHTML = `
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
-                                Phát hiện vị trí
-                            `;
-                        }, 1500);
-                    },
-                    (error) => {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error('Không thể phát hiện vị trí. Vui lòng nhập thủ công.');
-                        }
-                        this.disabled = false;
-                        this.innerHTML = `
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            Phát hiện vị trí
-                        `;
-                    }
-                );
-            } else {
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('Trình duyệt không hỗ trợ định vị.');
-                }
-            }
-        });
-    }
     
     // Clear form functionality
     if (clearFormBtn) {
@@ -2236,6 +2173,81 @@ document.addEventListener('DOMContentLoaded', function () {
             closeAddressModal();
         }
     });
+
+    // ===== KHÔI PHỤC DỮ LIỆU ĐỊA CHỈ CŨ KHI CÓ LỖI VALIDATION =====
+    function restoreOldAddressData() {
+        // Khôi phục dữ liệu từ Laravel old() helper
+        const oldCityName = '{{ old("new_address_city_name") }}';
+        const oldDistrictName = '{{ old("new_address_district_name") }}';
+        const oldWardName = '{{ old("new_address_ward_name") }}';
+        const oldCityId = '{{ old("new_address_city_id") }}';
+        const oldDistrictId = '{{ old("new_address_district_id") }}';
+        const oldWardId = '{{ old("new_address_ward_id") }}';
+        
+        // Nếu có dữ liệu cũ, khôi phục chúng
+        if (oldCityName || oldDistrictName || oldWardName) {
+            console.log('Khôi phục dữ liệu địa chỉ cũ...', {
+                city: oldCityName,
+                district: oldDistrictName, 
+                ward: oldWardName
+            });
+            
+            // Chuyển sang tab địa chỉ mới nếu có dữ liệu validation lỗi
+            const newAddressTab = document.getElementById('new-address-tab');
+            const existingAddressTab = document.getElementById('existing-address-tab');
+            
+            if (newAddressTab && existingAddressTab) {
+                // Kích hoạt tab địa chỉ mới
+                newAddressTab.click();
+            }
+            
+            // Khôi phục hidden fields
+            if (oldCityName) document.getElementById('ten_tinh').value = oldCityName;
+            if (oldDistrictName) document.getElementById('ten_quan').value = oldDistrictName;
+            if (oldWardName) document.getElementById('ten_phuong').value = oldWardName;
+            
+            // Load lại dữ liệu select boxes nếu cần
+            if (oldCityId && oldCityName) {
+                setTimeout(() => {
+                    loadProvinces().then(() => {
+                        const citySelect = document.getElementById('tinh');
+                        if (citySelect) {
+                            citySelect.value = oldCityId;
+                            // Trigger change event để load districts
+                            citySelect.dispatchEvent(new Event('change'));
+                            
+                            setTimeout(() => {
+                                if (oldDistrictId && oldDistrictName) {
+                                    const districtSelect = document.getElementById('quan');
+                                    if (districtSelect) {
+                                        districtSelect.value = oldDistrictId;
+                                        districtSelect.dispatchEvent(new Event('change'));
+                                        
+                                        setTimeout(() => {
+                                            if (oldWardId && oldWardName) {
+                                                const wardSelect = document.getElementById('phuong');
+                                                if (wardSelect) {
+                                                    wardSelect.value = oldWardId;
+                                                    wardSelect.dispatchEvent(new Event('change'));
+                                                }
+                                            }
+                                        }, 500);
+                                    }
+                                }
+                            }, 500);
+                        }
+                    });
+                }, 100);
+            }
+        }
+    }
+    
+    // Khôi phục dữ liệu khi trang load
+    document.addEventListener('DOMContentLoaded', function() {
+        restoreOldAddressData();
+    });
+
+    // ...existing code...
 });
 
 </script>

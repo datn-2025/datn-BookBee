@@ -288,7 +288,54 @@ class OrderController extends Controller
             'max:50'
         ];
 
-        $request->validate($rules);
+        $messages = [
+            'voucher_code.exists' => 'Mã giảm giá không tồn tại.',
+            'payment_method_id.required' => 'Vui lòng chọn phương thức thanh toán.',
+            'payment_method_id.exists' => 'Phương thức thanh toán không hợp lệ.',
+            'delivery_method.required' => 'Vui lòng chọn phương thức giao hàng.',
+            'delivery_method.in' => 'Phương thức giao hàng không hợp lệ.',
+            'shipping_method.required_if' => 'Vui lòng chọn phương thức vận chuyển.',
+            'shipping_method.in' => 'Phương thức vận chuyển không hợp lệ.',
+            'shipping_fee_applied.required' => 'Phí vận chuyển không hợp lệ.',
+            'shipping_fee_applied.numeric' => 'Phí vận chuyển phải là số.',
+            'note.max' => 'Ghi chú không được quá 500 ký tự.',
+            
+            // Address validation messages
+            'address_id.required_without' => 'Vui lòng chọn địa chỉ hoặc nhập địa chỉ mới.',
+            'address_id.exists' => 'Địa chỉ được chọn không hợp lệ.',
+            
+            // New address validation messages
+            'new_recipient_name.required_without' => 'Vui lòng nhập tên người nhận.',
+            'new_recipient_name.string' => 'Tên người nhận phải là chuỗi ký tự.',
+            'new_recipient_name.max' => 'Tên người nhận không được quá 255 ký tự.',
+            
+            'new_phone.required_without' => 'Vui lòng nhập số điện thoại.',
+            'new_phone.string' => 'Số điện thoại phải là chuỗi ký tự.',
+            'new_phone.max' => 'Số điện thoại không được quá 20 ký tự.',
+            
+            'new_address_city_name.required_without' => 'Vui lòng chọn tỉnh/thành phố.',
+            'new_address_city_name.string' => 'Tên tỉnh/thành phố phải là chuỗi ký tự.',
+            'new_address_city_name.max' => 'Tên tỉnh/thành phố không được quá 100 ký tự.',
+            
+            'new_address_district_name.required_without' => 'Vui lòng chọn quận/huyện.',
+            'new_address_district_name.string' => 'Tên quận/huyện phải là chuỗi ký tự.',
+            'new_address_district_name.max' => 'Tên quận/huyện không được quá 100 ký tự.',
+            
+            'new_address_ward_name.required_without' => 'Vui lòng chọn phường/xã.',
+            'new_address_ward_name.string' => 'Tên phường/xã phải là chuỗi ký tự.',
+            'new_address_ward_name.max' => 'Tên phường/xã không được quá 100 ký tự.',
+            
+            'new_address_detail.required_without' => 'Vui lòng nhập địa chỉ cụ thể.',
+            'new_address_detail.string' => 'Địa chỉ cụ thể phải là chuỗi ký tự.',
+            'new_address_detail.max' => 'Địa chỉ cụ thể không được quá 255 ký tự.',
+            
+            // Email validation messages
+            'new_email.required' => 'Vui lòng nhập địa chỉ email.',
+            'new_email.string' => 'Email phải là chuỗi ký tự.',
+            'new_email.max' => 'Email không được quá 50 ký tự.',
+        ];
+
+        $request->validate($rules, $messages);
         $newAddressCreated = !$request->address_id;
 
         try {
