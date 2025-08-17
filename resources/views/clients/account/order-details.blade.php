@@ -101,9 +101,13 @@
                                         'Chờ xác nhận' => 'bg-yellow-500 text-white',
                                         'Đã xác nhận' => 'bg-blue-500 text-white',
                                         'Đang chuẩn bị' => 'bg-indigo-500 text-white',
+                                        'Đang đóng gói' => 'bg-orange-500 text-white',
                                         'Đang giao hàng' => 'bg-purple-500 text-white',
+                                        'Đã giao hàng' => 'bg-green-500 text-white',
+                                        'Đã giao thành công' => 'bg-green-500 text-white',
                                         'Đã giao', 'Thành công' => 'bg-green-500 text-white',
                                         'Đã hủy' => 'bg-red-500 text-white',
+                                        'Hoàn trả' => 'bg-gray-500 text-white',
                                         default => 'bg-gray-500 text-white'
                                     };
                                 @endphp
@@ -170,8 +174,8 @@
                                                                             </div>
                                                                         @endif
                                                                     @else
-                                                                        @if($item->book && $item->book->images->isNotEmpty())
-                                                                            <img src="{{ asset('storage/' . $item->book->images->first()->image_url) }}" 
+                                                                        @if($item->book && $item->book->cover_image)
+                                                                            <img src="{{ asset('storage/' . $item->book->cover_image) }}" 
                                                                                  alt="{{ $item->book->title }}" 
                                                                                  class="h-full w-full object-cover">
                                                                         @else
@@ -196,6 +200,34 @@
                                                                             <span class="text-gray-600">({{ $item->bookFormat->format_name }})</span>
                                                                         @endif
                                                                     </h6>
+                                                                    
+                                                                    <!-- Hiển thị thuộc tính biến thể cho child order -->
+                                                                    @if($item->attributeValues && $item->attributeValues->count() > 0)
+                                                                        <div class="flex flex-wrap gap-1 mt-1">
+                                                                            @foreach($item->attributeValues as $attributeValue)
+                                                                                <span class="px-1 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded border">
+                                                                                    {{ $attributeValue->attribute->name }}: {{ $attributeValue->value }}
+                                                                                </span>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    @endif
+                                                                    
+                                                                    <!-- Hiển thị quà tặng cho child order -->
+                                                                    @if($item->book && $item->book->gifts && $item->book->gifts->count() > 0)
+                                                                        <div class="mt-1">
+                                                                            <div class="flex items-center gap-1 mb-1">
+                                                                                <svg class="w-3 h-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                                    <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                                                                                </svg>
+                                                                                <span class="text-xs font-bold text-red-600">Quà tặng:</span>
+                                                                            </div>
+                                                                            @foreach($item->book->gifts as $gift)
+                                                                                <div class="text-xs text-red-600 bg-red-50 px-1 py-0.5 rounded border border-red-200 mb-1">
+                                                                                    {{ $gift->gift_name }} (x{{ $item->quantity }})
+                                                                                </div>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    @endif
                                                                 @endif
                                                                 
                                                                 <div class="flex items-center gap-3 mt-1 text-xs text-gray-600">
@@ -405,17 +437,18 @@
                                                     <div class="h-full w-full bg-black flex items-center justify-center">
                                                         <span class="text-white text-xs font-bold">COMBO</span>
                                                     </div>
-                                                @endif                            @else
-                                @if($item->book && $item->book->images->isNotEmpty())
-                                    <img src="{{ asset('storage/' . $item->book->images->first()->image_url) }}" 
-                                         alt="{{ $item->book->title }}" 
-                                         class="h-full w-full object-cover">
-                                @else
-                                    <div class="h-full w-full bg-gray-300 flex items-center justify-center">
-                                        <span class="text-gray-600 text-xs">IMG</span>
-                                    </div>
-                                @endif
-                            @endif
+                                                @endif
+                                            @else
+                                                @if($item->book && $item->book->cover_image)
+                                                    <img src="{{ asset('storage/' . $item->book->cover_image) }}" 
+                                                         alt="{{ $item->book->title }}" 
+                                                         class="h-full w-full object-cover">
+                                                @else
+                                                    <div class="h-full w-full bg-gray-300 flex items-center justify-center">
+                                                        <span class="text-gray-600 text-xs">IMG</span>
+                                                    </div>
+                                                @endif
+                                            @endif
                                         </div>
                                     </div>
                                     
@@ -435,6 +468,53 @@
                                                     <span class="text-gray-600">({{ $item->bookFormat->format_name }})</span>
                                                 @endif
                                             </h5>
+                                            
+                                            <!-- Hiển thị thuộc tính biến thể -->
+                                            @if($item->attributeValues && $item->attributeValues->count() > 0)
+                                                <div class="flex flex-wrap gap-2 mt-1">
+                                                    @foreach($item->attributeValues as $attributeValue)
+                                                        <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded border">
+                                                            {{ $attributeValue->attribute->name }}: {{ $attributeValue->value }}
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                            
+                                            <!-- Hiển thị quà tặng -->
+                                            @if($item->book && $item->book->gifts && $item->book->gifts->count() > 0)
+                                                <div class="mt-2">
+                                                    <div class="flex items-center gap-2 mb-1">
+                                                        <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                                                        </svg>
+                                                        <span class="text-xs font-bold text-red-600 uppercase tracking-wide">Quà tặng kèm:</span>
+                                                    </div>
+                                                    <div class="space-y-1">
+                                                        @foreach($item->book->gifts as $gift)
+                                                            <div class="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded">
+                                                                @if($gift->gift_image)
+                                                                    <img src="{{ asset('storage/' . $gift->gift_image) }}" 
+                                                                         alt="{{ $gift->gift_name }}" 
+                                                                         class="w-8 h-8 object-cover rounded border">
+                                                                @else
+                                                                    <div class="w-8 h-8 bg-red-200 rounded flex items-center justify-center">
+                                                                        <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                                                                        </svg>
+                                                                    </div>
+                                                                @endif
+                                                                <div class="flex-1">
+                                                                    <p class="text-xs font-medium text-red-800">{{ $gift->gift_name }}</p>
+                                                                    @if($gift->gift_description)
+                                                                        <p class="text-xs text-red-600">{{ $gift->gift_description }}</p>
+                                                                    @endif
+                                                                </div>
+                                                                <span class="text-xs font-bold text-red-600">x{{ $item->quantity }}</span>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
                                         @endif
                                         
                                         <div class="flex items-center gap-4 mt-2 text-xs text-gray-600 uppercase tracking-wide">
@@ -613,7 +693,6 @@
                             }
                             return false;
                         });
-                        // dd($ebookItems);    
                     @endphp
                     
                     @if($ebookItems->isNotEmpty() && $order->paymentStatus->name === 'Đã Thanh Toán' && $hasEbook)
@@ -766,7 +845,6 @@
                             $canRefundResult = $ebookRefundService->canRefundEbook($order, auth()->user());
                             $canRefundEbook = $canRefundResult['can_refund'];
                         }
-                        // dd($hasEbook);
                     @endphp
                     
                     @if(!$order->isParentOrder() && (\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name) || $canRefundEbook))

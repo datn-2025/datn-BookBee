@@ -624,9 +624,67 @@
                     </div>
                     <!-- Thông tin combo -->
                     <div class="space-y-8 adidas-font lg:pl-8">
+                        @php
+                            // CENTRALIZED COMBO STATUS LOGIC - ONLY DEFINE ONCE
+                            $now = now();
+                            $startDate = $combo->start_date ? \Carbon\Carbon::parse($combo->start_date) : null;
+                            $endDate = $combo->end_date ? \Carbon\Carbon::parse($combo->end_date) : null;
+
+                            // Determine combo status with proper priority
+                            $comboStatus = [
+                                'isActive' => false,
+                                'canPurchase' => false,
+                                'statusText' => '',
+                                'statusDot' => '',
+                                'badgeClass' => '',
+                                'buttonText' => '',
+                                'showQuantity' => false,
+                                'showStock' => false
+                            ];
+
+                            // Priority 1: Check if combo is disabled
+                            if ($combo->status !== 'active') {
+                                $comboStatus['statusText'] = 'Ngừng bán';
+                                $comboStatus['statusDot'] = 'bg-gray-500';
+                                $comboStatus['badgeClass'] = 'bg-gray-50 text-gray-700 border-gray-200';
+                                $comboStatus['buttonText'] = 'NGỪNG BÁN';
+                            }
+                            // Priority 2: Check stock
+                            elseif ($combo->combo_stock <= 0) {
+                                $comboStatus['statusText'] = 'Hết hàng';
+                                $comboStatus['statusDot'] = 'bg-red-500';
+                                $comboStatus['badgeClass'] = 'bg-red-50 text-red-700 border-red-200';
+                                $comboStatus['buttonText'] = 'HẾT HÀNG';
+                            }
+                            // Priority 3: Check time constraints
+                            elseif ($startDate && $now < $startDate) {
+                                $comboStatus['statusText'] = 'Chưa bắt đầu';
+                                $comboStatus['statusDot'] = 'bg-yellow-500';
+                                $comboStatus['badgeClass'] = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                                $comboStatus['buttonText'] = 'CHƯA BẮT ĐẦU';
+                            } elseif ($endDate && $now > $endDate) {
+                                $comboStatus['statusText'] = 'Đã kết thúc';
+                                $comboStatus['statusDot'] = 'bg-red-500';
+                                $comboStatus['badgeClass'] = 'bg-red-50 text-red-700 border-red-200';
+                                $comboStatus['buttonText'] = 'ĐÃ KẾT THÚC';
+                            }
+                            // All conditions met - combo is active
+                            else {
+                                $comboStatus['isActive'] = true;
+                                $comboStatus['canPurchase'] = true;
+                                $comboStatus['statusText'] = 'Đang mở bán';
+                                $comboStatus['statusDot'] = 'bg-green-500';
+                                $comboStatus['badgeClass'] = 'bg-green-50 text-green-700 border-green-200';
+                                $comboStatus['buttonText'] = 'THÊM VÀO GIỎ HÀNG';
+                                $comboStatus['showQuantity'] = true;
+                                $comboStatus['showStock'] = true;
+                            }
+                        @endphp
+
                         <div class="space-y-4 pb-6 border-b border-gray-200">
                             <h1 class="product-title combo-title">{{ $combo->name }}</h1>
                         </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                             <div class="space-y-3">
                                 <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
@@ -636,52 +694,34 @@
                                 <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">NGÀY BẮT
                                         ĐẦU</span>
-                                    <span
-                                        class="text-black font-semibold adidas-font truncate">{{ optional($combo->start_date)->format('d/m/Y') ?? '-' }}</span>
+                                    <span class="text-black font-semibold adidas-font truncate">
+                                        @if($combo->start_date)
+                                            {{ $startDate->format('d/m/Y') }}
+                                        @else
+                                            <span class="text-gray-400">Không giới hạn</span>
+                                        @endif
+                                    </span>
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">NGÀY KẾT
                                         THÚC</span>
-                                    <span
-                                        class="text-black font-semibold adidas-font truncate">{{ optional($combo->end_date)->format('d/m/Y') ?? '-' }}</span>
+                                    <span class="text-black font-semibold adidas-font truncate">
+                                        @if($combo->end_date)
+                                            {{ $endDate->format('d/m/Y') }}
+                                        @else
+                                            <span class="text-gray-400">Không giới hạn</span>
+                                        @endif
+                                    </span>
                                 </div>
                             </div>
                             <div class="space-y-3">
                                 <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">TRẠNG
                                         THÁI</span>
-                                     @php
-                                    $now = now();
-                                    $startDate = $combo->start_date ? \Carbon\Carbon::parse($combo->start_date) : null;
-                                    $endDate = $combo->end_date ? \Carbon\Carbon::parse($combo->end_date) : null;
-                                    $isActive = $combo->status === 'active' &&
-                                        (!$startDate || $now >= $startDate) &&
-                                        (!$endDate || $now <= $endDate);
-
-                                    if (!$isActive) {
-                                        if ($combo->status !== 'active') {
-                                            $statusText = 'Ngừng bán';
-                                            $statusDot = 'bg-gray-500';
-                                            $badgeClass = 'bg-gray-50 text-gray-700 border-gray-200';
-                                        } elseif ($startDate && $now < $startDate) {
-                                            $statusText = 'Chưa bắt đầu';
-                                            $statusDot = 'bg-yellow-500';
-                                            $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
-                                        } elseif ($endDate && $now > $endDate) {
-                                            $statusText = 'Đã kết thúc';
-                                            $statusDot = 'bg-red-500';
-                                            $badgeClass = 'bg-red-50 text-red-700 border-red-200';
-                                        }
-                                    } else {
-                                        $statusText = 'Đang mở bán';
-                                        $statusDot = 'bg-green-500';
-                                        $badgeClass = 'bg-green-50 text-green-700 border-green-200';
-                                    }
-                                @endphp
-                                <span
-                                    class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }} whitespace-nowrap">
-                                    <span class="truncate">{{ $statusText }}</span>
-                                </span>
+                                    <span
+                                        class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $comboStatus['badgeClass'] }} whitespace-nowrap">
+                                        <span class="truncate">{{ $comboStatus['statusText'] }}</span>
+                                    </span>
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-1 sm:gap-0">
                                     <span class="text-gray-600 font-medium adidas-font uppercase tracking-wider">GIÁ
@@ -696,67 +736,132 @@
                             <div class="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
                                 <span
                                     class="text-4xl font-bold text-black adidas-font">{{ number_format($combo->combo_price, 0, ',', '.') }}₫</span>
-                                @php
-                                    $now = now();
-                                    $startDate = $combo->start_date ? \Carbon\Carbon::parse($combo->start_date) : null;
-                                    $endDate = $combo->end_date ? \Carbon\Carbon::parse($combo->end_date) : null;
-                                    $isActive = $combo->status === 'active' &&
-                                        (!$startDate || $now >= $startDate) &&
-                                        (!$endDate || $now <= $endDate);
-
-                                    if (!$isActive) {
-                                        if ($combo->status !== 'active') {
-                                            $statusText = 'Ngừng bán';
-                                            $statusDot = 'bg-gray-500';
-                                            $badgeClass = 'bg-gray-50 text-gray-700 border-gray-200';
-                                        } elseif ($startDate && $now < $startDate) {
-                                            $statusText = 'Chưa bắt đầu';
-                                            $statusDot = 'bg-yellow-500';
-                                            $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
-                                        } elseif ($endDate && $now > $endDate) {
-                                            $statusText = 'Đã kết thúc';
-                                            $statusDot = 'bg-red-500';
-                                            $badgeClass = 'bg-red-50 text-red-700 border-red-200';
-                                        }
-                                    } else {
-                                        $statusText = 'Đang mở bán';
-                                        $statusDot = 'bg-green-500';
-                                        $badgeClass = 'bg-green-50 text-green-700 border-green-200';
-                                    }
-                                @endphp
                                 <span
-                                    class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }} whitespace-nowrap">
-                                    <span class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block flex-shrink-0"></span>
-                                    <span class="truncate">{{ $statusText }}</span>
+                                    class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $comboStatus['badgeClass'] }} whitespace-nowrap">
+                                    <span
+                                        class="w-2 h-2 rounded-full mr-2 {{ $comboStatus['statusDot'] }} inline-block flex-shrink-0"></span>
+                                    <span class="truncate">{{ $comboStatus['statusText'] }}</span>
                                 </span>
-                                @php
-                                $now = now();
-                                $endDate = $combo->end_date ? \Carbon\Carbon::parse($combo->end_date) : null;
-                                $isEnded = $endDate && $now > $endDate;
-                            @endphp
-                            @if($combo->combo_stock > 0 && !$isEnded)
+                                @if($comboStatus['showStock'])
                                     <span class="text-sm text-gray-600 adidas-font">(<span
                                             class="font-bold text-black">{{ $combo->combo_stock }}</span> combo còn lại)</span>
                                 @endif
                             </div>
+                        </div>
 
-                            <!-- Additional date information -->
-                            @if(($isActive && $startDate) || ($isActive && $endDate))
-                                <div class="flex flex-col sm:flex-row gap-2 text-xs sm:text-sm text-gray-600 adidas-font">
-                                    @if($isActive && $startDate)
-                                        <span class="whitespace-nowrap">
-                                            Bắt đầu: {{ $startDate->format('d/m/Y') }}
-                                        </span>
+                        <!-- Enhanced Time Information Section -->
+                        @if($combo->start_date || $combo->end_date)
+                            <div
+                                class="time-info-section bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 p-4 rounded-r-lg mt-6">
+                                <h3
+                                    class="text-sm font-bold text-amber-800 uppercase tracking-wider mb-3 adidas-font flex items-center">
+                                    <i class="fas fa-clock mr-2"></i>Thông tin thời gian
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    @if($combo->start_date)
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 bg-green-100 flex items-center justify-center rounded-full">
+                                                <i class="fas fa-play text-green-600 text-sm"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Bắt đầu</div>
+                                                <div class="text-sm font-bold text-gray-800">
+                                                    {{ \Carbon\Carbon::parse($combo->start_date)->format('d/m/Y') }}
+                                                </div>
+                                                <div class="text-xs text-gray-500">
+                                                    {{ \Carbon\Carbon::parse($combo->start_date)->format('H:i') }}
+                                                </div>
+                                            </div>
+                                        </div>
                                     @endif
-                                    @if($isActive && $endDate)
-                                        <span class="whitespace-nowrap">
-                                            @if($isActive && $startDate)<span class="hidden sm:inline">•</span>@endif
-                                            Kết thúc: {{ $endDate->format('d/m/Y') }}
-                                        </span>
+
+                                    @if($combo->end_date)
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 bg-red-100 flex items-center justify-center rounded-full">
+                                                <i class="fas fa-stop text-red-600 text-sm"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Kết thúc</div>
+                                                <div class="text-sm font-bold text-gray-800">
+                                                    {{ \Carbon\Carbon::parse($combo->end_date)->format('d/m/Y') }}
+                                                </div>
+                                                <div class="text-xs text-gray-500">
+                                                    {{ \Carbon\Carbon::parse($combo->end_date)->format('H:i') }}
+                                                </div>
+                                            </div>
+                                        </div>
                                     @endif
                                 </div>
-                            @endif
-                        </div>
+
+                                <!-- Countdown Timer for Active Combo -->
+                                @if($comboStatus['isActive'] && $combo->end_date)
+                                    @php
+                                        $diff = $now->diff($endDate);
+                                        $totalDays = $now->diffInDays($endDate);
+                                        $isUrgent = $totalDays <= 3;
+                                    @endphp
+                                    <div
+                                        class="mt-4 p-3 {{ $isUrgent ? 'bg-red-100 border border-red-200' : 'bg-blue-100 border border-blue-200' }} rounded-lg">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center space-x-2">
+                                                <i class="fas fa-hourglass-half {{ $isUrgent ? 'text-red-600' : 'text-blue-600' }}"></i>
+                                                <span
+                                                    class="text-sm font-semibold {{ $isUrgent ? 'text-red-800' : 'text-blue-800' }} uppercase tracking-wider">
+                                                    {{ $isUrgent ? 'Sắp kết thúc!' : 'Thời gian còn lại' }}
+                                                </span>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="text-lg font-bold {{ $isUrgent ? 'text-red-600' : 'text-blue-600' }}">
+                                                    @if($diff->days > 0)
+                                                        {{ $diff->days }} ngày
+                                                    @endif
+                                                    @if($diff->h > 0)
+                                                        {{ $diff->h }} giờ
+                                                    @endif
+                                                    @if($diff->i > 0 && $diff->days == 0)
+                                                        {{ $diff->i }} phút
+                                                    @endif
+                                                </div>
+                                                <div class="text-xs {{ $isUrgent ? 'text-red-500' : 'text-blue-500' }}">
+                                                    {{ $endDate->diffForHumans() }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @elseif(!$comboStatus['isActive'] && $combo->start_date && $now < $startDate)
+                                    @php
+                                        $diff = $now->diff($startDate);
+                                    @endphp
+                                    <div class="mt-4 p-3 bg-yellow-100 border border-yellow-200 rounded-lg">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center space-x-2">
+                                                <i class="fas fa-clock text-yellow-600"></i>
+                                                <span class="text-sm font-semibold text-yellow-800 uppercase tracking-wider">
+                                                    Chưa bắt đầu
+                                                </span>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="text-lg font-bold text-yellow-600">
+                                                    @if($diff->days > 0)
+                                                        {{ $diff->days }} ngày
+                                                    @endif
+                                                    @if($diff->h > 0)
+                                                        {{ $diff->h }} giờ
+                                                    @endif
+                                                    @if($diff->i > 0 && $diff->days == 0)
+                                                        {{ $diff->i }} phút
+                                                    @endif
+                                                </div>
+                                                <div class="text-xs text-yellow-500">
+                                                    {{ $startDate->diffForHumans() }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+
                         <!-- Danh sách sách trong combo -->
                         <div class="combo-books-list bg-white border border-gray-100 p-6 mt-6 rounded-lg">
                             <h2
@@ -796,36 +901,29 @@
                             @csrf
                             <input type="hidden" name="combo_id" value="{{ $combo->id }}">
                             <input type="hidden" name="type" value="combo">
-                            @if(!$isEnded)
-                            <div class="mb-6">
-                                <label class="block text-sm font-bold text-black uppercase tracking-wider mb-3 adidas-font">Số
-                                    lượng</label>
-                                <div class="flex items-center w-fit">
-                                    <button type="button" class="quantity-btn-enhanced" id="comboDecrementBtn">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                    <input type="number" name="quantity" id="comboQuantity" value="1" min="1"
-                                        max="{{ $combo->combo_stock }}" class="quantity-input-enhanced adidas-font" />
-                                    <button type="button" class="quantity-btn-enhanced" id="comboIncrementBtn">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
+                            @if($comboStatus['showQuantity'])
+                                <div class="mb-6">
+                                    <label class="block text-sm font-bold text-black uppercase tracking-wider mb-3 adidas-font">Số
+                                        lượng</label>
+                                    <div class="flex items-center w-fit">
+                                        <button type="button" class="quantity-btn-enhanced" id="comboDecrementBtn">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <input type="number" name="quantity" id="comboQuantity" value="1" min="1"
+                                            max="{{ $combo->combo_stock }}" class="quantity-input-enhanced adidas-font" />
+                                        <button type="button" class="quantity-btn-enhanced" id="comboIncrementBtn">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
                             @else
-                            <input type="hidden" name="quantity" value="1">
+                                <input type="hidden" name="quantity" value="1">
                             @endif
                             <button type="submit"
                                 class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font"
-                                @php
-                                    $now = now();
-                                    $startDate = $combo->start_date ? \Carbon\Carbon::parse($combo->start_date) : null;
-                                    $endDate = $combo->end_date ? \Carbon\Carbon::parse($combo->end_date) : null;
-                                    $isActive = $combo->status === 'active' &&
-                                        (!$startDate || $now >= $startDate) &&
-                                        (!$endDate || $now <= $endDate);
-                                @endphp @if(!$isActive) disabled style="opacity:0.6;pointer-events:none;" @endif>
+                                @if(!$comboStatus['canPurchase']) disabled style="opacity:0.6;pointer-events:none;" @endif>
                                 <i class="fas fa-shopping-bag mr-3"></i>
-                                <span>THÊM VÀO GIỎ HÀNG</span>
+                                <span>{{ $comboStatus['buttonText'] }}</span>
                             </button>
                             <!-- Enhanced Share Section -->
                             <div class="share-section pt-8 border-t border-gray-200 mt-8">
@@ -1058,28 +1156,28 @@
                                         </div>
                                     @endif
 
-                                    <!-- Admin Response -->
+                                    {{-- <!-- Admin Response -->
                                     @if($review->admin_response)
-                                        <div
-                                            class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-r-lg admin-response">
-                                            <div class="flex items-center space-x-2 mb-2">
-                                                <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center">
-                                                    <i class="fas fa-reply text-xs"></i>
-                                                </div>
-                                                <span class="text-xs text-blue-700 uppercase tracking-wider font-bold">
-                                                    PHẢN HỒI TỪ BOOKBEE
-                                                </span>
+                                    <div
+                                        class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-r-lg admin-response">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center">
+                                                <i class="fas fa-reply text-xs"></i>
                                             </div>
-                                            <div class="pl-8">
-                                                <p class="text-gray-700 leading-relaxed font-medium italic">{{ $review->admin_response }}
-                                                </p>
-                                                <div class="mt-2 text-xs text-gray-500">
-                                                    <i class="fas fa-clock mr-1"></i>
-                                                    {{ $review->updated_at->format('d/m/Y H:i') }}
-                                                </div>
+                                            <span class="text-xs text-blue-700 uppercase tracking-wider font-bold">
+                                                PHẢN HỒI TỪ BOOKBEE
+                                            </span>
+                                        </div>
+                                        <div class="pl-8">
+                                            <p class="text-gray-700 leading-relaxed font-medium italic">{{ $review->admin_response }}
+                                            </p>
+                                            <div class="mt-2 text-xs text-gray-500">
+                                                <i class="fas fa-clock mr-1"></i>
+                                                {{ $review->updated_at->format('d/m/Y H:i') }}
                                             </div>
                                         </div>
-                                    @endif
+                                    </div>
+                                    @endif --}}
 
                                     <!-- Product Info & Format -->
                                     <div class="mt-4 p-3 bg-gray-50 border-l-4 border-black product-info">
@@ -1099,7 +1197,7 @@
                                     <!-- Bottom Accent -->
                                     <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
                                         <div
-                                            class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider verified-badge">
+                                            class="flex items-center space-x-2 text-xs text-black uppercase tracking-wider bg-gray-200">
                                             <i class="fas fa-check-circle w-3"></i>
                                             <span>Đánh giá đã xác thực</span>
                                         </div>
@@ -1303,14 +1401,14 @@
                                         </span>
                                     </div>
                                 @endif
-                                <!-- Wishlist Button -->
+                                {{-- <!-- Wishlist Button -->
                                 <div class="absolute top-2 right-2">
                                     <button
                                         class="w-10 h-10 bg-white bg-opacity-90 flex items-center justify-center border border-gray-200 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition-all duration-300 transform hover:scale-110"
-                                        onclick="event.stopPropagation();">>
+                                        onclick="event.stopPropagation();">
                                         <i class="far fa-heart text-sm"></i>
                                     </button>
-                                </div>
+                                </div> --}}
                             </div>
                             <div class="p-2">
                                 <h3
@@ -1326,23 +1424,23 @@
                                     </span>
                                 </div>
                                 <div class="pt-1">
-                                    <button onclick="event.stopPropagation(); addRelatedToCart('{{ $related->id }}')"
-                                        class="adidas-btn-enhanced w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center {{ $relatedStock <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800' }}"
-                                        {{ $relatedStock <= 0 ? 'disabled' : '' }}>
+                                    <a href="{{ route('combos.show', $related->slug ?? $related->id) }}"
+                                        onclick="event.stopPropagation();"
+                                        class="adidas-btn-enhanced w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center hover:bg-gray-800">
                                         <span class="relative flex items-center space-x-1">
-                                            <i class="fas fa-shopping-cart text-xs"></i>
-                                            <span>{{ $relatedStock <= 0 ? 'HẾT HÀNG' : 'THÊM VÀO GIỎ' }}</span>
+                                            <i class="fas fa-eye text-xs"></i>
+                                            <span>XEM CHI TIẾT</span>
                                             <i
                                                 class="fas fa-arrow-right text-xs transform group-hover/btn:translate-x-1 transition-transform duration-300"></i>
                                         </span>
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     @endforeach
                 </div>
                 <div class="flex justify-center pt-8 mb-8">
-                    <a href="{{ route('books.index') }}"
+                    <a href="{{ route('combos.index') }}"
                         class="adidas-btn-enhanced px-8 py-4 bg-white text-black border-2 border-black font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all duration-300 flex items-center space-x-3">
                         <span>XEM TẤT CẢ COMBO</span>
                     </a>
@@ -1376,9 +1474,12 @@
                         <div class="space-y-6">
                             <div class="relative group">
                                 <div class="aspect-square bg-white border border-gray-100 overflow-hidden">
-                                    <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
-                                        alt="{{ $book->title }}" id="mainImage"
-                                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                                    <img src="{{ $book->cover_image
+                    ? asset('storage/' . $book->cover_image)
+                    : ($book->images->first()
+                        ? asset('storage/' . $book->images->first()->image_url)
+                        : asset('images/default.jpg')) }}" alt="{{ $book->title }}"
+                                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                 </div>
                                 @if ($book->images->count() > 1)
                                     <div class="grid grid-cols-5 gap-3 mt-4">
@@ -1472,128 +1573,129 @@
                                     @endif
                                 </div>
                                 @php
-                                        $isEbook = false;
-                                        if (isset($defaultFormat->format_name)) {
-                                            $isEbook = stripos($defaultFormat->format_name, 'ebook') !== false;
-                                        }
-                                        $defaultStock = (int) ($defaultFormat->stock ?? $book->stock ?? 0);
+                                    $isEbook = false;
+                                    if (isset($defaultFormat->format_name)) {
+                                        $isEbook = stripos($defaultFormat->format_name, 'ebook') !== false;
+                                    }
+                                    $defaultStock = (int) ($defaultFormat->stock ?? $book->stock ?? 0);
 
-                                        // Priority 1: Check book.status first 
-                                        switch ($book->status) {
-                                            case 'Ngừng Kinh Doanh':
-                                                $statusText = 'NGƯNG KINH DOANH';
-                                                $statusDot = 'bg-gray-500';
-                                                $badgeClass = 'bg-gray-100 text-gray-700 border-gray-300';
-                                                break;
-                                            case 'Sắp Ra Mắt':
-                                                $statusText = 'SẮP RA MẮT';
-                                                $statusDot = 'bg-yellow-500';
-                                                $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
-                                                break;
-                                            case 'Hết Hàng Tồn Kho':
-                                                $statusText = 'HẾT HÀNG TỒN KHO';
+                                    // Priority 1: Check book.status first 
+                                    switch ($book->status) {
+                                        case 'Ngừng Kinh Doanh':
+                                            $statusText = 'NGƯNG KINH DOANH';
+                                            $statusDot = 'bg-gray-500';
+                                            $badgeClass = 'bg-gray-100 text-gray-700 border-gray-300';
+                                            break;
+                                        case 'Sắp Ra Mắt':
+                                            $statusText = 'SẮP RA MẮT';
+                                            $statusDot = 'bg-yellow-500';
+                                            $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                                            break;
+                                        case 'Hết Hàng Tồn Kho':
+                                            $statusText = 'HẾT HÀNG TỒN KHO';
+                                            $statusDot = 'bg-red-500';
+                                            $badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                            break;
+                                        case 'Còn Hàng':
+                                        default:
+                                            // Priority 2: Only when status = 'Còn Hàng', check if ebook or stock levels
+                                            if ($isEbook) {
+                                                $statusText = 'EBOOK - CÓ SẴN';
+                                                $statusDot = 'bg-blue-500';
+                                                $badgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+                                            } elseif ($defaultStock == 0) {
+                                                $statusText = 'HẾT HÀNG (Stock)';
                                                 $statusDot = 'bg-red-500';
                                                 $badgeClass = 'bg-red-50 text-red-700 border-red-200';
-                                                break;
-                                            case 'Còn Hàng':
-                                            default:
-                                                // Priority 2: Only when status = 'Còn Hàng', check if ebook or stock levels
-                                                if ($isEbook) {
-                                                    $statusText = 'EBOOK - CÓ SẴN';
-                                                    $statusDot = 'bg-blue-500';
-                                                    $badgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
-                                                } elseif ($defaultStock == 0) {
-                                                    $statusText = 'HẾT HÀNG (Stock)';
-                                                    $statusDot = 'bg-red-500';
-                                                    $badgeClass = 'bg-red-50 text-red-700 border-red-200';
-                                                } elseif ($defaultStock >= 1 && $defaultStock <= 9) {
-                                                    $statusText = 'SẮP HẾT HÀNG';
-                                                    $statusDot = 'bg-yellow-500';
-                                                    $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
-                                                } elseif ($defaultStock >= 10) {
-                                                    $statusText = 'CÒN HÀNG';
-                                                    $statusDot = 'bg-green-500';
-                                                    $badgeClass = 'bg-green-50 text-green-700 border-green-200';
-                                                } else {
-                                                    $statusText = 'HẾT HÀNG';
-                                                    $statusDot = 'bg-red-500';
-                                                    $badgeClass = 'bg-red-50 text-red-700 border-red-200';
-                                                }
-                                                break;
-                                        }
-                                    @endphp
-                                    <div class="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4 mt-2">
-                                        <span id="stockBadge"
-                                            class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }} whitespace-nowrap w-fit">
-                                            <span id="stockDot"
-                                                class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block flex-shrink-0"></span>
-                                            <span id="stockText" class="truncate">{{ $statusText }}</span>
-                                        </span>
-                                        @if(
-                                                ($book->status === 'Còn Hàng' && $defaultStock > 0) ||
-                                                $isEbook
-                                            )
-                                            @if(!in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho']))
+                                            } elseif ($defaultStock >= 1 && $defaultStock <= 9) {
+                                                $statusText = 'SẮP HẾT HÀNG';
+                                                $statusDot = 'bg-yellow-500';
+                                                $badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                                            } elseif ($defaultStock >= 10) {
+                                                $statusText = 'CÒN HÀNG';
+                                                $statusDot = 'bg-green-500';
+                                                $badgeClass = 'bg-green-50 text-green-700 border-green-200';
+                                            } else {
+                                                $statusText = 'HẾT HÀNG';
+                                                $statusDot = 'bg-red-500';
+                                                $badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                                            }
+                                            break;
+                                    }
+                                @endphp
+                                <div class="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4 mt-2">
+                                    <span id="stockBadge"
+                                        class="inline-flex items-center px-3 py-1 text-xs sm:text-sm font-semibold border adidas-font uppercase tracking-wider {{ $badgeClass }} whitespace-nowrap w-fit">
+                                        <span id="stockDot"
+                                            class="w-2 h-2 rounded-full mr-2 {{ $statusDot }} inline-block flex-shrink-0"></span>
+                                        <span id="stockText" class="truncate">{{ $statusText }}</span>
+                                    </span>
+                                    @if(
+                                            ($book->status === 'Còn Hàng' && $defaultStock > 0) ||
+                                            $isEbook
+                                        )
+                                        @if(!in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho']))
                                             <span id="stockQuantityDisplay"
                                                 class="text-xs sm:text-sm text-gray-600 adidas-font whitespace-nowrap">
                                                 (<span class="font-bold text-black" id="productQuantity">{{ $defaultStock }}</span> cuốn
                                                 còn lại)
                                             </span>
-                                            @endif
                                         @endif
-                                    </div>
+                                    @endif
+                                </div>
                             </div>
 
                             <!-- Quà tặng kèm - Chỉ hiển thị khi chọn định dạng sách vật lý -->
                             @if(!in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho']))
-                            @php
-                                $selectedFormat = $book->formats->first(); // Lấy định dạng mặc định hoặc đầu tiên
-                                
-                                // Kiểm tra xem định dạng đang chọn có phải là sách vật lý không
-                                $isPhysicalFormatSelected = $selectedFormat && str_contains($selectedFormat->format_name, 'Sách Vật Lý');
-                            @endphp
-                            @if(isset($bookGifts) && $bookGifts->count())
-                                <div id="giftsSection" class="book-gifts-section mt-8" @if(!$isPhysicalFormatSelected) style="display: none;" @endif>
-                                    <h3
-                                        class="text-lg font-bold text-black mb-3 flex items-center adidas-font uppercase tracking-wider">
-                                        <i class="fas fa-gift text-base mr-2 text-black"></i>Quà tặng kèm
-                                    </h3>
-                                    <ul class="space-y-3">
-                                        @foreach($bookGifts as $gift)
-                                            <li
-                                                class="flex items-start gap-4 p-4 bg-white border border-gray-200 hover:border-black transition-all duration-200 shadow-sm">
-                                                @if($gift->gift_image)
-                                                    <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="{{ $gift->gift_name }}"
-                                                        class="w-16 h-16 object-cover shadow border border-gray-200">
-                                                @else
-                                                    <span
-                                                        class="w-16 h-16 flex items-center justify-center bg-gray-100 text-2xl border border-gray-200"><i
-                                                            class="fas fa-gift"></i></span>
-                                                @endif
-                                                <div class="flex-1">
-                                                    <div class="font-semibold text-black text-base adidas-font">{{ $gift->gift_name }}</div>
-                                                    @if($gift->gift_description)
-                                                        <div class="text-sm text-gray-700 mt-1">{{ $gift->gift_description }}</div>
+                                @php
+                                    $selectedFormat = $book->formats->first(); // Lấy định dạng mặc định hoặc đầu tiên
+
+                                    // Kiểm tra xem định dạng đang chọn có phải là sách vật lý không
+                                    $isPhysicalFormatSelected = $selectedFormat && str_contains($selectedFormat->format_name, 'Sách Vật Lý');
+                                @endphp
+                                @if(isset($bookGifts) && $bookGifts->count())
+                                    <div id="giftsSection" class="book-gifts-section mt-8" @if(!$isPhysicalFormatSelected)
+                                    style="display: none;" @endif>
+                                        <h3
+                                            class="text-lg font-bold text-black mb-3 flex items-center adidas-font uppercase tracking-wider">
+                                            <i class="fas fa-gift text-base mr-2 text-black"></i>Quà tặng kèm
+                                        </h3>
+                                        <ul class="space-y-3">
+                                            @foreach($bookGifts as $gift)
+                                                <li
+                                                    class="flex items-start gap-4 p-4 bg-white border border-gray-200 hover:border-black transition-all duration-200 shadow-sm">
+                                                    @if($gift->gift_image)
+                                                        <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="{{ $gift->gift_name }}"
+                                                            class="w-16 h-16 object-cover shadow border border-gray-200">
+                                                    @else
+                                                        <span
+                                                            class="w-16 h-16 flex items-center justify-center bg-gray-100 text-2xl border border-gray-200"><i
+                                                                class="fas fa-gift"></i></span>
                                                     @endif
-                                                    @if($gift->quantity > 0)
-                                                        <div class="text-xs text-green-700 mt-1">Số lượng: {{ $gift->quantity }}</div>
-                                                    @endif
-                                                    @if($gift->start_date || $gift->end_date)
-                                                        <div class="text-xs text-gray-500 mt-1 flex flex-wrap gap-2">
-                                                            @if($gift->start_date)
-                                                                <span>Bắt đầu: {{ Carbon::parse($gift->start_date)->format('d/m/Y') }}</span>
-                                                            @endif
-                                                            @if($gift->end_date)
-                                                                <span>Kết thúc: {{ Carbon::parse($gift->end_date)->format('d/m/Y') }}</span>
-                                                            @endif
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @endif
+                                                    <div class="flex-1">
+                                                        <div class="font-semibold text-black text-base adidas-font">{{ $gift->gift_name }}</div>
+                                                        @if($gift->gift_description)
+                                                            <div class="text-sm text-gray-700 mt-1">{{ $gift->gift_description }}</div>
+                                                        @endif
+                                                        @if($gift->quantity > 0)
+                                                            <div class="text-xs text-green-700 mt-1">Số lượng: {{ $gift->quantity }}</div>
+                                                        @endif
+                                                        @if($gift->start_date || $gift->end_date)
+                                                            <div class="text-xs text-gray-500 mt-1 flex flex-wrap gap-2">
+                                                                @if($gift->start_date)
+                                                                    <span>Bắt đầu: {{ Carbon::parse($gift->start_date)->format('d/m/Y') }}</span>
+                                                                @endif
+                                                                @if($gift->end_date)
+                                                                    <span>Kết thúc: {{ Carbon::parse($gift->end_date)->format('d/m/Y') }}</span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
                             @endif
 
 
@@ -1604,8 +1706,7 @@
                                     <label for="bookFormatSelect"
                                         class="block text-sm font-bold text-black uppercase tracking-wider">Định dạng sách</label>
                                     <div class="relative">
-                                        <select id="bookFormatSelect" 
-                                            data-gifts-section="giftsSection"
+                                        <select id="bookFormatSelect" data-gifts-section="giftsSection"
                                             class="adidas-select w-full px-6 py-4 text-lg font-semibold appearance-none bg-white border-2 border-gray-300 focus:border-black rounded-none transition-colors duration-300">
                                             @php
                                                 $ebookFormat = $book->formats->first(function ($f) {
@@ -1839,7 +1940,8 @@
                                     }
                                     $isSpecialStatus = in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho']);
                                 @endphp
-                                <div class="quantity-section space-y-3" @if($isEbook || $isSpecialStatus) style="display:none" @endif>
+                                <div class="quantity-section space-y-3" @if($isEbook || $isSpecialStatus) style="display:none"
+                                @endif>
                                     <label for="quantity"
                                         class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">Số
                                         lượng</label>
@@ -2088,9 +2190,9 @@
                                         </div>
 
                                         <!-- Bottom Accent -->
-                                        <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+                                        <div class="flex items-center justify-between mt-6 pt-4 border-t">
                                             <div
-                                                class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider verified-badge">
+                                                class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider bg-gray-200">
                                                 <i class="fas fa-check-circle w-3"></i>
                                                 <span>Đánh giá đã xác thực</span>
                                             </div>
@@ -2209,14 +2311,14 @@
                                             </div>
                                         @endif
 
-                                        <!-- Wishlist Button -->
+                                        {{-- <!-- Wishlist Button -->
                                         <div class="absolute top-2 right-2">
                                             <button
                                                 class="w-10 h-10 bg-white bg-opacity-90 flex items-center justify-center border border-gray-200 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition-all duration-300 transform hover:scale-110"
-                                                onclick="event.stopPropagation();">>
+                                                onclick="event.stopPropagation();">
                                                 <i class="far fa-heart text-sm"></i>
                                             </button>
-                                        </div>
+                                        </div> --}}
 
                                         <!-- Quick View Button -->
                                         <div
@@ -2274,25 +2376,14 @@
                                         </div>
 
                                         <div class="mt-3">
-                                            @if($defaultFormat)
-                                                <button onclick="event.stopPropagation(); addRelatedToCart('{{ $related->id }}')"
-                                                    class="adidas-btn-enhanced w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center {{ $stock <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800' }}"
-                                                    {{ $stock <= 0 ? 'disabled' : '' }}>
-                                                    <span class="relative flex items-center space-x-1">
-                                                        <i class="fas fa-shopping-cart text-xs"></i>
-                                                        <span>{{ $stock > 0 ? 'THÊM VÀO GIỎ' : 'HẾT HÀNG' }}</span>
-                                                    </span>
-                                                </button>
-                                            @else
-                                                <button
-                                                    class="adidas-btn-enhanced w-full h-10 bg-gray-400 text-white font-bold text-xs uppercase tracking-wider cursor-not-allowed opacity-50"
-                                                    disabled>
-                                                    <span class="relative flex items-center space-x-1">
-                                                        <i class="fas fa-exclamation-circle text-xs"></i>
-                                                        <span>KHÔNG KHẢ DỤNG</span>
-                                                    </span>
-                                                </button>
-                                            @endif
+                                            <a href="{{ route('books.show', $related->slug ?? $related->id) }}"
+                                                onclick="event.stopPropagation();"
+                                                class="adidas-btn-enhanced w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center hover:bg-gray-800">
+                                                <span class="relative flex items-center space-x-1">
+                                                    <i class="fas fa-eye text-xs"></i>
+                                                    <span>XEM CHI TIẾT</span>
+                                                </span>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -2432,27 +2523,27 @@
     </div>
 
     @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const formatSelect = document.getElementById('bookFormatSelect');
-            const giftsSection = document.getElementById('giftsSection');
-            
-            if (formatSelect && giftsSection) {
-                // Kiểm tra ngay khi trang tải
-                const checkFormat = () => {
-                    const selectedOption = formatSelect.options[formatSelect.selectedIndex];
-                    const isPhysicalFormat = selectedOption.text.includes('Sách Vật Lý');
-                    giftsSection.style.display = isPhysicalFormat ? 'block' : 'none';
-                };
-                
-                // Chạy kiểm tra lần đầu
-                checkFormat();
-                
-                // Lắng nghe sự kiện thay đổi
-                formatSelect.addEventListener('change', checkFormat);
-            }
-        });
-    </script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const formatSelect = document.getElementById('bookFormatSelect');
+                const giftsSection = document.getElementById('giftsSection');
+
+                if (formatSelect && giftsSection) {
+                    // Kiểm tra ngay khi trang tải
+                    const checkFormat = () => {
+                        const selectedOption = formatSelect.options[formatSelect.selectedIndex];
+                        const isPhysicalFormat = selectedOption.text.includes('Sách Vật Lý');
+                        giftsSection.style.display = isPhysicalFormat ? 'block' : 'none';
+                    };
+
+                    // Chạy kiểm tra lần đầu
+                    checkFormat();
+
+                    // Lắng nghe sự kiện thay đổi
+                    formatSelect.addEventListener('change', checkFormat);
+                }
+            });
+        </script>
         <script>
             // Ensure DOM is fully loaded
             document.addEventListener('DOMContentLoaded', function () {
@@ -3233,9 +3324,9 @@
                 const bookStatus = bookPriceElement.dataset.bookStatus || 'Còn Hàng';
 
                 // Kiểm tra trạng thái đặc biệt
-                const isSpecialStatus = bookStatus === 'Ngừng Kinh Doanh' || 
-                                      bookStatus === 'Sắp Ra Mắt' || 
-                                      bookStatus === 'Hết Hàng Tồn Kho';
+                const isSpecialStatus = bookStatus === 'Ngừng Kinh Doanh' ||
+                    bookStatus === 'Sắp Ra Mắt' ||
+                    bookStatus === 'Hết Hàng Tồn Kho';
 
                 if (attributesGroup) {
                     const attributeItems = attributesGroup.querySelectorAll('.attribute-item');
@@ -3243,20 +3334,20 @@
                     if (isSpecialStatus) {
                         // Ẩn toàn bộ phần thuộc tính
                         attributesGroup.style.display = 'none';
-                        
+
                         // Ẩn tất cả các dropdown chọn thuộc tính
                         document.querySelectorAll('[name^="attributes["]').forEach(select => {
                             select.style.display = 'none';
                             const parent = select.closest('.attribute-item');
                             if (parent) parent.style.display = 'none';
                         });
-                        
+
                         // Ẩn nhãn thuộc tính
                         const attributeLabels = document.querySelectorAll('.attribute-item label');
                         attributeLabels.forEach(label => {
                             label.style.display = 'none';
                         });
-                        
+
                         // Ẩn thông tin biến thể nếu có
                         document.querySelectorAll('[id^="variant_info_"]').forEach(el => {
                             el.style.display = 'none';
@@ -3629,7 +3720,7 @@
                         return;
                     @endguest
 
-                                                        const addToCartBtn = document.getElementById('addToCartBtn');
+                                                                    const addToCartBtn = document.getElementById('addToCartBtn');
                     const originalText = addToCartBtn.textContent;
                     const bookId = '{{ $book->id }}';
                     const quantity = parseInt(document.getElementById('quantity')?.value) || 1;
@@ -3918,7 +4009,7 @@
                     console.warn('addToCart function called on combo page');
                     showToastr('warning', 'Chức năng này chỉ khả dụng trên trang sách đơn');
                 @endif
-                                                    }
+                                                            }
 
             // Add related product to cart function - optimized  
             function addRelatedToCart(bookId) {
@@ -3930,7 +4021,7 @@
                     return;
                 @endguest
 
-                                        const button = event.target.closest('button');
+                                                const button = event.target.closest('button');
                 const originalText = button.innerHTML;
 
                 // Disable button and show loading
@@ -4256,7 +4347,7 @@
                         return;
                     @endguest
 
-                                                    const formData = new FormData(comboForm);
+                                                            const formData = new FormData(comboForm);
                     const urlParams = new URLSearchParams();
 
                     // Convert FormData to URLSearchParams
@@ -4384,7 +4475,7 @@
                         return;
                     @endguest
 
-                                            if (this.disabled) return;
+                                                    if (this.disabled) return;
 
                     const button = this;
                     const bookId = button.dataset.bookId;

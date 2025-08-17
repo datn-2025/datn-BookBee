@@ -64,13 +64,18 @@
                         <!-- Avatar Section -->
                         <div class="w-full md:w-1/4 text-center">
                             <div class="avatar">
-                                <img src="{{ Auth::user()->avatar ? asset('storage/' . Auth::user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=6366f1&color=fff&size=200' }}" 
-                                     alt="Avatar" class="w-32 h-32 object-cover rounded-full shadow-md mx-auto">
+                                <img id="avatar-preview" 
+                                     src="{{ Auth::user()->avatar ? asset('storage/' . Auth::user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=6366f1&color=fff&size=200' }}" 
+                                     alt="Avatar" class="w-32 h-32 object-cover rounded-full shadow-md mx-auto"
+                                     data-original="{{ Auth::user()->avatar ? asset('storage/' . Auth::user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=6366f1&color=fff&size=200' }}">
                                 <div class="mt-3">
-                                    <label for="avatar-input" class="btn-save w-full">
+                                    <label for="avatar-input" class="btn-save w-full btn btn-primary">
                                         <i class="fas fa-camera"></i> Chọn ảnh
                                     </label>
-                                    <input type="file" name="avatar" id="avatar-input" accept="image/jpeg,image/png" class="hidden">
+                                    <input type="file" name="avatar" id="avatar-input" accept="image/jpeg,image/png,image/jpg" class="hidden">
+                                    <button type="button" id="cancel-avatar" class="btn btn-outline-secondary w-full mt-2 d-none">
+                                        <i class="fas fa-times"></i> Hủy
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -93,7 +98,7 @@
                             </div>
 
                             <!-- Save Button -->
-                            <button type="submit" class="btn btn-save w-full">
+                            <button type="submit" class="btn btn-primary w-full">
                                 <i class="fas fa-save me-2"></i> Lưu thay đổi
                             </button>
                         </div>
@@ -118,6 +123,7 @@
                                        name="current_password" required>
                                 <button class="inline-flex items-center px-3 text-sm font-medium text-gray-900 bg-gray-200 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-200 transition-colors duration-200" 
                                         type="button" 
+                                        tabindex="-1"
                                         onclick="togglePassword('current_password')">
                                     <i class="fas fa-eye text-gray-600" id="current_password_icon"></i>
                                 </button>
@@ -143,6 +149,7 @@
                                        name="password" required>
                                 <button class="inline-flex items-center px-3 text-sm font-medium text-gray-900 bg-gray-200 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-200 transition-colors duration-200" 
                                         type="button" 
+                                        tabindex="-1"
                                         onclick="togglePassword('password')">
                                     <i class="fas fa-eye text-gray-600" id="password_icon"></i>
                                 </button>
@@ -168,6 +175,7 @@
                                        name="password_confirmation" required>
                                 <button class="inline-flex items-center px-3 text-sm font-medium text-gray-900 bg-gray-200 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-200 transition-colors duration-200" 
                                         type="button" 
+                                        tabindex="-1"
                                         onclick="togglePassword('password_confirmation')">
                                     <i class="fas fa-eye text-gray-600" id="password_confirmation_icon"></i>
                                 </button>
@@ -179,8 +187,14 @@
                         <a href="{{ route('account.profile') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left me-1"></i>Quay lại
                         </a>
-                        <button type="submit" class="btn text-white fw-bold py-2 px-4 rounded" style="background-color: #3b82f6; border: none;">
-                            <i class="fas fa-key me-2"></i>Cập nhật mật khẩu
+                        <button type="submit" id="password-submit-btn" class="btn text-white fw-bold py-2 px-4 rounded" style="background-color: #3b82f6; border: none;">
+                            <span class="btn-text">
+                                <i class="fas fa-key me-2"></i>Cập nhật mật khẩu
+                            </span>
+                            <span class="btn-loading d-none">
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Đang xử lý...
+                            </span>
                         </button>
                     </div>
                 </form>
@@ -625,6 +639,160 @@
             }
         }
     }
+
+    // Handle password change form submission
+    $(document).ready(function() {
+        // Xử lý form đổi mật khẩu
+        $('form[action="{{ route('account.password.update') }}"]').on('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+            
+            const form = $(this);
+            const submitBtn = $('#password-submit-btn');
+            const btnText = submitBtn.find('.btn-text');
+            const btnLoading = submitBtn.find('.btn-loading');
+            
+            // Lấy data trước khi disable form
+            const formData = form.serialize();
+            
+            // Hiển thị loading và disable nút
+            btnText.addClass('d-none');
+            btnLoading.removeClass('d-none');
+            submitBtn.prop('disabled', true);
+            
+            // Chỉ disable button khác, không disable input để data vẫn được gửi
+            form.find('button').not('#password-submit-btn').prop('disabled', true);
+            
+            // Submit form via AJAX với data đã lấy trước
+            $.ajax({
+                url: form.attr('action'),
+                method: 'POST',
+                data: formData,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    // Success - show toastr and redirect
+                    if (response.message) {
+                        toastr.success(response.message, 'Thành công');
+                    }
+                    
+                    setTimeout(function() {
+                        if (response.redirect) {
+                            window.location.href = response.redirect;
+                        } else {
+                            window.location.reload();
+                        }
+                    }, 1500);
+                },
+                error: function(xhr) {
+                    // Reset UI
+                    btnText.removeClass('d-none');
+                    btnLoading.addClass('d-none');
+                    submitBtn.prop('disabled', false);
+                    form.find('button').prop('disabled', false);
+                    
+                    if (xhr.status === 419) {
+                        // CSRF token expired
+                        toastr.error('Phiên làm việc đã hết hạn. Vui lòng tải lại trang và thử lại.', 'Lỗi');
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 2000);
+                    } else if (xhr.status === 422) {
+                        // Validation errors
+                        const errors = xhr.responseJSON?.errors;
+                        if (errors) {
+                            Object.keys(errors).forEach(function(key) {
+                                toastr.error(errors[key][0], 'Lỗi');
+                            });
+                        } else if (xhr.responseJSON?.message) {
+                            toastr.error(xhr.responseJSON.message, 'Lỗi');
+                        }
+                    } else if (xhr.status === 429) {
+                        // Rate limiting
+                        const message = xhr.responseJSON?.message || 'Bạn đã thử quá nhiều lần. Vui lòng đợi.';
+                        toastr.error(message, 'Lỗi');
+                    } else if (xhr.status === 409) {
+                        // Processing conflict
+                        const message = xhr.responseJSON?.message || 'Yêu cầu đang được xử lý.';
+                        toastr.warning(message, 'Cảnh báo');
+                    } else {
+                        // Other errors
+                        const message = xhr.responseJSON?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
+                        toastr.error(message, 'Lỗi');
+                    }
+                }
+            });
+            
+            // Fallback timeout để tự động enable lại sau 15s
+            setTimeout(function() {
+                if (submitBtn.prop('disabled')) {
+                    btnText.removeClass('d-none');
+                    btnLoading.addClass('d-none');
+                    submitBtn.prop('disabled', false);
+                    form.find('button').prop('disabled', false);
+                    toastr.warning('Đã hết thời gian chờ. Vui lòng thử lại.', 'Cảnh báo');
+                }
+            }, 15000);
+        });
+    });
+
+    // Avatar preview functionality
+    $(document).ready(function() {
+        const avatarInput = $('#avatar-input');
+        const avatarPreview = $('#avatar-preview');
+        const cancelBtn = $('#cancel-avatar');
+        const originalSrc = avatarPreview.attr('data-original');
+        
+        // Xử lý khi chọn file ảnh
+        avatarInput.on('change', function(e) {
+            const file = e.target.files[0];
+            
+            if (file) {
+                // Kiểm tra loại file
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                if (!validTypes.includes(file.type)) {
+                    toastr.error('Chỉ chấp nhận file ảnh định dạng JPG, JPEG, PNG', 'Lỗi');
+                    resetAvatar();
+                    return;
+                }
+                
+                // Kiểm tra kích thước file (max 1MB)
+                if (file.size > 1024 * 1024) {
+                    toastr.error('Kích thước ảnh không được vượt quá 1MB', 'Lỗi');
+                    resetAvatar();
+                    return;
+                }
+                
+                // Tạo preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarPreview.attr('src', e.target.result);
+                    cancelBtn.removeClass('d-none');
+                    toastr.info('Ảnh đã được chọn. Bấm "Lưu thay đổi" để cập nhật.', 'Thông báo');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Xử lý khi bấm hủy
+        cancelBtn.on('click', function() {
+            resetAvatar();
+            toastr.info('Đã khôi phục ảnh gốc', 'Thông báo');
+        });
+        
+        // Function reset avatar về trạng thái ban đầu
+        function resetAvatar() {
+            avatarPreview.attr('src', originalSrc);
+            avatarInput.val('');
+            cancelBtn.addClass('d-none');
+        }
+        
+        // Xử lý khi form được reset (nếu có lỗi validation)
+        $('form').on('reset', function() {
+            setTimeout(resetAvatar, 100); // Delay để đảm bảo form đã reset
+        });
+    });
 </script>
 @endpush
 
@@ -640,12 +808,65 @@
     transform: scale(1.05);
 }
 
+/* Loading button styles */
+#password-submit-btn {
+    position: relative;
+    min-width: 180px;
+    transition: all 0.3s ease;
+}
+
+#password-submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background-color: #6b7280 !important;
+}
+
+.btn-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+    animation: spinner-border 1s linear infinite;
+}
+
+@keyframes spinner-border {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 /* Enhanced input focus styles */
 .form-control:focus,
 input:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     border-color: #3b82f6;
+}
+
+/* Avatar preview styles */
+#avatar-preview {
+    transition: all 0.3s ease;
+    border: 3px solid #e5e7eb;
+}
+
+#avatar-preview:hover {
+    border-color: #3b82f6;
+    transform: scale(1.05);
+}
+
+#cancel-avatar {
+    transition: all 0.2s ease;
+}
+
+#cancel-avatar:hover {
+    background-color: #ef4444;
+    color: white;
+    border-color: #ef4444;
 }
 
 /* Button hover effects */

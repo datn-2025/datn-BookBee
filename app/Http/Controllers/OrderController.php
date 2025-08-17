@@ -19,13 +19,13 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
 use App\Services\InvoiceService;
+use Illuminate\Support\Facades\Log;
 use App\Services\MixedOrderService;
 use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Services\QrCodeService;
 use App\Services\VoucherService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -75,6 +75,14 @@ class OrderController extends Controller
         try {
             $cartItems = $this->orderService->validateCartItems($user);
         } catch (\Exception $e) {
+            // Log detailed stock information for debugging
+            try {
+                $stockReport = $this->orderService->getCartStockReport($user);
+                Log::warning('Checkout validation failed - Stock Report:', $stockReport);
+            } catch (\Exception $reportException) {
+                Log::error('Failed to generate stock report:', ['error' => $reportException->getMessage()]);
+            }
+            
             toastr()->error($e->getMessage());
             return redirect()->route('cart.index');
         }
@@ -105,13 +113,15 @@ class OrderController extends Controller
                                 ->orWhere('end_date', '>=', now());
                         })
                         ->where('quantity', '>', 0)
-                        ->select('gift_name as name', 'gift_description as description', 'gift_image as image')
+                        ->select('id', 'gift_name as name', 'gift_description as description', 'gift_image as image', 'quantity')
                         ->get()
                         ->map(function ($gift) {
                             return (object) [
+                                'id' => $gift->id,
                                 'name' => $gift->name ?? 'Quà tặng',
                                 'description' => $gift->description ?? '',
-                                'image' => $gift->image ?? null
+                                'image' => $gift->image ?? null,
+                                'quantity' => $gift->quantity
                             ];
                         });
                 }
@@ -197,6 +207,14 @@ class OrderController extends Controller
         try {
             $selectedCartItems = $this->orderService->validateCartItems($user);
         } catch (\Exception $e) {
+            // Log detailed stock information for debugging
+            try {
+                $stockReport = $this->orderService->getCartStockReport($user);
+                Log::warning('Order creation validation failed - Stock Report:', $stockReport);
+            } catch (\Exception $reportException) {
+                Log::error('Failed to generate stock report during order creation:', ['error' => $reportException->getMessage()]);
+            }
+            
             toastr()->error($e->getMessage());
             return redirect()->route('cart.index');
         }
@@ -270,7 +288,54 @@ class OrderController extends Controller
             'max:50'
         ];
 
-        $request->validate($rules);
+        $messages = [
+            'voucher_code.exists' => 'Mã giảm giá không tồn tại.',
+            'payment_method_id.required' => 'Vui lòng chọn phương thức thanh toán.',
+            'payment_method_id.exists' => 'Phương thức thanh toán không hợp lệ.',
+            'delivery_method.required' => 'Vui lòng chọn phương thức giao hàng.',
+            'delivery_method.in' => 'Phương thức giao hàng không hợp lệ.',
+            'shipping_method.required_if' => 'Vui lòng chọn phương thức vận chuyển.',
+            'shipping_method.in' => 'Phương thức vận chuyển không hợp lệ.',
+            'shipping_fee_applied.required' => 'Phí vận chuyển không hợp lệ.',
+            'shipping_fee_applied.numeric' => 'Phí vận chuyển phải là số.',
+            'note.max' => 'Ghi chú không được quá 500 ký tự.',
+            
+            // Address validation messages
+            'address_id.required_without' => 'Vui lòng chọn địa chỉ hoặc nhập địa chỉ mới.',
+            'address_id.exists' => 'Địa chỉ được chọn không hợp lệ.',
+            
+            // New address validation messages
+            'new_recipient_name.required_without' => 'Vui lòng nhập tên người nhận.',
+            'new_recipient_name.string' => 'Tên người nhận phải là chuỗi ký tự.',
+            'new_recipient_name.max' => 'Tên người nhận không được quá 255 ký tự.',
+            
+            'new_phone.required_without' => 'Vui lòng nhập số điện thoại.',
+            'new_phone.string' => 'Số điện thoại phải là chuỗi ký tự.',
+            'new_phone.max' => 'Số điện thoại không được quá 20 ký tự.',
+            
+            'new_address_city_name.required_without' => 'Vui lòng chọn tỉnh/thành phố.',
+            'new_address_city_name.string' => 'Tên tỉnh/thành phố phải là chuỗi ký tự.',
+            'new_address_city_name.max' => 'Tên tỉnh/thành phố không được quá 100 ký tự.',
+            
+            'new_address_district_name.required_without' => 'Vui lòng chọn quận/huyện.',
+            'new_address_district_name.string' => 'Tên quận/huyện phải là chuỗi ký tự.',
+            'new_address_district_name.max' => 'Tên quận/huyện không được quá 100 ký tự.',
+            
+            'new_address_ward_name.required_without' => 'Vui lòng chọn phường/xã.',
+            'new_address_ward_name.string' => 'Tên phường/xã phải là chuỗi ký tự.',
+            'new_address_ward_name.max' => 'Tên phường/xã không được quá 100 ký tự.',
+            
+            'new_address_detail.required_without' => 'Vui lòng nhập địa chỉ cụ thể.',
+            'new_address_detail.string' => 'Địa chỉ cụ thể phải là chuỗi ký tự.',
+            'new_address_detail.max' => 'Địa chỉ cụ thể không được quá 255 ký tự.',
+            
+            // Email validation messages
+            'new_email.required' => 'Vui lòng nhập địa chỉ email.',
+            'new_email.string' => 'Email phải là chuỗi ký tự.',
+            'new_email.max' => 'Email không được quá 50 ký tự.',
+        ];
+
+        $request->validate($rules, $messages);
         $newAddressCreated = !$request->address_id;
 
         try {
@@ -555,7 +620,18 @@ class OrderController extends Controller
             ]);
         }
 
-        $discountResult = $this->voucherService->calculateDiscount($voucher, $request->subtotal);
+        // Lấy thông tin giỏ hàng của user để kiểm tra điều kiện sản phẩm
+        $user = Auth::user();
+        try {
+            $cartItems = $this->orderService->validateCartItems($user);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['Giỏ hàng không hợp lệ: ' . $e->getMessage()]
+            ]);
+        }
+
+        $discountResult = $this->voucherService->calculateDiscount($voucher, $request->subtotal, $cartItems);
 
         if (isset($discountResult['errors'])) {
             return response()->json([
@@ -983,7 +1059,7 @@ class OrderController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Preorder error: ' . $e->getMessage());
+            Log::error('Preorder error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => 'Có lỗi xảy ra khi đặt trước sách.'
@@ -1036,6 +1112,67 @@ class OrderController extends Controller
                     $bookAttributeValue->increment('stock', $orderItem->quantity);
                 }
             }
+        }
+    }
+
+    /**
+     * API endpoint to check cart stock status before checkout
+     */
+    public function checkStockStatus(Request $request)
+    {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Người dùng chưa đăng nhập'
+            ], 401);
+        }
+        
+        // Get cart from session for this implementation
+        $cart = session('cart', []);
+        
+        if (empty($cart)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Giỏ hàng trống'
+            ], 400);
+        }
+        
+        try {
+            // Validate cart items using session cart
+            $validationResult = $this->orderService->validateCartItems($cart);
+            
+            if ($validationResult['is_valid']) {
+                // If validation passes, get detailed stock report
+                $stockReport = $this->orderService->getCartStockReport($cart);
+                
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Tất cả sản phẩm đều có đủ tồn kho',
+                    'stock_report' => $stockReport
+                ]);
+            } else {
+                // If validation fails, provide detailed error information
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Tồn kho không đủ cho một số sản phẩm',
+                    'stock_report' => $validationResult
+                ], 422);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Stock validation error in checkStockStatus', [
+                'user_id' => $user->id,
+                'cart_count' => count($cart),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Lỗi hệ thống khi kiểm tra tồn kho: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

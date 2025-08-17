@@ -18,6 +18,12 @@
             <!-- Orders List -->
             <div class="space-y-6">
                 @forelse($orders as $order)
+                    @php
+                        // Kiểm tra xem đơn hàng có ít nhất một sản phẩm hợp lệ không
+                        $hasValidItems = $order->orderItems->where('book', '!=', null)->count() > 0;
+                    @endphp
+                    
+                    @if($hasValidItems)
                     <div class="bg-white border border-black shadow transition hover:shadow-lg" style="border-radius:0;">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 py-4 bg-gray-50 border-b border-black">
                             <div>
@@ -32,20 +38,29 @@
                         <div class="p-6 space-y-6">
                             @foreach ($order->orderItems as $item)
                                 @php
-                                    $review = $order->reviews()->withTrashed()->where('book_id', $item->book_id)->first();
+                                    $review = $order->reviews()->where('book_id', $item->book_id)->first();
                                 @endphp
+                                @if($item->book)
                                 <div class="flex flex-col lg:flex-row gap-6 pb-6 border-b border-slate-200 last:border-b-0 last:pb-0">
                                     <div class="lg:w-32 flex-shrink-0 flex items-center justify-center bg-gray-100 border border-black" style="border-radius:0; min-height: 120px;">
-                                        <img src="{{ $item->book->cover_image_url }}" alt="{{ $item->book->title }}" class="w-20 h-28 object-cover shadow-sm border border-slate-300" style="border-radius:0;">
+                                        @php
+                                            $bookImageUrl = asset('images/default-book.jpg');
+                                            if ($item->book && $item->book->cover_image) {
+                                                $bookImageUrl = asset('storage/' . $item->book->cover_image);
+                                            } elseif ($item->book && $item->book->images && $item->book->images->isNotEmpty()) {
+                                                $bookImageUrl = asset('storage/' . $item->book->images->first()->image_url);
+                                            }
+                                        @endphp
+                                        <img src="{{ $bookImageUrl }}" alt="{{ $item->book ? $item->book->title : 'Sản phẩm không tồn tại' }}" class="w-20 h-28 object-cover shadow-sm border border-slate-300" style="border-radius:0;" onerror="this.src='{{ asset('images/default-book.jpg') }}'; this.onerror=null;">
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <h4 class="text-lg font-bold text-black mb-1">{{ $item->book->title }}</h4>
-                                        <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Tác giả:</span> {{ $item->book->authors->first()->name ?? 'Không rõ' }}</div>
-                                        <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Nhà xuất bản:</span> {{ $item->book->brand->name ?? 'Không rõ' }}</div>
+                                        <h4 class="text-lg font-bold text-black mb-1">{{ $item->book ? $item->book->title : 'Sản phẩm không tồn tại' }}</h4>
+                                        <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Tác giả:</span> {{ $item->book && $item->book->authors ? $item->book->authors->first()->name ?? 'Không rõ' : 'Không rõ' }}</div>
+                                        <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Nhà xuất bản:</span> {{ $item->book && $item->book->brand ? $item->book->brand->name ?? 'Không rõ' : 'Không rõ' }}</div>
                                         <div class="text-sm text-gray-700 mb-1"><span class="font-medium">Số lượng:</span> {{ $item->quantity }}</div>
                                     </div>
                                     <div class="lg:w-96 flex flex-col gap-2">
-                                        @if ($review && !$review->trashed())
+                                        @if ($review)
                                             <div class="bg-blue-50 border border-blue-200 p-4" style="border-radius:0;">
                                                 <div class="mb-2">
                                                     <span class="text-xs text-slate-500">Cập nhật lần cuối: {{ $review->updated_at->format('d/m/Y') }}</span>
@@ -84,9 +99,11 @@
                                         @endif
                                     </div>
                                 </div>
+                                @endif
                             @endforeach
                         </div>
                     </div>
+                    @endif
                 @empty
                     <div class="text-center py-12">
                         <div class="inline-flex items-center justify-center w-16 h-16 bg-black text-white mb-4" style="border-radius:0;">

@@ -9,6 +9,8 @@ use App\Models\PaymentStatus;
 use App\Models\Voucher;
 use App\Models\OrderItemAttributeValue;
 use App\Models\BookAttributeValue;
+use App\Models\BookGift;
+use App\Models\Collection;
 use App\Models\Address;
 use App\Models\User;
 use App\Models\PaymentMethod;
@@ -26,6 +28,12 @@ class OrderService
     protected $paymentRefundService;
     protected $ghnService;
     // protected $refundValidationService;
+    
+    /**
+     * Track books that have already had their gift stock decreased in current order session
+     * to avoid double processing when the same book has multiple variants
+     */
+    private $processedGiftBooks = [];
 
     public function __construct(
         PaymentRefundService $paymentRefundService,
@@ -423,6 +431,9 @@ class OrderService
      */
     public function createOrderWithItems(array $orderData, $cartItems)
     {
+        // Reset gift processing tracker for new order
+        $this->processedGiftBooks = [];
+        
         // dd($orderData['delivery_method']);
         // 1. Tạo Order
         $order = Order::create([
@@ -535,6 +546,9 @@ class OrderService
         // ✨ THÊM MỚI: Trừ stock thuộc tính sản phẩm
         $this->decreaseAttributeStock($cartItem);
 
+        // ✨ THÊM MỚI: Trừ số lượng quà tặng
+        $this->decreaseGiftStock($cartItem);
+
         Log::info('Created book order item:', [
             'order_item_id' => $orderItem->id,
             'book_id' => $cartItem->book_id,
@@ -551,10 +565,22 @@ class OrderService
     {
         $attributeValueIds = $cartItem->attribute_value_ids ?? [];
         
+        // Xử lý attribute_value_ids có thể là JSON string hoặc array
+        if (is_string($attributeValueIds) && !empty($attributeValueIds) && $attributeValueIds !== '[]') {
+            $decoded = json_decode($attributeValueIds, true);
+            if (is_array($decoded)) {
+                $attributeValueIds = $decoded;
+            } else {
+                $attributeValueIds = [];
+            }
+        } elseif (!is_array($attributeValueIds)) {
+            $attributeValueIds = [];
+        }
+        
         if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
             foreach ($attributeValueIds as $attributeValueId) {
-                // Kiểm tra attributeValueId hợp lệ (không phải 0, null, hoặc empty)
-                if ($attributeValueId && is_numeric($attributeValueId) && $attributeValueId > 0) {
+                // Kiểm tra attributeValueId hợp lệ (không phải null, empty, hoặc 0)
+                if ($attributeValueId && !empty(trim($attributeValueId)) && $attributeValueId !== '0') {
                     $bookAttributeValue = BookAttributeValue::where('book_id', $cartItem->book_id)
                         ->where('attribute_value_id', $attributeValueId)
                         ->first();
@@ -590,6 +616,93 @@ class OrderService
                 }
             }
         }
+    }
+
+    /**
+     * Trừ số lượng quà tặng khi tạo đơn hàng
+     * Fixed to handle total book quantity across variants properly
+     */
+    private function decreaseGiftStock($cartItem)
+    {
+        // Chỉ xử lý quà tặng cho sách vật lý (không phải ebook hoặc combo)
+        if (isset($cartItem->is_combo) && $cartItem->is_combo) {
+            return; // Combo không có quà tặng
+        }
+
+        // Kiểm tra xem có phải ebook không
+        if ($cartItem->bookFormat && stripos($cartItem->bookFormat->format_name, 'ebook') !== false) {
+            return; // Ebook không có quà tặng
+        }
+
+        // Check if gift stock for this book has already been decreased in this order session
+        if (!isset($this->processedGiftBooks)) {
+            $this->processedGiftBooks = [];
+        }
+
+        if (in_array($cartItem->book_id, $this->processedGiftBooks)) {
+            Log::info('Gift stock already decreased for this book in current order', [
+                'book_id' => $cartItem->book_id,
+                'current_item_quantity' => $cartItem->quantity
+            ]);
+            return;
+        }
+
+        // Calculate total quantity of this book across all variants
+        $totalBookQuantity = $this->getTotalBookQuantityInCart($cartItem->book_id);
+
+        // Lấy các quà tặng có sẵn cho sách này
+        $availableGifts = BookGift::where('book_id', $cartItem->book_id)
+            ->where(function ($query) {
+                $query->whereNull('start_date')
+                    ->orWhere('start_date', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', now());
+            })
+            ->where('quantity', '>', 0)
+            ->get();
+
+        // Trừ số lượng quà tặng dựa trên tổng số lượng sách (không phải từng item)
+        foreach ($availableGifts as $gift) {
+            if ($gift->quantity >= $totalBookQuantity) {
+                $gift->decrement('quantity', $totalBookQuantity);
+                
+                Log::info('Decreased gift stock (total book quantity):', [
+                    'gift_id' => $gift->id,
+                    'gift_name' => $gift->gift_name,
+                    'book_id' => $cartItem->book_id,
+                    'total_book_quantity_decreased' => $totalBookQuantity,
+                    'current_item_quantity' => $cartItem->quantity,
+                    'remaining_quantity' => $gift->fresh()->quantity
+                ]);
+            } else {
+                Log::warning('Insufficient gift stock for total book quantity:', [
+                    'gift_id' => $gift->id,
+                    'gift_name' => $gift->gift_name,
+                    'book_id' => $cartItem->book_id,
+                    'available_quantity' => $gift->quantity,
+                    'total_book_quantity_needed' => $totalBookQuantity,
+                    'current_item_quantity' => $cartItem->quantity
+                ]);
+                
+                // Nếu không đủ quà tặng, trừ hết số lượng còn lại
+                if ($gift->quantity > 0) {
+                    $remainingQuantity = $gift->quantity;
+                    $gift->update(['quantity' => 0]);
+                    
+                    Log::info('Used remaining gift stock (insufficient for total quantity):', [
+                        'gift_id' => $gift->id,
+                        'gift_name' => $gift->gift_name,
+                        'quantity_used' => $remainingQuantity,
+                        'quantity_still_needed' => $totalBookQuantity - $remainingQuantity
+                    ]);
+                }
+            }
+        }
+
+        // Mark this book as processed to avoid double processing
+        $this->processedGiftBooks[] = $cartItem->book_id;
     }
 
     /**
@@ -715,9 +828,13 @@ class OrderService
      */
     public function validateCartItems(User $user)
     {
+        Log::info('OrderService - Starting comprehensive cart validation', [
+            'user_id' => $user->id
+        ]);
+
         // Lấy tất cả items trong giỏ hàng (cả sách lẻ và combo) chỉ những item được chọn
         $cartItems = $user->cart()
-            ->with(['book', 'bookFormat', 'collection'])
+            ->with(['book', 'bookFormat', 'collection', 'collection.books'])
             ->where('is_selected', 1) // Chỉ lấy items được chọn
             ->where(function($query) {
                 // Sách lẻ: có book_id và book_format_id
@@ -734,26 +851,57 @@ class OrderService
             })
             ->get();
 
-        Log::info('Cart Items (Books + Combos):', $cartItems->toArray());
+        Log::info('OrderService - Cart items retrieved', [
+            'total_items' => $cartItems->count(),
+            'user_id' => $user->id
+        ]);
 
         if ($cartItems->isEmpty()) {
-            throw new \Exception('Giỏ hàng của bạn đang trống.');
+            throw new \Exception('Giỏ hàng của bạn đang trống hoặc không có sản phẩm nào được chọn.');
         }
 
-        // Validate từng item
+        // Track validation statistics
+        $validationStats = [
+            'total_items' => $cartItems->count(),
+            'combos_validated' => 0,
+            'books_validated' => 0,
+            'errors' => []
+        ];
+
+        // Validate từng item với comprehensive stock checking
         foreach ($cartItems as $item) {
-            if ($item->is_combo) {
-                $this->validateComboItem($item);
-            } else {
-                $this->validateBookItem($item);
+            try {
+                if ($item->is_combo) {
+                    $this->validateComboItem($item);
+                    $validationStats['combos_validated']++;
+                } else {
+                    $this->validateBookItem($item);
+                    $validationStats['books_validated']++;
+                }
+            } catch (\Exception $e) {
+                $validationStats['errors'][] = [
+                    'item_id' => $item->id,
+                    'error' => $e->getMessage()
+                ];
+                
+                Log::error('OrderService - Item validation failed', [
+                    'item_id' => $item->id,
+                    'is_combo' => $item->is_combo,
+                    'error' => $e->getMessage()
+                ]);
+                
+                // Re-throw the exception to stop processing
+                throw $e;
             }
         }
+
+        Log::info('OrderService - Cart validation completed successfully', $validationStats);
 
         return $cartItems;
     }
 
     /**
-     * Validate combo item
+     * Validate combo item with real-time stock checking
      */
     private function validateComboItem($cartItem)
     {
@@ -761,28 +909,47 @@ class OrderService
             throw new \Exception('Combo không tồn tại trong giỏ hàng.');
         }
 
+        // Lấy thông tin combo mới nhất từ database
+        $freshCombo = \App\Models\Collection::find($cartItem->collection_id);
+        if (!$freshCombo) {
+            throw new \Exception('Combo không tồn tại.');
+        }
+
         // Kiểm tra combo còn hoạt động không
-        if ($cartItem->collection->status !== 'active') {
-            throw new \Exception('Combo "' . $cartItem->collection->name . '" không còn hoạt động.');
+        if ($freshCombo->status !== 'active') {
+            throw new \Exception('Combo "' . $freshCombo->name . '" không còn hoạt động.');
         }
 
         // Kiểm tra thời gian khuyến mãi
         $now = now()->toDateString();
-        if ($cartItem->collection->start_date && $cartItem->collection->start_date > $now) {
-            throw new \Exception('Combo "' . $cartItem->collection->name . '" chưa bắt đầu khuyến mãi.');
+        if ($freshCombo->start_date && $freshCombo->start_date > $now) {
+            throw new \Exception('Combo "' . $freshCombo->name . '" chưa bắt đầu khuyến mãi.');
         }
-        if ($cartItem->collection->end_date && $cartItem->collection->end_date < $now) {
-            throw new \Exception('Combo "' . $cartItem->collection->name . '" đã hết thời gian khuyến mãi.');
+        if ($freshCombo->end_date && $freshCombo->end_date < $now) {
+            throw new \Exception('Combo "' . $freshCombo->name . '" đã hết thời gian khuyến mãi.');
         }
 
-        // Kiểm tra tồn kho combo
-        if ($cartItem->collection->combo_stock !== null && $cartItem->collection->combo_stock < $cartItem->quantity) {
-            throw new \Exception('Combo "' . $cartItem->collection->name . '" không đủ số lượng. Còn lại: ' . $cartItem->collection->combo_stock);
+        // Kiểm tra tồn kho combo với thông tin thời gian thực
+        if ($freshCombo->combo_stock !== null) {
+            if ($freshCombo->combo_stock <= 0) {
+                throw new \Exception('Combo "' . $freshCombo->name . '" đã hết hàng.');
+            }
+
+            if ($freshCombo->combo_stock < $cartItem->quantity) {
+                throw new \Exception('Combo "' . $freshCombo->name . '" không đủ số lượng. Còn lại: ' . $freshCombo->combo_stock);
+            }
+
+            Log::info('OrderService - Combo stock validation passed', [
+                'combo_id' => $cartItem->collection_id,
+                'combo_name' => $freshCombo->name,
+                'available_stock' => $freshCombo->combo_stock,
+                'requested_quantity' => $cartItem->quantity
+            ]);
         }
     }
 
     /**
-     * Validate book item
+     * Validate book item with comprehensive stock checking
      */
     private function validateBookItem($cartItem)
     {
@@ -808,12 +975,161 @@ class OrderService
             throw new \Exception('Sách "' . $freshBook->title . '" không còn hoạt động.');
         }
 
-        // Kiểm tra tồn kho từ book_format mới nhất từ database
-        if ($freshBookFormat->type === 'Sách vật lý') {
-        if ($freshBookFormat->stock < $cartItem->quantity) {
-            throw new \Exception('Sách "' . $freshBook->title . '" (định dạng: ' . $freshBookFormat->format_name . ') không đủ số lượng. Còn lại: ' . $freshBookFormat->stock);
+        // Skip stock validation for ebooks
+        $isEbook = strtolower($freshBookFormat->format_name) === 'ebook';
+        if ($isEbook) {
+            Log::info('OrderService - Skipping stock validation for ebook', [
+                'book_id' => $cartItem->book_id,
+                'format' => $freshBookFormat->format_name
+            ]);
+            return;
         }
+
+        // Comprehensive stock validation for physical books
+        $this->validatePhysicalBookStock($cartItem, $freshBook, $freshBookFormat);
     }
+
+    /**
+     * Validate physical book stock with hierarchical validation
+     */
+    private function validatePhysicalBookStock($cartItem, $freshBook, $freshBookFormat)
+    {
+        // Step 1: Validate format stock
+        $formatStock = $freshBookFormat->stock;
+        if ($formatStock <= 0) {
+            throw new \Exception('Sách "' . $freshBook->title . '" (định dạng: ' . $freshBookFormat->format_name . ') đã hết hàng.');
+        }
+
+        if ($cartItem->quantity > $formatStock) {
+            throw new \Exception('Sách "' . $freshBook->title . '" (định dạng: ' . $freshBookFormat->format_name . ') không đủ số lượng. Còn lại: ' . $formatStock);
+        }
+
+        // Step 2: Validate variant stock if item has attributes
+        $availableStock = $formatStock;
+        if (!empty($cartItem->attribute_value_ids) && $cartItem->attribute_value_ids !== '[]') {
+            $attributeValueIds = is_string($cartItem->attribute_value_ids) 
+                ? json_decode($cartItem->attribute_value_ids, true) 
+                : $cartItem->attribute_value_ids;
+
+            if ($attributeValueIds && is_array($attributeValueIds) && count($attributeValueIds) > 0) {
+                $variantStockInfo = DB::table('book_attribute_values')
+                    ->whereIn('attribute_value_id', $attributeValueIds)
+                    ->where('book_id', $cartItem->book_id)
+                    ->select('attribute_value_id', 'stock', 'sku')
+                    ->get();
+
+                if ($variantStockInfo->isEmpty()) {
+                    throw new \Exception('Không tìm thấy thông tin tồn kho cho thuộc tính đã chọn của sách "' . $freshBook->title . '".');
+                }
+
+                // Check for out of stock variants
+                $outOfStockVariants = $variantStockInfo->filter(function ($variant) {
+                    return $variant->stock <= 0;
+                });
+
+                if ($outOfStockVariants->isNotEmpty()) {
+                    $outOfStockSkus = $outOfStockVariants->pluck('sku')->filter()->implode(', ');
+                    throw new \Exception('Thuộc tính đã hết hàng cho sách "' . $freshBook->title . '": ' . ($outOfStockSkus ?: 'N/A'));
+                }
+
+                // Get minimum variant stock and apply hierarchical logic
+                $minVariantStock = $variantStockInfo->min('stock');
+                $availableStock = min($formatStock, $minVariantStock);
+
+                Log::info('OrderService - Hierarchical stock validation', [
+                    'book_id' => $cartItem->book_id,
+                    'format_stock' => $formatStock,
+                    'min_variant_stock' => $minVariantStock,
+                    'final_available_stock' => $availableStock,
+                    'requested_quantity' => $cartItem->quantity
+                ]);
+
+                if ($cartItem->quantity > $minVariantStock) {
+                    $lowStockVariant = $variantStockInfo->where('stock', $minVariantStock)->first();
+                    throw new \Exception('Thuộc tính không đủ số lượng cho sách "' . $freshBook->title . '". Tồn kho hiện tại: ' . $minVariantStock . 
+                        ($lowStockVariant->sku ? " (SKU: {$lowStockVariant->sku})" : ""));
+                }
+            }
+        }
+
+        // Step 3: Validate gift stock if book has gifts
+        $this->validateGiftStock($cartItem, $freshBook);
+
+        // Final check with calculated available stock
+        if ($cartItem->quantity > $availableStock) {
+            throw new \Exception('Sách "' . $freshBook->title . '" không đủ số lượng khả dụng. Tồn kho hiện tại: ' . $availableStock);
+        }
+
+        Log::info('OrderService - Stock validation passed', [
+            'book_id' => $cartItem->book_id,
+            'book_title' => $freshBook->title,
+            'final_available_stock' => $availableStock,
+            'requested_quantity' => $cartItem->quantity
+        ]);
+    }
+
+    /**
+     * Validate gift stock availability
+     * Checks total quantity of the same book across all variants in cart
+     */
+    private function validateGiftStock($cartItem, $freshBook)
+    {
+        $gifts = BookGift::where('book_id', $cartItem->book_id)->get();
+        
+        if ($gifts->isEmpty()) {
+            return;
+        }
+
+        // Calculate total quantity of the same book across all variants in the user's cart
+        $totalBookQuantity = $this->getTotalBookQuantityInCart($cartItem->book_id);
+        
+        foreach ($gifts as $gift) {
+            if ($gift->quantity !== null && $gift->quantity < $totalBookQuantity) {
+                throw new \Exception('Quà tặng "' . $gift->gift_name . '" cho sách "' . $freshBook->title . '" không đủ số lượng. Tổng số lượng sách trong giỏ: ' . $totalBookQuantity . ', quà tặng còn lại: ' . $gift->quantity);
+            }
+        }
+
+        Log::info('OrderService - Gift stock validation passed', [
+            'book_id' => $cartItem->book_id,
+            'gifts_count' => $gifts->count(),
+            'current_item_quantity' => $cartItem->quantity,
+            'total_book_quantity_in_cart' => $totalBookQuantity
+        ]);
+    }
+
+    /**
+     * Calculate total quantity of a specific book across all variants in user's cart
+     */
+    private function getTotalBookQuantityInCart($bookId)
+    {
+        // Get the current user from the cart item being validated
+        $userId = null;
+        
+        // Find user_id from any cart item with this book_id that is selected
+        $cartItem = Cart::where('book_id', $bookId)
+            ->where('is_selected', 1)
+            ->first();
+            
+        if (!$cartItem) {
+            return 0;
+        }
+        
+        $userId = $cartItem->user_id;
+        
+        // Sum all quantities for this book_id across different variants
+        $totalQuantity = Cart::where('user_id', $userId)
+            ->where('book_id', $bookId)
+            ->where('is_selected', 1)
+            ->where('is_combo', 0) // Exclude combo items
+            ->sum('quantity');
+            
+        Log::info('OrderService - Calculated total book quantity in cart', [
+            'book_id' => $bookId,
+            'user_id' => $userId,
+            'total_quantity' => $totalQuantity
+        ]);
+        
+        return $totalQuantity;
     }
 
     /**
@@ -1075,5 +1391,140 @@ class OrderService
                 ]);
             }
         }
+    }
+
+    /**
+     * Get detailed stock information for a cart item (useful for debugging and user feedback)
+     */
+    public function getCartItemStockInfo($cartItem)
+    {
+        $stockInfo = [
+            'item_id' => $cartItem->id,
+            'is_combo' => $cartItem->is_combo,
+            'quantity_requested' => $cartItem->quantity,
+            'validation_passed' => false,
+            'errors' => []
+        ];
+
+        if ($cartItem->is_combo) {
+            $combo = Collection::find($cartItem->collection_id);
+            $stockInfo['combo_info'] = [
+                'name' => $combo->name ?? 'Unknown',
+                'combo_stock' => $combo->combo_stock ?? 'Unlimited',
+                'status' => $combo->status ?? 'Unknown'
+            ];
+            
+            if ($combo && $combo->combo_stock !== null) {
+                $stockInfo['available_stock'] = $combo->combo_stock;
+                $stockInfo['sufficient'] = $combo->combo_stock >= $cartItem->quantity;
+            } else {
+                $stockInfo['available_stock'] = 'Unlimited';
+                $stockInfo['sufficient'] = true;
+            }
+        } else {
+            $book = \App\Models\Book::find($cartItem->book_id);
+            $bookFormat = \App\Models\BookFormat::find($cartItem->book_format_id);
+            
+            $stockInfo['book_info'] = [
+                'title' => $book->title ?? 'Unknown',
+                'format' => $bookFormat->format_name ?? 'Unknown',
+                'format_stock' => $bookFormat->stock ?? 0,
+                'book_status' => $book->status ?? 'Unknown'
+            ];
+
+            $isEbook = strtolower($bookFormat->format_name ?? '') === 'ebook';
+            if ($isEbook) {
+                $stockInfo['available_stock'] = 'Unlimited (Ebook)';
+                $stockInfo['sufficient'] = true;
+            } else {
+                $availableStock = $bookFormat->stock;
+                
+                // Check variant stock if applicable
+                if (!empty($cartItem->attribute_value_ids) && $cartItem->attribute_value_ids !== '[]') {
+                    $attributeValueIds = is_string($cartItem->attribute_value_ids) 
+                        ? json_decode($cartItem->attribute_value_ids, true) 
+                        : $cartItem->attribute_value_ids;
+
+                    if ($attributeValueIds && is_array($attributeValueIds)) {
+                        $variantStocks = DB::table('book_attribute_values')
+                            ->whereIn('attribute_value_id', $attributeValueIds)
+                            ->where('book_id', $cartItem->book_id)
+                            ->pluck('stock', 'sku')
+                            ->toArray();
+                        
+                        $minVariantStock = min($variantStocks);
+                        $availableStock = min($availableStock, $minVariantStock);
+                        
+                        $stockInfo['variant_info'] = [
+                            'variant_stocks' => $variantStocks,
+                            'min_variant_stock' => $minVariantStock,
+                            'hierarchical_stock' => $availableStock
+                        ];
+                    }
+                }
+
+                // Check gift stock
+                $gifts = BookGift::where('book_id', $cartItem->book_id)->get();
+                if ($gifts->isNotEmpty()) {
+                    $giftStocks = [];
+                    foreach ($gifts as $gift) {
+                        $giftStocks[] = [
+                            'name' => $gift->gift_name,
+                            'stock' => $gift->quantity,
+                            'sufficient' => $gift->quantity === null || $gift->quantity >= $cartItem->quantity
+                        ];
+                    }
+                    $stockInfo['gift_info'] = $giftStocks;
+                }
+
+                $stockInfo['available_stock'] = $availableStock;
+                $stockInfo['sufficient'] = $availableStock >= $cartItem->quantity;
+            }
+        }
+
+        try {
+            if ($cartItem->is_combo) {
+                $this->validateComboItem($cartItem);
+            } else {
+                $this->validateBookItem($cartItem);
+            }
+            $stockInfo['validation_passed'] = true;
+        } catch (\Exception $e) {
+            $stockInfo['errors'][] = $e->getMessage();
+        }
+
+        return $stockInfo;
+    }
+
+    /**
+     * Get comprehensive stock report for all selected cart items
+     */
+    public function getCartStockReport(User $user)
+    {
+        $cartItems = $user->cart()
+            ->with(['book', 'bookFormat', 'collection'])
+            ->where('is_selected', 1)
+            ->get();
+
+        $report = [
+            'total_items' => $cartItems->count(),
+            'validation_summary' => [
+                'all_valid' => true,
+                'total_errors' => 0
+            ],
+            'items' => []
+        ];
+
+        foreach ($cartItems as $item) {
+            $itemInfo = $this->getCartItemStockInfo($item);
+            $report['items'][] = $itemInfo;
+            
+            if (!$itemInfo['validation_passed']) {
+                $report['validation_summary']['all_valid'] = false;
+                $report['validation_summary']['total_errors'] += count($itemInfo['errors']);
+            }
+        }
+
+        return $report;
     }
 }

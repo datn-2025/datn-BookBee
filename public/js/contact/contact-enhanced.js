@@ -612,8 +612,18 @@ document.addEventListener('DOMContentLoaded', function() {
       buttonText.textContent = 'Đang gửi...';
     }
     
-    // Simulate form submission (replace with actual API call)
-    setTimeout(() => {
+    // Actually submit the form to the server
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+      }
+    })
+    .then(response => response.text())
+    .then(data => {
       // Hide loading
       submitBtn.classList.remove('loading');
       submitBtn.classList.add('success');
@@ -626,7 +636,21 @@ document.addEventListener('DOMContentLoaded', function() {
       setTimeout(() => {
         resetForm();
       }, 3000);
-    }, 2000);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      // Hide loading
+      submitBtn.classList.remove('loading');
+      loadingOverlay?.classList.remove('show');
+      
+      // Reset button text
+      if (buttonText) {
+        buttonText.textContent = 'Gửi tin nhắn';
+      }
+      submitBtn.disabled = false;
+      
+      alert('Có lỗi xảy ra khi gửi form. Vui lòng thử lại.');
+    });
   }
   
   // Show success message

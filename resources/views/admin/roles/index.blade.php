@@ -31,7 +31,7 @@
                                     @foreach ($roles as $role)
                                         <tr>
                                             <td>{{ $role->name }}</td>
-                                            <td>{{ $role->description }}</td>
+                                           <td>{!! $role->description !!}</td>
                                             <td>{{ $role->permissions->count() }}</td>
                                             <td>{{ $role->users->count() }}</td>
                                             <td>
