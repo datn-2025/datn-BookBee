@@ -156,6 +156,7 @@ class AdminBookController extends Controller
             'release_date',
             'pre_order',
             'pre_order_price',
+            'preorder_discount_percent',
             'stock_preorder_limit',
             'preorder_count',
             'preorder_description'
@@ -292,6 +293,7 @@ class AdminBookController extends Controller
             'pre_order' => 'boolean',
             'release_date' => 'required_if:pre_order,true|nullable|date|after:today',
             'pre_order_price' => 'nullable|numeric|min:0',
+            'preorder_discount_percent' => 'nullable|numeric|min:0|max:100',
             'stock_preorder_limit' => 'required_if:pre_order,true|nullable|integer|min:1',
             'preorder_count' => 'nullable|integer|min:0',
             'preorder_description' => 'nullable|string|max:1000',
