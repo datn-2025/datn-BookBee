@@ -75,8 +75,8 @@
                             'pending' => 'Chờ xác nhận',
                             'confirmed' => 'Đã xác nhận',
                             'preparing' => 'Đang chuẩn bị',
-                            'shipping' => 'Đang giao hàng',
-                            'delivered' => 'Đã giao',
+                            'shipping' => 'Đang giao / Đã giao',
+                            'delivered' => 'Hoàn thành',
                             'cancelled' => 'Đã hủy',
                         ];
                     @endphp

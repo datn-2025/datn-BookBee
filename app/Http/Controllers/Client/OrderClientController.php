@@ -224,8 +224,8 @@ class OrderClientController extends Controller
                 'pending' => 'Chờ xác nhận',
                 'confirmed' => 'Đã xác nhận', 
                 'preparing' => 'Đang chuẩn bị',
-                'shipping' => 'Đang giao hàng',
-                'delivered' => ['Đã giao', 'Đã giao hàng', 'Thành công'],
+                'shipping' => ['Đang giao hàng', 'Đã giao thành công'],
+                'delivered' => ['Đã giao', 'Đã giao hàng', 'Đã nhận hàng', 'Thành công'],
                 'cancelled' => 'Đã hủy'
             ];
             
