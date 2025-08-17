@@ -1138,6 +1138,7 @@ class OrderService
 
     /**
      * Calculate total quantity of a specific book across all variants in user's cart
+     * Only count physical books, exclude ebooks since they don't have gifts
      */
     private function getTotalBookQuantityInCart($bookId)
     {
@@ -1155,17 +1156,23 @@ class OrderService
         
         $userId = $cartItem->user_id;
         
-        // Sum all quantities for this book_id across different variants
-        $totalQuantity = Cart::where('user_id', $userId)
-            ->where('book_id', $bookId)
-            ->where('is_selected', 1)
-            ->where('is_combo', 0) // Exclude combo items
-            ->sum('quantity');
+        // Sum all quantities for this book_id across different variants, excluding ebooks
+        $totalQuantity = Cart::join('book_formats', 'carts.book_format_id', '=', 'book_formats.id')
+            ->where('carts.user_id', $userId)
+            ->where('carts.book_id', $bookId)
+            ->where('carts.is_selected', 1)
+            ->where('carts.is_combo', 0) // Exclude combo items
+            ->where(function($query) {
+                // Exclude ebooks from gift calculation
+                $query->where('book_formats.format_name', 'NOT LIKE', '%ebook%')
+                      ->where('book_formats.format_name', 'NOT LIKE', '%Ebook%');
+            })
+            ->sum('carts.quantity');
             
-        Log::info('OrderService - Calculated total book quantity in cart', [
+        Log::info('OrderService - Calculated total physical book quantity in cart (excluding ebooks)', [
             'book_id' => $bookId,
             'user_id' => $userId,
-            'total_quantity' => $totalQuantity
+            'total_physical_quantity' => $totalQuantity
         ]);
         
         return $totalQuantity;
