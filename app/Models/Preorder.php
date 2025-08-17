@@ -130,7 +130,7 @@ class Preorder extends Model
             'confirmed' => 'Đã xác nhận',
             'processing' => 'Đang xử lý',
             'shipped' => 'Đã gửi hàng',
-            'delivered' => 'Đã giao hàng',
+            'delivered' => 'Đã chuyển thành đơn hàng',
             'cancelled' => 'Đã hủy'
         ];
 
