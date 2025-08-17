@@ -428,12 +428,10 @@ class AdminPreorderController extends Controller
                  'updated_at' => now()
              ]);
 
-            // Cập nhật trạng thái preorder
+            // Cập nhật trạng thái preorder (không ghi đè ghi chú của khách hàng)
             $preorder->update([
                 'status' => 'delivered',
-                'delivered_at' => now(),
-                'notes' => ($preorder->notes ? $preorder->notes . "\n\n" : '') . 
-                          'Đã chuyển đổi thành đơn hàng #' . $order->id
+                'delivered_at' => now()
             ]);
 
             DB::commit();
