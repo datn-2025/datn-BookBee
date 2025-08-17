@@ -253,7 +253,7 @@
                                                         <i class="fas fa-edit"></i> Cập nhật trạng thái
                                                     </button>
                                                 </li>
-                                                @if($preorder->status === 'pending')
+                                                @if($preorder->status === 'Chờ xử lý' || $preorder->status === 'pending')
                                                     <li>
                                                         <form action="{{ route('admin.preorders.approve', $preorder) }}" method="POST" class="d-inline">
                                                             @csrf
@@ -264,19 +264,30 @@
                                                             </button>
                                                         </form>
                                                     </li>
-                                                @elseif($preorder->status === 'confirmed' && $preorder->book->isReleased())
+                                                @elseif($preorder->status === 'Đã xác nhận' || $preorder->status === 'confirmed')
                                                     <li>
-                                                        <form action="{{ route('admin.preorders.convert-to-order', $preorder) }}" method="POST" class="d-inline">
-                                                            @csrf
-                                                            <button type="submit" class="dropdown-item text-success" 
-                                                                    onclick="return confirm('Chuyển đổi đơn đặt trước thành đơn hàng?')">
-                                                                <i class="fas fa-exchange-alt"></i>
-                                                                Chuyển thành đơn hàng
-                                                            </button>
-                                                        </form>
+                                                        @if($preorder->book->isReleased())
+                                                            <form action="{{ route('admin.preorders.convert-to-order', $preorder) }}" method="POST" class="d-inline">
+                                                                @csrf
+                                                                <button type="submit" class="dropdown-item text-success" 
+                                                                        onclick="return confirm('Chuyển đổi đơn đặt trước thành đơn hàng?')">
+                                                                    <i class="fas fa-exchange-alt"></i>
+                                                                    Chuyển thành đơn hàng
+                                                                </button>
+                                                            </form>
+                                                        @else
+                                                            <form action="{{ route('admin.preorders.convert-to-order', $preorder) }}" method="POST" class="d-inline">
+                                                                @csrf
+                                                                <button type="submit" class="dropdown-item text-warning" 
+                                                                        onclick="return confirm('Sách chưa được phát hành ({{ $preorder->book->release_date->format('d/m/Y') }}). Bạn có chắc muốn chuyển đổi đơn đặt trước thành đơn hàng không?')">
+                                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                                    Chuyển thành đơn hàng (Sớm)
+                                                                </button>
+                                                            </form>
+                                                        @endif
                                                     </li>
                                                 @endif
-                                                @if($preorder->status == 'cancelled')
+                                                @if($preorder->status == 'Đã hủy' || $preorder->status == 'cancelled')
                                                     <li>
                                                         <form action="{{ route('admin.preorders.destroy', $preorder) }}" method="POST" class="d-inline">
                                                             @csrf
@@ -327,7 +338,7 @@
                     <div class="mb-3">
                         <label for="status" class="form-label">Trạng thái mới</label>
                         <select class="form-control" id="modalStatus" name="status" required>
-                            <option value="pending">Chờ xử lý</option>
+                            <option value="Chờ xử lý">Chờ xử lý</option>
                             <option value="confirmed">Đã xác nhận</option>
                         </select>
                     </div>
@@ -360,8 +371,8 @@
                     <div class="mb-3">
                         <label for="bulkStatus" class="form-label">Trạng thái mới</label>
                         <select class="form-control" id="bulkStatus" name="status" required>
-                            <option value="pending">Chờ xử lý</option>
-                            <option value="confirmed">Đã xác nhận</option>
+                            <option value="Chờ xử lý">Chờ xử lý</option>
+                            <option value="Đã xác nhận">Đã xác nhận</option>
                         </select>
                     </div>
                     <div class="alert alert-info">
