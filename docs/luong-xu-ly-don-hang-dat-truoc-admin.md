@@ -4,6 +4,37 @@
 
 Tài liệu này mô tả luồng xử lý đơn hàng đặt trước từ phía admin, bao gồm việc chuyển đổi preorder thành order thực tế khi sách được phát hành.
 
+## 👤 Luồng phía Khách hàng (Client)
+
+Luồng này bám sát code trong `app/Http/Controllers/PreorderController.php`.
+
+- __Mở form__: `create(Book $book)`
+  - Kiểm tra `book->canPreorder()`
+  - Nạp `formats`, `attributes`, `paymentMethods` (chỉ VNPay, Ví điện tử), `wallet` của user, `preorderDiscountPercent`
+
+- __Gửi form__: `store(Request $request)`
+  - Validate dữ liệu, kiểm tra địa chỉ với sách vật lý (không yêu cầu với ebook)
+  - Tính giá: `getPreorderPrice()` + phụ thu thuộc tính + số lượng → `unit_price`, `total_amount`
+  - Tạo `preorders` với `status='pending'`, `payment_status='pending'` và thông tin địa chỉ (nếu vật lý)
+
+- __Thanh toán__:
+  - __Ví điện tử__: kiểm tra số dư ví → trừ tiền → tạo `WalletTransaction` → cập nhật `preorders.payment_status='paid'` → gửi email → redirect `preorders.show`
+  - __VNPay__: gọi `vnpay_payment($vnpayData)` → lưu `preorders.vnpay_transaction_id` (mã tham chiếu) và `payment_status='processing'` → redirect VNPay. Sau khi quay lại `vnpayReturn()`:
+    - Xác thực chữ ký
+    - Tìm preorder theo `vnp_TxnRef`
+    - Thành công (`vnp_ResponseCode === '00'`): `payment_status='paid'`, cập nhật `vnpay_transaction_id` = mã giao dịch thực tế, gửi email
+    - Thất bại: `payment_status='failed'`
+
+- __Xem chi tiết__: `show(Preorder $preorder)` — chỉ chủ sở hữu được xem
+
+- __Danh sách của tôi__: `index()` — phân trang các preorder của user
+
+- __Hủy đơn__: `cancel(Preorder $preorder)` — chỉ khi `Preorder::canBeCancelled()` trả true
+
+Lưu ý quan trọng về thanh toán (đã áp dụng trong code):
+- Không tạo bản ghi `payments` trong giai đoạn preorder (tránh lỗi ràng buộc `order_id` NOT NULL). Thay vào đó dùng các trường trên bảng `preorders`: `payment_status`, `vnpay_transaction_id`.
+- Khi chuyển đổi sang Order mới tạo `payments` (nếu cần) và gán đúng `payment_method_id` (tránh gán nhầm COD cho đơn đã trả qua Ví/ VNPay).
+
 ## 🔄 Luồng Xử Lý Chính
 
 ### 1. Kiểm Tra Điều Kiện Chuyển Đổi
