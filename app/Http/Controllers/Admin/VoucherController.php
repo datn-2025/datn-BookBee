@@ -29,9 +29,9 @@ class VoucherController extends Controller
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('code', 'LIKE', "%{$search}%")
-                  ->orWhere('description', 'LIKE', "%{$search}%");
+                    ->orWhere('description', 'LIKE', "%{$search}%");
             });
         }
 
@@ -122,12 +122,11 @@ class VoucherController extends Controller
             return redirect()
                 ->route('admin.vouchers.index')
                 ->with('success', 'Thêm voucher thành công');
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Voucher creation error: ' . $e->getMessage());
             return back()->with('error', 'Có lỗi xảy ra khi tạo voucher')
-                         ->withInput();
+                ->withInput();
         }
     }
 
@@ -160,7 +159,7 @@ class VoucherController extends Controller
         $categories = Category::select('id', 'name')
             ->orderBy('name', 'asc')
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
@@ -171,7 +170,7 @@ class VoucherController extends Controller
         $authors = Author::select('id', 'name')
             ->orderBy('name', 'asc')
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
@@ -182,7 +181,7 @@ class VoucherController extends Controller
         $brands = Brand::select('id', 'name')
             ->orderBy('name', 'asc')
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
@@ -194,7 +193,7 @@ class VoucherController extends Controller
             ->orderBy('title', 'asc')
             ->with(['authors:id,name', 'brand:id,name'])
             ->get()
-            ->map(function($book) {
+            ->map(function ($book) {
                 $authorInfo = $book->authors->isNotEmpty() ? ' - ' . $book->authors->first()->name : '';
                 $brandInfo = $book->brand ? ' (' . $book->brand->name . ')' : '';
                 return [
@@ -251,7 +250,6 @@ class VoucherController extends Controller
             return redirect()
                 ->route('admin.vouchers.index')
                 ->with('success', 'Cập nhật voucher thành công');
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Voucher update error: ' . $e->getMessage());
@@ -302,17 +300,56 @@ class VoucherController extends Controller
     public function forceDelete($id)
     {
         try {
+            Log::info('Force delete voucher called with ID: ' . $id);
+
             $voucher = Voucher::onlyTrashed()->findOrFail($id);
-            if ($voucher->appliedVouchers()->exists()) {
-                return back()->with('error', 'Không thể xóa vĩnh viễn voucher đã được sử dụng');
+            Log::info('Found voucher: ' . $voucher->code);
+            Log::info('Applied vouchers count: ' . $voucher->appliedVouchers()->count());
+
+            Log::info('Proceeding with force delete');
+
+            // Xóa applied vouchers trước (nếu có)
+            $appliedCount = $voucher->appliedVouchers()->count();
+            if ($appliedCount > 0) {
+                $voucher->appliedVouchers()->delete();
+                Log::info('Deleted ' . $appliedCount . ' applied vouchers');
             }
-            $voucher->forceDelete();
+
+            // Kiểm tra xem có conditions không
+            $conditionsCount = $voucher->conditions()->count();
+            Log::info('Conditions count: ' . $conditionsCount);
+
+            // Xóa conditions trước
+            if ($conditionsCount > 0) {
+                $voucher->conditions()->delete();
+                Log::info('Deleted conditions');
+            }
+
+            // Thử force delete
+            Log::info('About to force delete voucher');
+            $result = $voucher->forceDelete();
+            Log::info('Force delete result: ' . ($result ? 'true' : 'false'));
+            Log::info('Force delete completed successfully');
+
             return redirect()
                 ->route('admin.vouchers.trash')
                 ->with('success', 'Xóa vĩnh viễn voucher thành công');
         } catch (\Exception $e) {
             Log::error('Voucher force deletion error: ' . $e->getMessage());
-            return back()->with('error', 'Có lỗi xảy ra khi xóa vĩnh viễn voucher');
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            return back()->with('error', 'Có lỗi xảy ra khi xóa vĩnh viễn voucher: ' . $e->getMessage());
+        }
+    }
+
+    // Method test để debug
+    public function testForceDelete($id)
+    {
+        try {
+            $voucher = Voucher::onlyTrashed()->findOrFail($id);
+            $voucher->forceDelete();
+            return response()->json(['success' => true, 'message' => 'Force delete successful']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
         }
     }
 
@@ -415,7 +452,6 @@ class VoucherController extends Controller
                 'options' => $options,
                 'selected_ids' => $selectedIds
             ]);
-
         } catch (\Exception $e) {
             return response()->json(['error' => 'Lỗi: ' . $e->getMessage()], 500);
         }
@@ -429,7 +465,7 @@ class VoucherController extends Controller
         $books = Book::where('title', 'like', "%{$term}%")
             ->select('id', 'title as name')
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 $item->type = 'Sách';
                 return $item;
             });
@@ -438,7 +474,7 @@ class VoucherController extends Controller
         $authors = Author::where('name', 'like', "%{$term}%")
             ->select('id', 'name')
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 $item->type = 'Tác giả';
                 return $item;
             });
@@ -447,7 +483,7 @@ class VoucherController extends Controller
         $brands = Brand::where('name', 'like', "%{$term}%")
             ->select('id', 'name')
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 $item->type = 'NXB';
                 return $item;
             });
@@ -456,7 +492,7 @@ class VoucherController extends Controller
         $categories = Category::where('name', 'like', "%{$term}%")
             ->select('id', 'name')
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 $item->type = 'Danh mục';
                 return $item;
             });
