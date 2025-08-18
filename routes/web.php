@@ -43,6 +43,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderChatTestController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Events\OrderCreated;
+
+
 
 // Route QR code
 Route::get('storage/private/{filename}', function ($filename) {
@@ -94,6 +97,15 @@ Route::prefix('cart')->group(function () {
     Route::post('/update-selected', [CartController::class, 'updateSelected'])->name('cart.update-selected');
 });
 
+// Test route để kiểm tra JavaScript
+Route::get('/test-js', function () {
+    return view('test-js');
+});
+
+Route::get('/test-notification-page', function () {
+    return view('test-notification');
+});
+
 // danh sach yeu thich
 Route::get('/wishlist', [WishlistController::class, 'getWishlist'])->name('wishlist.index');
 Route::get('/wishlist/count', [WishlistController::class, 'getWishlistCount'])->name('wishlist.count');
@@ -130,6 +142,11 @@ Route::post('/register', [LoginController::class, 'handleRegister'])->name('regi
 Route::middleware('auth')->group(function () {
     // Đăng xuất
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    
+    // Notifications routes
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::patch('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 
     Route::prefix('account')->name('account.')->group(function () {
         // Route::get('/', [LoginController::class, 'index'])->name('index');
@@ -297,6 +314,13 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::post('/send', [AdminChatRealTimeController::class, 'send'])->name('send');
         Route::post('/create-conversation', [AdminChatrealtimeController::class, 'createConversation'])->name('create-conversation');
         Route::get('/users/active', [AdminChatrealtimeController::class, 'getActiveUsers'])->name('users.active');
+    });
+
+    // Admin Notifications
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'index'])->name('index');
+        Route::patch('/{id}/read', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'markAsRead'])->name('markAsRead');
+        Route::patch('/mark-all-read', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'markAllAsRead'])->name('markAllAsRead');
     });
 
     // Categories
@@ -536,8 +560,155 @@ Route::prefix('api/ghn')->name('ghn.')->group(function() {
     Route::get('/tracking/{orderCode}', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('tracking');
 });
 
-// Test page for GHN API
-Route::get('/test-ghn', function() {
+// Test GHN API
+Route::get('/test-ghn', function () {
     return view('test-ghn');
 });
+
+// Test routes (remove in production)
+Route::get('/test-notification', function () {
+    // Lấy một order bất kỳ từ database để test
+    $order = \App\Models\Order::with('user')->first();
+    
+    if (!$order) {
+        return response()->json([
+            'error' => 'Không có order nào trong database để test',
+            'suggestion' => 'Hãy tạo ít nhất một order trước'
+        ], 404);
+    }
+    
+    // Fire event để test
+    event(new \App\Events\OrderCreated($order));
+    
+    return response()->json([
+        'message' => 'Test notification sent',
+        'order' => [
+            'id' => $order->id,
+            'order_code' => $order->order_code,
+            'customer_name' => $order->user->name,
+            'total_amount' => $order->total_amount
+        ],
+        'timestamp' => now()
+    ]);
+});
+
+// Route test thông báo nạp tiền ví
+Route::get('/test-wallet-deposit', function () {
+    // Lấy một user bất kỳ từ database để test
+    $user = \App\Models\User::first();
+    
+    if (!$user) {
+        return response()->json([
+            'error' => 'Không có user nào trong database để test',
+            'suggestion' => 'Hãy tạo ít nhất một user trước'
+        ], 404);
+    }
+    
+    // Số tiền test
+    $amount = 100000; // 100,000 VND
+    $transactionId = 'TXN_' . time();
+    
+    // Fire event để test
+    event(new \App\Events\WalletDeposited($user, $amount, $transactionId));
+    
+    return response()->json([
+        'message' => 'Test wallet deposit notification sent',
+        'wallet' => [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'amount' => $amount,
+            'transaction_id' => $transactionId
+        ],
+        'timestamp' => now()
+    ]);
+});
+
+// Route test thông báo rút tiền ví
+Route::get('/test-wallet-withdraw', function () {
+    // Lấy một user bất kỳ từ database để test
+    $user = \App\Models\User::first();
+    
+    if (!$user) {
+        return response()->json([
+            'error' => 'Không có user nào trong database để test',
+            'suggestion' => 'Hãy tạo ít nhất một user trước'
+        ], 404);
+    }
+    
+    // Số tiền test
+    $amount = 50000; // 50,000 VND
+    $transactionId = 'TXN_' . time();
+    
+    // Fire event để test
+    event(new \App\Events\WalletWithdrawn($user, $amount, $transactionId));
+    
+    return response()->json([
+        'message' => 'Test wallet withdraw notification sent',
+        'wallet' => [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'amount' => $amount,
+            'transaction_id' => $transactionId
+        ],
+        'timestamp' => now()
+    ]);
+});
+
+// Route test thông báo nạp tiền ví cho admin
+Route::get('/test-admin-wallet-deposit', function () {
+    // Lấy một user bất kỳ để test (khách hàng)
+    $user = \App\Models\User::first();
+    
+    if (!$user) {
+        return response()->json(['error' => 'Không tìm thấy user để test']);
+    }
+    
+    // Tạo dữ liệu giả định
+    $amount = rand(100000, 1000000); // Số tiền từ 100k đến 1tr
+    $transactionId = 'TXN' . time() . rand(1000, 9999);
+    
+    // Kích hoạt event (sẽ gửi thông báo cho cả khách hàng và admin)
+    event(new \App\Events\WalletDeposited($user, $amount, $transactionId));
+    
+    return response()->json([
+        'message' => 'Test admin wallet deposit notification sent',
+        'customer_id' => $user->id,
+        'customer_name' => $user->name,
+        'amount' => number_format($amount, 0, ',', '.') . 'đ',
+        'transaction_id' => $transactionId,
+        'note' => 'Thông báo đã được gửi cho admin và khách hàng'
+    ]);
+});
+
+// Route test thông báo rút tiền ví cho admin
+Route::get('/test-admin-wallet-withdraw', function () {
+    // Lấy một user bất kỳ để test (khách hàng)
+    $user = \App\Models\User::first();
+    
+    if (!$user) {
+        return response()->json(['error' => 'Không tìm thấy user để test']);
+    }
+    
+    // Tạo dữ liệu giả định
+    $amount = rand(50000, 500000); // Số tiền từ 50k đến 500k
+    $transactionId = 'TXN' . time() . rand(1000, 9999);
+    
+    // Kích hoạt event (sẽ gửi thông báo cho cả khách hàng và admin)
+    event(new \App\Events\WalletWithdrawn($user, $amount, $transactionId));
+    
+    return response()->json([
+        'message' => 'Test admin wallet withdraw notification sent',
+        'customer_id' => $user->id,
+        'customer_name' => $user->name,
+        'amount' => number_format($amount, 0, ',', '.') . 'đ',
+        'transaction_id' => $transactionId,
+        'note' => 'Thông báo đã được gửi cho admin và khách hàng'
+    ]);
+});
+
+
+
+
+
+// }]}}
 

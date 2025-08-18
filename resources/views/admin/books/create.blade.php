@@ -508,9 +508,9 @@
                     </div>
                     <div class="card-body">
                         <label for="status" class="form-label fw-medium">Trạng thái sách</label>
-                        <select class="form-select @error('status') is-invalid @enderror" id="status" name="status">
+                        <select class="form-select @error('status') is-invalid @enderror"  name="status">
                             <option value="Còn Hàng" {{ old('status') == 'Còn Hàng' ? 'selected' : '' }}>Còn Hàng</option>
-                            <option value="Hết Hàng Tồn Kho" {{ old('status') == 'Hết Hàng Tồn Kho' ? 'selected' : '' }}>Hết Hàng Tồn Kho</option>
+                            {{-- <option value="Hết Hàng Tồn Kho" {{ old('status') == 'Hết Hàng Tồn Kho' ? 'selected' : '' }}>Hết Hàng Tồn Kho</option> --}}
                             <option value="Sắp Ra Mắt" {{ old('status') == 'Sắp Ra Mắt' ? 'selected' : '' }}>Sắp Ra Mắt</option>
                             <option value="Ngừng Kinh Doanh" {{ old('status') == 'Ngừng Kinh Doanh' ? 'selected' : '' }}>Ngừng Kinh Doanh</option>
                         </select>

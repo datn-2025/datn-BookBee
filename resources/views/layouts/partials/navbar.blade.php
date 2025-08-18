@@ -171,6 +171,46 @@
                         </div>
                     </div>
 
+                    {{-- Notifications --}}
+                    @auth
+                    <div class="notification-dropdown" style="position: relative;">
+                        <button type="button" class="notification-btn" style="position: relative; padding: 0.5rem; color: #6b7280; background: none; border: none; cursor: pointer; transition: color 0.2s ease;"
+                                onmouseover="this.style.color='black'"
+                                onmouseout="this.style.color='#6b7280'"
+                                onclick="toggleNotificationDropdown()">
+                            <svg style="height: 1.25rem; width: 1.25rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                            <span id="notification-badge" class="notification-badge" style="position: absolute; top: -0.25rem; right: -0.25rem; height: 1rem; width: 1rem; background-color: #ef4444; color: white; font-size: 0.75rem; border-radius: 50%; display: none; align-items: center; justify-content: center;">0</span>
+                        </button>
+                        
+                        <div id="notification-dropdown" class="notification-dropdown-menu" style="position: absolute; right: 0; top: 100%; margin-top: 0.5rem; width: 20rem; background-color: white; border: 1px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 0.2s ease; pointer-events: none; z-index: 9999; border-radius: 0.5rem;">
+                            <!-- Header -->
+                            <div style="padding: 1rem; border-bottom: 1px solid #f3f4f6; background-color: #f9fafb;">
+                                <h6 style="margin: 0; font-size: 1rem; font-weight: 600; color: #111827;">Thông báo</h6>
+                                <span id="notification-count" style="font-size: 0.875rem; color: #6b7280;">0 thông báo mới</span>
+                            </div>
+                            
+                            <!-- Notification List -->
+                            <div id="notification-list" style="max-height: 240px; overflow-y: auto;">
+                                <div style="padding: 2rem 1rem; text-align: center; color: #6b7280;">
+                                    <svg style="height: 3rem; width: 3rem; margin: 0 auto 1rem; opacity: 0.5;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                    </svg>
+                                    <p style="margin: 0; font-size: 0.875rem;">Chưa có thông báo nào</p>
+                                </div>
+                            </div>
+                            
+                            <!-- View All Link -->
+                            <div style="border-top: 1px solid #f3f4f6; padding: 0.75rem;">
+                                <a href="{{ route('notifications.index') }}" style="display: block; text-align: center; color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 500; padding: 0.5rem; border-radius: 0.375rem; transition: background-color 0.2s ease;"
+                                   onmouseover="this.style.backgroundColor='#f3f4f6'"
+                                   onmouseout="this.style.backgroundColor=''">Xem tất cả thông báo</a>
+                            </div>
+                        </div>
+                    </div>
+                    @endauth
+
                     {{-- Wishlist --}}
                     <a href="{{ route('wishlist.index') }}" style="position: relative; padding: 0.5rem; color: #6b7280; text-decoration: none; transition: color 0.2s ease;"
                        onmouseover="this.style.color='black'"

@@ -137,8 +137,8 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ in_array($transaction->type, ['Nap', 'HoanTien']) ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ in_array($transaction->type, ['Nap', 'HoanTien']) ? '+' : '-' }}₫{{ number_format($transaction->amount, 0, ',', '.') }}
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ in_array($transaction->type, ['NAP', 'HOANTIEN']) ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ in_array($transaction->type, ['NAP', 'HOANTIEN']) ? '+' : '-' }}₫{{ number_format($transaction->amount, 0, ',', '.') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">
                                         @if ($transaction->payment_method === 'bank_transfer')

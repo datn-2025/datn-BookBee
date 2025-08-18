@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderStatus;
 use App\Models\Setting;
 use App\Models\BookAttributeValue;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,12 @@ use Illuminate\Support\Facades\Log;
 
 class OrderClientController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     // Method index đã được thay thế bằng unified()
 
     /**
@@ -312,6 +319,13 @@ class OrderClientController extends Controller
             } else {
                 $message = 'Đã hủy đơn hàng thành công';
             }
+
+            // Tạo thông báo cho admin về việc hủy đơn hàng
+            $this->notificationService->createOrderCancellationNotificationForAdmin(
+                $order,
+                $request->cancellation_reason ?? 'Khách hàng hủy đơn hàng',
+                $order->paymentStatus->name === 'Đã Thanh Toán' ? $order->total_amount : 0
+            );
 
             DB::commit();
             return redirect()->back()->with('success', $message);

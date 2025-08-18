@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\WalletDeposited;
+use App\Events\WalletWithdrawn;
 use App\Http\Controllers\Controller;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
@@ -179,11 +181,14 @@ class WalletController extends Controller
             // Nếu là nạp thì cộng tiền, nếu là rút thì trừ wallet_lock
             if ($transaction->type === 'Nap') {
                 $transaction->wallet->increment('balance', $transaction->amount);
+                // dd(Auth::user());
+                event(new WalletDeposited($transaction->wallet->user, $transaction->amount ,$transaction->id, 'customer'));
             } elseif ($transaction->type === 'Rut') {
+                // dd($transaction->wallet->user);
                 $user = $transaction->wallet->user;
                 $user->wallet_lock = max(0, ($user->wallet_lock ?? 0) - $transaction->amount);
                 $user->save();
-                
+                event(new WalletWithdrawn($user, $transaction->amount ,$transaction->id, 'customer'));
                 // Tạo và gửi hóa đơn rút tiền
                 try {
                     $walletInvoiceService = new WalletInvoiceService();
