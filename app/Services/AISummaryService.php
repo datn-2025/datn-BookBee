@@ -699,14 +699,31 @@ class AISummaryService
     public function chatAboutCombo(Collection $combo, string $userMessage)
     {
         try {
-            $prompt = $this->buildComboChatPrompt($combo, $userMessage);
+            // Kiểm tra API key trước khi gọi
+            if (empty($this->apiKey) || $this->apiKey === 'your_gemini_api_key_here') {
+                Log::warning('Gemini API key not configured for combo chat, using fallback response', [
+                    'combo_id' => $combo->id
+                ]);
+                return $this->generateFallbackComboChatResponse($combo, $userMessage);
+            }
 
-            $response = Http::timeout(30)->post($this->apiUrl . '?key=' . $this->apiKey, [
+            $prompt = $this->buildComboChatPrompt($combo, $userMessage);
+            
+            // Làm sạch UTF-8 encoding trước khi gửi request
+            $cleanPrompt = mb_convert_encoding($prompt, 'UTF-8', 'UTF-8');
+
+            // Gọi API Gemini với timeout và retry
+            $response = Http::timeout(30)
+                ->retry(2, 1000)
+                ->withHeaders([
+                    'Content-Type' => 'application/json; charset=utf-8'
+                ])
+                ->post($this->apiUrl . '?key=' . $this->apiKey, [
                 'contents' => [
                     [
                         'parts' => [
                             [
-                                'text' => $prompt
+                                'text' => $cleanPrompt
                             ]
                         ]
                     ]
@@ -720,14 +737,30 @@ class AISummaryService
             ]);
 
             if ($response->successful()) {
-                $result = $response->json();
+                $data = $response->json();
+                $content = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
                 
-                if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
-                    return trim($result['candidates'][0]['content']['parts'][0]['text']);
-                }
-            }
+                // Làm sạch response và đảm bảo UTF-8 hợp lệ
+                $cleanContent = mb_convert_encoding(trim($content), 'UTF-8', 'UTF-8');
+                return $cleanContent;
+            } else {
+                $errorBody = $response->body();
+                Log::error('Gemini Combo Chat API Error', [
+                    'combo_id' => $combo->id,
+                    'status' => $response->status(),
+                    'error' => $errorBody
+                ]);
 
-            throw new Exception('API response không hợp lệ');
+                // Kiểm tra nếu là lỗi API key
+                if ($response->status() === 400 && str_contains($errorBody, 'API key not valid')) {
+                    Log::warning('Invalid API key detected for combo chat, using fallback response', [
+                        'combo_id' => $combo->id
+                    ]);
+                    return $this->generateFallbackComboChatResponse($combo, $userMessage);
+                }
+                
+                throw new Exception('API Error: ' . $errorBody);
+            }
 
         } catch (Exception $e) {
             Log::error('Error in combo chat:', [
@@ -736,7 +769,7 @@ class AISummaryService
                 'error' => $e->getMessage()
             ]);
 
-            return 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.';
+            return $this->generateFallbackComboChatResponse($combo, $userMessage);
         }
     }
 
@@ -765,7 +798,7 @@ class AISummaryService
         if ($combo->description) {
             $prompt .= "Mô tả: " . mb_convert_encoding($combo->description, 'UTF-8', 'UTF-8') . "\n";
         }
-        $prompt .= "Giá combo: " . number_format($combo->combo_price, 0, ',', '.') . "₫\n\n";
+        $prompt .= "Giá combo: " . number_format((float)($combo->combo_price ?? 0), 0, ',', '.') . "₫\n\n";
         
         $prompt .= "CÁC SÁCH TRONG COMBO:\n{$booksContext}\n\n";
         
@@ -773,5 +806,115 @@ class AISummaryService
         $prompt .= "HÃY TRẢ LỜI:";
 
         return $prompt;
+    }
+
+    private function generateFallbackComboChatResponse(Collection $combo, string $userMessage)
+    {
+        $comboName = $combo->name;
+        $booksCount = $combo->books->count();
+        $comboPrice = number_format((float)($combo->combo_price ?? 0), 0, ',', '.');
+
+        // Tạo response dựa trên từ khóa trong câu hỏi
+        $message = strtolower($userMessage);
+        
+        if (str_contains($message, 'bao nhiêu sách') || str_contains($message, 'mấy sách') || str_contains($message, 'số lượng')) {
+            return "Combo '{$comboName}' bao gồm {$booksCount} cuốn sách. " .
+                   "Đây là một bộ sưu tập được tuyển chọn kỹ lưỡng để mang đến trải nghiệm đọc phong phú và đa dạng cho bạn.";
+        }
+        
+        if (str_contains($message, 'những sách gì') || str_contains($message, 'sách nào') || 
+            str_contains($message, 'danh sách') || str_contains($message, 'gồm những') ||
+            str_contains($message, 'có sách') || str_contains($message, 'bao gồm')) {
+            
+            $booksList = $combo->books->map(function($book, $index) {
+                $authorName = $book->authors->count() > 0 ? 
+                    ' - Tác giả: ' . $book->authors->pluck('name')->join(', ') : '';
+                return ($index + 1) . ". {$book->title}{$authorName}";
+            })->join("\n");
+            
+            return "Combo '{$comboName}' bao gồm {$booksCount} cuốn sách sau:\n\n{$booksList}\n\n" .
+                   "Đây là bộ combo được tuyển chọn kỹ lưỡng để mang đến trải nghiệm đọc đa dạng và phong phú.";
+        }
+        
+        if (str_contains($message, 'tóm tắt') || str_contains($message, 'nội dung')) {
+            $booksWithDesc = $combo->books->map(function($book, $index) {
+                $authorName = $book->authors->count() > 0 ? 
+                    ' (Tác giả: ' . $book->authors->pluck('name')->join(', ') . ')' : '';
+                $description = $book->description ? 
+                    ' - ' . mb_substr(strip_tags($book->description), 0, 100) . '...' : 
+                    ' - Cuốn sách hay với nội dung phong phú và bổ ích.';
+                return ($index + 1) . ". {$book->title}{$authorName}{$description}";
+            })->join("\n\n");
+            
+            return "Combo '{$comboName}' gồm {$booksCount} cuốn sách với nội dung đa dạng:\n\n{$booksWithDesc}\n\n" .
+                   "Combo này được thiết kế để mang đến trải nghiệm đọc hoàn chỉnh và kiến thức phong phú.";
+        }
+        
+        if (str_contains($message, 'giá') || str_contains($message, 'mua') || str_contains($message, 'tiết kiệm') || str_contains($message, 'bao nhiêu tiền')) {
+            // Tính tổng giá lẻ để so sánh
+            $totalIndividualPrice = 0;
+            $bookPrices = $combo->books->map(function($book) use (&$totalIndividualPrice) {
+                $lowestPrice = $book->formats->min('price') ?? 0;
+                $totalIndividualPrice += $lowestPrice;
+                return "{$book->title}: " . number_format($lowestPrice, 0, ',', '.') . "₫";
+            })->join("\n");
+            
+            $savings = $totalIndividualPrice - ($combo->combo_price ?? 0);
+            $savingsText = $savings > 0 ? 
+                " Bạn tiết kiệm được " . number_format($savings, 0, ',', '.') . "₫ so với mua lẻ!" : "";
+            
+            return "Combo '{$comboName}' có giá {$comboPrice}₫ cho {$booksCount} cuốn sách:\n\n{$bookPrices}\n\n" .
+                   "Tổng giá nếu mua lẻ: " . number_format($totalIndividualPrice, 0, ',', '.') . "₫{$savingsText}";
+        }
+        
+        if (str_contains($message, 'tác giả') || str_contains($message, 'ai viết')) {
+            $authorsDetail = $combo->books->map(function($book, $index) {
+                $authorName = $book->authors->count() > 0 ? 
+                    $book->authors->pluck('name')->join(', ') : 'Tác giả không xác định';
+                return ($index + 1) . ". {$book->title} - Tác giả: {$authorName}";
+            })->join("\n");
+            
+            $uniqueAuthors = $combo->books->flatMap(function($book) {
+                return $book->authors->pluck('name');
+            })->unique();
+            
+            return "Combo '{$comboName}' bao gồm tác phẩm từ " . $uniqueAuthors->count() . " tác giả:\n\n{$authorsDetail}\n\n" .
+                   "Sự đa dạng về tác giả giúp mang đến những góc nhìn và phong cách viết phong phú.";
+        }
+        
+        if (str_contains($message, 'đánh giá') || str_contains($message, 'review')) {
+            $avgRating = $combo->reviews->avg('rating') ?? 0;
+            $reviewCount = $combo->reviews->count();
+            $ratingText = $reviewCount > 0 ? 
+                " với đánh giá trung bình {$avgRating}/5 từ {$reviewCount} khách hàng" : "";
+            
+            return "Combo '{$comboName}' đã nhận được nhiều phản hồi tích cực từ độc giả{$ratingText}. " .
+                   "Với {$booksCount} cuốn sách được tuyển chọn kỹ lưỡng, combo này mang đến giá trị đọc cao và trải nghiệm thú vị. " .
+                   "Bạn có thể xem các đánh giá chi tiết từ những độc giả đã mua combo.";
+        }
+        
+        if (str_contains($message, 'thể loại') || str_contains($message, 'category') || str_contains($message, 'genre')) {
+            $categories = $combo->books->map(function($book) {
+                return $book->category ? $book->category->name : 'Chưa phân loại';
+            })->unique()->join(', ');
+            
+            $booksWithCategories = $combo->books->map(function($book, $index) {
+                $categoryName = $book->category ? $book->category->name : 'Chưa phân loại';
+                return ($index + 1) . ". {$book->title} - Thể loại: {$categoryName}";
+            })->join("\n");
+            
+            return "Combo '{$comboName}' bao gồm sách thuộc các thể loại: {$categories}\n\n{$booksWithCategories}\n\n" .
+                   "Sự đa dạng thể loại giúp mở rộng kiến thức và trải nghiệm đọc của bạn.";
+        }
+        
+        // Response mặc định với thông tin chi tiết hơn
+        $quickBooksList = $combo->books->take(3)->map(function($book, $index) {
+            return ($index + 1) . ". {$book->title}";
+        })->join("\n");
+        
+        $moreBooks = $booksCount > 3 ? "\n... và " . ($booksCount - 3) . " cuốn sách khác" : "";
+        
+        return "Combo '{$comboName}' bao gồm {$booksCount} cuốn sách với giá ưu đãi {$comboPrice}₫:\n\n{$quickBooksList}{$moreBooks}\n\n" .
+               "Để biết thêm chi tiết về từng cuốn sách, bạn có thể hỏi cụ thể như 'combo này có những sách gì?' hoặc 'tác giả của các sách trong combo?'";
     }
 }

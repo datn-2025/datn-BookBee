@@ -475,8 +475,8 @@
                                         @endif
                                     @endif
                                     
-                                    {{-- Gifts --}}
-                                    @if(isset($item->gifts) && count($item->gifts) > 0)
+                                    {{-- Gifts - Chỉ hiển thị cho sách vật lý --}}
+                                    @if(!$isEbook && isset($item->gifts) && count($item->gifts) > 0)
                                         <div class="bg-green-50 p-3 border-l-4 border-green-500 mb-4">
                                             <div class="text-xs text-green-600 uppercase tracking-wide font-bold mb-2">
                                                 <i class="fas fa-gift"></i> Quà tặng đi kèm:
@@ -636,9 +636,9 @@
                                 </div>
                             </div>
                         </div>
-                        
                         <!-- Checkout Button -->
                         <a href="{{ route('orders.checkout') }}" 
+                           id="checkout-btn"
                            class="w-full bg-black text-white py-4 px-6 font-bold text-sm uppercase tracking-wide hover:bg-gray-800 transition-all duration-300 flex items-center justify-center gap-3 group">
                             <i class="fas fa-credit-card"></i>
                             <span>TIẾN HÀNH THANH TOÁN</span>
@@ -720,6 +720,7 @@
     {{-- <script src="{{ asset('js/cart/cart_quantity.js') }}"></script> --}}
     <script src="{{ asset('js/cart/cart_products.js') }}"></script>
     <script src="{{ asset('js/cart/cart.js') }}"></script>
+    <script src="{{ asset('js/cart/cart_stock_validation.js') }}"></script>
     {{-- <script src="{{ asset('js/cart/cart_voucher.js') }}"></script>
     <script src="{{ asset('js/cart/cart_enhanced_ux.js') }}"></script>
     <script src="{{ asset('js/cart/cart_smart_ux.js') }}"></script> --}}

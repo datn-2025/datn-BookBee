@@ -62,8 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const activeTab = document.getElementById(tabId);
             activeTab.classList.remove('hidden');
 
-            buttons.forEach(b => b.classList.remove('bg-black', 'text-white'));
-            btn.classList.add('bg-black', 'text-white');
+            // buttons.forEach(b => b.classList.remove('bg-black', 'text-white'));
+            // btn.classList.add('bg-black', 'text-white');
 
             // ✅ Reset slide về đầu khi chuyển tab
             const swiper = swiperMap[tabId];

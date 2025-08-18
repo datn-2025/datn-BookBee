@@ -88,7 +88,13 @@ class ProfileClientController extends Controller
 
         // Kiểm tra mật khẩu hiện tại
         if (!Hash::check($request->current_password, $user->password)) {
-            Toastr::error('Mật khẩu hiện tại không đúng.', 'Lỗi');
+            if ($request->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Mật khẩu hiện tại không đúng.',
+                    'errors' => ['current_password' => ['Mật khẩu hiện tại không đúng.']]
+                ], 422);
+            }
             return back()->withErrors(['current_password' => 'Mật khẩu hiện tại không đúng.']);
         }
 
@@ -104,7 +110,21 @@ class ProfileClientController extends Controller
             Log::error('Không thể gửi email thông báo đổi mật khẩu: ' . $e->getMessage());
         }
 
-        session()->flash('success', 'Bạn đã thay đổi mật khẩu thành công!');
-        return redirect()->route('account.profile');
+        // Logout người dùng để đảm bảo tính bảo mật
+        Auth::logout();
+
+        // Xóa tất cả session
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại với mật khẩu mới.',
+                'redirect' => route('login')
+            ]);
+        }
+
+        return redirect()->route('login')->with('success', 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại với mật khẩu mới.');
     }
 }

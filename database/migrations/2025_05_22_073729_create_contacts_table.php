@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('phone')->nullable();
+            $table->string('phone'); // Bỏ nullable()
             $table->text('address')->nullable();
             $table->text('note')->nullable();
             $table->string('status')->default('new'); // Thêm trạng thái: new, processing, replied, closed

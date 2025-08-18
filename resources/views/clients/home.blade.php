@@ -46,17 +46,17 @@
 
                     <!-- Nổi bật giá - Kiểu dáng vuông -->
                     <div class="flex items-center gap-4">
-                        <span class="bg-red-600 text-white px-4 py-2 text-sm font-bold uppercase tracking-wide">
+                        {{-- <span class="bg-red-600 text-white px-4 py-2 text-sm font-bold uppercase tracking-wide">
                             <i class="fas fa-tags mr-1"></i>
                             GIẢM 30%
-                        </span>
+                        </span> --}}
                         <span class="text-2xl font-bold text-amber-600">Mua ngay hôm nay!</span>
                     </div>
                 </div>
 
                 <!-- Nút hành động - Kiểu vuông -->
                 <div class="pt-4">
-                    <a href="#"
+                    <a href="{{ route('books.index') }}"
                         class="group bg-amber-600 text-white px-10 py-4 font-bold text-sm uppercase tracking-[0.1em] hover:bg-amber-700 transition-all duration-300 flex items-center gap-3 w-max button-text">
                         <i class="fas fa-search text-white"></i>
                         <span>KHÁM PHÁ NGAY</span>
@@ -65,29 +65,12 @@
                 </div>
             </div>
 
-            {{-- Right image - Clean presentation --}}
+            {{-- Right image - Background style --}}
             <div class="flex justify-center">
                 <div class="relative group">
-                    <!-- Main image với clean style -->
-                    <div class="relative">
-                        <img src="{{ asset('storage/images/banner-image2.png') }}"
-                            class="h-80 md:h-96 object-contain transform group-hover:scale-105 transition-transform duration-700"
-                            alt="Banner BookBee">
-
-                        <!-- Clean badge thay vì rounded -->
-                        <div
-                            class="absolute -top-6 -left-6 bg-black text-white px-6 py-3 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-500">
-                            <div class="text-center">
-                                <div class="text-sm font-bold uppercase tracking-wide">MỚI</div>
-                                <div class="text-xs uppercase tracking-wider text-gray-300">Bộ Sưu Tập</div>
-                            </div>
-                        </div>
-
-                        <!-- Minimal accent -->
-                        <div
-                            class="absolute -bottom-4 -right-4 bg-white border-2 border-black px-4 py-2 transform group-hover:translate-x-1 group-hover:translate-y-1 transition-transform duration-500">
-                            <span class="text-xs font-bold uppercase tracking-wide text-black">Cao Cấp</span>
-                        </div>
+                    <!-- Background image style -->
+                    <div class="relative h-80 md:h-96 w-80 md:w-96 bg-cover bg-center bg-no-repeat transform group-hover:scale-105 transition-transform duration-700"
+                         style="background-image: url('{{ asset('storage/images/banner-image2.png') }}');">
                     </div>
 
                     <!-- Background geometric shape -->
@@ -127,162 +110,126 @@
             </div>
 
             <!-- Enhanced Features Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <!-- Feature 1: Free Shipping -->
-                <div class="feature-card group bg-white border border-gray-100 hover:border-slate-600 hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
-                    <!-- Enhanced geometric background -->
-                    <div
-                        class="absolute top-0 right-0 w-16 h-16 bg-slate-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-slate-100 group-hover:scale-110 transition-all duration-500">
-                    </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <!-- Feature 1: Free Shipping -->
+                <div class="feature-card group bg-white border border-gray-100 hover:border-slate-600 hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2 h-full flex flex-col">
+                    <div class="absolute top-0 right-0 w-16 h-16 bg-slate-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-slate-100 group-hover:scale-110 transition-all duration-500"></div>
+                    <div class="absolute inset-0 bg-gradient-to-br from-slate-500/0 to-slate-500/0 group-hover:from-slate-500/5 group-hover:to-transparent transition-all duration-500"></div>
 
-                    <!-- Hover overlay -->
-                    <div
-                        class="absolute inset-0 bg-gradient-to-br from-slate-500/0 to-slate-500/0 group-hover:from-slate-500/5 group-hover:to-transparent transition-all duration-500">
-                    </div>
+                    <div class="p-8 text-center relative z-10 flex flex-col items-center justify-center flex-1">
+                        <div class="w-16 h-16 bg-slate-600 text-white flex items-center justify-center mb-6 mx-auto group-hover:bg-slate-700 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 relative">
+                            <i class="fas fa-shipping-fast text-xl transform group-hover:scale-125 transition-transform duration-300"></i>
+                            <div class="absolute inset-0 bg-slate-500 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500"></div>
+                        </div>
 
-                    <div class="p-8 text-center relative z-10">
-                        <!-- Enhanced Icon -->
-                        <div
-                            class="w-16 h-16 bg-slate-600 text-white flex items-center justify-center mb-6 mx-auto group-hover:bg-slate-700 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 relative">
-                            <i
-                                class="fas fa-shipping-fast text-xl transform group-hover:scale-125 transition-transform duration-300"></i>
-                            <!-- Icon glow effect -->
-                            <div
-                                class="absolute inset-0 bg-slate-500 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500">
+                        <!-- BLOCK CỐ ĐỊNH -->
+                        <div class="flex flex-col items-center w-full">
+                            <div class="h-20 flex items-center justify-center w-full">
+                                <h3 class="text-lg font-bold uppercase tracking-wide text-black group-hover:text-slate-600 transition-colors duration-300 text-center">
+                                    GIAO HÀNG MIỄN PHÍ
+                                </h3>
+                            </div>
+                            <div class="w-8 h-0.5 bg-slate-600 my-3 group-hover:w-16 group-hover:bg-slate-500 transition-all duration-500"></div>
+                            <div class="h-16 flex items-center justify-center w-full">
+                                <p class="text-sm text-gray-600 leading-relaxed uppercase tracking-wider group-hover:text-gray-800 transition-colors duration-300">
+                                    Miễn phí vận chuyển toàn quốc
+                                </p>
                             </div>
                         </div>
+                        <!-- /BLOCK CỐ ĐỊNH -->
 
-                        <!-- Enhanced Content -->
-                        <h3
-                            class="feature-title text-lg font-bold uppercase tracking-wide text-black mb-2 group-hover:text-slate-600 transition-colors duration-300">
-                            GIAO HÀNG MIỄN PHÍ
-                        </h3>
-                        <div
-                            class="w-8 h-0.5 bg-slate-600 mx-auto mb-4 group-hover:w-16 group-hover:bg-slate-500 transition-all duration-500">
-                        </div>
-                        <p
-                            class="text-sm text-gray-600 leading-relaxed uppercase tracking-wider group-hover:text-gray-800 transition-colors duration-300">
-                            Miễn phí vận chuyển toàn quốc
-                        </p>
-
-                        <!-- Progress indicator -->
-                        <div
-                            class="absolute bottom-0 left-0 h-1 bg-slate-500 w-0 group-hover:w-full transition-all duration-700">
-                        </div>
+                        <div class="absolute bottom-0 left-0 h-1 bg-slate-500 w-0 group-hover:w-full transition-all duration-700"></div>
                     </div>
                 </div>
 
-                <!-- Feature 2: Quality -->
-                <div class="feature-card group bg-white border border-gray-100 hover:border-blue-600 hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
-                    <div
-                        class="absolute top-0 right-0 w-16 h-16 bg-blue-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-blue-100 group-hover:scale-110 transition-all duration-500">
-                    </div>
-                    <div
-                        class="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-blue-500/0 group-hover:from-blue-500/5 group-hover:to-transparent transition-all duration-500">
-                    </div>
+            <!-- Feature 2: Quality -->
+            <div class="feature-card group bg-white border border-gray-100 hover:border-blue-600 hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2 h-full flex flex-col">
+                <div class="absolute top-0 right-0 w-16 h-16 bg-blue-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-blue-100 group-hover:scale-110 transition-all duration-500"></div>
+                <div class="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-blue-500/0 group-hover:from-blue-500/5 group-hover:to-transparent transition-all duration-500"></div>
 
-                    <div class="p-8 text-center relative z-10">
-                        <div
-                            class="w-16 h-16 bg-blue-600 text-white flex items-center justify-center mb-6 mx-auto group-hover:bg-blue-700 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 relative">
-                            <i
-                                class="fas fa-award text-xl transform group-hover:scale-125 transition-transform duration-300"></i>
-                            <div
-                                class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500">
-                            </div>
-                        </div>
-
-                        <h3
-                            class="feature-title text-lg font-bold uppercase tracking-wide text-black mb-2 group-hover:text-blue-600 transition-colors duration-300">
-                            CAM KẾT CHẤT LƯỢNG
-                        </h3>
-                        <div
-                            class="w-8 h-0.5 bg-blue-600 mx-auto mb-4 group-hover:w-16 group-hover:bg-blue-500 transition-all duration-500">
-                        </div>
-                        <p
-                            class="text-sm text-gray-600 leading-relaxed uppercase tracking-wider group-hover:text-gray-800 transition-colors duration-300">
-                            Sản phẩm chính hãng 100%
-                        </p>
-
-                        <div
-                            class="absolute bottom-0 left-0 h-1 bg-blue-500 w-0 group-hover:w-full transition-all duration-700">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Feature 3: Daily Offers -->
-                <div class="feature-card group bg-white border border-gray-100 hover:border-amber-600 hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
-                    <div
-                        class="absolute top-0 right-0 w-16 h-16 bg-amber-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-amber-100 group-hover:scale-110 transition-all duration-500">
-                    </div>
-                    <div
-                        class="absolute inset-0 bg-gradient-to-br from-amber-500/0 to-amber-500/0 group-hover:from-amber-500/5 group-hover:to-transparent transition-all duration-500">
+                <div class="p-8 text-center relative z-10 flex flex-col items-center justify-center flex-1">
+                    <div class="w-16 h-16 bg-blue-600 text-white flex items-center justify-center mb-6 mx-auto group-hover:bg-blue-700 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 relative">
+                        <i class="fas fa-award text-xl transform group-hover:scale-125 transition-transform duration-300"></i>
+                        <div class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500"></div>
                     </div>
 
-                    <div class="p-8 text-center relative z-10">
-                        <div
-                            class="w-16 h-16 bg-amber-600 text-white flex items-center justify-center mb-6 mx-auto group-hover:bg-amber-700 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 relative">
-                            <i
-                                class="fas fa-gift text-xl transform group-hover:scale-125 transition-transform duration-300"></i>
-                            <div
-                                class="absolute inset-0 bg-amber-500 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500">
-                            </div>
+                    <div class="flex flex-col items-center w-full">
+                        <div class="h-20 flex items-center justify-center w-full">
+                            <h3 class="text-lg font-bold uppercase tracking-wide text-black group-hover:text-blue-600 transition-colors duration-300 text-center">
+                                CAM KẾT CHẤT LƯỢNG
+                            </h3>
                         </div>
-
-                        <h3
-                            class="feature-title text-lg font-bold uppercase tracking-wide text-black mb-2 group-hover:text-amber-600 transition-colors duration-300">
-                            ƯU ĐÃI MỖI NGÀY
-                        </h3>
-                        <div
-                            class="w-8 h-0.5 bg-amber-600 mx-auto mb-4 group-hover:w-16 group-hover:bg-amber-500 transition-all duration-500">
-                        </div>
-                        <p
-                            class="text-sm text-gray-600 leading-relaxed uppercase tracking-wider group-hover:text-gray-800 transition-colors duration-300">
-                            Khuyến mãi hấp dẫn liên tục
-                        </p>
-
-                        <div
-                            class="absolute bottom-0 left-0 h-1 bg-amber-500 w-0 group-hover:w-full transition-all duration-700">
+                        <div class="w-8 h-0.5 bg-blue-600 my-3 group-hover:w-16 group-hover:bg-blue-500 transition-all duration-500"></div>
+                        <div class="h-16 flex items-center justify-center w-full">
+                            <p class="text-sm text-gray-600 leading-relaxed uppercase tracking-wider group-hover:text-gray-800 transition-colors duration-300">
+                                Sản phẩm chính hãng 100%
+                            </p>
                         </div>
                     </div>
-                </div>
 
-                <!-- Feature 4: Secure Payment -->
-                <div class="feature-card group bg-white border border-gray-100 hover:border-slate-600 hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
-                    <div
-                        class="absolute top-0 right-0 w-16 h-16 bg-slate-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-slate-100 group-hover:scale-110 transition-all duration-500">
-                    </div>
-                    <div
-                        class="absolute inset-0 bg-gradient-to-br from-slate-500/0 to-slate-500/0 group-hover:from-slate-500/5 group-hover:to-transparent transition-all duration-500">
-                    </div>
-
-                    <div class="p-8 text-center relative z-10">
-                        <div
-                            class="w-16 h-16 bg-slate-600 text-white flex items-center justify-center mb-6 mx-auto group-hover:bg-slate-700 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 relative">
-                            <i
-                                class="fas fa-lock text-xl transform group-hover:scale-125 transition-transform duration-300"></i>
-                            <div
-                                class="absolute inset-0 bg-slate-500 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500">
-                            </div>
-                        </div>
-
-                        <h3
-                            class="feature-title text-lg font-bold uppercase tracking-wide text-black mb-2 group-hover:text-slate-600 transition-colors duration-300">
-                            THANH TOÁN AN TOÀN
-                        </h3>
-                        <div
-                            class="w-8 h-0.5 bg-slate-600 mx-auto mb-4 group-hover:w-16 group-hover:bg-slate-500 transition-all duration-500">
-                        </div>
-                        <p
-                            class="text-sm text-gray-600 leading-relaxed uppercase tracking-wider group-hover:text-gray-800 transition-colors duration-300">
-                            Hỗ trợ nhiều hình thức bảo mật
-                        </p>
-
-                        <div
-                            class="absolute bottom-0 left-0 h-1 bg-slate-500 w-0 group-hover:w-full transition-all duration-700">
-                        </div>
-                    </div>
+                    <div class="absolute bottom-0 left-0 h-1 bg-blue-500 w-0 group-hover:w-full transition-all duration-700"></div>
                 </div>
             </div>
+
+            <!-- Feature 3: Daily Offers -->
+            <div class="feature-card group bg-white border border-gray-100 hover:border-amber-600 hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2 h-full flex flex-col">
+                <div class="absolute top-0 right-0 w-16 h-16 bg-amber-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-amber-100 group-hover:scale-110 transition-all duration-500"></div>
+                <div class="absolute inset-0 bg-gradient-to-br from-amber-500/0 to-amber-500/0 group-hover:from-amber-500/5 group-hover:to-transparent transition-all duration-500"></div>
+
+                <div class="p-8 text-center relative z-10 flex flex-col items-center justify-center flex-1">
+                    <div class="w-16 h-16 bg-amber-600 text-white flex items-center justify-center mb-6 mx-auto group-hover:bg-amber-700 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 relative">
+                        <i class="fas fa-gift text-xl transform group-hover:scale-125 transition-transform duration-300"></i>
+                        <div class="absolute inset-0 bg-amber-500 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500"></div>
+                    </div>
+
+                    <div class="flex flex-col items-center w-full">
+                        <div class="h-20 flex items-center justify-center w-full">
+                            <h3 class="text-lg font-bold uppercase tracking-wide text-black group-hover:text-amber-600 transition-colors duration-300 text-center">
+                                ƯU ĐÃI MỖI NGÀY
+                            </h3>
+                        </div>
+                        <div class="w-8 h-0.5 bg-amber-600 my-3 group-hover:w-16 group-hover:bg-amber-500 transition-all duration-500"></div>
+                        <div class="h-16 flex items-center justify-center w-full">
+                            <p class="text-sm text-gray-600 leading-relaxed uppercase tracking-wider group-hover:text-gray-800 transition-colors duration-300">
+                                Khuyến mãi hấp dẫn liên tục
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="absolute bottom-0 left-0 h-1 bg-amber-500 w-0 group-hover:w-full transition-all duration-700"></div>
+                </div>
+            </div>
+
+            <!-- Feature 4: Secure Payment -->
+            <div class="feature-card group bg-white border border-gray-100 hover:border-slate-600 hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2 h-full flex flex-col">
+                <div class="absolute top-0 right-0 w-16 h-16 bg-slate-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-slate-100 group-hover:scale-110 transition-all duration-500"></div>
+                <div class="absolute inset-0 bg-gradient-to-br from-slate-500/0 to-slate-500/0 group-hover:from-slate-500/5 group-hover:to-transparent transition-all duration-500"></div>
+
+                <div class="p-8 text-center relative z-10 flex flex-col items-center justify-center flex-1">
+                    <div class="w-16 h-16 bg-slate-600 text-white flex items-center justify-center mb-6 mx-auto group-hover:bg-slate-700 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 relative">
+                        <i class="fas fa-lock text-xl transform group-hover:scale-125 transition-transform duration-300"></i>
+                        <div class="absolute inset-0 bg-slate-500 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500"></div>
+                    </div>
+
+                    <div class="flex flex-col items-center w-full">
+                        <div class="h-20 flex items-center justify-center w-full">
+                            <h3 class="text-lg font-bold uppercase tracking-wide text-black group-hover:text-slate-600 transition-colors duration-300 text-center">
+                                THANH TOÁN AN TOÀN
+                            </h3>
+                        </div>
+                        <div class="w-8 h-0.5 bg-slate-600 my-3 group-hover:w-16 group-hover:bg-slate-500 transition-all duration-500"></div>
+                        <div class="h-16 flex items-center justify-center w-full">
+                            <p class="text-sm text-gray-600 leading-relaxed uppercase tracking-wider group-hover:text-gray-800 transition-colors duration-300">
+                                Hỗ trợ nhiều hình thức bảo mật
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="absolute bottom-0 left-0 h-1 bg-slate-500 w-0 group-hover:w-full transition-all duration-700"></div>
+                </div>
+            </div>
+        </div>
+
 
             <!-- Enhanced Stats Section -->
             @if(isset($statistics) && $statistics['has_real_data'])
@@ -394,7 +341,7 @@
             <div class="flex gap-0 mb-12 overflow-x-auto">
                 @foreach ($categories as $index => $category)
                     <button type="button" 
-                            class="tab-button flex-shrink-0 px-8 py-4 font-bold text-sm uppercase tracking-wider transition-all duration-300 cursor-pointer select-none {{ $index === 0 ? 'bg-amber-600 text-white' : 'bg-gray-100 text-black hover:bg-gray-200' }}"
+                            class="tab-button flex-shrink-0 px-8 py-4 font-bold text-sm uppercase tracking-wider transition-all duration-300 cursor-pointer select-none {{ $index === 0 ? ' bg-amber-600 text-white' : 'bg-gray-100 text-black hover:bg-gray-200' }}"
                             data-tab="tab-{{ $category->id }}"
                             style="pointer-events: auto; user-select: none; -webkit-tap-highlight-color: transparent;">
                         <i class="fas fa-bookmark mr-2"></i>
@@ -488,7 +435,7 @@
                 <a href="{{ route('books.index') }}" 
                    class="bg-slate-600 text-white px-6 py-3 font-bold text-sm uppercase tracking-wider hover:bg-slate-700 transition-colors">
                     <i class="fas fa-plus mr-2"></i>
-                    XEM THÊM
+                    XEM TẤt CẢ
                 </a>
             </div>
 
@@ -557,7 +504,7 @@
             </div>
             
             <!-- XEM THÊM Button -->
-            @if(count($allBooks) > 8)
+            {{-- @if(count($allBooks) > 8)
                 <div class="text-center mt-8">
                     <button id="showMoreBooks" 
                             class="bg-slate-600 text-white px-8 py-3 font-bold text-sm uppercase tracking-wider hover:bg-slate-700 transition-colors">
@@ -570,7 +517,7 @@
                         THU GỌN
                     </button>
                 </div>
-            @endif
+            @endif --}}
         </div>
     </section>
 
@@ -821,6 +768,11 @@
                         <div class="w-16 h-0.5 bg-purple-600 mt-2"></div>
                     </div>
                 </div>
+                <a href="{{ route('combos.index') }}" 
+                   class="bg-slate-600 text-white px-6 py-3 font-bold text-sm uppercase tracking-wider hover:bg-slate-700 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>
+                    XEM TẤT CẢ
+                </a>
             </div>
             
             <!-- Grid -->
@@ -883,34 +835,36 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($articles->take(3) as $article)
                     <article class="group bg-white border-2 border-gray-100 hover:border-black transition-all duration-300">
-                        <!-- Image -->
-                        <div class="aspect-[4/3] bg-gray-100 overflow-hidden relative">
-                            <img src="{{ asset('storage/' . $article->thumbnail) }}" 
-                                 alt="{{ $article->title }}"
-                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                            <div class="absolute top-3 left-3 bg-indigo-600 text-white px-2 py-1 text-xs font-bold uppercase">
-                                <i class="fas fa-newspaper mr-1"></i>
-                                TIN TỨC
+                        <a href="{{ route('news.show', $article->id) }}" class="block">
+                            <!-- Image -->
+                            <div class="aspect-[4/3] bg-gray-100 overflow-hidden relative">
+                                <img src="{{ asset('storage/' . $article->thumbnail) }}" 
+                                     alt="{{ $article->title }}"
+                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <div class="absolute top-3 left-3 bg-indigo-600 text-white px-2 py-1 text-xs font-bold uppercase">
+                                    <i class="fas fa-newspaper mr-1"></i>
+                                    TIN TỨC
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Content -->
-                        <div class="p-6 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-500 uppercase tracking-wider font-bold">
-                                    {{ $article->created_at->format('d.m.Y') }}
-                                </span>
-                                <div class="w-6 h-0.5 bg-black group-hover:w-8 transition-all duration-300"></div>
+                            <!-- Content -->
+                            <div class="p-6 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-500 uppercase tracking-wider font-bold">
+                                        {{ $article->created_at->format('d.m.Y') }}
+                                    </span>
+                                    <div class="w-6 h-0.5 bg-black group-hover:w-8 transition-all duration-300"></div>
+                                </div>
+                                
+                                <h3 class="font-bold text-lg text-black leading-tight group-hover:opacity-70 transition-opacity">
+                                    {{ $article->title }}
+                                </h3>
+                                
+                                <p class="text-gray-600 text-sm leading-relaxed">
+                                    {{ Str::limit($article->summary, 100) }}
+                                </p>
                             </div>
-                            
-                            <h3 class="font-bold text-lg text-black leading-tight group-hover:opacity-70 transition-opacity">
-                                {{ $article->title }}
-                            </h3>
-                            
-                            <p class="text-gray-600 text-sm leading-relaxed">
-                                {{ Str::limit($article->summary, 100) }}
-                            </p>
-                        </div>
+                        </a>
                     </article>
                 @empty
                     <div class="col-span-full text-center py-12">
@@ -946,6 +900,31 @@
 
 @push('scripts')
     <style>
+        /* Cố định chiều cao cho các thẻ tính năng */
+        .feature-card {
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+        }
+        .feature-card > div:last-child {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding-bottom: 40px; /* Thêm khoảng trống cho thanh tiến trình */
+        }
+        /* Cố định vị trí thanh tiến trình ở dưới cùng */
+        .feature-card [class*="absolute bottom-0 left-0 h-1"] {
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+            width: 0;
+            transition: width 0.7s ease;
+        }
+        .feature-card:hover [class*="absolute bottom-0 left-0 h-1"] {
+            width: 100%;
+        }
         /* BookBee Home Page - Font Styling */
         .bookbee-home-page {
             font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
@@ -1045,13 +1024,32 @@
             -ms-user-select: none;
             user-select: none;
         }
-        
+            
         /* Ripple effect animation */
         @keyframes ripple {
             to {
                 transform: scale(4);
                 opacity: 0;
             }
+        }
+
+        /* News Article Card Enhancement */
+        .bookbee-home-page article {
+            cursor: pointer;
+        }
+        
+        .bookbee-home-page article a {
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .bookbee-home-page article:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .bookbee-home-page article:active {
+            transform: translateY(0);
         }
     </style>
 

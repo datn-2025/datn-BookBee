@@ -28,10 +28,10 @@ class OrderClientController extends Controller
     public function show($id)
     {
         $order = Order::with([
-            'orderItems.book.images',
+            'orderItems.book.gifts',
             'orderItems.collection',
             'orderItems.bookFormat',
-            'orderItems.attributeValues',
+            'orderItems.attributeValues.attribute',
             'orderStatus',
             'paymentStatus',
             'shippingAddress',
@@ -41,9 +41,10 @@ class OrderClientController extends Controller
             'voucher',
             'parentOrder', // Thêm parent order relationship
             'parentOrder.voucher', // Thêm voucher của parent order
-            'childOrders.orderItems.book.images',
+            'childOrders.orderItems.book.gifts',
             'childOrders.orderItems.collection',
             'childOrders.orderItems.bookFormat',
+            'childOrders.orderItems.attributeValues.attribute',
             'childOrders.orderStatus',
             'childOrders.paymentStatus',
             'refundRequests' // Thêm để load thông tin yêu cầu hoàn tiền
@@ -202,9 +203,10 @@ class OrderClientController extends Controller
         $status = $request->query('status', 'all');
         
         $query = Order::with([
-            'orderItems.book.images',
+            'orderItems.book.gifts',
             'orderItems.collection', 
             'orderItems.bookFormat',
+            'orderItems.attributeValues.attribute',
             'orderStatus', 
             'paymentStatus',
             'paymentMethod',
@@ -212,9 +214,10 @@ class OrderClientController extends Controller
             'voucher',
             'reviews',
             'refundRequests',
-            'childOrders.orderItems.book.images',
+            'childOrders.orderItems.book.gifts',
             'childOrders.orderItems.collection',
             'childOrders.orderItems.bookFormat',
+            'childOrders.orderItems.attributeValues.attribute',
             'childOrders.orderStatus',
             'childOrders.paymentStatus',
             'childOrders.refundRequests'
@@ -228,8 +231,8 @@ class OrderClientController extends Controller
                 'pending' => 'Chờ xác nhận',
                 'confirmed' => 'Đã xác nhận', 
                 'preparing' => 'Đang chuẩn bị',
-                'shipping' => 'Đang giao hàng',
-                'delivered' => ['Đã giao', 'Đã giao hàng', 'Thành công'],
+                'shipping' => ['Đang giao hàng', 'Đã giao thành công'],
+                'delivered' => ['Đã giao', 'Đã giao hàng', 'Đã nhận hàng', 'Thành công'],
                 'cancelled' => 'Đã hủy'
             ];
             

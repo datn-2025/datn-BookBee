@@ -152,14 +152,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Remove active state from all buttons
             tabButtons.forEach((btn, btnIndex) => {
-                btn.classList.remove('bg-black', 'text-white');
+                btn.classList.remove('bg-amber-600', 'bg-black', 'text-white');
                 btn.classList.add('bg-gray-100', 'text-black', 'hover:bg-gray-200');
                 btn.setAttribute('aria-selected', 'false');
             });
             
             // Activate clicked button
-            this.classList.remove('bg-gray-100', 'text-black', 'hover:bg-gray-200');
-            this.classList.add('bg-black', 'text-white');
+            this.classList.remove('bg-gray-100', 'hover:bg-gray-200', 'text-black');
+            this.classList.add('bg-amber-600', 'text-white');
             this.setAttribute('aria-selected', 'true');
             
             // Hide all tab contents

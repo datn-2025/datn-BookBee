@@ -139,12 +139,19 @@ class AdminProfileController extends Controller
                 Log::error('Không thể gửi email thông báo đổi mật khẩu: ' . $e->getMessage());
             }
 
-            Toastr::success('Đổi mật khẩu thành công!');
+            // Logout admin để đảm bảo tính bảo mật
+            Auth::guard('admin')->logout();
+
+            // Xóa tất cả session
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            Toastr::success('Đổi mật khẩu thành công! Vui lòng đăng nhập lại với mật khẩu mới.');
+            return redirect()->route('admin.login');
         } catch (\Exception $e) {
             Log::error('Error updating admin password: ' . $e->getMessage());
             Toastr::error('Có lỗi xảy ra khi đổi mật khẩu!');
+            return back();
         }
-
-        return back();
     }
 }

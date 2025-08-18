@@ -20,6 +20,7 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
 use App\Services\InvoiceService;
+use Illuminate\Support\Facades\Log;
 use App\Services\MixedOrderService;
 use App\Services\NotificationService;
 use App\Services\OrderService;
@@ -27,7 +28,6 @@ use App\Services\PaymentService;
 use App\Services\QrCodeService;
 use App\Services\VoucherService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -80,6 +80,14 @@ class OrderController extends Controller
         try {
             $cartItems = $this->orderService->validateCartItems($user);
         } catch (\Exception $e) {
+            // Log detailed stock information for debugging
+            try {
+                $stockReport = $this->orderService->getCartStockReport($user);
+                Log::warning('Checkout validation failed - Stock Report:', $stockReport);
+            } catch (\Exception $reportException) {
+                Log::error('Failed to generate stock report:', ['error' => $reportException->getMessage()]);
+            }
+            
             toastr()->error($e->getMessage());
             return redirect()->route('cart.index');
         }
@@ -110,13 +118,15 @@ class OrderController extends Controller
                                 ->orWhere('end_date', '>=', now());
                         })
                         ->where('quantity', '>', 0)
-                        ->select('gift_name as name', 'gift_description as description', 'gift_image as image')
+                        ->select('id', 'gift_name as name', 'gift_description as description', 'gift_image as image', 'quantity')
                         ->get()
                         ->map(function ($gift) {
                             return (object) [
+                                'id' => $gift->id,
                                 'name' => $gift->name ?? 'Quà tặng',
                                 'description' => $gift->description ?? '',
-                                'image' => $gift->image ?? null
+                                'image' => $gift->image ?? null,
+                                'quantity' => $gift->quantity
                             ];
                         });
                 }
@@ -196,12 +206,23 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
+        Log::info('Order store method called', ['request_data' => $request->all()]);
+        
         $user = Auth::user();
         // dd($request->all());
         // Validate giỏ hàng (kiểm tra sản phẩm được chọn, số lượng tồn kho và trạng thái)
         try {
             $selectedCartItems = $this->orderService->validateCartItems($user);
         } catch (\Exception $e) {
+            Log::error('Cart validation failed in store method', ['error' => $e->getMessage()]);
+            // Log detailed stock information for debugging
+            try {
+                $stockReport = $this->orderService->getCartStockReport($user);
+                Log::warning('Order creation validation failed - Stock Report:', $stockReport);
+            } catch (\Exception $reportException) {
+                Log::error('Failed to generate stock report during order creation:', ['error' => $reportException->getMessage()]);
+            }
+            
             toastr()->error($e->getMessage());
             return redirect()->route('cart.index');
         }
@@ -275,8 +296,57 @@ class OrderController extends Controller
             'max:50'
         ];
 
-        $request->validate($rules);
+        $messages = [
+            'voucher_code.exists' => 'Mã giảm giá không tồn tại.',
+            'payment_method_id.required' => 'Vui lòng chọn phương thức thanh toán.',
+            'payment_method_id.exists' => 'Phương thức thanh toán không hợp lệ.',
+            'delivery_method.required' => 'Vui lòng chọn phương thức giao hàng.',
+            'delivery_method.in' => 'Phương thức giao hàng không hợp lệ.',
+            'shipping_method.required_if' => 'Vui lòng chọn phương thức vận chuyển.',
+            'shipping_method.in' => 'Phương thức vận chuyển không hợp lệ.',
+            'shipping_fee_applied.required' => 'Phí vận chuyển không hợp lệ.',
+            'shipping_fee_applied.numeric' => 'Phí vận chuyển phải là số.',
+            'note.max' => 'Ghi chú không được quá 500 ký tự.',
+            
+            // Address validation messages
+            'address_id.required_without' => 'Vui lòng chọn địa chỉ hoặc nhập địa chỉ mới.',
+            'address_id.exists' => 'Địa chỉ được chọn không hợp lệ.',
+            
+            // New address validation messages
+            'new_recipient_name.required_without' => 'Vui lòng nhập tên người nhận.',
+            'new_recipient_name.string' => 'Tên người nhận phải là chuỗi ký tự.',
+            'new_recipient_name.max' => 'Tên người nhận không được quá 255 ký tự.',
+            
+            'new_phone.required_without' => 'Vui lòng nhập số điện thoại.',
+            'new_phone.string' => 'Số điện thoại phải là chuỗi ký tự.',
+            'new_phone.max' => 'Số điện thoại không được quá 20 ký tự.',
+            
+            'new_address_city_name.required_without' => 'Vui lòng chọn tỉnh/thành phố.',
+            'new_address_city_name.string' => 'Tên tỉnh/thành phố phải là chuỗi ký tự.',
+            'new_address_city_name.max' => 'Tên tỉnh/thành phố không được quá 100 ký tự.',
+            
+            'new_address_district_name.required_without' => 'Vui lòng chọn quận/huyện.',
+            'new_address_district_name.string' => 'Tên quận/huyện phải là chuỗi ký tự.',
+            'new_address_district_name.max' => 'Tên quận/huyện không được quá 100 ký tự.',
+            
+            'new_address_ward_name.required_without' => 'Vui lòng chọn phường/xã.',
+            'new_address_ward_name.string' => 'Tên phường/xã phải là chuỗi ký tự.',
+            'new_address_ward_name.max' => 'Tên phường/xã không được quá 100 ký tự.',
+            
+            'new_address_detail.required_without' => 'Vui lòng nhập địa chỉ cụ thể.',
+            'new_address_detail.string' => 'Địa chỉ cụ thể phải là chuỗi ký tự.',
+            'new_address_detail.max' => 'Địa chỉ cụ thể không được quá 255 ký tự.',
+            
+            // Email validation messages
+            'new_email.required' => 'Vui lòng nhập địa chỉ email.',
+            'new_email.string' => 'Email phải là chuỗi ký tự.',
+            'new_email.max' => 'Email không được quá 50 ký tự.',
+        ];
+
+        $request->validate($rules, $messages);
         $newAddressCreated = !$request->address_id;
+        
+        Log::info('Validation passed, starting order creation process');
 
         try {
             DB::beginTransaction();
@@ -315,7 +385,15 @@ class OrderController extends Controller
                     DB::commit();
                     
                     // Xử lý sau khi tạo đơn hàng thành công
-                    $this->mixedOrderService->handlePostOrderCreation($parentOrder, $physicalOrder, $ebookOrder, $user);
+                    try {
+                        $this->mixedOrderService->handlePostOrderCreation($parentOrder, $physicalOrder, $ebookOrder, $user);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to handle post order creation for mixed order', [
+                            'parent_order_id' => $parentOrder->id,
+                            'error' => $e->getMessage()
+                        ]);
+                        // Don't let email errors stop the process
+                    }
                     
                     // Tạo và gửi hóa đơn
                     try {
@@ -369,7 +447,15 @@ class OrderController extends Controller
                 DB::commit();
                 
                 // Xử lý sau khi tạo đơn hàng thành công
-                $this->mixedOrderService->handlePostOrderCreation($parentOrder, $physicalOrder, $ebookOrder, $user);
+                try {
+                    $this->mixedOrderService->handlePostOrderCreation($parentOrder, $physicalOrder, $ebookOrder, $user);
+                } catch (\Exception $e) {
+                    Log::error('Failed to handle post order creation for mixed order (COD)', [
+                        'parent_order_id' => $parentOrder->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    // Don't let email errors stop the process
+                }
                 
                 $successMessage = 'Đặt hàng thành công! Đơn hàng của bạn đã được chia thành 2 phần: giao hàng sách in và nhận ebook qua email.';
                 if ($newAddressCreated) {
@@ -411,21 +497,34 @@ class OrderController extends Controller
             
             // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
             if ($order->delivery_method === 'delivery') {
-                $this->orderService->createGhnOrder($order);
+                try {
+                    $this->orderService->createGhnOrder($order);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create GHN order for wallet payment', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
             
             // Tạo mã QR và gửi email xác nhận
-            $this->qrCodeService->generateOrderQrCode($order);
-            $this->emailService->sendOrderConfirmation($order);
-            
-            // Gửi email ebook nếu đơn hàng có ebook
-            $this->emailService->sendEbookPurchaseConfirmation($order);
-            
-            // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
-            $this->orderService->updateEbookOrderStatusOnPaymentSuccess($order);
-            
-            // Phát sự kiện OrderCreated để thông báo cho admin
-            event(new OrderCreated($order));
+            try {
+                $this->qrCodeService->generateOrderQrCode($order);
+                $this->emailService->sendOrderConfirmation($order);
+                
+                // Gửi email ebook nếu đơn hàng có ebook
+                $this->emailService->sendEbookPurchaseConfirmation($order);
+                
+                // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
+                $this->orderService->updateEbookOrderStatusOnPaymentSuccess($order);
+            } catch (\Exception $e) {
+                Log::error('Failed to send confirmation emails for wallet payment', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage()
+                ]);
+                // Don't let email errors stop the process
+            }
+
                 
                 // Tạo và gửi hóa đơn ngay lập tức cho thanh toán ví
                 try {
@@ -488,12 +587,27 @@ class OrderController extends Controller
             
             // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
             if ($order->delivery_method === 'delivery') {
-                $this->orderService->createGhnOrder($order);
+                try {
+                    $this->orderService->createGhnOrder($order);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create GHN order for COD payment', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
             
             // Tạo mã QR và gửi email xác nhận
-            $this->qrCodeService->generateOrderQrCode($order);
-            $this->emailService->sendOrderConfirmation($order);
+            try {
+                $this->qrCodeService->generateOrderQrCode($order);
+                $this->emailService->sendOrderConfirmation($order);
+            } catch (\Exception $e) {
+                Log::error('Failed to send confirmation email for COD order', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage()
+                ]);
+                // Don't let email errors stop the process
+            }
             
             // Phát sự kiện OrderCreated để thông báo cho admin
             event(new OrderCreated($order));
@@ -511,11 +625,22 @@ class OrderController extends Controller
             
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
+            Log::error('Validation exception in order store', [
+                'errors' => $e->errors(), 
+                'message' => $e->getMessage(),
+                'request_data' => $request->all()
+            ]);
             toastr()->error('Lỗi validation: ' . $e->getMessage());
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Lỗi khi tạo đơn hàng: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            Log::error('Exception in order store', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
             toastr()->error($e->getMessage());
             return redirect()->back()->with('error', 'Có lỗi xảy ra khi đặt hàng: ' . $e->getMessage());
         }
@@ -572,7 +697,18 @@ class OrderController extends Controller
             ]);
         }
 
-        $discountResult = $this->voucherService->calculateDiscount($voucher, $request->subtotal);
+        // Lấy thông tin giỏ hàng của user để kiểm tra điều kiện sản phẩm
+        $user = Auth::user();
+        try {
+            $cartItems = $this->orderService->validateCartItems($user);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['Giỏ hàng không hợp lệ: ' . $e->getMessage()]
+            ]);
+        }
+
+        $discountResult = $this->voucherService->calculateDiscount($voucher, $request->subtotal, $cartItems);
 
         if (isset($discountResult['errors'])) {
             return response()->json([
@@ -863,22 +999,43 @@ class OrderController extends Controller
                     }
                     
                     // Xử lý sau thanh toán cho mixed order
-                    $this->mixedOrderService->handlePostOrderCreation($order, $physicalOrder, $ebookOrder, Auth::user());
+                    try {
+                        $this->mixedOrderService->handlePostOrderCreation($order, $physicalOrder, $ebookOrder, Auth::user());
+                    } catch (\Exception $e) {
+                        Log::error('Failed to handle post order creation for VNPay mixed order', [
+                            'order_id' => $order->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
                 } else {
                     // Xử lý đơn hàng thông thường
                     // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
                     if ($order->delivery_method === 'delivery') {
-                        $this->orderService->createGhnOrder($order);
+                        try {
+                            $this->orderService->createGhnOrder($order);
+                        } catch (\Exception $e) {
+                            Log::error('Failed to create GHN order for VNPay payment', [
+                                'order_id' => $order->id,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
                     }
 
                     // Gửi email xác nhận
-                    $this->emailService->sendOrderConfirmation($order);
-                    
-                    // Gửi email ebook nếu đơn hàng có ebook
-                    $this->emailService->sendEbookPurchaseConfirmation($order);
-                    
-                    // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
-                    $this->orderService->updateEbookOrderStatusOnPaymentSuccess($order);
+                    try {
+                        $this->emailService->sendOrderConfirmation($order);
+                        
+                        // Gửi email ebook nếu đơn hàng có ebook
+                        $this->emailService->sendEbookPurchaseConfirmation($order);
+                        
+                        // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
+                        $this->orderService->updateEbookOrderStatusOnPaymentSuccess($order);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send confirmation emails for VNPay order', [
+                            'order_id' => $order->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
                 }
                 
                 // Tạo và gửi hóa đơn cho thanh toán VNPay thành công
@@ -897,7 +1054,14 @@ class OrderController extends Controller
 
                 // Tạo QR code nếu chưa có
                 if (!$order->qr_code) {
-                    $this->generateQrCode($order);
+                    try {
+                        $this->generateQrCode($order);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to generate QR code for VNPay order', [
+                            'order_id' => $order->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
                 }
 
                 DB::commit();
@@ -1010,7 +1174,7 @@ class OrderController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Preorder error: ' . $e->getMessage());
+            Log::error('Preorder error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => 'Có lỗi xảy ra khi đặt trước sách.'
@@ -1063,6 +1227,67 @@ class OrderController extends Controller
                     $bookAttributeValue->increment('stock', $orderItem->quantity);
                 }
             }
+        }
+    }
+
+    /**
+     * API endpoint to check cart stock status before checkout
+     */
+    public function checkStockStatus(Request $request)
+    {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Người dùng chưa đăng nhập'
+            ], 401);
+        }
+        
+        // Get cart from session for this implementation
+        $cart = session('cart', []);
+        
+        if (empty($cart)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Giỏ hàng trống'
+            ], 400);
+        }
+        
+        try {
+            // Validate cart items using session cart
+            $validationResult = $this->orderService->validateCartItems($cart);
+            
+            if ($validationResult['is_valid']) {
+                // If validation passes, get detailed stock report
+                $stockReport = $this->orderService->getCartStockReport($cart);
+                
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Tất cả sản phẩm đều có đủ tồn kho',
+                    'stock_report' => $stockReport
+                ]);
+            } else {
+                // If validation fails, provide detailed error information
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Tồn kho không đủ cho một số sản phẩm',
+                    'stock_report' => $validationResult
+                ], 422);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Stock validation error in checkStockStatus', [
+                'user_id' => $user->id,
+                'cart_count' => count($cart),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Lỗi hệ thống khi kiểm tra tồn kho: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

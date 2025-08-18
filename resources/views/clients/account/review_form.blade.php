@@ -7,16 +7,24 @@
     </div>
     <div class="p-6">
         <div class="flex flex-col sm:flex-row gap-6 items-center mb-6">
-            <img src="{{ $item->book->cover_image_url }}" alt="{{ $item->book->title }}" class="w-24 h-32 object-cover border border-slate-300 shadow-sm rounded-none">
+            @php
+                $bookImageUrl = asset('images/default-book.jpg');
+                if ($item->book && $item->book->cover_image) {
+                    $bookImageUrl = asset('storage/' . $item->book->cover_image);
+                } elseif ($item->book && $item->book->images && $item->book->images->isNotEmpty()) {
+                    $bookImageUrl = asset('storage/' . $item->book->images->first()->image_url);
+                }
+            @endphp
+            <img src="{{ $bookImageUrl }}" alt="{{ $item->book ? $item->book->title : 'Sản phẩm không tồn tại' }}" class="w-24 h-32 object-cover border border-slate-300 shadow-sm rounded-none" onerror="this.src='{{ asset('images/default-book.jpg') }}'; this.onerror=null;">
             <div class="flex-1 w-full">
-                <div class="font-semibold text-lg text-black mb-1">{{ $item->book->title }}</div>
-                <div class="text-xs text-gray-500 mb-1">Tác giả: <span class="font-medium text-black">{{ $item->book->authors->first()->name ?? 'N/A' }}</span></div>
-                <div class="text-xs text-gray-500 mb-1">Nhà xuất bản: <span class="font-medium text-black">{{ $item->book->brand->name ?? 'N/A' }}</span></div>
-                <div class="text-xs text-gray-500 mb-1">Danh mục: <span class="font-medium text-black">{{ $item->book->category->name ?? 'N/A' }}</span></div>
-                <div class="text-xs text-gray-500 mb-1">Định dạng sách: <span class="font-medium text-black">{{ $item->book->is_ebook ? 'Ebook' : 'Sách vật lý' }}</span></div>
-                <div class="text-xs text-gray-500 mb-1">Ngôn ngữ: <span class="font-medium text-black">{{ $item->book->language ?? 'N/A' }}</span></div>
-                <div class="text-xs text-gray-500 mb-1">Loại bìa: <span class="font-medium text-black">{{ $item->book->cover_type ?? 'N/A' }}</span></div>
-                <div class="text-xs text-gray-500 mb-1">Kích thước: <span class="font-medium text-black">{{ $item->book->size ?? 'N/A' }}</span></div>
+                <div class="font-semibold text-lg text-black mb-1">{{ $item->book ? $item->book->title : 'Sản phẩm không tồn tại' }}</div>
+                <div class="text-xs text-gray-500 mb-1">Tác giả: <span class="font-medium text-black">{{ $item->book && $item->book->authors ? $item->book->authors->first()->name ?? 'N/A' : 'N/A' }}</span></div>
+                <div class="text-xs text-gray-500 mb-1">Nhà xuất bản: <span class="font-medium text-black">{{ $item->book && $item->book->brand ? $item->book->brand->name ?? 'N/A' : 'N/A' }}</span></div>
+                <div class="text-xs text-gray-500 mb-1">Danh mục: <span class="font-medium text-black">{{ $item->book && $item->book->category ? $item->book->category->name ?? 'N/A' : 'N/A' }}</span></div>
+                <div class="text-xs text-gray-500 mb-1">Định dạng sách: <span class="font-medium text-black">{{ $item->book ? ($item->book->is_ebook ? 'Ebook' : 'Sách vật lý') : 'N/A' }}</span></div>
+                <div class="text-xs text-gray-500 mb-1">Ngôn ngữ: <span class="font-medium text-black">{{ $item->book ? $item->book->language ?? 'N/A' : 'N/A' }}</span></div>
+                <div class="text-xs text-gray-500 mb-1">Loại bìa: <span class="font-medium text-black">{{ $item->book ? $item->book->cover_type ?? 'N/A' : 'N/A' }}</span></div>
+                <div class="text-xs text-gray-500 mb-1">Kích thước: <span class="font-medium text-black">{{ $item->book ? $item->book->size ?? 'N/A' : 'N/A' }}</span></div>
                 <div class="text-xs text-gray-500">Giá: <span class="font-medium text-black">{{ number_format($item->price, 0, ',', '.') }} đ</span></div>
                 <div class="text-xs text-gray-500">Số lượng: <span class="font-medium text-black">{{ $item->quantity }}</span></div>
             </div>

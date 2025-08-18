@@ -75,8 +75,8 @@
                             'pending' => 'Chờ xác nhận',
                             'confirmed' => 'Đã xác nhận',
                             'preparing' => 'Đang chuẩn bị',
-                            'shipping' => 'Đang giao hàng',
-                            'delivered' => 'Đã giao',
+                            'shipping' => 'Đang giao / Đã giao',
+                            'delivered' => 'Hoàn thành',
                             'cancelled' => 'Đã hủy',
                         ];
                     @endphp
@@ -151,9 +151,13 @@
                                             'Chờ xác nhận' => 'bg-yellow-500 text-white',
                                             'Đã xác nhận' => 'bg-blue-500 text-white',
                                             'Đang chuẩn bị' => 'bg-indigo-500 text-white',
+                                            'Đang đóng gói' => 'bg-orange-500 text-white',
                                             'Đang giao hàng' => 'bg-purple-500 text-white',
+                                            'Đã giao hàng' => 'bg-green-500 text-white',
+                                            'Đã giao thành công' => 'bg-green-500 text-white',
                                             'Đã giao', 'Thành công' => 'bg-green-500 text-white',
                                             'Đã hủy' => 'bg-red-500 text-white',
+                                            'Hoàn trả' => 'bg-gray-500 text-white',
                                             default => 'bg-gray-500 text-white'
                                         };
                                     @endphp
@@ -221,9 +225,13 @@
                                                         'Chờ xác nhận' => 'bg-yellow-500 text-white',
                                                         'Đã xác nhận' => 'bg-blue-500 text-white',
                                                         'Đang chuẩn bị' => 'bg-indigo-500 text-white',
+                                                        'Đang đóng gói' => 'bg-orange-500 text-white',
                                                         'Đang giao hàng' => 'bg-purple-500 text-white',
+                                                        'Đã giao hàng' => 'bg-green-500 text-white',
+                                                        'Đã giao thành công' => 'bg-green-500 text-white',
                                                         'Đã giao', 'Thành công' => 'bg-green-500 text-white',
                                                         'Đã hủy' => 'bg-red-500 text-white',
+                                                        'Hoàn trả' => 'bg-gray-500 text-white',
                                                         default => 'bg-gray-500 text-white'
                                                     };
                                                 @endphp
@@ -305,6 +313,42 @@
                                                                 <p class="text-sm text-gray-600 uppercase tracking-wide mb-2">
                                                                     Định dạng: {{ $item->bookFormat->format_name }}
                                                                 </p>
+                                                            @endif
+                                                            
+                                                            @if(!$item->isCombo() && $item->attributeValues && $item->attributeValues->count() > 0)
+                                                                <div class="space-y-1 mb-2">
+                                                                    @foreach($item->attributeValues as $attributeValue)
+                                                                        <p class="text-sm text-gray-600 uppercase tracking-wide">
+                                                                            <span class="font-semibold">{{ $attributeValue->attribute->name ?? 'Thuộc tính' }}:</span> 
+                                                                            {{ $attributeValue->value }}
+                                                                        </p>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                            
+                                                            <!-- Hiển thị quà tặng -->
+                                                            @if(!$item->isCombo() && $item->book && $item->book->gifts && $item->book->gifts->count() > 0)
+                                                                <div class="mb-2">
+                                                                    <div class="flex items-center gap-2 mb-1">
+                                                                        <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                                                                        </svg>
+                                                                        <span class="text-sm font-bold text-red-600 uppercase tracking-wide">Quà tặng:</span>
+                                                                    </div>
+                                                                    <div class="space-y-1">
+                                                                        @foreach($item->book->gifts as $gift)
+                                                                            <div class="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded text-sm">
+                                                                                @if($gift->gift_image)
+                                                                                    <img src="{{ asset('storage/' . $gift->gift_image) }}" 
+                                                                                         alt="{{ $gift->gift_name }}" 
+                                                                                         class="w-6 h-6 object-cover rounded">
+                                                                                @endif
+                                                                                <span class="text-red-800 font-medium">{{ $gift->gift_name }}</span>
+                                                                                <span class="text-red-600 text-xs">(x{{ $item->quantity }})</span>
+                                                                            </div>
+                                                                        @endforeach
+                                                                    </div>
+                                                                </div>
                                                             @endif
                                                         @endif
                                                         
@@ -578,29 +622,29 @@
                                         <div class="flex-shrink-0">
                                             <div class="w-24 h-32 bg-gray-200 border-2 border-gray-300 overflow-hidden">
                                                 @if($item->isCombo())
-                                                    @if($item->collection && $item->collection->cover_image)
-                                                        <img src="{{ asset('storage/' . $item->collection->cover_image) }}" 
-                                                             alt="{{ $item->collection->name }}" 
-                                                             class="w-full h-full object-cover">
-                                                    @else
-                                                        <div class="w-full h-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center">
-                                                            <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                                            </svg>
-                                                        </div>
-                                                    @endif
+                                                    @php
+                                                        $comboImageUrl = asset('images/default-book.jpg');
+                                                        if ($item->collection && $item->collection->cover_image) {
+                                                            $comboImageUrl = asset('storage/' . $item->collection->cover_image);
+                                                        }
+                                                    @endphp
+                                                    <img src="{{ $comboImageUrl }}" 
+                                                         alt="{{ $item->collection ? $item->collection->name : 'Combo không tồn tại' }}" 
+                                                         class="w-full h-full object-cover"
+                                                         onerror="this.src='{{ asset('images/default-book.jpg') }}'; this.onerror=null;">
                                                 @else
-                                                    @if($item->book && $item->book->images->isNotEmpty())
-                                                        <img src="{{ asset('storage/' . $item->book->images->first()->path) }}" 
-                                                             alt="{{ $item->book->title }}" 
-                                                             class="w-full h-full object-cover">
-                                                    @else
-                                                        <div class="w-full h-full bg-gray-300 flex items-center justify-center">
-                                                            <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                            </svg>
-                                                        </div>
-                                                    @endif
+                                                    @php
+                                                        $bookImageUrl = asset('images/default-book.jpg');
+                                                        if ($item->book && $item->book->cover_image) {
+                                                            $bookImageUrl = asset('storage/' . $item->book->cover_image);
+                                                        } elseif ($item->book && $item->book->images && $item->book->images->isNotEmpty()) {
+                                                            $bookImageUrl = asset('storage/' . $item->book->images->first()->image_url);
+                                                        }
+                                                    @endphp
+                                                    <img src="{{ $bookImageUrl }}" 
+                                                         alt="{{ $item->book ? $item->book->title : 'Sản phẩm không tồn tại' }}" 
+                                                         class="w-full h-full object-cover"
+                                                         onerror="this.src='{{ asset('images/default-book.jpg') }}'; this.onerror=null;">
                                                 @endif
                                             </div>
                                         </div>
@@ -624,6 +668,37 @@
                                                     <p class="text-sm text-gray-600 uppercase tracking-wide mb-2">
                                                         Định dạng: {{ $item->bookFormat->format_name }}
                                                     </p>
+                                                @endif
+                                                
+                                                @if(!$item->isCombo() && $item->attributeValues && $item->attributeValues->count() > 0)
+                                                    <div class="space-y-1 mb-2">
+                                                        @foreach($item->attributeValues as $attributeValue)
+                                                            <p class="text-sm text-gray-600 uppercase tracking-wide">
+                                                                <span class="font-semibold">{{ $attributeValue->attribute->name ?? 'Thuộc tính' }}:</span> 
+                                                                {{ $attributeValue->value }}
+                                                            </p>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                                
+                                                <!-- Hiển thị quà tặng -->
+                                                @if(!$item->isCombo() && $item->book && $item->book->gifts && $item->book->gifts->count() > 0)
+                                                    <div class="mb-2">
+                                                        <p class="text-sm font-semibold text-red-600 uppercase tracking-wide mb-1">🎁 Quà tặng kèm:</p>
+                                                        <div class="flex flex-wrap gap-2">
+                                                            @foreach($item->book->gifts as $gift)
+                                                                <div class="flex items-center gap-2 px-2 py-1 bg-red-50 text-red-700 text-xs font-medium rounded border border-red-200">
+                                                                    @if($gift->image)
+                                                                        <img src="{{ asset('storage/' . $gift->image) }}" 
+                                                                             alt="{{ $gift->name }}" 
+                                                                             class="w-4 h-4 object-cover rounded">
+                                                                    @endif
+                                                                    <span>{{ $gift->name }}</span>
+                                                                    <span class="text-red-500">x{{ $gift->pivot->quantity ?? 1 }}</span>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
                                                 @endif
                                             @endif
                                             
@@ -662,11 +737,18 @@
                                                         </div>
                                                         <p class="text-sm text-gray-600 italic">"{{ $review->comment ?? 'Không có nhận xét' }}"</p>
                                                         
-                                                        @if($review->images && count($review->images) > 0)
+                                                        @php
+                                                            $reviewImages = $review->images;
+                                                            if (is_string($reviewImages)) {
+                                                                $reviewImages = json_decode($reviewImages, true) ?? [];
+                                                            }
+                                                            $reviewImages = is_array($reviewImages) ? $reviewImages : [];
+                                                        @endphp
+                                                        @if(!empty($reviewImages))
                                                             <div class="mt-3">
                                                                 <p class="text-xs font-bold uppercase tracking-wide text-black mb-2">Hình ảnh đánh giá:</p>
                                                                 <div class="grid grid-cols-3 gap-2">
-                                                                    @foreach($review->images as $imagePath)
+                                                                    @foreach($reviewImages as $imagePath)
                                                                         <img src="{{ asset('storage/' . $imagePath) }}" alt="Review Image" class="w-full h-16 object-cover border border-gray-300 rounded cursor-pointer hover:opacity-80 transition-opacity" onclick="openImageModal('{{ asset('storage/' . $imagePath) }}')">
                                                                     @endforeach
                                                                 </div>
@@ -751,12 +833,12 @@
                                                                 GỬI ĐÁNH GIÁ
                                                             </button>
                                                             @if($item->isCombo())
-                                                                <a href="{{ route('account.reviews.create.combo', ['orderId' => $order->id, 'collectionId' => $item->collection_id]) }}" 
+                                                                <a href="{{ route('combos.show', $item->collection->slug) }}" 
                                                                    class="px-3 py-3 bg-gray-200 text-black text-xs font-medium hover:bg-gray-300 transition-colors duration-150">
                                                                     Chi tiết
                                                                 </a>
                                                             @else
-                                                                <a href="{{ route('account.reviews.create', ['orderId' => $order->id, 'bookId' => $item->book_id]) }}" 
+                                                                <a href="{{ route('books.show', $item->book->slug) }}" 
                                                                    class="px-3 py-3 bg-gray-200 text-black text-xs font-medium hover:bg-gray-300 transition-colors duration-150">
                                                                     Chi tiết
                                                                 </a>

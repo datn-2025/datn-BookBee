@@ -34,8 +34,8 @@
                                 <label for="date_range" class="form-label">Chọn Khoảng Ngày</label>
                                 <input type="text" name="date_range" class="form-control date-range-picker @error('date_range') is-invalid @enderror" placeholder="Chọn khoảng ngày" autocomplete="off"
                                     value="{{ old('date_range', ($startDate && $endDate) ? ($startDate . ' - ' . $endDate) : '') }}">
-                                <input type="hidden" name="start_date" class="start-date" value="{{ old('start_date', $collection->startDate) }}">
-                                <input type="hidden" name="end_date" class="end-date" value="{{ old('end_date', $collection->endDate) }}">
+                              <input type="hidden" name="start_date" class="start-date" value="{{ old('start_date', $collection->start_date) }}">
+                                <input type="hidden" name="end_date" class="end-date" value="{{ old('end_date', $collection->end_date) }}">
                                 @error('date_range')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
