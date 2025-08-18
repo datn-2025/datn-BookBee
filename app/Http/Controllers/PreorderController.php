@@ -31,15 +31,29 @@ class PreorderController extends Controller
     }
 
     /**
+     * OVERVIEW: Luồng Đặt Trước (Preorder)
+     * - Route vào file `routes/web.php` nhóm prefix `preorders.*` (xem các comment tại đó)
+     * - Người dùng mở form `create()` → gửi form tới `store()`
+     * - Nếu chọn "Ví điện tử": trừ tiền ví ngay và đánh dấu preorder `payment_status = 'paid'`
+     * - Nếu chọn "VNPay": redirect sang VNPay; khi quay lại sẽ vào `vnpayReturn()` để chốt trạng thái thanh toán
+     * - Người dùng xem chi tiết bằng `show()`; có thể xem danh sách tại `index()` hoặc hủy bằng `cancel()` nếu còn hợp lệ
+     */
+
+    /**
      * Hiển thị form đặt trước sách
+     * - Chỉ hiển thị phương thức thanh toán phù hợp: VNPay, Ví điện tử
+     * - Trả thêm thông tin ví của user để UI hiển thị số dư
      */
     public function create(Book $book)
     {
+        // Kiểm tra điều kiện cho phép đặt trước (ví dụ: cờ pre_order, thời gian mở preorder, tồn kho dự kiến...)
         if (!$book->canPreorder()) {
             return redirect()->back()->with('error', 'Sách này không thể đặt trước.');
-        }
+        }  //Đoạn code kiểm tra nếu sách không thể đặt trước ($book->canPreorder() trả về false) thì sẽ chuyển người dùng về trang trước và hiển thị thông báo lỗi "Sách này không thể đặt trước.".
 
+        // Danh sách định dạng sách (bìa cứng, bìa mềm, ebook, ...)
         $formats = $book->formats()->get();
+        // Thuộc tính/biến thể hiển thị cho người dùng lựa chọn (màu, chữ ký, tặng kèm...)
         $attributes = $book->bookAttributeValues()->with('attributeValue.attribute')->get();
         
         // Chỉ hiển thị VNPay và Ví điện tử cho preorder
@@ -52,19 +66,29 @@ class PreorderController extends Controller
             })
             ->get();
             
+        // Lấy ví hiện tại của người dùng đang đăng nhập để hiện số dư
         $wallet = Wallet::where('user_id', Auth::id())->first();
         
         // Truyền thêm preorder_discount_percent để tính toán giá
+        // Phần trăm giảm giá dành riêng cho giai đoạn preorder (nếu có cấu hình trên sách)
         $preorderDiscountPercent = $book->preorder_discount_percent ?? 0;
         
         return view('preorders.create', compact('book', 'formats', 'attributes', 'paymentMethods', 'wallet', 'preorderDiscountPercent'));
-    }
+    } //Đoạn code trên lấy phần trăm giảm giá đặt trước của sách (mặc định 0 nếu không có), sau đó truyền toàn bộ dữ liệu (book, formats, attributes, paymentMethods, wallet, preorderDiscountPercent) sang view preorders.create.
 
     /**
      * Lưu đơn đặt trước
+     * STEPS:
+     * 1) Validate input và tính đơn giá/tổng tiền theo định dạng sách + thuộc tính
+     * 2) Tạo bản ghi `preorders`
+     * 3) Xử lý thanh toán theo phương thức:
+     *    - Ví điện tử: kiểm tra số dư → trừ tiền → ghi `WalletTransaction` → cập nhật preorder.payment_status='paid' → commit, gửi mail
+     *    - VNPay: commit tạm preorder → build URL thanh toán → redirect sang VNPay
+     * 4) Trường hợp không phải 2 phương thức trên: commit và gửi mail xác nhận đặt trước (chưa thanh toán)
      */
     public function store(Request $request)
     {
+        // 1) Validate các trường đầu vào từ form — đảm bảo dữ liệu hợp lệ trước khi xử lý
         $validated = $request->validate([
             'book_id' => 'required|exists:books,id',
             'book_format_id' => 'nullable|exists:book_formats,id',
@@ -84,18 +108,19 @@ class PreorderController extends Controller
             'payment_method_id' => 'required|exists:payment_methods,id'
         ]);
 
-        $book = Book::findOrFail($validated['book_id']);
-        $bookFormat = $validated['book_format_id'] ? BookFormat::findOrFail($validated['book_format_id']) : null;
-        $paymentMethod = PaymentMethod::findOrFail($validated['payment_method_id']);
-
+        // 2) Tải đối tượng cần thiết để tính giá và xử lý thanh toán
+        $book = Book::findOrFail($validated['book_id']); //Lấy ra sách từ bảng books theo book_id đã validate
+        $bookFormat = $validated['book_format_id'] ? BookFormat::findOrFail($validated['book_format_id']) : null; //Nếu người dùng có chọn định dạng sách (ví dụ: bìa mềm, bìa cứng, ebook) thì lấy bản ghi BookFormat. Nếu không có thì để null.
+        $paymentMethod = PaymentMethod::findOrFail($validated['payment_method_id']);//Lấy phương thức thanh toán đã chọn từ bảng payment_methods.
+        // Kiểm tra xem sách có thể đặt trước không
         if (!$book->canPreorder()) {
             return back()->with('error', 'Sách này không thể đặt trước.');
         }
 
-        // Kiểm tra định dạng có phải ebook không
+        // Kiểm tra định dạng có phải ebook không (ebook: không cần địa chỉ giao hàng)
         $isEbook = $bookFormat && strtolower($bookFormat->format_name) === 'ebook';
 
-        // Nếu là sách vật lý, bắt buộc phải có địa chỉ
+        // Nếu là sách vật lý, bắt buộc phải có địa chỉ — tránh đơn thiếu thông tin giao hàng
         if (!$isEbook && (!$validated['address'] || !$validated['province_code'])) {
             return back()->with('error', 'Vui lòng nhập đầy đủ địa chỉ giao hàng cho sách vật lý.');
         }
@@ -103,51 +128,60 @@ class PreorderController extends Controller
         try {
             DB::beginTransaction();
 
-            // Tính giá cơ bản
+            // Tính giá cơ bản (đơn giá preorder có thể khác giá bán chính thức)
             $basePrice = $book->getPreorderPrice($bookFormat);
             
-            // Làm sạch thuộc tính được chọn: loại bỏ giá trị rỗng/null
-            $selectedAttributes = [];
-            if (!empty($validated['selected_attributes']) && is_array($validated['selected_attributes'])) {
-                foreach ($validated['selected_attributes'] as $k => $v) {
-                    if ($v !== null && $v !== '') {
-                        $selectedAttributes[$k] = $v;
+            // Làm sạch thuộc tính được chọn: loại bỏ giá trị rỗng/null để tránh cộng giá sai
+            $selectedAttributes = []; // Mảng lưu trữ các thuộc tính đã chọn
+            // Nếu có thuộc tính được chọn, lọc ra các giá trị hợp lệ
+            // Chỉ giữ lại các thuộc tính có giá trị không rỗng
+            if (!empty($validated['selected_attributes']) && is_array($validated['selected_attributes'])) { // Kiểm tra nếu selected_attributes không rỗng và là mảng
+                // Duyệt qua từng thuộc tính đã chọn và loại bỏ giá trị rỗng
+                // Chỉ giữ lại các thuộc tính có giá trị không rỗng
+                // Điều này giúp tránh việc cộng giá trị rỗng vào tổng tiền
+                foreach ($validated['selected_attributes'] as $k => $v) { // Duyệt qua các thuộc tính được chọn
+                    if ($v !== null && $v !== '') { // Kiểm tra nếu giá trị không phải null hoặc chuỗi rỗng
+                        // Chỉ giữ lại các thuộc tính có giá trị hợp lệ
+                        $selectedAttributes[$k] = $v; // Lưu trữ thuộc tính đã chọn
                     }
                 }
             }
 
-            // Tính giá thêm từ thuộc tính (chỉ với sách vật lý)
-            $attributeExtraPrice = 0;
-            if (!empty($selectedAttributes) && !$isEbook) {
-                foreach ($selectedAttributes as $attributeName => $attributeValue) {
+            // Tính giá thêm từ thuộc tính (chỉ áp dụng cho sách vật lý)
+            $attributeExtraPrice = 0; // Tổng giá trị từ các thuộc tính
+            if (!empty($selectedAttributes) && !$isEbook) { // Kiểm tra nếu có thuộc tính được chọn và sách không phải ebook
+                foreach ($selectedAttributes as $attributeName => $attributeValue) {   // Duyệt qua từng thuộc tính đã chọn 
                      // Tìm BookAttributeValue tương ứng
-                     $bookAttributeValue = $book->bookAttributeValues()
-                         ->whereHas('attributeValue', function($query) use ($attributeValue) {
-                             $query->where('value', $attributeValue);
+                     $bookAttributeValue = $book->bookAttributeValues() // Tìm kiếm BookAttributeValue tương ứng với sách và thuộc tính
+                         ->whereHas('attributeValue', function($query) use ($attributeValue) { // Kiểm tra xem thuộc tính có giá trị tương ứng
+                             $query->where('value', $attributeValue); // Lọc ra các giá trị có trong thuộc tính
+                         }) 
+                         ->whereHas('attributeValue.attribute', function($query) use ($attributeName) { // Kiểm tra xem thuộc tính có tên tương ứng
+                             $query->where('name', $attributeName); // Lọc ra các thuộc tính có tên trong thuộc tính
                          })
-                         ->whereHas('attributeValue.attribute', function($query) use ($attributeName) {
-                             $query->where('name', $attributeName);
-                         })
-                         ->first();
-                     
-                     if ($bookAttributeValue && $bookAttributeValue->extra_price > 0) {
-                         $attributeExtraPrice += $bookAttributeValue->extra_price;
-                     }
+                         ->first(); // Lấy giá trị đầu tiên phù hợp
+                        // Nếu tìm thấy giá trị thuộc tính và nó có phụ thu, cộng vào tổng phụ thu
+                     if ($bookAttributeValue && $bookAttributeValue->extra_price > 0) { // Kiểm tra nếu giá trị thuộc tính có phụ thu
+                         $attributeExtraPrice += $bookAttributeValue->extra_price; // Cộng giá trị phụ thu vào tổng phụ thu
+                     } 
                  }
              }
             
-            $unitPrice = $basePrice + $attributeExtraPrice;
-            $totalAmount = $unitPrice * $validated['quantity'];
+            // Đơn giá cuối cùng = giá cơ bản + phụ thu từ thuộc tính
+            $unitPrice = $basePrice + $attributeExtraPrice; // Tính đơn giá cuối cùng
+            // Thành tiền = đơn giá cuối cùng * số lượng
+            $totalAmount = $unitPrice * $validated['quantity']; // Tính tổng tiền
             
-            // Thêm phí ship nếu có (miễn phí cho preorder)
+            // Thêm phí ship nếu có (hiện tại: miễn phí cho preorder)
             $shippingFee = 0; // Miễn phí ship cho đặt trước
 
-            // Lấy trạng thái thanh toán mặc định
+            // Lấy trạng thái thanh toán mặc định (hiển thị "Chờ Xử Lý" cho các giao dịch đang diễn ra)
             $paymentStatus = PaymentStatus::where('name', 'Chờ Xử Lý')->first();
             if (!$paymentStatus) {
                 $paymentStatus = PaymentStatus::first(); // Fallback
             }
 
+            // Dữ liệu sẽ ghi vào bảng preorders — lưu ý: payment_status mặc định 'pending'
             $preorderData = [
                 'user_id' => Auth::id(),
                 'book_id' => $book->id,
@@ -166,7 +200,7 @@ class PreorderController extends Controller
                 'payment_status' => 'pending'
             ];
 
-            // Chỉ lưu địa chỉ nếu không phải ebook
+            // Chỉ lưu địa chỉ nếu không phải ebook (ebook không cần địa chỉ giao hàng)
             if (!$isEbook) {
                 $preorderData = array_merge($preorderData, [
                     'address' => $validated['address'],
@@ -182,6 +216,8 @@ class PreorderController extends Controller
             // dd($preorder);
 
             // Xử lý thanh toán ví điện tử
+            // Lưu ý: Đây là luồng "thu tiền ngay" cho preorder. Sau bước này
+            // `preorder.payment_status` sẽ là 'paid'. Điều này rất quan trọng cho bước convertToOrder phía Admin.
             if (str_contains(strtolower($paymentMethod->name), 'ví điện tử') || str_contains(strtolower($paymentMethod->name), 'wallet')) {
                 $user = Auth::user();
                 // dd(1);
@@ -193,7 +229,7 @@ class PreorderController extends Controller
                     return back()->with('error', 'Số dư ví không đủ để thanh toán. Vui lòng nạp thêm tiền hoặc chọn phương thức thanh toán khác.');
                 }
                 // dd($totalAmount);
-                // Trừ tiền từ ví
+                // Trừ tiền từ ví — đảm bảo thao tác trong transaction để an toàn dữ liệu
                 $wallet->decrement('balance', $totalAmount);
                 // dd(2);
                 // Tạo bản ghi lịch sử giao dịch ví
@@ -207,7 +243,7 @@ class PreorderController extends Controller
                     'payment_method' => 'wallet'
                 ]);
                 // dd($a);
-                // Cập nhật trạng thái thanh toán preorder
+                // Cập nhật trạng thái thanh toán preorder — đánh dấu đã trả tiền
                 $preorder->update([
                     'payment_status' => 'paid',
                 ]);
@@ -226,6 +262,8 @@ class PreorderController extends Controller
             }
 
             // Xử lý thanh toán VNPay cho preorder
+            // Ghi chú: KHÔNG tạo bản ghi Payment ở đây (tránh lỗi ràng buộc order_id not null).
+            // Thay vào đó lưu tạm thông tin vào preorder và hoàn tất tại `vnpayReturn()`
             if ($paymentMethod->name == 'Thanh toán vnpay') {
                 DB::commit();
                 
@@ -277,6 +315,8 @@ class PreorderController extends Controller
 
     /**
      * Danh sách đơn đặt trước của user
+     * - Dựa theo Auth::id()
+     * - Phân trang và trả view `preorders.index`
      */
     public function index()
     {
@@ -290,6 +330,8 @@ class PreorderController extends Controller
 
     /**
      * Hủy đơn đặt trước
+     * - Chỉ cho phép nếu `Preorder::canBeCancelled()` trả true.
+     * - Cập nhật trạng thái phù hợp thông qua `markAsCancelled()`.
      */
     public function cancel(Preorder $preorder)
     {
@@ -309,6 +351,7 @@ class PreorderController extends Controller
 
     /**
      * API: Lấy thông tin sách để đặt trước
+     * - Dùng cho UI: trả về book, các format và các thuộc tính có thể chọn.
      */
     public function getBookInfo(Book $book)
     {
@@ -328,6 +371,9 @@ class PreorderController extends Controller
 
     /**
      * Xử lý thanh toán VNPay cho preorder
+     * - Tạo tham số, ký hash và redirect sang cổng VNPay
+     * - Trước khi redirect, cập nhật `preorders.vnpay_transaction_id` = mã tham chiếu và `payment_status = 'processing'`
+     * - Khi VNPay redirect về, `vnpayReturn()` sẽ xác nhận thành công/thất bại
      */
     public function vnpay_payment($data)
     {
@@ -337,9 +383,11 @@ class PreorderController extends Controller
         $vnp_Returnurl = route("preorder.vnpay.return");
         $vnp_TxnRef = $data['order_code'];
         $vnp_OrderInfo = $data['order_info'];
+        // VNPay yêu cầu số tiền theo đơn vị VND x 100
         $vnp_Amount = (int)($data['amount'] * 100);
         $vnp_Locale = "vn";
         $vnp_BankCode = "NCB";
+        // Địa chỉ IP của client (VNPay ghi nhận)
         $vnp_IpAddr = $_SERVER['REMOTE_ADDR'];
 
         $inputData = array(
@@ -357,11 +405,14 @@ class PreorderController extends Controller
             "vnp_OrderType" => "other",
         );
 
+        // Sắp xếp tham số theo key để tạo chuỗi ký đúng chuẩn VNPay
         ksort($inputData);
 
+        // Chuỗi query dùng để redirect và cũng là dữ liệu để băm chữ ký
         $query = http_build_query($inputData);
         $hashdata = $query;
 
+        // Tạo chữ ký an toàn theo thuật toán HMAC-SHA512
         $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
         $vnp_Url = $vnp_Url . "?" . $query . "&vnp_SecureHash=" . $vnpSecureHash;
 
@@ -380,13 +431,19 @@ class PreorderController extends Controller
 
     /**
      * Xử lý callback từ VNPay cho preorder
+     * STEPS:
+     * 1) Xác thực chữ ký VNPay
+     * 2) Tìm preorder theo `vnp_TxnRef`
+     * 3) Nếu ResponseCode === '00' → set `payment_status = 'paid'`, cập nhật transaction id thực tế, gửi mail
+     * 4) Nếu thất bại → set `payment_status = 'failed'`
+     * 5) Redirect về trang chi tiết preorder với thông báo
      */
     public function vnpayReturn(Request $request)
     {
         $vnp_HashSecret = config('services.vnpay.hash_secret');
         $vnp_SecureHash = $request->vnp_SecureHash;
 
-        // Lấy tất cả tham số trừ vnp_SecureHash
+        // Lấy tất cả tham số trừ vnp_SecureHash (không dùng tham số này khi tạo chữ ký kiểm chứng)
         $inputData = [];
         foreach ($request->all() as $key => $value) {
             if ($key !== 'vnp_SecureHash') {
@@ -394,14 +451,14 @@ class PreorderController extends Controller
             }
         }
 
-        // Sắp xếp theo key
+        // Sắp xếp theo key để đảm bảo cùng thứ tự khi tính hash
         ksort($inputData);
 
-        // Tạo hash string
+        // Tạo hash string đúng format như lúc gửi đi
         $hashData = http_build_query($inputData);
         $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
 
-        // Kiểm tra tính hợp lệ của chữ ký
+        // Kiểm tra tính hợp lệ của chữ ký — nếu sai, dừng xử lý và báo lỗi
         if ($secureHash !== $vnp_SecureHash) {
             Log::error('VNPay signature verification failed for preorder', [
                 'expected' => $secureHash,
@@ -419,7 +476,7 @@ class PreorderController extends Controller
         try {
             DB::beginTransaction();
 
-            // Tìm preorder theo transaction reference
+            // Tìm preorder theo transaction reference (mã đã đặt ở vnpay_payment)
             $preorder = Preorder::where('vnpay_transaction_id', $vnp_TxnRef)->first();
 
             if (!$preorder) {
@@ -429,7 +486,7 @@ class PreorderController extends Controller
             }
 
             if ($vnp_ResponseCode === '00') {
-                // Thanh toán thành công
+                // Thanh toán thành công — đánh dấu paid và cập nhật transaction id thực tế từ VNPay
                 $preorder->update([
                     'payment_status' => 'paid',
                     'vnpay_transaction_id' => $vnp_TransactionNo,
