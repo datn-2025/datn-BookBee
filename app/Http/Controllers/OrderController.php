@@ -15,6 +15,9 @@ use App\Models\Wallet;
 use App\Models\OrderCancellation; // Added for order cancellation
 use App\Models\OrderItemAttributeValue; // Added for order item attributes
 use App\Models\BookAttributeValue;
+
+use App\Models\AppliedVoucher; // ✅ NEW: Lưu voucher đã dùng
+
 use App\Events\OrderCreated; // Thêm import Event
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
@@ -76,7 +79,7 @@ class OrderController extends Controller
         // Lấy thông tin cửa hàng từ settings
         $storeSettings = \App\Models\Setting::first();
 
-        // Validate giỏ hàng (kiểm tra sản phẩm được chọn, số lượng tồn kho và trạng thái)
+        // Validate giỏ hàng
         try {
             $cartItems = $this->orderService->validateCartItems($user);
         } catch (\Exception $e) {
@@ -92,21 +95,18 @@ class OrderController extends Controller
             return redirect()->route('cart.index');
         }
 
-        // Lấy thông tin chi tiết giỏ hàng với relationships
+        // Lấy chi tiết giỏ hàng
         $cartItems = $user->cart()->with(['book.images', 'bookFormat', 'collection.books'])->where('is_selected', 1)->get();
 
-        // Sau khi validateCartItems, cập nhật lại trường gifts cho từng item
+        // Gifts
         foreach ($cartItems as $item) {
-            // Nếu là combo thì không có quà tặng
             if (isset($item->is_combo) && $item->is_combo) {
                 $item->gifts = collect();
             } else {
-                // Kiểm tra ebook
                 $isEbook = $item->bookFormat && stripos($item->bookFormat->format_name, 'ebook') !== false;
                 if ($isEbook) {
                     $item->gifts = collect();
                 } else {
-                    // Lấy quà tặng cho sách vật lý
                     $item->gifts = DB::table('book_gifts')
                         ->where('book_id', $item->book_id)
                         ->where(function ($query) {
@@ -133,64 +133,41 @@ class OrderController extends Controller
             }
         }
 
-        // Kiểm tra nếu giỏ hàng có cả sách vật lý và sách ebook
+        // Kiểm tra loại giỏ hàng
         $hasPhysicalBook = false;
         $hasEbook = false;
         $mixedFormatCart = false;
-        $hasOnlyEbooks = true; // Mặc định là chỉ có ebook
+        $hasOnlyEbooks = true;
 
         foreach ($cartItems as $item) {
-            // Kiểm tra combo - combo luôn là sách vật lý
             if (isset($item->is_combo) && $item->is_combo) {
                 $hasPhysicalBook = true;
-                $hasOnlyEbooks = false; // Có combo thì không phải chỉ ebook
-                
-                // Nếu đã có ebook, thì đây là giỏ hàng hỗn hợp
-                if ($hasEbook) {
-                    $mixedFormatCart = true;
-                    break;
-                }
+                $hasOnlyEbooks = false;
+                if ($hasEbook) { $mixedFormatCart = true; break; }
             }
-            
-            // Kiểm tra sách đơn lẻ
             if ($item->bookFormat) {
-                // Kiểm tra format_name để xác định loại sách
                 if (strtolower($item->bookFormat->format_name) === 'ebook') {
                     $hasEbook = true;
-                    
-                    // Nếu đã có sách vật lý (bao gồm combo), thì đây là giỏ hàng hỗn hợp
-                    if ($hasPhysicalBook) {
-                        $mixedFormatCart = true;
-                        break;
-                    }
+                    if ($hasPhysicalBook) { $mixedFormatCart = true; break; }
                 } else {
                     $hasPhysicalBook = true;
-                    $hasOnlyEbooks = false; // Có sách vật lý thì không phải chỉ ebook
-                    
-                    // Nếu đã có ebook, thì đây là giỏ hàng hỗn hợp
-                    if ($hasEbook) {
-                        $mixedFormatCart = true;
-                        break;
-                    }
+                    $hasOnlyEbooks = false;
+                    if ($hasEbook) { $mixedFormatCart = true; break; }
                 }
             }
         }
 
-        // Ẩn phương thức thanh toán COD cho:
-        // 1. Giỏ hàng hỗn hợp (có cả sách vật lý và ebook)
-        // 2. Đơn hàng chỉ có ebook
         if ($mixedFormatCart || $hasOnlyEbooks) {
-            // Lọc bỏ phương thức thanh toán khi nhận hàng (COD)
             $paymentMethods = $paymentMethods->filter(function($method) {
-                return !str_contains(strtolower($method->name), 'khi nhận hàng') &&
-                       !str_contains(strtolower($method->name), 'cod');
+                return !str_contains(strtolower($method->name), 'khi nhận hàng')
+                    && !str_contains(strtolower($method->name), 'cod');
             });
         }
 
-        // Tính tổng tiền
         $subtotal = $cartItems->sum(function ($item) {
             return $item->price * $item->quantity;
         });
+
         return view('orders.checkout', compact(
             'addresses',
             'wallet',
@@ -198,9 +175,9 @@ class OrderController extends Controller
             'paymentMethods',
             'cartItems',
             'subtotal',
-            'mixedFormatCart', // Truyền biến này để hiển thị thông báo trong view
-            'hasOnlyEbooks', // Truyền biến này để kiểm tra đơn hàng chỉ có ebook
-            'storeSettings' // Thông tin cửa hàng
+            'mixedFormatCart',
+            'hasOnlyEbooks',
+            'storeSettings'
         ));
     }
 
@@ -209,8 +186,8 @@ class OrderController extends Controller
         Log::info('Order store method called', ['request_data' => $request->all()]);
         
         $user = Auth::user();
-        // dd($request->all());
-        // Validate giỏ hàng (kiểm tra sản phẩm được chọn, số lượng tồn kho và trạng thái)
+
+        // Validate giỏ hàng
         try {
             $selectedCartItems = $this->orderService->validateCartItems($user);
         } catch (\Exception $e) {
@@ -227,9 +204,8 @@ class OrderController extends Controller
             return redirect()->route('cart.index');
         }
         
-        // Kiểm tra xem có phải đơn hàng ebook không
         $isEbookOrder = $request->delivery_method === 'ebook';
-        // dd($request->delivery_method);
+
         $rules = [
             'voucher_code' => 'nullable|exists:vouchers,code',
             'payment_method_id' => 'required|exists:payment_methods,id',
@@ -239,62 +215,23 @@ class OrderController extends Controller
             'note' => 'nullable|string|max:500',
         ];
         
-        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook
         if (!$isEbookOrder) {
             $rules = array_merge($rules, [
-                // Address rules
                 'address_id' => [
                     'required_without:new_address_city_name',
                     'nullable',
                     'exists:addresses,id,user_id,' . ($user ? $user->id : 'NULL')
                 ],
-
-                // New address rules
-                'new_recipient_name' => [
-                    'required_without:address_id',
-                    'nullable',
-                    'string',
-                    'max:255'
-                ],
-                'new_phone' => [
-                    'required_without:address_id',
-                    'nullable',
-                    'string',
-                    'max:20'
-                ],
-                'new_address_city_name' => [
-                    'required_without:address_id',
-                    'nullable',
-                    'string',
-                    'max:100'
-                ],
-                'new_address_district_name' => [
-                    'required_without:address_id',
-                    'nullable',
-                    'string',
-                    'max:100'
-                ],
-                'new_address_ward_name' => [
-                    'required_without:address_id',
-                    'nullable',
-                    'string',
-                    'max:100'
-                ],
-                'new_address_detail' => [
-                    'required_without:address_id',
-                    'nullable',
-                    'string',
-                    'max:255'
-                ],
+                'new_recipient_name' => ['required_without:address_id','nullable','string','max:255'],
+                'new_phone' => ['required_without:address_id','nullable','string','max:20'],
+                'new_address_city_name' => ['required_without:address_id','nullable','string','max:100'],
+                'new_address_district_name' => ['required_without:address_id','nullable','string','max:100'],
+                'new_address_ward_name' => ['required_without:address_id','nullable','string','max:100'],
+                'new_address_detail' => ['required_without:address_id','nullable','string','max:255'],
             ]);
         }
         
-        // Email luôn bắt buộc
-        $rules['new_email'] = [
-            'required',
-            'string',
-            'max:50'
-        ];
+        $rules['new_email'] = ['required','string','max:50'];
 
         $messages = [
             'voucher_code.exists' => 'Mã giảm giá không tồn tại.',
@@ -351,28 +288,27 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
             
-            // Kiểm tra xem có phải mixed format cart không
+            // Mixed format?
             $cartItems = $this->orderService->validateCartItems($user);
             $isMixedFormat = $this->mixedOrderService->hasMixedFormats($cartItems);
             
             if ($isMixedFormat) {
-                // Xử lý đơn hàng hỗn hợp (có cả ebook và sách vật lý)
                 $mixedOrderResult = $this->mixedOrderService->createMixedFormatOrders($request, $user);
                 $parentOrder = $mixedOrderResult['parent_order'];
                 $physicalOrder = $mixedOrderResult['physical_order'];
                 $ebookOrder = $mixedOrderResult['ebook_order'];
                 $cartItems = $mixedOrderResult['cart_items'];
                 
-                // Lấy thông tin payment method
                 $paymentMethod = PaymentMethod::findOrFail($request->payment_method_id);
                 
-                // Xử lý thanh toán cho đơn hàng hỗn hợp
+                // ✅ Ghi nhận voucher đã dùng cho Parent Order (nếu có)
+                $this->recordAppliedVoucher($parentOrder, $request->voucher_code ?? null, $user);
+
                 $isWalletPayment = $this->mixedOrderService->processMixedOrderPayment(
                     $parentOrder, $physicalOrder, $ebookOrder, $user, $paymentMethod
                 );
                 
                 if ($isWalletPayment) {
-                    // Tạo payment records cho các đơn hàng
                     $this->paymentService->createPayment([
                         'order_id' => $parentOrder->id,
                         'transaction_id' => $parentOrder->order_code . '_WALLET',
@@ -384,6 +320,8 @@ class OrderController extends Controller
                     
                     DB::commit();
                     
+                    $this->mixedOrderService->handlePostOrderCreation($parentOrder, $physicalOrder, $ebookOrder, $user);
+
                     // Xử lý sau khi tạo đơn hàng thành công
                     try {
                         $this->mixedOrderService->handlePostOrderCreation($parentOrder, $physicalOrder, $ebookOrder, $user);
@@ -395,7 +333,6 @@ class OrderController extends Controller
                         // Don't let email errors stop the process
                     }
                     
-                    // Tạo và gửi hóa đơn
                     try {
                         $this->invoiceService->processInvoiceForPaidOrder($parentOrder);
                         Log::info('Invoice created for mixed order', ['parent_order_id' => $parentOrder->id]);
@@ -410,16 +347,13 @@ class OrderController extends Controller
                      $this->notificationService->createPaymentSuccessNotification($parentOrder, $user);
                     
                     $successMessage = 'Đặt hàng thành công! Đơn hàng của bạn đã được chia thành 2 phần: giao hàng sách in và nhận ebook qua email.';
-                    if ($newAddressCreated) {
-                        $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
-                    }
+                    if ($newAddressCreated) { $successMessage .= ' Địa chỉ mới của bạn đã được lưu.'; }
                     
                     toastr()->success($successMessage);
                     event(new OrderCreated($parentOrder));
                     return redirect()->route('orders.show', $parentOrder->id);
                 }
                 
-                // Xử lý VNPay cho mixed order (nếu cần)
                 if ($paymentMethod->name == 'Thanh toán vnpay') {
                     DB::commit();
                     
@@ -435,7 +369,6 @@ class OrderController extends Controller
                     return $this->vnpay_payment($vnpayData);
                 }
                 
-                // Xử lý COD cho mixed order
                 $this->paymentService->createPayment([
                     'order_id' => $parentOrder->id,
                     'transaction_id' => $parentOrder->order_code,
@@ -447,6 +380,7 @@ class OrderController extends Controller
                 
                 DB::commit();
                 
+
                 // Xử lý sau khi tạo đơn hàng thành công
                 try {
                     $this->mixedOrderService->handlePostOrderCreation($parentOrder, $physicalOrder, $ebookOrder, $user);
@@ -459,30 +393,26 @@ class OrderController extends Controller
                 }
                 
                 $successMessage = 'Đặt hàng thành công! Đơn hàng của bạn đã được chia thành 2 phần: giao hàng sách in và nhận ebook qua email.';
-                if ($newAddressCreated) {
-                    $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
-                }
+                if ($newAddressCreated) { $successMessage .= ' Địa chỉ mới của bạn đã được lưu.'; }
                 
                 toastr()->success($successMessage);
                 event(new OrderCreated($parentOrder));
                 return redirect()->route('orders.show', $parentOrder->id);
             }
             
-            // Xử lý đơn hàng thông thường (chỉ có một loại sản phẩm)
-            // dd($request->all());
+            // Single format order
             $orderResult = $this->orderService->processOrderCreationWithWallet($request, $user);
-            // dd($orderResult);
             $order = $orderResult['order'];
             $paymentMethod = $orderResult['payment_method'];
             $cartItems = $orderResult['cart_items'];
             $isWalletPayment = $orderResult['is_wallet_payment'];
 
-            // Xử lý thanh toán bằng ví điện tử
+            // ✅ Ghi nhận voucher đã dùng cho đơn thường (nếu có)
+            $this->recordAppliedVoucher($order, $request->voucher_code ?? null, $user);
+
             if ($isWalletPayment) {
-                // Xử lý thanh toán ví
                 $this->orderService->processWalletPayment($order, $user);
                 
-                // Tạo payment record cho ví
                 $payment = $this->paymentService->createPayment([
                     'order_id' => $order->id,
                     'transaction_id' => $order->order_code . '_WALLET',
@@ -492,43 +422,39 @@ class OrderController extends Controller
                     'paid_at' => now()
                 ]);
                 
-                // Xóa giỏ hàng sau khi thanh toán thành công
-            $this->orderService->clearUserCart($user);
-            
-            DB::commit();
-            
-            // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
-            if ($order->delivery_method === 'delivery') {
+                // clear cart
+                $this->orderService->clearUserCart($user);
+                
+                // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
+                if ($order->delivery_method === 'delivery') {
+                    try {
+                        $this->orderService->createGhnOrder($order);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to create GHN order for wallet payment', [
+                            'order_id' => $order->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+                
+                // Tạo mã QR và gửi email xác nhận
                 try {
-                    $this->orderService->createGhnOrder($order);
+                    $this->qrCodeService->generateOrderQrCode($order);
+                    $this->emailService->sendOrderConfirmation($order);
+                    
+                    // Gửi email ebook nếu đơn hàng có ebook
+                    $this->emailService->sendEbookPurchaseConfirmation($order);
+                    
+                    // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
+                    $this->orderService->updateEbookOrderStatusOnPaymentSuccess($order);
                 } catch (\Exception $e) {
-                    Log::error('Failed to create GHN order for wallet payment', [
+                    Log::error('Failed to send confirmation emails for wallet payment', [
                         'order_id' => $order->id,
                         'error' => $e->getMessage()
                     ]);
+                    // Don't let email errors stop the process
                 }
-            }
-            
-            // Tạo mã QR và gửi email xác nhận
-            try {
-                $this->qrCodeService->generateOrderQrCode($order);
-                $this->emailService->sendOrderConfirmation($order);
-                
-                // Gửi email ebook nếu đơn hàng có ebook
-                $this->emailService->sendEbookPurchaseConfirmation($order);
-                
-                // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
-                $this->orderService->updateEbookOrderStatusOnPaymentSuccess($order);
-            } catch (\Exception $e) {
-                Log::error('Failed to send confirmation emails for wallet payment', [
-                    'order_id' => $order->id,
-                    'error' => $e->getMessage()
-                ]);
-                // Don't let email errors stop the process
-            }
 
-                
-                // Tạo và gửi hóa đơn ngay lập tức cho thanh toán ví
                 try {
                     $this->invoiceService->processInvoiceForPaidOrder($order);
                     Log::info('Invoice created and sent for wallet payment', ['order_id' => $order->id]);
@@ -543,24 +469,17 @@ class OrderController extends Controller
                  $this->notificationService->createPaymentSuccessNotification($order, $user);
                 
                 $successMessage = 'Đặt hàng và thanh toán bằng ví thành công!';
-                if ($newAddressCreated) {
-                    $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
-                }
+                if ($newAddressCreated) { $successMessage .= ' Địa chỉ mới của bạn đã được lưu.'; }
                 
                 toastr()->success($successMessage);
                 event(new OrderCreated($order));
                 return redirect()->route('orders.show', $order->id);
             }
             
-            // Nếu thanh toán VNPay, tạo order trước rồi chuyển hướng
             if ($paymentMethod->name == 'Thanh toán vnpay') {
-                // Tạo mã QR cho đơn hàng
                 $this->qrCodeService->generateOrderQrCode($order);
-                
-                // Commit transaction trước khi chuyển đến VNPay
                 DB::commit();
                 
-                // Dữ liệu để truyền cho VNPay
                 $vnpayData = [
                     'order_id' => $order->id,
                     'payment_status_id' => $order->payment_status_id,
@@ -573,7 +492,7 @@ class OrderController extends Controller
                 return $this->vnpay_payment($vnpayData);
             }
 
-            // Xử lý thanh toán thường (COD)
+            // COD
             $payment = $this->paymentService->createPayment([
                 'order_id' => $order->id,
                 'transaction_id' => $order->order_code,
@@ -583,12 +502,10 @@ class OrderController extends Controller
                 'paid_at' => now()
             ]);
             
-            // Xóa giỏ hàng sau khi tạo đơn hàng thành công
             $this->orderService->clearUserCart($user);
             
             DB::commit();
             
-            // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
             if ($order->delivery_method === 'delivery') {
                 try {
                     $this->orderService->createGhnOrder($order);
@@ -599,8 +516,7 @@ class OrderController extends Controller
                     ]);
                 }
             }
-            
-            // Tạo mã QR và gửi email xác nhận
+        
             try {
                 $this->qrCodeService->generateOrderQrCode($order);
                 $this->emailService->sendOrderConfirmation($order);
@@ -611,7 +527,7 @@ class OrderController extends Controller
                 ]);
                 // Don't let email errors stop the process
             }
-            
+
             // Phát sự kiện OrderCreated để thông báo cho admin
             event(new OrderCreated($order));
             
@@ -619,9 +535,7 @@ class OrderController extends Controller
             Log::info('COD order created successfully - Invoice will be created when payment is confirmed by admin', ['order_id' => $order->id]);
             
             $successMessage = 'Đặt hàng thành công!';
-            if ($newAddressCreated) {
-                $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
-            }
+            if ($newAddressCreated) { $successMessage .= ' Địa chỉ mới của bạn đã được lưu.'; }
             
             toastr()->success($successMessage);
             return redirect()->route('orders.show', $order->id);
@@ -668,7 +582,6 @@ class OrderController extends Controller
             'voucher'
         ]);
         
-        // Lấy thông tin cài đặt cửa hàng
         $storeSettings = \App\Models\Setting::first();
 
         return view('clients.account.order-details', compact('order', 'storeSettings'));
@@ -739,13 +652,11 @@ class OrderController extends Controller
         $order = Order::findOrFail($request->order_id);
         $user = Auth::user();
 
-        // Authorization: Ensure the user owns the order
         if ($order->user_id !== $user->id) {
             toastr()->error('Bạn không có quyền hủy đơn hàng này.');
             return redirect()->back()->with('error', 'Bạn không có quyền hủy đơn hàng này.');
         }
 
-        // Check if order status allows cancellation
         if (!\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name)) {
             toastr()->error('Không thể hủy đơn hàng ở trạng thái hiện tại: ' . $order->orderStatus->name);
             return redirect()->back()->with('error', 'Không thể hủy đơn hàng ở trạng thái hiện tại: ' . $order->orderStatus->name);
@@ -753,13 +664,11 @@ class OrderController extends Controller
 
         DB::beginTransaction();
         try {
-            // Ghép "Lý do khác" nếu có
             $selectedReasons = $request->input('reason', []);
             if (!empty($request->input('other_reason'))) {
                 $selectedReasons[] = "Lý do khác: " . $request->input('other_reason');
             }
             
-            // Create OrderCancellation record
             OrderCancellation::create([
                 'order_id' => $order->id,
                 'reason' => implode(", ", $selectedReasons),
@@ -767,7 +676,6 @@ class OrderController extends Controller
                 'cancelled_at' => now(),
             ]);
 
-            // Update Order status to 'Cancelled'
             $cancelledStatus = OrderStatus::where('name', 'Đã hủy')->first();
             if (!$cancelledStatus) {
                 Log::error('Order status "Đã hủy" not found.');
@@ -776,48 +684,43 @@ class OrderController extends Controller
                 return redirect()->back()->with('error', 'Lỗi hệ thống khi hủy đơn hàng.');
             }
             
-            // Cập nhật đơn hàng với thông tin hủy
             $order->update([
                 'order_status_id' => $cancelledStatus->id,
                 'cancelled_at' => now(),
                 'cancellation_reason' => implode(", ", $selectedReasons)
             ]);
 
-            // Cộng lại tồn kho cho các sản phẩm trong đơn hàng
+            // Cộng lại tồn kho
             $order->orderItems->each(function ($item) {
                 if ($item->bookFormat && $item->bookFormat->stock !== null) {
                     Log::info("Cộng lại tồn kho cho book_format_id {$item->bookFormat->id}, số lượng: {$item->quantity}");
                     $item->bookFormat->increment('stock', $item->quantity);
                 }
-                
-                // ✨ THÊM MỚI: Cộng lại stock thuộc tính sản phẩm
                 $this->increaseAttributeStock($item);
             });
 
+            // ✅ NEW: Rollback voucher đã áp cho đơn này (nếu có)
+            $this->rollbackAppliedVoucher($order, $user);
 
-
-
-            // Hoàn tiền vào ví nếu đơn hàng đã thanh toán
+            // Hoàn tiền ví nếu đã thanh toán
             if ($order->paymentStatus->name === 'Đã Thanh Toán') {
                 try {
                     $paymentRefundService = app(\App\Services\PaymentRefundService::class);
                     $refundResult = $paymentRefundService->refundToWallet($order, $order->total_amount);
                     
                     if ($refundResult) {
-                        Log::info('Order 3 cancellation refund successful', [
+                        Log::info('Order cancellation refund successful', [
                             'order_id' => $order->id,
                             'order_code' => $order->order_code,
                             'amount' => $order->total_amount,
                             'user_id' => $order->user_id
                         ]);
-                        
                         toastr()->success('Đơn hàng đã được hủy và hoàn tiền vào ví thành công.');
                     } else {
                         Log::warning('Order cancellation refund failed but order still cancelled', [
                             'order_id' => $order->id,
                             'order_code' => $order->order_code
                         ]);
-                        
                         toastr()->success('Đơn hàng đã được hủy thành công. Tiền hoàn sẽ được xử lý trong thời gian sớm nhất.');
                     }
                 } catch (\Exception $refundError) {
@@ -826,14 +729,11 @@ class OrderController extends Controller
                         'error' => $refundError->getMessage(),
                         'trace' => $refundError->getTraceAsString()
                     ]);
-                    
                     toastr()->success('Đơn hàng đã được hủy thành công. Tiền hoàn sẽ được xử lý trong thời gian sớm nhất.');
                 }
             } else {
                 toastr()->success('Đơn hàng đã được hủy thành công.');
             }
-
-
 
             // Tạo thông báo cho admin về việc hủy đơn hàng
             $this->notificationService->createOrderCancellationNotificationForAdmin(
@@ -906,7 +806,6 @@ class OrderController extends Controller
         $vnp_HashSecret = config('services.vnpay.hash_secret');
         $vnp_SecureHash = $request->vnp_SecureHash;
 
-        // Lấy tất cả tham số trừ vnp_SecureHash
         $inputData = [];
         foreach ($request->all() as $key => $value) {
             if ($key !== 'vnp_SecureHash') {
@@ -914,14 +813,11 @@ class OrderController extends Controller
             }
         }
 
-        // Sắp xếp theo key
         ksort($inputData);
 
-        // Tạo hash string
         $hashData = http_build_query($inputData);
         $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
 
-        // Kiểm tra tính hợp lệ của chữ ký
         if ($secureHash !== $vnp_SecureHash) {
             Log::error('VNPay signature verification failed', [
                 'expected' => $secureHash,
@@ -930,7 +826,6 @@ class OrderController extends Controller
             return redirect()->route('orders.checkout')->with('error', 'Có lỗi xảy ra trong quá trình thanh toán');
         }
 
-        // Lấy thông tin từ VNPay response
         $vnp_ResponseCode = $request->vnp_ResponseCode;
         $vnp_TxnRef = $request->vnp_TxnRef;
         $vnp_Amount = $request->vnp_Amount / 100;
@@ -939,7 +834,6 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
 
-            // Tìm đơn hàng theo order_code
             $order = Order::where('order_code', $vnp_TxnRef)->first();
 
             if (!$order) {
@@ -948,13 +842,11 @@ class OrderController extends Controller
                 return redirect()->route('orders.checkout')->with('error', 'Không tìm thấy đơn hàng');
             }
 
-            // Tìm payment record
             $payment = Payment::where('order_id', $order->id)
                               ->where('transaction_id', $vnp_TxnRef)
                               ->first();
 
             if ($vnp_ResponseCode === '00') {
-                // Thanh toán thành công
                 $paymentStatus = PaymentStatus::where('name', 'Đã Thanh Toán')->first();
                 
                 if (!$paymentStatus) {
@@ -975,7 +867,6 @@ class OrderController extends Controller
                     ]);
                 }
 
-                // Cập nhật trạng thái thanh toán của đơn hàng
                 $order->update([
                     'payment_status_id' => $paymentStatus->id
                 ]);
@@ -985,12 +876,9 @@ class OrderController extends Controller
                     'order_code' => $order->order_code
                 ]);
 
-                // Xóa giỏ hàng sau khi thanh toán thành công
                 Auth::user()->cart()->delete();
 
-                // Kiểm tra xem có phải mixed order không
                 if ($order->delivery_method === 'mixed' && $order->isParentOrder()) {
-                    // Xử lý mixed order - cập nhật trạng thái cho các đơn con
                     $physicalOrder = $order->childOrders()->where('delivery_method', 'delivery')->first();
                     $ebookOrder = $order->childOrders()->where('delivery_method', 'ebook')->first();
                     
@@ -1001,6 +889,7 @@ class OrderController extends Controller
                         $ebookOrder->update(['payment_status_id' => $paymentStatus->id]);
                     }
                     
+
                     // Xử lý sau thanh toán cho mixed order
                     try {
                         $this->mixedOrderService->handlePostOrderCreation($order, $physicalOrder, $ebookOrder, Auth::user());
@@ -1011,8 +900,6 @@ class OrderController extends Controller
                         ]);
                     }
                 } else {
-                    // Xử lý đơn hàng thông thường
-                    // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
                     if ($order->delivery_method === 'delivery') {
                         try {
                             $this->orderService->createGhnOrder($order);
@@ -1023,6 +910,7 @@ class OrderController extends Controller
                             ]);
                         }
                     }
+
 
                     // Gửi email xác nhận
                     try {
@@ -1041,7 +929,6 @@ class OrderController extends Controller
                     }
                 }
                 
-                // Tạo và gửi hóa đơn cho thanh toán VNPay thành công
                 try {
                     $this->invoiceService->processInvoiceForPaidOrder($order);
                     Log::info('Invoice created and sent for VNPay order', ['order_id' => $order->id]);
@@ -1055,7 +942,6 @@ class OrderController extends Controller
                 // Tạo thông báo thanh toán thành công
                  $this->notificationService->createPaymentSuccessNotification($order, Auth::user());
 
-                // Tạo QR code nếu chưa có
                 if (!$order->qr_code) {
                     try {
                         $this->generateQrCode($order);
@@ -1074,7 +960,7 @@ class OrderController extends Controller
                 return redirect()->route('orders.show', $order->id);
 
             } else {
-                // Thanh toán thất bại - Hủy đơn hàng
+                // Thanh toán thất bại - Hủy đơn
                 $cancelledStatus = OrderStatus::where('name', 'Đã hủy')->first();
                 $failedPaymentStatus = PaymentStatus::where('name', 'Thất Bại')->first();
 
@@ -1084,9 +970,7 @@ class OrderController extends Controller
                     ]);
                 }
 
-                // Kiểm tra xem có phải mixed order không
                 if ($order->delivery_method === 'mixed' && $order->isParentOrder()) {
-                    // Hủy đơn hàng cha và các đơn con
                     $childOrders = $order->childOrders;
                     
                     foreach ($childOrders as $childOrder) {
@@ -1097,7 +981,6 @@ class OrderController extends Controller
                             'cancellation_reason' => 'Thanh toán VNPay thất bại - Mã lỗi: ' . $vnp_ResponseCode
                         ]);
                         
-                        // Tạo bản ghi hủy đơn hàng con
                         OrderCancellation::create([
                             'order_id' => $childOrder->id,
                             'reason' => 'Thanh toán VNPay thất bại - Mã lỗi: ' . $vnp_ResponseCode,
@@ -1107,7 +990,7 @@ class OrderController extends Controller
                     }
                 }
                 
-                // Cập nhật trạng thái đơn hàng thành "Đã hủy"
+                // Hủy order chính
                 $order->update([
                     'order_status_id' => $cancelledStatus->id,
                     'payment_status_id' => $failedPaymentStatus->id,
@@ -1115,13 +998,15 @@ class OrderController extends Controller
                     'cancellation_reason' => 'Thanh toán VNPay thất bại - Mã lỗi: ' . $vnp_ResponseCode
                 ]);
 
-                // Tạo bản ghi hủy đơn hàng
                 OrderCancellation::create([
                     'order_id' => $order->id,
                     'reason' => 'Thanh toán VNPay thất bại - Mã lỗi: ' . $vnp_ResponseCode,
                     'cancelled_by' => $order->user_id,
                     'cancelled_at' => now(),
                 ]);
+
+                // ✅ NEW: Rollback voucher đã áp cho đơn này (nếu có)
+                $this->rollbackAppliedVoucher($order, $order->user);
 
                 DB::commit();
 
@@ -1147,7 +1032,6 @@ class OrderController extends Controller
     public function storePreorder(Request $request)
     {
         try {
-            // Validation
             $validated = $request->validate([
                 'book_id' => 'required|exists:books,id',
                 'book_format_id' => 'required|exists:book_formats,id',
@@ -1162,9 +1046,6 @@ class OrderController extends Controller
                 'payment_method_id' => 'required|exists:payment_methods,id',
                 'selected_attributes' => 'nullable|array',
             ]);
-
-            // For now, just return success since this is a preorder (not immediate order)
-            // You can implement actual preorder logic here (save to preorders table, send email, etc.)
             
             return response()->json([
                 'success' => true,
@@ -1186,10 +1067,9 @@ class OrderController extends Controller
         }
     }
 
-     private function generateQrCode(Order $order)
+    private function generateQrCode(Order $order)
     {
         try {
-            // Create QR code with order information
             $orderInfo = [
                 'id' => $order->id,
                 'customer' => $order->user->name ?? 'N/A',
@@ -1205,7 +1085,6 @@ class OrderController extends Controller
             $filename = 'order_qr/order_' . substr($order->id, 0, 8) . '.png';
             Storage::disk('public')->put($filename, $qrCode);
 
-            // Update order with QR code path
             $order->update(['qr_code' => $filename]);
 
         } catch (\Exception $e) {
@@ -1218,7 +1097,6 @@ class OrderController extends Controller
      */
     private function increaseAttributeStock($orderItem)
     {
-        // Lấy thuộc tính từ OrderItemAttributeValue
         $orderItemAttributes = $orderItem->orderItemAttributeValues;
         
         if ($orderItemAttributes && $orderItemAttributes->count() > 0) {
@@ -1231,6 +1109,95 @@ class OrderController extends Controller
                     $bookAttributeValue->increment('stock', $orderItem->quantity);
                 }
             }
+        }
+    }
+
+    /**
+     * ✅ NEW: Ghi nhận voucher đã sử dụng cho một đơn hàng
+     */
+    private function recordAppliedVoucher(Order $order, ?string $voucherCode, User $user): void
+    {
+        try {
+            // Ưu tiên lấy voucher_id từ order (nếu dịch vụ tạo order đã gán)
+            $voucherId = $order->voucher_id;
+
+            // Nếu order chưa có voucher_id mà request có voucher_code => tra voucher
+            if (!$voucherId && $voucherCode) {
+                $voucher = Voucher::where('code', $voucherCode)->first();
+                if ($voucher) {
+                    $voucherId = $voucher->id;
+                    // nếu muốn đồng bộ vào order:
+                    if (!$order->voucher_id) {
+                        $order->update(['voucher_id' => $voucher->id]);
+                    }
+                }
+            }
+
+            if (!$voucherId) {
+                return; // không có voucher để lưu
+            }
+
+            $voucher = Voucher::find($voucherId);
+            if (!$voucher) return;
+
+            // Tạo AppliedVoucher nếu chưa tồn tại
+            $applied = AppliedVoucher::firstOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'voucher_id' => $voucher->id,
+                    'order_id' => $order->id,
+                ],
+                [
+                    'used_at' => now(),
+                    'usage_count' => 1,
+                ]
+            );
+
+            // Tăng used_count nếu là bản ghi mới
+            if ($applied->wasRecentlyCreated) {
+                if (method_exists($voucher, 'increment')) {
+                    $voucher->increment('used_count');
+                } else {
+                    // nếu model Voucher không có cột used_count thì bỏ qua
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error('recordAppliedVoucher error', [
+                'order_id' => $order->id ?? null,
+                'voucher_code' => $voucherCode,
+                'msg' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * ✅ NEW: Rollback voucher khi hủy/failed payment
+     */
+    private function rollbackAppliedVoucher(Order $order, User $user): void
+    {
+        try {
+            // tìm applied theo user + order
+            $applied = AppliedVoucher::where('user_id', $user->id)
+                ->where('order_id', $order->id)
+                ->first();
+
+            if ($applied) {
+                $voucher = Voucher::find($applied->voucher_id);
+
+                // Giảm used_count (không âm)
+                if ($voucher && isset($voucher->used_count)) {
+                    $newCount = max(0, (int)$voucher->used_count - (int)$applied->usage_count);
+                    $voucher->update(['used_count' => $newCount]);
+                }
+
+                // Soft delete applied voucher để giữ lịch sử
+                $applied->delete();
+            }
+        } catch (\Throwable $e) {
+            Log::error('rollbackAppliedVoucher error', [
+                'order_id' => $order->id ?? null,
+                'msg' => $e->getMessage()
+            ]);
         }
     }
 

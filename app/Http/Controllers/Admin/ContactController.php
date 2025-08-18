@@ -53,7 +53,7 @@ class ContactController extends Controller
         $contact->save();
         Toastr::success('Cập nhật trạng thái thành công!');
 
-        return redirect()->route('admin.contacts.index', $contact->id)->with('success', 'Cập nhật trạng thái thành công');
+        return redirect()->route('admin.contacts.index')->with('success', 'Cập nhật trạng thái thành công');
     }
     public function sendReply(Request $request, Contact $contact)
     {
@@ -69,6 +69,7 @@ class ContactController extends Controller
         $contact->admin_reply = $request->message;
         $contact->save();
 
+        Toastr::success('Đã gửi email phản hồi thành công!');
         return redirect()->route('admin.contacts.index')->with('success', 'Đã gửi email phản hồi thành công.');
     }
 

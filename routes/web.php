@@ -163,12 +163,12 @@ Route::middleware('auth')->group(function () {
 
         // Address management
         Route::get('/addresses', [AddressClientController::class, 'index'])->name('addresses');
-Route::post('/addresses', [AddressClientController::class, 'store'])->name('addresses.store');
-Route::get('/addresses/{id}/edit', [AddressClientController::class, 'edit'])->name('addresses.edit');
-Route::get('/addresses/{id}/shipping', [AddressClientController::class, 'getAddressForShipping'])->name('addresses.shipping');
-Route::put('/addresses/{id}', [AddressClientController::class, 'update'])->name('addresses.update');
-Route::delete('/addresses/{id}', [AddressClientController::class, 'destroy'])->name('addresses.destroy');
-Route::post('/addresses/{id}/set-default', [AddressClientController::class, 'setDefault'])->name('addresses.setDefault');
+        Route::post('/addresses', [AddressClientController::class, 'store'])->name('addresses.store');
+        Route::get('/addresses/{id}/edit', [AddressClientController::class, 'edit'])->name('addresses.edit');
+        Route::get('/addresses/{id}/shipping', [AddressClientController::class, 'getAddressForShipping'])->name('addresses.shipping');
+        Route::put('/addresses/{id}', [AddressClientController::class, 'update'])->name('addresses.update');
+        Route::delete('/addresses/{id}', [AddressClientController::class, 'destroy'])->name('addresses.destroy');
+        Route::post('/addresses/{id}/set-default', [AddressClientController::class, 'setDefault'])->name('addresses.setDefault');
 
         Route::get('/purchase', [ReviewClientController::class, 'index'])->name('purchase');
 
@@ -188,7 +188,7 @@ Route::post('/addresses/{id}/set-default', [AddressClientController::class, 'set
 
         Route::prefix('orders')->name('orders.')->group(function () {
             // Redirect old index route to unified
-            Route::get('/', function() {
+            Route::get('/', function () {
                 return redirect()->route('account.orders.unified');
             })->name('index');
             Route::get('/unified', [OrderClientController::class, 'unified'])->name('unified');
@@ -214,7 +214,7 @@ Route::post('/addresses/{id}/set-default', [AddressClientController::class, 'set
         Route::post('/apply-voucher', [\App\Http\Controllers\OrderController::class, 'applyVoucher'])->name('apply-voucher');
         Route::post('/check-stock', [\App\Http\Controllers\OrderController::class, 'checkStockStatus'])->name('check-stock');
     });
-    
+
     // Preorder routes
     Route::post('/preorder', [\App\Http\Controllers\OrderController::class, 'storePreorder'])->name('preorder.store');
 });
@@ -378,22 +378,22 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit')->middleware('checkpermission:user.edit');
         Route::put('/{id}', [UserController::class, 'update'])->name('update')->middleware('checkpermission:user.edit');
         Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy')->middleware('checkpermission:user.delete');
-    // Route::get('/{id}/roles-permissions', [UserController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:user.manage-roles');
-    // Route::put('/{id}/roles-permissions', [UserController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:user.manage-roles');
+        // Route::get('/{id}/roles-permissions', [UserController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:user.manage-roles');
+        // Route::put('/{id}/roles-permissions', [UserController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:user.manage-roles');
     });
 
-        // Staff
-        Route::prefix('staffs')->name('staff.')->middleware('checkpermission:staff.view')->group(function () {
+    // Staff
+    Route::prefix('staffs')->name('staff.')->middleware('checkpermission:staff.view')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\StaffController::class, 'index'])->name('index')->middleware('checkpermission:staff.view');
         Route::get('/create', [\App\Http\Controllers\Admin\StaffController::class, 'create'])->name('create')->middleware('checkpermission:staff.create');
         Route::post('/', [\App\Http\Controllers\Admin\StaffController::class, 'store'])->name('store')->middleware('checkpermission:staff.create');
-            Route::get('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'show'])->name('show')->middleware('checkpermission:staff.show');
-            Route::get('/{id}/edit', [\App\Http\Controllers\Admin\StaffController::class, 'edit'])->name('edit')->middleware('checkpermission:staff.edit');
-            Route::put('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'update'])->name('update')->middleware('checkpermission:staff.edit');
-            Route::delete('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'destroy'])->name('destroy')->middleware('checkpermission:staff.delete');
-            Route::get('/{id}/roles-permissions', [\App\Http\Controllers\Admin\StaffController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:staff.manage-roles');
-            Route::put('/{id}/roles-permissions', [\App\Http\Controllers\Admin\StaffController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:staff.manage-roles');
-        });
+        Route::get('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'show'])->name('show')->middleware('checkpermission:staff.show');
+        Route::get('/{id}/edit', [\App\Http\Controllers\Admin\StaffController::class, 'edit'])->name('edit')->middleware('checkpermission:staff.edit');
+        Route::put('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'update'])->name('update')->middleware('checkpermission:staff.edit');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'destroy'])->name('destroy')->middleware('checkpermission:staff.delete');
+        Route::get('/{id}/roles-permissions', [\App\Http\Controllers\Admin\StaffController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:staff.manage-roles');
+        Route::put('/{id}/roles-permissions', [\App\Http\Controllers\Admin\StaffController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:staff.manage-roles');
+    });
 
     // Permissions
     Route::prefix('permissions')->name('permissions.')->middleware('checkpermission:permission.view')->group(function () {
@@ -463,10 +463,10 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     });
 
 
-        // GHN routes
-        Route::post('/{id}/ghn/create', [OrderController::class, 'createGhnOrder'])->name('orders.ghn.create');
-        Route::post('/{id}/ghn/update-tracking', [OrderController::class, 'updateGhnTracking'])->name('orders.ghn.update-tracking');
-        Route::post('/{id}/ghn/cancel', [OrderController::class, 'cancelGhnOrder'])->name('orders.ghn.cancel');
+    // GHN routes
+    Route::post('/{id}/ghn/create', [OrderController::class, 'createGhnOrder'])->name('orders.ghn.create');
+    Route::post('/{id}/ghn/update-tracking', [OrderController::class, 'updateGhnTracking'])->name('orders.ghn.update-tracking');
+    Route::post('/{id}/ghn/cancel', [OrderController::class, 'cancelGhnOrder'])->name('orders.ghn.cancel');
     // Orders
     Route::prefix('orders')->name('orders.')->middleware('checkpermission:order.view')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index')->middleware('checkpermission:order.view');
@@ -515,20 +515,20 @@ Route::middleware('auth')->prefix('wallet')->name('wallet.')->group(function () 
 });
 
 // Ebook Download routes - Secure download with authentication
-Route::prefix('ebook')->name('ebook.')->group(function() {
+Route::prefix('ebook')->name('ebook.')->group(function () {
     // Sample downloads (public access)
     Route::get('/sample/download/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'downloadSample'])->name('sample.download');
     Route::get('/sample/view/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'viewSample'])->name('sample.view');
-    
+
     // Protected downloads (require authentication and purchase)
-    Route::middleware('auth')->group(function() {
+    Route::middleware('auth')->group(function () {
         Route::get('/download/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'download'])->name('download');
         Route::get('/view/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'view'])->name('view');
     });
 });
 
 // Ebook Refund routes
-Route::prefix('ebook-refund')->name('ebook-refund.')->middleware('auth')->group(function() {
+Route::prefix('ebook-refund')->name('ebook-refund.')->middleware('auth')->group(function () {
     Route::get('/{order}', [App\Http\Controllers\EbookRefundController::class, 'show'])->name('show');
     Route::post('/{order}', [App\Http\Controllers\EbookRefundController::class, 'store'])->name('store');
     Route::get('/preview/{order}', [App\Http\Controllers\EbookRefundController::class, 'preview'])->name('preview');
@@ -552,7 +552,7 @@ Route::prefix('ai-summary')->name('ai-summary.')->middleware(['web'])->group(fun
 });
 
 // GHN API routes
-Route::prefix('api/ghn')->name('ghn.')->group(function() {
+Route::prefix('api/ghn')->name('ghn.')->group(function () {
     Route::get('/provinces', [App\Http\Controllers\GhnController::class, 'getProvinces'])->name('provinces');
     Route::post('/districts', [App\Http\Controllers\GhnController::class, 'getDistricts'])->name('districts');
     Route::post('/wards', [App\Http\Controllers\GhnController::class, 'getWards'])->name('wards');
@@ -562,156 +562,4 @@ Route::prefix('api/ghn')->name('ghn.')->group(function() {
     Route::post('/track-order', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('track-order');
     Route::get('/tracking/{orderCode}', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('tracking');
 });
-
-// Test GHN API
-Route::get('/test-ghn', function () {
-    return view('test-ghn');
-});
-
-// Test routes (remove in production)
-Route::get('/test-notification', function () {
-    // Lấy một order bất kỳ từ database để test
-    $order = \App\Models\Order::with('user')->first();
-    
-    if (!$order) {
-        return response()->json([
-            'error' => 'Không có order nào trong database để test',
-            'suggestion' => 'Hãy tạo ít nhất một order trước'
-        ], 404);
-    }
-    
-    // Fire event để test
-    event(new \App\Events\OrderCreated($order));
-    
-    return response()->json([
-        'message' => 'Test notification sent',
-        'order' => [
-            'id' => $order->id,
-            'order_code' => $order->order_code,
-            'customer_name' => $order->user->name,
-            'total_amount' => $order->total_amount
-        ],
-        'timestamp' => now()
-    ]);
-});
-
-// Route test thông báo nạp tiền ví
-Route::get('/test-wallet-deposit', function () {
-    // Lấy một user bất kỳ từ database để test
-    $user = \App\Models\User::first();
-    
-    if (!$user) {
-        return response()->json([
-            'error' => 'Không có user nào trong database để test',
-            'suggestion' => 'Hãy tạo ít nhất một user trước'
-        ], 404);
-    }
-    
-    // Số tiền test
-    $amount = 100000; // 100,000 VND
-    $transactionId = 'TXN_' . time();
-    
-    // Fire event để test
-    event(new \App\Events\WalletDeposited($user, $amount, $transactionId));
-    
-    return response()->json([
-        'message' => 'Test wallet deposit notification sent',
-        'wallet' => [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'amount' => $amount,
-            'transaction_id' => $transactionId
-        ],
-        'timestamp' => now()
-    ]);
-});
-
-// Route test thông báo rút tiền ví
-Route::get('/test-wallet-withdraw', function () {
-    // Lấy một user bất kỳ từ database để test
-    $user = \App\Models\User::first();
-    
-    if (!$user) {
-        return response()->json([
-            'error' => 'Không có user nào trong database để test',
-            'suggestion' => 'Hãy tạo ít nhất một user trước'
-        ], 404);
-    }
-    
-    // Số tiền test
-    $amount = 50000; // 50,000 VND
-    $transactionId = 'TXN_' . time();
-    
-    // Fire event để test
-    event(new \App\Events\WalletWithdrawn($user, $amount, $transactionId));
-    
-    return response()->json([
-        'message' => 'Test wallet withdraw notification sent',
-        'wallet' => [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'amount' => $amount,
-            'transaction_id' => $transactionId
-        ],
-        'timestamp' => now()
-    ]);
-});
-
-// Route test thông báo nạp tiền ví cho admin
-Route::get('/test-admin-wallet-deposit', function () {
-    // Lấy một user bất kỳ để test (khách hàng)
-    $user = \App\Models\User::first();
-    
-    if (!$user) {
-        return response()->json(['error' => 'Không tìm thấy user để test']);
-    }
-    
-    // Tạo dữ liệu giả định
-    $amount = rand(100000, 1000000); // Số tiền từ 100k đến 1tr
-    $transactionId = 'TXN' . time() . rand(1000, 9999);
-    
-    // Kích hoạt event (sẽ gửi thông báo cho cả khách hàng và admin)
-    event(new \App\Events\WalletDeposited($user, $amount, $transactionId));
-    
-    return response()->json([
-        'message' => 'Test admin wallet deposit notification sent',
-        'customer_id' => $user->id,
-        'customer_name' => $user->name,
-        'amount' => number_format($amount, 0, ',', '.') . 'đ',
-        'transaction_id' => $transactionId,
-        'note' => 'Thông báo đã được gửi cho admin và khách hàng'
-    ]);
-});
-
-// Route test thông báo rút tiền ví cho admin
-Route::get('/test-admin-wallet-withdraw', function () {
-    // Lấy một user bất kỳ để test (khách hàng)
-    $user = \App\Models\User::first();
-    
-    if (!$user) {
-        return response()->json(['error' => 'Không tìm thấy user để test']);
-    }
-    
-    // Tạo dữ liệu giả định
-    $amount = rand(50000, 500000); // Số tiền từ 50k đến 500k
-    $transactionId = 'TXN' . time() . rand(1000, 9999);
-    
-    // Kích hoạt event (sẽ gửi thông báo cho cả khách hàng và admin)
-    event(new \App\Events\WalletWithdrawn($user, $amount, $transactionId));
-    
-    return response()->json([
-        'message' => 'Test admin wallet withdraw notification sent',
-        'customer_id' => $user->id,
-        'customer_name' => $user->name,
-        'amount' => number_format($amount, 0, ',', '.') . 'đ',
-        'transaction_id' => $transactionId,
-        'note' => 'Thông báo đã được gửi cho admin và khách hàng'
-    ]);
-});
-
-
-
-
-
-// }]}}
 

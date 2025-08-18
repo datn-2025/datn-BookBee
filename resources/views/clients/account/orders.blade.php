@@ -327,7 +327,7 @@
                                                             @endif
                                                             
                                                             <!-- Hiển thị quà tặng -->
-                                                            @if(!$item->isCombo() && $item->book && $item->book->gifts && $item->book->gifts->count() > 0)
+                                                            @if(!$item->isCombo() && $item->book && $item->book->gifts && $item->book->gifts->count() > 0 && $item->bookFormat && $item->bookFormat->format_name !== 'Ebook')
                                                                 <div class="mb-2">
                                                                     <div class="flex items-center gap-2 mb-1">
                                                                         <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
@@ -682,7 +682,7 @@
                                                 @endif
                                                 
                                                 <!-- Hiển thị quà tặng -->
-                                                @if(!$item->isCombo() && $item->book && $item->book->gifts && $item->book->gifts->count() > 0)
+                                                @if(!$item->isCombo() && $item->book && $item->book->gifts && $item->book->gifts->count() > 0 && $item->bookFormat && $item->bookFormat->format_name !== 'Ebook')
                                                     <div class="mb-2">
                                                         <p class="text-sm font-semibold text-red-600 uppercase tracking-wide mb-1">🎁 Quà tặng kèm:</p>
                                                         <div class="flex flex-wrap gap-2">
