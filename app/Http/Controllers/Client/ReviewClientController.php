@@ -175,7 +175,7 @@ class ReviewClientController extends Controller
                 ->where('book_id', $request->book_id)
                 ->firstOrFail();
                 
-            // Check if review already exists for book
+            // Check if review already exists for book (bao gồm cả review đã xóa)
             $existingReview = Review::withTrashed()
                 ->where('user_id', $user->id)
                 ->where('book_id', $request->book_id)
@@ -186,7 +186,7 @@ class ReviewClientController extends Controller
                 ->where('collection_id', $request->collection_id)
                 ->firstOrFail();
                 
-            // Check if review already exists for combo
+            // Check if review already exists for combo (bao gồm cả review đã xóa)
             $existingReview = Review::withTrashed()
                 ->where('user_id', $user->id)
                 ->where('collection_id', $request->collection_id)
@@ -196,14 +196,35 @@ class ReviewClientController extends Controller
 
         if ($existingReview) {
             if ($existingReview->trashed()) {
+                // Nếu review đã bị xóa, restore và cập nhật thông tin mới
+                $existingReview->restore();
+                
+                // Handle image uploads
+                $imagePaths = [];
+                if ($request->hasFile('images')) {
+                    foreach ($request->file('images') as $image) {
+                        $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                        $imagePath = $image->storeAs('reviews', $imageName, 'public');
+                        $imagePaths[] = $imagePath;
+                    }
+                }
+                
+                // Update review với thông tin mới
+                $existingReview->update([
+                    'rating' => $request->rating,
+                    'comment' => $request->comment,
+                    'images' => empty($imagePaths) ? null : json_encode($imagePaths),
+                    'status' => 'visible'
+                ]);
+                
                 $message = $request->has('book_id') ? 
-                    'Bạn đã xóa đánh giá cho sản phẩm này và không thể đánh giá lại' :
-                    'Bạn đã xóa đánh giá cho combo này và không thể đánh giá lại';
+                    'Đánh giá sản phẩm thành công!' :
+                    'Đánh giá combo thành công!';
                     
                 if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'error' => $message], 400);
+                    return response()->json(['success' => true, 'message' => $message]);
                 }
-                return redirect()->back()->with('error', $message);
+                return redirect()->back()->with('success', $message);
             }
             
             $message = $request->has('book_id') ? 
@@ -345,7 +366,8 @@ class ReviewClientController extends Controller
                     'message' => $message
                 ], 403);
             }
-            return redirect()->back()->with('error', $message);
+            Toastr::error($message, 'Lỗi');
+            return redirect()->back();
         }
 
         $review->delete();
@@ -357,7 +379,9 @@ class ReviewClientController extends Controller
                 'message' => $successMessage
             ]);
         }
-        return redirect()->back()->with('success', $successMessage);
+        
+        Toastr::success($successMessage, 'Thành công');
+        return redirect()->back();
     }
 
     public function createForm(Request $request, $orderId, $bookId = null, $collectionId = null)

@@ -337,14 +337,6 @@
                                         <div class="space-y-6">
                                             <!-- Quick Actions -->
                                             <div class="flex flex-wrap gap-3 mb-6">
-                                                <button type="button" id="detect-location-btn" 
-                                                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-colors duration-300">
-                                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                    </svg>
-                                                    Phát hiện vị trí
-                                                </button>
                                                 <button type="button" id="clear-form-btn" 
                                                         class="inline-flex items-center px-4 py-2 bg-gray-600 text-white font-medium text-sm rounded-lg hover:bg-gray-700 transition-colors duration-300">
                                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,8 +352,8 @@
                                                     <label for="tinh" class="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">
                                                         TỈNH/THÀNH PHỐ *
                                                     </label>
-                                                    <select id="tinh" name="new_address_city_id"
-                                                            class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
+                                                    <select id="tinh" name="new_address_city_id" required
+                                                            class="w-full border-2 border-gray-300 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
                                                         <option value="">Chọn Tỉnh/Thành phố</option>
                                                     </select>
                                                     <input type="hidden" name="new_address_city_name" id="ten_tinh">
@@ -372,8 +364,8 @@
                                                     <label for="quan" class="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">
                                                         QUẬN/HUYỆN *
                                                     </label>
-                                                    <select id="quan" name="new_address_district_id"
-                                                            class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
+                                                    <select id="quan" name="new_address_district_id" required
+                                                            class="w-full border-2 border-gray-300 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
                                                         <option value="">Chọn Quận/Huyện</option>
                                                     </select>
                                                     <input type="hidden" name="new_address_district_name" id="ten_quan">
@@ -384,8 +376,8 @@
                                                     <label for="phuong" class="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">
                                                         PHƯỜNG/XÃ *
                                                     </label>
-                                                    <select id="phuong" name="new_address_ward_id"
-                                                            class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
+                                                    <select id="phuong" name="new_address_ward_id" required
+                                                            class="w-full border-2 border-gray-300 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
                                                         <option value="">Chọn Phường/Xã</option>
                                                     </select>
                                                     <input type="hidden" name="new_address_ward_name" id="ten_phuong">
@@ -400,7 +392,8 @@
                                                      ĐỊA CHỈ CỤ THỂ *
                                                  </label>
                                                  <input type="text" name="new_address_detail" id="new_address_detail"
-                                                        class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg"
+                                                        class="w-full border-2 border-gray-300 px-4 py-3 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg"
+                                                        style="height: 3.5rem; line-height: 1.75; font-size: 14px;"
                                                         placeholder="Ví dụ: Số 123, Đường ABC, Tòa nhà XYZ" value="{{ old('new_address_detail') }}">
                                                  @error('new_address_detail') <p class="text-red-500 text-sm mt-2 font-medium">{{ $message }}</p> @enderror
                                              </div>
@@ -692,6 +685,17 @@
                                                     {{ $item->book->authors->pluck('name')->join(', ') }}
                                                 </span>
                                             </p>
+                                        @endif
+                                        
+                                        <!-- Hiển thị thuộc tính biến thể -->
+                                        @if(!$item->isCombo() && $item->attributeValues && $item->attributeValues->count() > 0)
+                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                @foreach($item->attributeValues as $attributeValue)
+                                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded border">
+                                                        {{ $attributeValue->attribute->name ?? 'Thuộc tính' }}: {{ $attributeValue->value }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
                                         @endif
                                         
                                         <!-- Hiển thị quà tặng kèm theo -->
@@ -1597,62 +1601,7 @@ document.addEventListener('DOMContentLoaded', function () {
     window.switchToNewAddressTab = switchToNewAddressTab;
     
     // ===== QUICK ACTIONS =====
-    const detectLocationBtn = document.getElementById('detect-location-btn');
     const clearFormBtn = document.getElementById('clear-form-btn');
-    
-    // Detect location functionality
-    if (detectLocationBtn) {
-        detectLocationBtn.addEventListener('click', function() {
-            if (navigator.geolocation) {
-                this.disabled = true;
-                this.innerHTML = `
-                    <svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    Đang phát hiện...
-                `;
-                
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        // Simulate address detection (in real app, use reverse geocoding API)
-                        setTimeout(() => {
-                            if (typeof toastr !== 'undefined') {
-                                toastr.success('Đã phát hiện vị trí! Vui lòng chọn tỉnh/thành phố từ danh sách.');
-                            }
-                            // Focus on city select
-                            document.getElementById('tinh')?.focus();
-                            
-                            this.disabled = false;
-                            this.innerHTML = `
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
-                                Phát hiện vị trí
-                            `;
-                        }, 1500);
-                    },
-                    (error) => {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error('Không thể phát hiện vị trí. Vui lòng nhập thủ công.');
-                        }
-                        this.disabled = false;
-                        this.innerHTML = `
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            Phát hiện vị trí
-                        `;
-                    }
-                );
-            } else {
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('Trình duyệt không hỗ trợ định vị.');
-                }
-            }
-        });
-    }
     
     // Clear form functionality
     if (clearFormBtn) {
@@ -2236,8 +2185,153 @@ document.addEventListener('DOMContentLoaded', function () {
             closeAddressModal();
         }
     });
+
+    // ===== KHÔI PHỤC DỮ LIỆU ĐỊA CHỈ CŨ KHI CÓ LỖI VALIDATION =====
+    function restoreOldAddressData() {
+        // Khôi phục dữ liệu từ Laravel old() helper
+        const oldCityName = '{{ old("new_address_city_name") }}';
+        const oldDistrictName = '{{ old("new_address_district_name") }}';
+        const oldWardName = '{{ old("new_address_ward_name") }}';
+        const oldCityId = '{{ old("new_address_city_id") }}';
+        const oldDistrictId = '{{ old("new_address_district_id") }}';
+        const oldWardId = '{{ old("new_address_ward_id") }}';
+        
+        // Nếu có dữ liệu cũ, khôi phục chúng
+        if (oldCityName || oldDistrictName || oldWardName) {
+            console.log('Khôi phục dữ liệu địa chỉ cũ...', {
+                city: oldCityName,
+                district: oldDistrictName, 
+                ward: oldWardName
+            });
+            
+            // Chuyển sang tab địa chỉ mới nếu có dữ liệu validation lỗi
+            const newAddressTab = document.getElementById('new-address-tab');
+            const existingAddressTab = document.getElementById('existing-address-tab');
+            
+            if (newAddressTab && existingAddressTab) {
+                // Kích hoạt tab địa chỉ mới
+                newAddressTab.click();
+            }
+            
+            // Khôi phục hidden fields
+            if (oldCityName) document.getElementById('ten_tinh').value = oldCityName;
+            if (oldDistrictName) document.getElementById('ten_quan').value = oldDistrictName;
+            if (oldWardName) document.getElementById('ten_phuong').value = oldWardName;
+            
+            // Load lại dữ liệu select boxes nếu cần
+            if (oldCityId && oldCityName) {
+                setTimeout(() => {
+                    loadProvinces().then(() => {
+                        const citySelect = document.getElementById('tinh');
+                        if (citySelect) {
+                            citySelect.value = oldCityId;
+                            // Trigger change event để load districts
+                            citySelect.dispatchEvent(new Event('change'));
+                            
+                            setTimeout(() => {
+                                if (oldDistrictId && oldDistrictName) {
+                                    const districtSelect = document.getElementById('quan');
+                                    if (districtSelect) {
+                                        districtSelect.value = oldDistrictId;
+                                        districtSelect.dispatchEvent(new Event('change'));
+                                        
+                                        setTimeout(() => {
+                                            if (oldWardId && oldWardName) {
+                                                const wardSelect = document.getElementById('phuong');
+                                                if (wardSelect) {
+                                                    wardSelect.value = oldWardId;
+                                                    wardSelect.dispatchEvent(new Event('change'));
+                                                }
+                                            }
+                                        }, 500);
+                                    }
+                                }
+                            }, 500);
+                        }
+                    });
+                }, 100);
+            }
+        }
+    }
+    
+    // Khôi phục dữ liệu khi trang load
+    document.addEventListener('DOMContentLoaded', function() {
+        restoreOldAddressData();
+    });
+
+    // ...existing code...
 });
 
 </script>
+
+<style>
+/* Custom styling for select fields to ensure text visibility */
+select#tinh, select#quan, select#phuong {
+    line-height: 1.75 !important;
+    height: 3.5rem !important;
+    min-height: 3.5rem !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    color: #374151 !important;
+    vertical-align: middle !important;
+    display: flex !important;
+    align-items: center !important;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E") !important;
+    background-position: right 0.75rem center !important;
+    background-repeat: no-repeat !important;
+    background-size: 1.25em 1.25em !important;
+    padding: 0.875rem 2.5rem 0.875rem 1rem !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    box-sizing: border-box !important;
+}
+
+select#tinh option, select#quan option, select#phuong option {
+    padding: 0.75rem 1rem !important;
+    color: #374151 !important;
+    background-color: white !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    min-height: 2.5rem !important;
+}
+
+/* Ensure proper display for placeholder text */
+select#tinh:invalid, select#quan:invalid, select#phuong:invalid {
+    color: #9CA3AF !important;
+}
+
+select#tinh:valid, select#quan:valid, select#phuong:valid {
+    color: #374151 !important;
+}
+
+/* Fix for different browsers */
+select#tinh, select#quan, select#phuong {
+    -webkit-box-sizing: border-box !important;
+    -moz-box-sizing: border-box !important;
+    box-sizing: border-box !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+}
+
+/* Ensure text is visible on different devices */
+@media (max-width: 768px) {
+    select#tinh, select#quan, select#phuong {
+        height: 3.75rem !important;
+        min-height: 3.75rem !important;
+        font-size: 16px !important;
+        padding: 1rem 2.5rem 1rem 1rem !important;
+    }
+}
+
+/* Additional fixes for text positioning */
+select#tinh, select#quan, select#phuong {
+    text-align: left !important;
+    text-align-last: left !important;
+    direction: ltr !important;
+}
+</style>
+
 @endpush
 @endsection

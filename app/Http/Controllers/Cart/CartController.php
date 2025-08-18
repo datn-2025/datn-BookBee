@@ -271,6 +271,13 @@ class CartController extends Controller
             // Xử lý attribute_value_ids từ form
             $attributeValueIds = [];
 
+            // Debug logging
+            Log::info('addToCart request data:', [
+                'all_request' => $request->all(),
+                'attribute_value_ids' => $validated['attribute_value_ids'] ?? null,
+                'attributes' => $validated['attributes'] ?? null
+            ]);
+
             // Cách 1: Nếu gửi lên dưới dạng JSON string
             if (!empty($validated['attribute_value_ids'])) {
                 $decoded = json_decode($validated['attribute_value_ids'], true);
