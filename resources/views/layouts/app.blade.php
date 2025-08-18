@@ -31,11 +31,15 @@
 
     @stack('styles')
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- Pusher Configuration -->
+    <meta name="pusher-key" content="{{ env('VITE_PUSHER_APP_KEY') }}">
+    <meta name="pusher-cluster" content="{{ env('VITE_PUSHER_APP_CLUSTER') }}">
+    <meta name="user-id" content="{{ auth()->id() ?? '' }}">
+    <meta name="user-role" content="{{ auth()->user()->role->name ?? '' }}">
 
     <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
     
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
@@ -242,6 +246,18 @@
 
 
     @stack('scripts')
+    
+    <!-- Laravel Echo & Notifications -->
+    @vite(['resources/js/echo.js'])
+    <script src="{{ asset('js/notifications.js') }}"></script>
+    <script src="{{ asset('js/frontend-notifications.js') }}"></script>
+    
+    <!-- Set user role for JavaScript -->
+    <script>
+        window.userRole = '{{ auth()->user()->role->name ?? "guest" }}';
+        window.userId = {{ auth()->id() ?? 'null' }};
+    </script>
+    
     @include('layouts.partials.footer')
 
     <!-- Test broadcast script removed - file not found -->

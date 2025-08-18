@@ -58,6 +58,26 @@ Broadcast::channel('conversations.{conversationId}', function ($user, $conversat
     return $hasAccess;
 });
 
+// Channel cho thông báo đơn hàng admin
+Broadcast::channel('admin-orders', function ($user) {
+    // Kiểm tra user có role admin không
+    return $user && $user->role && $user->role->name === 'Admin';
+});
+Broadcast::channel('admin-wallets', function ($user) {
+    // Kiểm tra user có role admin không
+    return $user && $user->role && $user->role->name === 'Admin';
+});
+Broadcast::channel('admin-chat-notifications', function ($user) {
+    // Kiểm tra user có role admin không
+    return $user && $user->role && $user->role->name === 'Admin';
+});
+
+// Channel cho thông báo đơn hàng customer
+Broadcast::channel('customer-{userId}', function ($user, $userId) {
+    // Chỉ cho phép user nghe channel của chính mình
+    return $user && (string) $user->id === (string) $userId;
+});
+
 // Backup cho private channel nếu cần
 Broadcast::channel('bookbee.private.{conversationId}', function ($user, $conversationId) {
     // Try to get user from different guards

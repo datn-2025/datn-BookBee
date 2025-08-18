@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Services\EbookRefundService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Brian2694\Toastr\Facades\Toastr;
@@ -11,10 +12,12 @@ use Brian2694\Toastr\Facades\Toastr;
 class EbookRefundController extends Controller
 {
     protected $ebookRefundService;
+    public $notificationService;
 
-    public function __construct(EbookRefundService $ebookRefundService)
+    public function __construct(EbookRefundService $ebookRefundService, NotificationService $notificationService)
     {
         $this->ebookRefundService = $ebookRefundService;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -71,6 +74,11 @@ class EbookRefundController extends Controller
             $user, 
             $request->reason, 
             $request->details
+        );
+
+        $this->notificationService->createRefundRequestNotificationForAdmin(
+            $order, $request->reason,
+            $order->paymentStatus->name === 'Đã Thanh Toán' ? $order->total_amount : 0
         );
 
         if ($result['success']) {

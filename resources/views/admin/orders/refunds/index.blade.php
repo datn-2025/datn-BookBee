@@ -174,13 +174,13 @@
                                     <td>
                                         <span class="badge 
                                             @if($refund->status === 'pending') bg-warning
-                                            @elseif($refund->status === 'processing') bg-info  
-                                            @elseif($refund->status === 'approve') bg-success
+                                            @elseif($refund->status === 'processing') bg-info
+                                            @elseif($refund->status === 'completed') bg-success
                                             @elseif($refund->status === 'rejected') bg-danger
                                             @else bg-secondary @endif">
                                             @if($refund->status === 'pending') Chờ xử lý
                                             @elseif($refund->status === 'processing') Đang xử lý
-                                            @elseif($refund->status === 'approve') Đã hoàn thành
+                                            @elseif($refund->status === 'completed') Đã Duyệt
                                             @elseif($refund->status === 'rejected') Đã từ chối
                                             @else {{ $refund->status }} @endif
                                         </span>

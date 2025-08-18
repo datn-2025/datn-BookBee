@@ -30,7 +30,7 @@ class PaymentRefundService
     public function refundToWallet(Order $order, $amount = null, RefundRequest $refundRequest = null)
     {
         $refundAmount = $amount ?? $order->total_amount;
-        // dd($refundAmount);
+        // dd($order->paymentStatus->name);
         return DB::transaction(function () use ($order, $refundAmount, $refundRequest) {
             Log::info('Starting wallet refund transaction', [
                 'order_id' => $order->id,
@@ -39,7 +39,7 @@ class PaymentRefundService
             ]);
             // Kiểm tra đơn hàng đã thanh toán chưa
             // dd($order->paymentStatus->name);
-            if ($order->paymentStatus->name !== 'Đã Thanh Toán') {
+            if (!in_array($order->paymentStatus->name, ['Đã Thanh Toán', 'Đang Hoàn Tiền'])) {
                 toastr()->error('Đơn hàng chưa thanh toán không thể hoàn tiền');
                 throw new \Exception('Đơn hàng chưa thanh toán không thể hoàn tiền');
             }

@@ -15,12 +15,14 @@ use App\Models\Wallet;
 use App\Models\OrderCancellation; // Added for order cancellation
 use App\Models\OrderItemAttributeValue; // Added for order item attributes
 use App\Models\BookAttributeValue;
+use App\Events\OrderCreated; // Thêm import Event
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
 use App\Services\InvoiceService;
 use Illuminate\Support\Facades\Log;
 use App\Services\MixedOrderService;
+use App\Services\NotificationService;
 use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Services\QrCodeService;
@@ -40,6 +42,7 @@ class OrderController extends Controller
     protected $emailService;
     protected $qrCodeService;
     protected $invoiceService;
+    protected $notificationService;
 
     public function __construct(
         OrderService $orderService,
@@ -48,7 +51,8 @@ class OrderController extends Controller
         PaymentService $paymentService,
         EmailService $emailService,
         QrCodeService $qrCodeService,
-        InvoiceService $invoiceService
+        InvoiceService $invoiceService,
+        NotificationService $notificationService
     ) {
         $this->orderService = $orderService;
         $this->mixedOrderService = $mixedOrderService;
@@ -57,6 +61,7 @@ class OrderController extends Controller
         $this->emailService = $emailService;
         $this->qrCodeService = $qrCodeService;
         $this->invoiceService = $invoiceService;
+        $this->notificationService = $notificationService;
     }
 
     public function checkout(Request $request)
@@ -401,6 +406,9 @@ class OrderController extends Controller
                         ]);
                     }
                     
+                    // Tạo thông báo thanh toán thành công
+                     $this->notificationService->createPaymentSuccessNotification($parentOrder, $user);
+                    
                     $successMessage = 'Đặt hàng thành công! Đơn hàng của bạn đã được chia thành 2 phần: giao hàng sách in và nhận ebook qua email.';
                     if ($newAddressCreated) {
                         $successMessage .= ' Địa chỉ mới của bạn đã được lưu.';
@@ -516,6 +524,7 @@ class OrderController extends Controller
                 ]);
                 // Don't let email errors stop the process
             }
+
                 
                 // Tạo và gửi hóa đơn ngay lập tức cho thanh toán ví
                 try {
@@ -527,6 +536,9 @@ class OrderController extends Controller
                         'error' => $e->getMessage()
                     ]);
                 }
+                
+                // Tạo thông báo thanh toán thành công
+                 $this->notificationService->createPaymentSuccessNotification($order, $user);
                 
                 $successMessage = 'Đặt hàng và thanh toán bằng ví thành công!';
                 if ($newAddressCreated) {
@@ -596,6 +608,9 @@ class OrderController extends Controller
                 ]);
                 // Don't let email errors stop the process
             }
+            
+            // Phát sự kiện OrderCreated để thông báo cho admin
+            event(new OrderCreated($order));
             
             // Lưu ý: Hóa đơn cho COD sẽ được tạo khi admin xác nhận thanh toán
             Log::info('COD order created successfully - Invoice will be created when payment is confirmed by admin', ['order_id' => $order->id]);
@@ -817,6 +832,13 @@ class OrderController extends Controller
 
 
 
+            // Tạo thông báo cho admin về việc hủy đơn hàng
+            $this->notificationService->createOrderCancellationNotificationForAdmin(
+                $order,
+                implode(", ", $selectedReasons),
+                $order->paymentStatus->name === 'Đã Thanh Toán' ? $order->total_amount : 0
+            );
+
             DB::commit();
             return redirect()->route('orders.index')->with('success', 'Đơn hàng đã được hủy thành công.');
         } catch (\Exception $e) {
@@ -862,7 +884,7 @@ class OrderController extends Controller
 
         $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
         $vnp_Url = $vnp_Url . "?" . $query . "&vnp_SecureHash=" . $vnpSecureHash;
-
+        
         // Tạo payment record với trạng thái "Chờ Xử Lý"
         $this->paymentService->createPayment([
             'order_id' => $data['order_id'],
@@ -1026,6 +1048,9 @@ class OrderController extends Controller
                         'error' => $e->getMessage()
                     ]);
                 }
+                
+                // Tạo thông báo thanh toán thành công
+                 $this->notificationService->createPaymentSuccessNotification($order, Auth::user());
 
                 // Tạo QR code nếu chưa có
                 if (!$order->qr_code) {

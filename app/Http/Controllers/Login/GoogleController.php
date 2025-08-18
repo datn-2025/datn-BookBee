@@ -29,12 +29,13 @@ class GoogleController extends Controller
 
             $user = Socialite::driver('google')->user();
             $finduser = User::where('google_id', $user->id)->first();
+            // dd($finduser);
             if($finduser){
                 Auth::login($finduser);
                 	Toastr()->success('Đăng nhập thành công!');
                 return redirect()->intended('/');
             }else{
-                $role = Role::where('name', 'user')->first();
+                $role = Role::where('name', 'User')->first();
                 $newUser = User::updateOrCreate(
                     ['email' => $user->email],
                     [

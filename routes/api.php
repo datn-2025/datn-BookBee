@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GhnController;
 use App\Http\Controllers\Api\ChatbotController;
+use App\Http\Controllers\Api\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,6 +23,22 @@ use App\Http\Controllers\Api\ChatbotController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+// Notification API routes
+Route::middleware('auth')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/all', [NotificationController::class, 'all']);
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::patch('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+});
+
+// Admin Notification API routes
+Route::middleware('auth:admin')->prefix('admin')->group(function () {
+    Route::get('/notifications', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'index']);
+    Route::get('/notifications/all', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'all']);
+    Route::patch('/notifications/{id}/read', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'markAsRead']);
+    Route::patch('/notifications/mark-all-read', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'markAllAsRead']);
 });
 
 // GHN API Routes

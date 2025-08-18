@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\WalletDeposited;
+use App\Events\WalletWithdrawn;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use Illuminate\Http\Request;
@@ -51,7 +53,7 @@ class WalletController extends Controller
         }
         $data = [
             'wallet_id' => $wallet->id,
-            'type' => 'Nap',
+            'type' => 'NAP',
             'amount' => $request->amount,
             'description' => 'NAP - ' . (Auth::user()->phone ?? Auth::user()->name) . ' - ' . time(),
             'status' => 'pending',
@@ -72,6 +74,7 @@ class WalletController extends Controller
             } else {
                 $qrUrl = null;
             }
+            event(new WalletDeposited(Auth::user(), $pendingTransaction->amount ,$pendingTransaction->id, 'admin'));
             return view('wallets.qr', [
                 'amount' => $data['amount'],
                 'bankInfo' => $bankInfo,
@@ -149,6 +152,7 @@ class WalletController extends Controller
                     $transaction->save();
                     $transaction->wallet->increment('balance', $vnp_Amount);
                 });
+                event(new WalletDeposited(Auth::user(), $transaction->amount ,$transaction->id, 'admin'));
                 return redirect()->route('wallet.index')->with('success', 'Nạp ví thành công qua VNPay!');
             }
         }
@@ -185,9 +189,9 @@ class WalletController extends Controller
             $user->wallet_lock = ($user->wallet_lock ?? 0) + $request->amount;
             $user->save();
             // Chỉ tạo yêu cầu rút, không trừ tiền thật sự khỏi hệ thống
-            WalletTransaction::create([
+            $transaction = WalletTransaction::create([
                 'wallet_id' => $wallet->id,
-                'type' => 'Rut',
+                'type' => 'RUT',
                 'amount' => $request->amount,
                 'description' => $request->description,
                 'status' => 'pending',
@@ -196,6 +200,10 @@ class WalletController extends Controller
                 'customer_name' => $request->customer_name,
                 'payment_method' => 'bank_transfer'
             ]);
+            
+            // Kích hoạt event WalletWithdrawn để gửi thông báo
+            event(new WalletWithdrawn($user, $request->amount, $transaction->id, 'admin'));
+            
             DB::commit();
             toastr()->success('Yêu cầu rút tiền đã được gửi, vui lòng đợi admin duyệt!');
             return redirect()->route('wallet.index');
