@@ -870,29 +870,32 @@
                             </h2>
                             <div class="grid grid-cols-1 gap-4 mt-4">
                                 @foreach($combo->books as $book)
-                                    <div class="flex items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                                        <div
-                                            class="flex-shrink-0 w-12 h-16 bg-gray-100 mr-4 flex items-center justify-center overflow-hidden">
+                                                <div class="flex items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                                                    <div
+                                                        class="flex-shrink-0 w-12 h-16 bg-gray-100 mr-4 flex items-center justify-center overflow-hidden">
 
-                                            <img src="{{ $book->images->first() ? asset('storage/' . $book->images->first()->image_url) : ($book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg')) }}"
-                                                alt="{{ $book->title }}" id="mainImage"
-                                                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                                                        <img src="{{ $book->cover_image
+                                    ? asset('storage/' . $book->cover_image)
+                                    : ($book->images->first()
+                                        ? asset('storage/' . $book->images->first()->image_url)
+                                        : asset('images/default.jpg')) }}" alt="{{ $book->title }}" id="mainImage"
+                                                            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
 
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <a href="{{ route('books.show', $book->slug) }}"
-                                                class="text-base font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-200 line-clamp-2"
-                                                title="{{ $book->title }}">
-                                                {{ $book->title }}
-                                            </a>
-                                            @if($book->authors->count())
-                                                <p class="text-sm text-gray-500 mt-1">
-                                                    <span class="font-medium">Tác giả:</span>
-                                                    {{ $book->authors->pluck('name')->join(', ') }}
-                                                </p>
-                                            @endif
-                                        </div>
-                                    </div>
+                                                    </div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <a href="{{ route('books.show', $book->slug) }}"
+                                                            class="text-base font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-200 line-clamp-2"
+                                                            title="{{ $book->title }}">
+                                                            {{ $book->title }}
+                                                        </a>
+                                                        @if($book->authors->count())
+                                                            <p class="text-sm text-gray-500 mt-1">
+                                                                <span class="font-medium">Tác giả:</span>
+                                                                {{ $book->authors->pluck('name')->join(', ') }}
+                                                            </p>
+                                                        @endif
+                                                    </div>
+                                                </div>
                                 @endforeach
                             </div>
                         </div>
@@ -1780,7 +1783,8 @@
                                                         ->get();
                                                 @endphp
                                                 <div class="relative">
-                                                    <select name="attributes[{{ $attrVal->attribute_id }}]" id="attribute_{{ $attrVal->attribute_id }}"
+                                                    <select name="attributes[{{ $attrVal->attribute_id }}]"
+                                                        id="attribute_{{ $attrVal->attribute_id }}"
                                                         class="adidas-select w-full appearance-none bg-white">
                                                         @foreach($filteredValues as $bookAttrVal) @php
                                                                 $variantStock = $bookAttrVal->stock ?? 0;
@@ -1856,7 +1860,8 @@
                                                         </div>
 
                                                         <!-- For Ebooks -->
-                                                        <div id="ebook_variant_info_{{ $attrVal->attribute_id }}" class="p-4 space-y-3 hidden">
+                                                        <div id="ebook_variant_info_{{ $attrVal->attribute_id }}"
+                                                            class="p-4 space-y-3 hidden">
                                                             <div
                                                                 class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
                                                                 <div class="flex items-center">
@@ -3749,7 +3754,7 @@
                         return;
                     @endguest
 
-                                                                    const addToCartBtn = document.getElementById('addToCartBtn');
+                                                                                const addToCartBtn = document.getElementById('addToCartBtn');
                     const originalText = addToCartBtn.textContent;
                     const bookId = '{{ $book->id }}';
                     const quantity = parseInt(document.getElementById('quantity')?.value) || 1;
@@ -4038,7 +4043,7 @@
                     console.warn('addToCart function called on combo page');
                     showToastr('warning', 'Chức năng này chỉ khả dụng trên trang sách đơn');
                 @endif
-                                                            }
+                                                                    }
 
             // Add related product to cart function - optimized  
             function addRelatedToCart(bookId) {
@@ -4050,7 +4055,7 @@
                     return;
                 @endguest
 
-                                                const button = event.target.closest('button');
+                                                        const button = event.target.closest('button');
                 const originalText = button.innerHTML;
 
                 // Disable button and show loading
@@ -4376,7 +4381,7 @@
                         return;
                     @endguest
 
-                                                            const formData = new FormData(comboForm);
+                                                                    const formData = new FormData(comboForm);
                     const urlParams = new URLSearchParams();
 
                     // Convert FormData to URLSearchParams
@@ -4504,7 +4509,7 @@
                         return;
                     @endguest
 
-                                                    if (this.disabled) return;
+                                                            if (this.disabled) return;
 
                     const button = this;
                     const bookId = button.dataset.bookId;
