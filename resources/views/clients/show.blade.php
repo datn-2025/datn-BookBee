@@ -2287,6 +2287,35 @@
                                     if ($discount && $price > 0) {
                                         $finalPrice = $price - ($discount->discount_amount ?? 0);
                                     }
+
+                                    // Áp dụng logic status priority như trang chi tiết chính
+                                    $isEbook = $defaultFormat && stripos($defaultFormat->format_name, 'ebook') !== false;
+                                    $shouldShowOutOfStock = false;
+                                    $outOfStockText = '';
+
+                                    // Priority 1: Check book.status first 
+                                    switch ($related->status) {
+                                        case 'Ngừng Kinh Doanh':
+                                            $shouldShowOutOfStock = true;
+                                            $outOfStockText = 'NGƯNG KINH DOANH';
+                                            break;
+                                        case 'Sắp Ra Mắt':
+                                            $shouldShowOutOfStock = true;
+                                            $outOfStockText = 'SẮP RA MẮT';
+                                            break;
+                                        case 'Hết Hàng Tồn Kho':
+                                            $shouldShowOutOfStock = true;
+                                            $outOfStockText = 'HẾT HÀNG TỒN KHO';
+                                            break;
+                                        case 'Còn Hàng':
+                                        default:
+                                            // Priority 2: Only when status = 'Còn Hàng', check stock levels for physical books
+                                            if (!$isEbook && $stock <= 0) {
+                                                $shouldShowOutOfStock = true;
+                                                $outOfStockText = 'HẾT HÀNG';
+                                            }
+                                            break;
+                                    }
                                 @endphp
 
                                 <div class="bg-white border border-gray-200 overflow-hidden group hover:border-amber-600 transition-all duration-300 p-2 cursor-pointer relative"
@@ -2303,10 +2332,10 @@
                                             <img src="{{ $imageUrl }}" alt="{{ $related->title }}"
                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                         </a>
-                                        @if($stock <= 0)
+                                        @if($shouldShowOutOfStock)
                                             <div class="absolute top-2 left-2">
                                                 <span class="bg-red-600 text-white text-xs font-bold uppercase tracking-wider px-2 py-0.5">
-                                                    HẾT HÀNG
+                                                    {{ $outOfStockText }}
                                                 </span>
                                             </div>
                                         @endif
