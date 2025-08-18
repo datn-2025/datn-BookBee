@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\RefundRequested;
 use App\Http\Controllers\Controller;
 use App\Models\RefundRequest;
 use App\Models\Order;
@@ -75,10 +76,10 @@ class RefundController extends Controller
     {
         // dd($request->all());
         $request->validate([
-            'action' => 'required|in:approve,reject',
+            'action' => 'required|in:approve,rejected',
             'admin_note' => 'nullable|string|max:1000',
         ]);
-
+        // dd($request->all());
         try {
             DB::beginTransaction();
 
@@ -151,12 +152,13 @@ class RefundController extends Controller
      */
     private function rejectRefund(RefundRequest $refund, $adminNote = null)
     {
+        $order = $refund->order;
         $refund->update([
             'status' => 'rejected',
             'admin_note' => $adminNote,
             'processed_at' => now(),
         ]);
-
+        event(new RefundRequested($order, $refund->reason, $order->total_amount, 'customer', $refund->admin_note, 'rejected'));
         Log::info('Refund rejected', [
             'refund_id' => $refund->id,
             'order_id' => $refund->order_id,
@@ -169,10 +171,10 @@ class RefundController extends Controller
      */
     private function processWalletRefund(Order $order, $amount, RefundRequest $refundRequest = null)
     {
-        // dd(1);
         try {
+            // dd(1);
             $result = $this->paymentRefundService->refundToWallet($order, $amount, $refundRequest);
-            
+            event(new RefundRequested($order, $refundRequest->reason, $amount, 'customer', $refundRequest->admin_note, 'access'));
             if ($result) {
                 Log::info('Wallet refund processed successfully', [
                     'user_id' => $order->user_id,
