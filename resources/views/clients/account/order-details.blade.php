@@ -213,7 +213,7 @@
                                                                     @endif
                                                                     
                                                                     <!-- Hiển thị quà tặng cho child order -->
-                                                                    @if($item->book && $item->book->gifts && $item->book->gifts->count() > 0)
+                                                                    @if($item->book && $item->book->gifts && $item->book->gifts->count() > 0 && $item->bookFormat && $item->bookFormat->format_name !== 'Ebook')
                                                                         <div class="mt-1">
                                                                             <div class="flex items-center gap-1 mb-1">
                                                                                 <svg class="w-3 h-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
@@ -481,7 +481,7 @@
                                             @endif
                                             
                                             <!-- Hiển thị quà tặng -->
-                                            @if($item->book && $item->book->gifts && $item->book->gifts->count() > 0)
+                                            @if($item->book && $item->book->gifts && $item->book->gifts->count() > 0 && $item->bookFormat && $item->bookFormat->format_name !== 'Ebook')
                                                 <div class="mt-2">
                                                     <div class="flex items-center gap-2 mb-1">
                                                         <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
