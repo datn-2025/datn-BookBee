@@ -415,6 +415,7 @@ class OrderController extends Controller
                     }
                     
                     toastr()->success($successMessage);
+                    event(new OrderCreated($parentOrder));
                     return redirect()->route('orders.show', $parentOrder->id);
                 }
                 
@@ -430,7 +431,7 @@ class OrderController extends Controller
                         'amount' => $parentOrder->total_amount,
                         'order_info' => "Thanh toán đơn hàng hỗn hợp " . $parentOrder->order_code,
                     ];
-                    
+                    event(new OrderCreated($parentOrder));
                     return $this->vnpay_payment($vnpayData);
                 }
                 
@@ -463,6 +464,7 @@ class OrderController extends Controller
                 }
                 
                 toastr()->success($successMessage);
+                event(new OrderCreated($parentOrder));
                 return redirect()->route('orders.show', $parentOrder->id);
             }
             
@@ -546,6 +548,7 @@ class OrderController extends Controller
                 }
                 
                 toastr()->success($successMessage);
+                event(new OrderCreated($order));
                 return redirect()->route('orders.show', $order->id);
             }
             
@@ -1067,6 +1070,7 @@ class OrderController extends Controller
                 DB::commit();
 
                 toastr()->success('Thanh toán thành công! Đơn hàng của bạn đã được xác nhận.');
+                event(new OrderCreated($order));
                 return redirect()->route('orders.show', $order->id);
 
             } else {
