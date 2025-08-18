@@ -422,40 +422,36 @@ class OrderController extends Controller
                 
                 // clear cart
                 $this->orderService->clearUserCart($user);
-            
-
-            // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
-            if ($order->delivery_method === 'delivery') {
+                
+                // Tạo đơn hàng GHN nếu là đơn hàng giao hàng
+                if ($order->delivery_method === 'delivery') {
+                    try {
+                        $this->orderService->createGhnOrder($order);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to create GHN order for wallet payment', [
+                            'order_id' => $order->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+                
+                // Tạo mã QR và gửi email xác nhận
                 try {
-                    $this->orderService->createGhnOrder($order);
+                    $this->qrCodeService->generateOrderQrCode($order);
+                    $this->emailService->sendOrderConfirmation($order);
+                    
+                    // Gửi email ebook nếu đơn hàng có ebook
+                    $this->emailService->sendEbookPurchaseConfirmation($order);
+                    
+                    // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
+                    $this->orderService->updateEbookOrderStatusOnPaymentSuccess($order);
                 } catch (\Exception $e) {
-                    Log::error('Failed to create GHN order for wallet payment', [
+                    Log::error('Failed to send confirmation emails for wallet payment', [
                         'order_id' => $order->id,
                         'error' => $e->getMessage()
                     ]);
+                    // Don't let email errors stop the process
                 }
-            }
-            
-            // Tạo mã QR và gửi email xác nhận
-            try {
-                $this->qrCodeService->generateOrderQrCode($order);
-                $this->emailService->sendOrderConfirmation($order);
-                
-                // Gửi email ebook nếu đơn hàng có ebook
-                $this->emailService->sendEbookPurchaseConfirmation($order);
-                
-                // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
-                $this->orderService->updateEbookOrderStatusOnPaymentSuccess($order);
-            } catch (\Exception $e) {
-                Log::error('Failed to send confirmation emails for wallet payment', [
-                    'order_id' => $order->id,
-                    'error' => $e->getMessage()
-                ]);
-                // Don't let email errors stop the process
-
-            }
-
-                
 
                 try {
                     $this->invoiceService->processInvoiceForPaidOrder($order);
@@ -527,7 +523,7 @@ class OrderController extends Controller
                     'error' => $e->getMessage()
                 ]);
                 // Don't let email errors stop the process
-            
+            }
 
             // Phát sự kiện OrderCreated để thông báo cho admin
             event(new OrderCreated($order));
@@ -1198,6 +1194,10 @@ class OrderController extends Controller
                 'order_id' => $order->id ?? null,
                 'msg' => $e->getMessage()
             ]);
+        }
+    }
+
+    /**
      * API endpoint to check cart stock status before checkout
      */
     public function checkStockStatus(Request $request)
