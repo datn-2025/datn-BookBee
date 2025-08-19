@@ -429,156 +429,259 @@
                         
                         <!-- Phương thức vận chuyển - Ẩn ban đầu, hiển thị khi chọn địa chỉ -->
                         @if(!$hasOnlyEbooks)
-                        <div class="mt-6 mb-6 shipping-section" style="display: none;">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-bold text-gray-900">Phương thức vận chuyển</h3>
-                                    <p class="text-sm text-gray-600">Chọn dịch vụ giao hàng</p>
-                                </div>
+                        <div class="mb-8 shipping-section" style="display: none;">
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="w-1 h-6 bg-black"></div>
+                                <h3 class="text-lg font-black uppercase tracking-wide text-black">
+                                    PHƯƠNG THỨC VẬN CHUYỂN
+                                </h3>
                             </div>
                             
                             <!-- Loading state -->
                             <div id="shipping-services-loading" class="text-center py-8">
-                                <div class="inline-flex items-center gap-2 text-gray-500">
-                                    <svg class="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                    </svg>
-                                    <span>Đang tải dịch vụ vận chuyển...</span>
+                                <div class="inline-flex items-center gap-3 text-gray-600">
+                                    <div class="w-8 h-8 bg-black text-white flex items-center justify-center">
+                                        <svg class="animate-spin w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                    </div>
+                                    <span class="font-bold uppercase tracking-wide">Đang tải dịch vụ vận chuyển...</span>
                                 </div>
                             </div>
                             
                             <!-- Services container -->
                             <div id="shipping-services-container" class="hidden">
-                                <div id="shipping-services-list" class="grid grid-cols-1 gap-3">
+                                <div id="shipping-services-list" class="space-y-4">
                                     <!-- Services will be loaded here -->
                                 </div>
                             </div>
                             
                             <!-- Fallback options -->
                             <div id="shipping-services-fallback" class="hidden">
-                                <div class="grid grid-cols-1 gap-3">
+                                <div class="space-y-4">
                                     <!-- Nhận hàng trực tiếp -->
-                                    <label class="group relative flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-300 hover:bg-green-50 transition-all duration-200 has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
-                                        <input type="radio" name="shipping_method" value="pickup" class="sr-only">
-                                        <div class="flex items-center justify-center w-4 h-4 border-2 border-gray-300 rounded-full group-has-[:checked]:border-green-500 group-has-[:checked]:bg-green-500 mr-3">
-                                            <div class="w-1.5 h-1.5 bg-white rounded-full opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></div>
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="flex items-center gap-2 mb-1">
-                                                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                                </svg>
-                                                <span class="font-medium text-gray-900">Nhận hàng trực tiếp</span>
-                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">FREE</span>
+                                    <label class="group cursor-pointer block">
+                                        <div class="relative border-2 border-gray-300 hover:border-black transition-all duration-500 bg-white group-hover:shadow-lg overflow-hidden">
+                                            <!-- Adidas-style accent line -->
+                                            <div class="absolute left-0 top-0 w-1 h-full bg-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                            
+                                            <div class="p-6 relative">
+                                                <!-- Radio button -->
+                                                <input type="radio" name="shipping_method" value="pickup"
+                                                       class="absolute right-6 top-6 h-5 w-5 text-black focus:ring-black focus:ring-2 border-2 border-gray-400">
+                                                
+                                                <!-- Content -->
+                                                <div class="pr-12">
+                                                    <div class="flex items-center gap-3 mb-3">
+                                                        <!-- Shipping icon -->
+                                                        <div class="w-10 h-10 bg-black text-white flex items-center justify-center">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                                            </svg>
+                                                        </div>
+                                                        
+                                                        <!-- Method info -->
+                                                        <div>
+                                                            <h4 class="text-base font-black uppercase tracking-wide text-black">
+                                                                Nhận hàng tại cửa hàng
+                                                            </h4>
+                                                            <p class="text-sm text-gray-600 mt-1">Miễn phí vận chuyển</p>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Price display -->
+                                                    <div class="mt-4 p-4 bg-gray-50 border-l-4 border-black">
+                                                        <div class="flex items-center justify-between">
+                                                            <span class="text-sm font-bold uppercase tracking-wide text-gray-700">PHÍ VẬN CHUYỂN:</span>
+                                                            <span class="text-lg font-black text-green-600">0đ</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Adidas-style corner accent -->
+                                                <div class="absolute top-0 right-0 w-8 h-8 bg-black opacity-5 transform rotate-45 translate-x-4 -translate-y-4 group-hover:opacity-10 transition-opacity duration-300"></div>
                                             </div>
-                                            <p class="text-xs text-gray-600">Đến cửa hàng nhận</p>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-sm font-bold text-green-600">0đ</div>
                                         </div>
                                     </label>
-                                    
-
-                                    
-
                                 </div>
                             </div>
                             
                             @error('shipping_method')
-                            <p class="text-red-500 text-xs mt-2">{{ $message }}</p>
+                            <div class="mt-4 p-4 bg-red-50 border-l-4 border-red-500">
+                                <p class="text-sm text-red-700 font-medium">{{ $message }}</p>
+                            </div>
                             @enderror
                         </div>
                         @endif
                         
                         <!-- Phương thức thanh toán -->
-                        <div class="mt-6 mb-6">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-bold text-gray-900">Phương thức thanh toán</h3>
-                                    <p class="text-sm text-gray-600">Chọn cách thanh toán</p>
-                                </div>
+                        <div class="mb-8">
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="w-1 h-6 bg-black"></div>
+                                <h3 class="text-lg font-black uppercase tracking-wide text-black">
+                                    PHƯƠNG THỨC THANH TOÁN
+                                </h3>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            
+                            <div class="space-y-4">
                                 @foreach($paymentMethods as $method)
-                                <label class="group cursor-pointer">
-                                    <div class="relative border-2 border-gray-200 rounded-lg p-4 transition-all duration-300 group-hover:border-black group-hover:shadow-md">
-                                        <input type="radio" name="payment_method_id" value="{{ $method->id }}"
-                                               class="absolute right-3 top-3 h-4 w-4 accent-black" required>
-                                        <div class="space-y-2">
-                                            <div class="flex items-center gap-2">
-                                                @if(str_contains(strtolower($method->name), 'ví điện tử'))
-                                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                                                    </svg>
-                                                @elseif(str_contains(strtolower($method->name), 'momo'))
-                                                    <svg class="w-5 h-5 text-pink-500" viewBox="0 0 24 24" fill="currentColor">
-                                                        <path d="M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10z"/>
-                                                    </svg>
-                                                @elseif(str_contains(strtolower($method->name), 'vnpay'))
-                                                    <svg class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-                                                        <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/>
-                                                    </svg>
-                                                @else
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                              d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/>
-                                                    </svg>
-                                                @endif
-                                                <span class="font-medium text-base">{{ $method->name }}</span>
-                                            </div>
-                                            @if(str_contains(strtolower($method->name), 'ví điện tử'))
-                                                <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded">
-                                                    <div class="flex items-center justify-between">
-                                                        <span class="text-xs font-medium text-green-700">Số dư:</span>
-                                                        <span class="text-xs font-bold text-green-800">
-                                                            @if($wallet)
-                                                                {{ number_format($wallet->balance) }}đ
-                                                            @else
-                                                                0đ
-                                                            @endif
-                                                        </span>
+                                <label class="group cursor-pointer block">
+                                    <div class="relative border-2 border-gray-300 hover:border-black transition-all duration-500 bg-white group-hover:shadow-lg overflow-hidden">
+                                        <!-- Adidas-style accent line -->
+                                        <div class="absolute left-0 top-0 w-1 h-full bg-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        
+                                        <div class="p-6 relative">
+                                            <!-- Radio button -->
+                                            <input type="radio" name="payment_method_id" value="{{ $method->id }}"
+                                                   class="absolute right-6 top-6 h-5 w-5 text-black focus:ring-black focus:ring-2 border-2 border-gray-400" required>
+                                            
+                                            <!-- Content -->
+                                            <div class="pr-12">
+                                                <div class="flex items-center gap-3 mb-3">
+                                                    <!-- Payment method icon -->
+                                                    <div class="w-10 h-10 bg-black text-white flex items-center justify-center">
+                                                        @if(str_contains(strtolower($method->name), 'ví điện tử'))
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                                            </svg>
+                                                        @elseif(str_contains(strtolower($method->name), 'momo'))
+                                                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10z"/>
+                                                            </svg>
+                                                        @elseif(str_contains(strtolower($method->name), 'vnpay'))
+                                                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+                                                            </svg>
+                                                        @else
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                                      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+                                                            </svg>
+                                                        @endif
+                                                    </div>
+                                                    
+                                                    <!-- Method name -->
+                                                    <div>
+                                                        <h4 class="text-base font-black uppercase tracking-wide text-black">
+                                                            {{ $method->name }}
+                                                        </h4>
+                                                        @if(str_contains(strtolower($method->name), 'ví điện tử'))
+                                                            <p class="text-sm text-gray-600 mt-1">Thanh toán nhanh chóng với ví điện tử</p>
+                                                        @elseif(str_contains(strtolower($method->name), 'momo'))
+                                                            <p class="text-sm text-gray-600 mt-1">Thanh toán qua ví MoMo</p>
+                                                        @elseif(str_contains(strtolower($method->name), 'vnpay'))
+                                                            <p class="text-sm text-gray-600 mt-1">Thanh toán qua cổng VNPay</p>
+                                                        @elseif(str_contains(strtolower($method->name), 'khi nhận hàng'))
+                                                            <p class="text-sm text-gray-600 mt-1">Thanh toán khi shipper giao hàng</p>
+                                                        @else
+                                                            <p class="text-sm text-gray-600 mt-1">Phương thức thanh toán an toàn</p>
+                                                        @endif
                                                     </div>
                                                 </div>
-                                            @endif
+                                                
+                                                <!-- Wallet balance for e-wallet -->
+                                                @if(str_contains(strtolower($method->name), 'ví điện tử'))
+                                                    <div class="mt-4 p-4 bg-gray-50 border-l-4 border-black">
+                                                        <div class="flex items-center justify-between">
+                                                            <span class="text-sm font-bold uppercase tracking-wide text-gray-700">SỐ DƯ VÍ:</span>
+                                                            <span class="text-lg font-black text-black">
+                                                                @if($wallet)
+                                                                    {{ number_format($wallet->balance) }}đ
+                                                                @else
+                                                                    0đ
+                                                                @endif
+                                                            </span>
+                                                        </div>
+                                                        @if(!$wallet || $wallet->balance == 0)
+                                                            <p class="text-xs text-red-600 mt-2 font-medium">
+                                                                ⚠️ Số dư ví không đủ để thanh toán
+                                                            </p>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                                
+                                                <!-- Special notes for payment methods -->
+                                                @if(str_contains(strtolower($method->name), 'khi nhận hàng') && $hasOnlyEbooks)
+                                                    <div class="mt-3 p-3 bg-red-50 border-l-4 border-red-500">
+                                                        <p class="text-xs text-red-700 font-medium">
+                                                            ❌ Không khả dụng cho đơn hàng ebook
+                                                        </p>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            
+                                            <!-- Adidas-style corner accent -->
+                                            <div class="absolute top-0 right-0 w-8 h-8 bg-black opacity-5 transform rotate-45 translate-x-4 -translate-y-4 group-hover:opacity-10 transition-opacity duration-300"></div>
                                         </div>
                                     </div>
                                 </label>
                                 @endforeach
                             </div>
+                            
                             @error('payment_method_id')
-                            <p class="text-red-500 text-xs mt-2">{{ $message }}</p>
+                            <div class="mt-4 p-4 bg-red-50 border-l-4 border-red-500">
+                                <p class="text-sm text-red-700 font-medium">{{ $message }}</p>
+                            </div>
                             @enderror
                         </div>
 
                         <!-- Ghi chú -->
-                        <div class="mt-12 mb-8">
+                        <div class="mb-8">
                             <div class="flex items-center gap-4 mb-6">
-                                <div class="w-6 h-0.5 bg-black"></div>
-                                <h6 class="text-xl font-bold uppercase tracking-wider">Ghi chú đơn hàng</h6>
+                                <div class="w-1 h-6 bg-black"></div>
+                                <h3 class="text-lg font-black uppercase tracking-wide text-black">
+                                    GHI CHÚ ĐƠN HÀNG
+                                </h3>
                             </div>
-                            <div class="relative">
-                                <textarea name="note" rows="4"
-                                    class="w-full border-2 border-gray-200 rounded-lg px-4 py-3 focus:border-black focus:ring-0 transition-colors"
-                                    placeholder="Nhập ghi chú cho đơn hàng của bạn (nếu có)"></textarea>
+                            
+                            <div class="group">
+                                <label class="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">
+                                    THÔNG TIN BỔ SUNG (TÙY CHỌN)
+                                </label>
+                                <div class="relative">
+                                    <textarea name="note" rows="4"
+                                        class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg resize-none"
+                                        placeholder="Nhập ghi chú cho đơn hàng của bạn (yêu cầu đặc biệt, thời gian giao hàng mong muốn...)">{{ old('note') }}</textarea>
+                                    
+                                    <!-- Adidas-style accent line -->
+                                    <div class="absolute left-0 top-0 w-1 h-full bg-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2 uppercase tracking-wide">
+                                    * Ghi chú sẽ được gửi đến bộ phận xử lý đơn hàng
+                                </p>
                             </div>
                         </div>
 
-                        <button type="submit"
-                            class="w-full bg-black text-white py-4 px-8 text-lg font-bold uppercase tracking-wider
-                                   hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 
-                                   transform hover:scale-[1.02] transition-all duration-300">
-                            ĐẶT HÀNG NGAY
-                        </button>
+                        <!-- Submit Button -->
+                        <div class="mt-12">
+                            <button type="submit"
+                                class="w-full bg-black text-white py-6 px-8 text-lg font-black uppercase tracking-wider
+                                       hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-400 focus:ring-offset-2 
+                                       transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden group">
+                                
+                                <!-- Button background effect -->
+                                <div class="absolute inset-0 bg-gradient-to-r from-gray-900 to-black transform -skew-x-12 -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+                                
+                                <!-- Button content -->
+                                <div class="relative z-10 flex items-center justify-center gap-3">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span>ĐẶT HÀNG NGAY</span>
+                                    <div class="w-1 h-6 bg-white opacity-50"></div>
+                                </div>
+                                
+                                <!-- Adidas-style corner accent -->
+                                <div class="absolute top-0 right-0 w-12 h-12 bg-white opacity-10 transform rotate-45 translate-x-6 -translate-y-6"></div>
+                            </button>
+                            
+                            <!-- Security notice -->
+                            <div class="mt-4 text-center">
+                                <p class="text-xs text-gray-500 uppercase tracking-wide">
+                                    🔒 Thanh toán an toàn & bảo mật
+                                </p>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
