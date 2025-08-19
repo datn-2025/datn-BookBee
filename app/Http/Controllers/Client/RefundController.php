@@ -7,6 +7,7 @@ use App\Http\Requests\RefundRequest;
 use App\Models\Order;
 use App\Models\RefundRequest as ModelsRefundRequest;
 use App\Services\RefundService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -15,10 +16,12 @@ use Illuminate\Support\Facades\Log;
 class RefundController extends Controller
 {
     protected $refundService;
+    protected $notificationService;
 
-    public function __construct(RefundService $refundService)
+    public function __construct(RefundService $refundService, NotificationService $notificationService)
     {
         $this->refundService = $refundService;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -148,6 +151,13 @@ class RefundController extends Controller
             // if ($refundingPaymentStatus) {
             //     $order->update(['payment_status_id' => $refundingPaymentStatus->id]);
             // }
+
+            // Tạo thông báo cho admin về yêu cầu hoàn tiền mới
+            $this->notificationService->createRefundRequestNotificationForAdmin(
+                $order,
+                $request->reason,
+                $order->total_amount
+            );
 
             DB::commit();
 

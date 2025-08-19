@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Jobs\SendOrderStatusUpdatedMail;
+use App\Events\OrderStatusUpdated;
 
 
 
@@ -431,6 +432,9 @@ class OrderController extends Controller
             Log::info("Order {$order->id} status changed from {$currentStatus} to {$newStatus} by admin");
 
             DB::commit();
+
+            // Phát sự kiện OrderStatusUpdated để thông báo cho khách hàng
+            event(new OrderStatusUpdated($order, $currentStatus, $newStatus));
 
             // Gửi mail thông báo cập nhật trạng thái đơn hàng qua queue
             dispatch(new SendOrderStatusUpdatedMail($order, $newStatus));

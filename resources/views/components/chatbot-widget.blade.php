@@ -27,7 +27,7 @@
     <!-- Chat Window - Style -->
     <div id="chatbot-window" 
          class="hidden fixed bottom-44 right-5 rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bg-white transform transition-all duration-300 scale-95 opacity-0"
-         style="display: none; width: 400px; height: 650px;"
+         style="display: none; width: 350px; height: 500px;"
          role="dialog" 
          aria-labelledby="chatbot-title" 
          aria-modal="true">

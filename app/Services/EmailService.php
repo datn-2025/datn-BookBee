@@ -97,7 +97,8 @@ class EmailService
 
         try {
             Mail::to($order->user->email)
-                ->send(new EbookPurchaseConfirmation($order));
+                ->send(new EbookPurchaseConfirmation($order))
+                ->subject('Xác nhận mua ebook thành công');
             Log::info('Ebook purchase confirmation email sent', ['order_id' => $order->id]);
         } catch (\Exception $e) {
             Log::error('Failed to send ebook purchase confirmation email', [

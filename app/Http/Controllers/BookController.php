@@ -219,6 +219,7 @@ class BookController extends Controller
         if ($totalBooks == 0) {
             // Không có sách nào, trả về kết quả rỗng
             $books = collect([]);
+            $combos = collect([]);
             $categories = collect([]);
             $authors = collect([]);
             $brands = collect([]);
@@ -357,14 +358,116 @@ class BookController extends Controller
             // Giới hạn 1000 sách để tránh vấn đề hiệu suất
             $books = $booksQuery->limit(1000)->get();
 
-            // Lấy dữ liệu cho filters
-            $categories = DB::table('categories')->orderBy('name')->get();
-            $authors = DB::table('authors')->orderBy('name')->get();
-            $brands = DB::table('brands')->orderBy('name')->get();
+            // Tìm kiếm combos/collections
+            $combosQuery = DB::table('collections')
+                ->where('status', 'active')
+                ->where('combo_price', '>', 0)
+                ->whereNull('deleted_at')
+                ->where(function($query) {
+                    $query->whereNull('start_date')
+                          ->orWhere('start_date', '<=', now());
+                })
+                ->where(function($query) {
+                    $query->whereNull('end_date')
+                          ->orWhere('end_date', '>=', now());
+                })
+                ->select(
+                    'id',
+                    'name',
+                    'slug', 
+                    'description',
+                    'combo_price',
+                    'cover_image',
+                    'created_at'
+                );
+
+            // Tìm kiếm combo theo từ khóa
+            if (!empty($searchTerm)) {
+                $combosQuery->where(function($query) use ($searchTerm) {
+                    $query->where('name', 'like', "%$searchTerm%")
+                          ->orWhere('description', 'like', "%$searchTerm%");
+                });
+            }
+
+            // Filter combo theo giá
+            if ($minPrice) {
+                $combosQuery->where('combo_price', '>=', $minPrice);
+            }
+            if ($maxPrice) {
+                $combosQuery->where('combo_price', '<=', $maxPrice);
+            }
+
+            // Filter combo theo category - check if combo contains books from this category
+            if ($categoryFilter) {
+                $combosQuery->whereExists(function($query) use ($categoryFilter) {
+                    $query->select(DB::raw(1))
+                          ->from('book_collections as bc')
+                          ->join('books as b', 'bc.book_id', '=', 'b.id')
+                          ->whereRaw('bc.collection_id = collections.id')
+                          ->where('b.category_id', $categoryFilter)
+                          ->whereNull('b.deleted_at');
+                });
+            }
+
+            // Filter combo theo author - check if combo contains books from this author
+            if ($authorFilter) {
+                $combosQuery->whereExists(function($query) use ($authorFilter) {
+                    $query->select(DB::raw(1))
+                          ->from('book_collections as bc')
+                          ->join('books as b', 'bc.book_id', '=', 'b.id')
+                          ->join('author_books as ab', 'b.id', '=', 'ab.book_id')
+                          ->whereRaw('bc.collection_id = collections.id')
+                          ->where('ab.author_id', $authorFilter)
+                          ->whereNull('b.deleted_at');
+                });
+            }
+
+            // Filter combo theo brand - check if combo contains books from this brand
+            if ($brandFilter) {
+                $combosQuery->whereExists(function($query) use ($brandFilter) {
+                    $query->select(DB::raw(1))
+                          ->from('book_collections as bc')
+                          ->join('books as b', 'bc.book_id', '=', 'b.id')
+                          ->whereRaw('bc.collection_id = collections.id')
+                          ->where('b.brand_id', $brandFilter)
+                          ->whereNull('b.deleted_at');
+                });
+            }
+
+            // Sắp xếp combo
+            switch ($sort) {
+                case 'price_asc':
+                    $combosQuery->orderBy('combo_price', 'ASC');
+                    break;
+                case 'price_desc':
+                    $combosQuery->orderBy('combo_price', 'DESC');
+                    break;
+                case 'name_asc':
+                    $combosQuery->orderBy('name', 'ASC');
+                    break;
+                case 'name_desc':
+                    $combosQuery->orderBy('name', 'DESC');
+                    break;
+                case 'oldest':
+                    $combosQuery->orderBy('created_at', 'ASC');
+                    break;
+                case 'newest':
+                default:
+                    $combosQuery->orderBy('created_at', 'DESC');
+                    break;
+            }
+
+            $combos = $combosQuery->limit(500)->get();
         }
+
+        // Lấy dữ liệu cho filters
+        $categories = DB::table('categories')->orderBy('name')->get();
+        $authors = DB::table('authors')->orderBy('name')->get();
+        $brands = DB::table('brands')->orderBy('name')->get();
 
         return view('books.search', [
             'books' => $books,
+            'combos' => $combos,
             'categories' => $categories,
             'authors' => $authors,
             'brands' => $brands,

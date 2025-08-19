@@ -45,15 +45,46 @@
                         
                         <!-- Dropdown Menu -->
                         <div class="dropdown-menu" style="position: absolute; left: 0; top: 100%; margin-top: 0.5rem; width: 12rem; background-color: white; border: 2px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 0.2s ease; pointer-events: none; z-index: 50;">
-                            <a href="{{ route('books.index') }}" 
-                               style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: background-color 0.2s ease; {{ request()->routeIs('books.*') ? 'background-color: #f9fafb; color: black; font-weight: 600;' : '' }}"
-                               onmouseover="this.style.backgroundColor='#f9fafb'; this.style.color='black'"
-                               onmouseout="this.style.backgroundColor='{{ request()->routeIs('books.*') ? '#f9fafb' : 'white' }}'; this.style.color='{{ request()->routeIs('books.*') ? 'black' : '#374151' }}'">
-                                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <div style="width: 0.25rem; height: 1rem; background-color: black;"></div>
-                                    <span style="text-transform: uppercase; letter-spacing: 0.05em;">Sách</span>
+                            <!-- Books with submenu -->
+                            <div class="books-dropdown-item" style="position: relative;">
+                                <a href="{{ route('books.index') }}" 
+                                   class="books-main-link"
+                                   style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: background-color 0.2s ease; {{ request()->routeIs('books.*') ? 'background-color: #f9fafb; color: black; font-weight: 600;' : '' }}"
+                                   onmouseover="this.style.backgroundColor='#f9fafb'; this.style.color='black'"
+                                   onmouseout="this.style.backgroundColor='{{ request()->routeIs('books.*') ? '#f9fafb' : 'white' }}'; this.style.color='{{ request()->routeIs('books.*') ? 'black' : '#374151' }}'">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; justify-content: space-between;">
+                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                            <div style="width: 0.25rem; height: 1rem; background-color: black;"></div>
+                                            <span style="text-transform: uppercase; letter-spacing: 0.05em;">Sách</span>
+                                        </div>
+                                        <svg style="width: 0.75rem; height: 0.75rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </div>
+                                </a>
+                                
+                                <!-- Books Categories Submenu -->
+                                <div class="books-submenu" style="position: absolute; left: 100%; top: 0; width: 14rem; background-color: white; border: 2px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; visibility: hidden; transform: translateX(-8px); transition: all 0.2s ease; pointer-events: none; z-index: 60; max-height: 20rem; overflow-y: auto;">
+                                    @if(isset($navCategories) && $navCategories->count() > 0)
+                                        @foreach($navCategories as $navCategory)
+                                        <a href="{{ route('books.index', $navCategory->slug) }}" 
+                                           style="display: block; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 400; color: #6b7280; text-decoration: none; transition: background-color 0.2s ease;"
+                                           onmouseover="this.style.backgroundColor='#f9fafb'; this.style.color='black'"
+                                           onmouseout="this.style.backgroundColor='white'; this.style.color='#6b7280'">
+                                            <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: space-between;">
+                                                <span>{{ $navCategory->name }}</span>
+                                                <span style="font-size: 0.7rem; color: #9ca3af;">({{ $navCategory->books_count }})</span>
+                                            </div>
+                                        </a>
+                                        @endforeach
+                                    @else
+                                        <div style="padding: 0.75rem 1rem; font-size: 0.8rem; color: #9ca3af; text-align: center;">
+                                            Chưa có danh mục sách
+                                        </div>
+                                    @endif
                                 </div>
-                            </a>
+                            </div>
+                            
                             <a href="{{ route('combos.index') }}" 
                                style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: background-color 0.2s ease; {{ request()->routeIs('combos.*') ? 'background-color: #f9fafb; color: black; font-weight: 600;' : '' }}"
                                onmouseover="this.style.backgroundColor='#f9fafb'; this.style.color='black'"
@@ -170,6 +201,46 @@
                             @endauth
                         </div>
                     </div>
+
+                    {{-- Notifications --}}
+                    @auth
+                    <div class="notification-dropdown" style="position: relative;">
+                        <button type="button" class="notification-btn" style="position: relative; padding: 0.5rem; color: #6b7280; background: none; border: none; cursor: pointer; transition: color 0.2s ease;"
+                                onmouseover="this.style.color='black'"
+                                onmouseout="this.style.color='#6b7280'"
+                                onclick="toggleNotificationDropdown()">
+                            <svg style="height: 1.25rem; width: 1.25rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                            <span id="notification-badge" class="notification-badge" style="position: absolute; top: -0.25rem; right: -0.25rem; height: 1rem; width: 1rem; background-color: #ef4444; color: white; font-size: 0.75rem; border-radius: 50%; display: none; align-items: center; justify-content: center;">0</span>
+                        </button>
+                        
+                        <div id="notification-dropdown" class="notification-dropdown-menu" style="position: absolute; right: 0; top: 100%; margin-top: 0.5rem; width: 20rem; background-color: white; border: 1px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 0.2s ease; pointer-events: none; z-index: 9999; border-radius: 0.5rem;">
+                            <!-- Header -->
+                            <div style="padding: 1rem; border-bottom: 1px solid #f3f4f6; background-color: #f9fafb;">
+                                <h6 style="margin: 0; font-size: 1rem; font-weight: 600; color: #111827;">Thông báo</h6>
+                                <span id="notification-count" style="font-size: 0.875rem; color: #6b7280;">0 thông báo mới</span>
+                            </div>
+                            
+                            <!-- Notification List -->
+                            <div id="notification-list" style="max-height: 240px; overflow-y: auto;">
+                                <div style="padding: 2rem 1rem; text-align: center; color: #6b7280;">
+                                    <svg style="height: 3rem; width: 3rem; margin: 0 auto 1rem; opacity: 0.5;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                    </svg>
+                                    <p style="margin: 0; font-size: 0.875rem;">Chưa có thông báo nào</p>
+                                </div>
+                            </div>
+                            
+                            <!-- View All Link -->
+                            <div style="border-top: 1px solid #f3f4f6; padding: 0.75rem;">
+                                <a href="{{ route('notifications.index') }}" style="display: block; text-align: center; color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 500; padding: 0.5rem; border-radius: 0.375rem; transition: background-color 0.2s ease;"
+                                   onmouseover="this.style.backgroundColor='#f3f4f6'"
+                                   onmouseout="this.style.backgroundColor=''">Xem tất cả thông báo</a>
+                            </div>
+                        </div>
+                    </div>
+                    @endauth
 
                     {{-- Wishlist --}}
                     <a href="{{ route('wishlist.index') }}" style="position: relative; padding: 0.5rem; color: #6b7280; text-decoration: none; transition: color 0.2s ease;"
@@ -368,6 +439,40 @@
         visibility: visible;
         transform: translateY(0);
         pointer-events: auto;
+    }
+
+    /* Books dropdown with submenu */
+    .books-dropdown-item {
+        position: relative;
+    }
+
+    .books-dropdown-item .books-submenu {
+        position: absolute;
+        left: 100%;
+        top: 0;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateX(-8px);
+        transition: all 0.2s ease;
+        pointer-events: none;
+        z-index: 60;
+    }
+
+    .books-dropdown-item:hover .books-submenu {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: translateX(0) !important;
+        pointer-events: auto !important;
+    }
+
+    /* Keep parent dropdown open when hovering submenu */
+    .shop-dropdown:hover .dropdown-menu,
+    .books-dropdown-item:hover ~ .dropdown-menu,
+    .dropdown-menu:hover {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: translateY(0) !important;
+        pointer-events: auto !important;
     }
 
     /* User dropdown hover effect */

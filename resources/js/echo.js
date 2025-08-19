@@ -64,10 +64,10 @@ if (window.Echo && window.Echo.connector) {
     window.Echo.connector.pusher.connection.bind('error', (error) => {
         console.error('❌ Pusher error:', error);
     });
+    
+    window.Echo.connector.pusher.connection.bind('error', (err) => {
+        console.error('🔥 Pusher connection error:', err);
+    });
 } else {
     console.error('❌ Echo connector not available');
 }
-
-window.Echo.connector.pusher.connection.bind('error', (err) => {
-    console.error('🔥 Pusher connection error:', err);
-});

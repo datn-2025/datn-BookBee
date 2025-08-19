@@ -475,8 +475,8 @@
                                         @endif
                                     @endif
                                     
-                                    {{-- Gifts --}}
-                                    @if(isset($item->gifts) && count($item->gifts) > 0)
+                                    {{-- Gifts - Chỉ hiển thị cho sách vật lý --}}
+                                    @if(!$isEbook && isset($item->gifts) && count($item->gifts) > 0)
                                         <div class="bg-green-50 p-3 border-l-4 border-green-500 mb-4">
                                             <div class="text-xs text-green-600 uppercase tracking-wide font-bold mb-2">
                                                 <i class="fas fa-gift"></i> Quà tặng đi kèm:

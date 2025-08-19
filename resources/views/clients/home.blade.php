@@ -46,17 +46,17 @@
 
                     <!-- Nổi bật giá - Kiểu dáng vuông -->
                     <div class="flex items-center gap-4">
-                        <span class="bg-red-600 text-white px-4 py-2 text-sm font-bold uppercase tracking-wide">
+                        {{-- <span class="bg-red-600 text-white px-4 py-2 text-sm font-bold uppercase tracking-wide">
                             <i class="fas fa-tags mr-1"></i>
                             GIẢM 30%
-                        </span>
+                        </span> --}}
                         <span class="text-2xl font-bold text-amber-600">Mua ngay hôm nay!</span>
                     </div>
                 </div>
 
                 <!-- Nút hành động - Kiểu vuông -->
                 <div class="pt-4">
-                    <a href="#"
+                    <a href="{{ route('books.index') }}"
                         class="group bg-amber-600 text-white px-10 py-4 font-bold text-sm uppercase tracking-[0.1em] hover:bg-amber-700 transition-all duration-300 flex items-center gap-3 w-max button-text">
                         <i class="fas fa-search text-white"></i>
                         <span>KHÁM PHÁ NGAY</span>
@@ -65,29 +65,12 @@
                 </div>
             </div>
 
-            {{-- Right image - Clean presentation --}}
+            {{-- Right image - Background style --}}
             <div class="flex justify-center">
                 <div class="relative group">
-                    <!-- Main image với clean style -->
-                    <div class="relative">
-                        <img src="{{ asset('storage/images/banner-image2.png') }}"
-                            class="h-80 md:h-96 object-contain transform group-hover:scale-105 transition-transform duration-700"
-                            alt="Banner BookBee">
-
-                        <!-- Clean badge thay vì rounded -->
-                        <div
-                            class="absolute -top-6 -left-6 bg-black text-white px-6 py-3 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-500">
-                            <div class="text-center">
-                                <div class="text-sm font-bold uppercase tracking-wide">MỚI</div>
-                                <div class="text-xs uppercase tracking-wider text-gray-300">Bộ Sưu Tập</div>
-                            </div>
-                        </div>
-
-                        <!-- Minimal accent -->
-                        <div
-                            class="absolute -bottom-4 -right-4 bg-white border-2 border-black px-4 py-2 transform group-hover:translate-x-1 group-hover:translate-y-1 transition-transform duration-500">
-                            <span class="text-xs font-bold uppercase tracking-wide text-black">Cao Cấp</span>
-                        </div>
+                    <!-- Background image style -->
+                    <div class="relative h-80 md:h-96 w-80 md:w-96 bg-cover bg-center bg-no-repeat transform group-hover:scale-105 transition-transform duration-700"
+                         style="background-image: url('{{ asset('storage/images/banner-image2.png') }}');">
                     </div>
 
                     <!-- Background geometric shape -->

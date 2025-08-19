@@ -650,7 +650,7 @@ class OrderService
         // Calculate total quantity of this book across all variants
         $totalBookQuantity = $this->getTotalBookQuantityInCart($cartItem->book_id);
 
-        // Lấy các quà tặng có sẵn cho sách này
+        // Lấy các quà tặng có sẵn cho sách này (chỉ những quà tặng đang trong thời gian hiệu lực)
         $availableGifts = BookGift::where('book_id', $cartItem->book_id)
             ->where(function ($query) {
                 $query->whereNull('start_date')
@@ -662,6 +662,17 @@ class OrderService
             })
             ->where('quantity', '>', 0)
             ->get();
+
+        // Nếu không có quà tặng khả dụng thì không cần trừ stock
+        if ($availableGifts->isEmpty()) {
+            Log::info('OrderService - No available gifts to decrease stock for book', [
+                'book_id' => $cartItem->book_id,
+                'total_book_quantity' => $totalBookQuantity
+            ]);
+            // Mark as processed anyway to avoid re-checking
+            $this->processedGiftBooks[] = $cartItem->book_id;
+            return;
+        }
 
         // Trừ số lượng quà tặng dựa trên tổng số lượng sách (không phải từng item)
         foreach ($availableGifts as $gift) {
@@ -1071,19 +1082,47 @@ class OrderService
     /**
      * Validate gift stock availability
      * Checks total quantity of the same book across all variants in cart
+     * Only validates if the book actually has gifts available in the current period
      */
     private function validateGiftStock($cartItem, $freshBook)
     {
-        $gifts = BookGift::where('book_id', $cartItem->book_id)->get();
+        // Chỉ xử lý quà tặng cho sách vật lý (không phải ebook hoặc combo)
+        if (isset($cartItem->is_combo) && $cartItem->is_combo) {
+            return; // Combo không có quà tặng
+        }
+
+        // Kiểm tra xem có phải ebook không
+        if ($cartItem->bookFormat && stripos($cartItem->bookFormat->format_name, 'ebook') !== false) {
+            return; // Ebook không có quà tặng
+        }
+
+        // Lấy các quà tặng có sẵn trong thời gian hiện tại cho sách này
+        $availableGifts = BookGift::where('book_id', $cartItem->book_id)
+            ->where(function ($query) {
+                $query->whereNull('start_date')
+                    ->orWhere('start_date', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', now());
+            })
+            ->where('quantity', '>', 0)
+            ->get();
         
-        if ($gifts->isEmpty()) {
+        // Nếu không có quà tặng khả dụng thì không cần validate
+        if ($availableGifts->isEmpty()) {
+            Log::info('OrderService - No available gifts for book, skipping gift validation', [
+                'book_id' => $cartItem->book_id,
+                'book_title' => $freshBook->title
+            ]);
             return;
         }
 
         // Calculate total quantity of the same book across all variants in the user's cart
         $totalBookQuantity = $this->getTotalBookQuantityInCart($cartItem->book_id);
         
-        foreach ($gifts as $gift) {
+        // Chỉ validate những quà tặng thực sự có sẵn
+        foreach ($availableGifts as $gift) {
             if ($gift->quantity !== null && $gift->quantity < $totalBookQuantity) {
                 throw new \Exception('Quà tặng "' . $gift->gift_name . '" cho sách "' . $freshBook->title . '" không đủ số lượng. Tổng số lượng sách trong giỏ: ' . $totalBookQuantity . ', quà tặng còn lại: ' . $gift->quantity);
             }
@@ -1091,7 +1130,7 @@ class OrderService
 
         Log::info('OrderService - Gift stock validation passed', [
             'book_id' => $cartItem->book_id,
-            'gifts_count' => $gifts->count(),
+            'gifts_count' => $availableGifts->count(),
             'current_item_quantity' => $cartItem->quantity,
             'total_book_quantity_in_cart' => $totalBookQuantity
         ]);
@@ -1099,6 +1138,7 @@ class OrderService
 
     /**
      * Calculate total quantity of a specific book across all variants in user's cart
+     * Only count physical books, exclude ebooks since they don't have gifts
      */
     private function getTotalBookQuantityInCart($bookId)
     {
@@ -1116,17 +1156,23 @@ class OrderService
         
         $userId = $cartItem->user_id;
         
-        // Sum all quantities for this book_id across different variants
-        $totalQuantity = Cart::where('user_id', $userId)
-            ->where('book_id', $bookId)
-            ->where('is_selected', 1)
-            ->where('is_combo', 0) // Exclude combo items
-            ->sum('quantity');
+        // Sum all quantities for this book_id across different variants, excluding ebooks
+        $totalQuantity = Cart::join('book_formats', 'carts.book_format_id', '=', 'book_formats.id')
+            ->where('carts.user_id', $userId)
+            ->where('carts.book_id', $bookId)
+            ->where('carts.is_selected', 1)
+            ->where('carts.is_combo', 0) // Exclude combo items
+            ->where(function($query) {
+                // Exclude ebooks from gift calculation
+                $query->where('book_formats.format_name', 'NOT LIKE', '%ebook%')
+                      ->where('book_formats.format_name', 'NOT LIKE', '%Ebook%');
+            })
+            ->sum('carts.quantity');
             
-        Log::info('OrderService - Calculated total book quantity in cart', [
+        Log::info('OrderService - Calculated total physical book quantity in cart (excluding ebooks)', [
             'book_id' => $bookId,
             'user_id' => $userId,
-            'total_quantity' => $totalQuantity
+            'total_physical_quantity' => $totalQuantity
         ]);
         
         return $totalQuantity;

@@ -9,9 +9,9 @@
 <div id="{{ $isCombo ? 'ai-combo-summary-container' : 'ai-summary-container' }}" {{ $dataAttribute }}="{{ $item->id }}" class="ai-summary-section">
     {{-- Content will be loaded by JavaScript --}}
     <div class="text-center">
-        <div class="bg-white border-2 border-black relative overflow-hidden group">
+        <div class="bg-white border-2 border-gray-100 relative overflow-hidden group">
             <!-- Header Badge -->
-            <div class="bg-black text-white px-6 py-3 text-center">
+            <div class="bg-amber-600 text-white px-6 py-3 text-center">
                 <span class="text-sm font-bold uppercase tracking-wider">
                     {{ $isCombo ? 'AI SUMMARY - COMBO' : 'AI SUMMARY' }}
                 </span>
@@ -19,7 +19,7 @@
             
             <!-- Loading Content -->
             <div class="p-12">
-                <div class="w-20 h-20 bg-black flex items-center justify-center mx-auto mb-6">
+                <div class="w-20 h-20 bg-amber-600 flex items-center justify-center mx-auto mb-6">
                     <i class="fas fa-robot text-3xl text-white animate-pulse"></i>
                 </div>
                 <div class="space-y-4">
@@ -28,15 +28,15 @@
                     <div class="h-4 bg-gray-100 w-2/3 mx-auto"></div>
                 </div>
                 <div class="mt-8">
-                    <div class="h-12 bg-black w-48 mx-auto flex items-center justify-center">
+                    <div class="h-12 bg-amber-600 w-48 mx-auto flex items-center justify-center">
                         <span class="text-white text-sm font-bold uppercase tracking-wider">Đang tải...</span>
                     </div>
                 </div>
             </div>
             
             <!-- Geometric decorations -->
-            <div class="absolute top-0 right-0 w-16 h-16 bg-black opacity-5 transform rotate-45 translate-x-8 -translate-y-8"></div>
-            <div class="absolute bottom-0 left-0 w-24 h-1 bg-black opacity-10"></div>
+            <div class="absolute top-0 right-0 w-16 h-16 bg-amber-600 opacity-5 transform rotate-45 translate-x-8 -translate-y-8"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-1 bg-amber-600 opacity-10"></div>
         </div>
     </div>
 </div>
@@ -58,7 +58,7 @@
 /* Main Container Styles */
 .ai-summary-container {
     background: #fff;
-    border: 2px solid #000;
+    border: 2px solid #d97706;
     position: relative;
     overflow: hidden;
     transition: all 0.3s ease;
@@ -66,7 +66,7 @@
 
 .ai-summary-container:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 25px rgba(217, 119, 6, 0.15);
 }
 
 .ai-summary-container::before {
@@ -76,7 +76,7 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    background: linear-gradient(90deg, transparent, rgba(217, 119, 6, 0.2), transparent);
     transition: left 0.5s;
 }
 
@@ -86,13 +86,13 @@
 
 /* Header Styles */
 .ai-header {
-    background: #000;
+    background: #d97706;
     color: #fff;
     padding: 1rem 1.5rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 2px solid #000;
+    border-bottom: 2px solid #d97706;
 }
 
 .ai-header-title {
@@ -105,7 +105,7 @@
 
 .ai-header-badge {
     background: #fff;
-    color: #000;
+    color: #d97706;
     padding: 0.25rem 0.75rem;
     font-size: 0.75rem;
     font-weight: 700;
@@ -121,7 +121,7 @@
 
 .ai-section {
     margin-bottom: 2rem;
-    border-left: 4px solid #000;
+    border-left: 4px solid #d97706;
     padding-left: 1.5rem;
 }
 
@@ -134,7 +134,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #000;
+    color: #d97706;
     margin-bottom: 1rem;
     display: flex;
     align-items: center;
@@ -143,7 +143,7 @@
 }
 
 .ai-section-title:hover {
-    color: #333;
+    color: #b45309;
 }
 
 .ai-section-title i {
@@ -183,9 +183,9 @@
 
 /* Button Styles */
 .ai-btn {
-    background: #000;
+    background: #d97706;
     color: #fff;
-    border: 2px solid #000;
+    border: 2px solid #d97706;
     padding: 0.75rem 1.5rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -212,10 +212,10 @@
 }
 
 .ai-btn:hover {
-    background: #333;
-    border-color: #333;
+    background: #b45309;
+    border-color: #b45309;
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 25px rgba(217, 119, 6, 0.3);
     color: #fff;
     text-decoration: none;
 }
@@ -226,25 +226,25 @@
 
 .ai-btn:active {
     transform: translateY(0);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.2);
 }
 
 .ai-btn-outline {
     background: #fff;
-    color: #000;
-    border: 2px solid #000;
+    color: #d97706;
+    border: 2px solid #d97706;
 }
 
 .ai-btn-outline:hover {
-    background: #000;
+    background: #d97706;
     color: #fff;
 }
 
 /* Primary Button Style */
 .adidas-btn-primary {
-    background: #000;
+    background: #d97706;
     color: #fff;
-    border: 2px solid #000;
+    border: 2px solid #d97706;
     padding: 1rem 2rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -272,10 +272,10 @@
 }
 
 .adidas-btn-primary:hover {
-    background: #333;
-    border-color: #333;
+    background: #b45309;
+    border-color: #b45309;
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 25px rgba(217, 119, 6, 0.3);
     color: #fff;
     text-decoration: none;
 }
@@ -286,12 +286,12 @@
 
 .adidas-btn-primary:active {
     transform: translateY(0);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.2);
 }
 
 /* Chat Styles */
 .ai-chat-container {
-    border-top: 2px solid #000;
+    border-top: 2px solid #d97706;
     margin-top: 2rem;
     padding-top: 2rem;
 }
@@ -308,11 +308,11 @@
 .ai-chat-message {
     margin-bottom: 1rem;
     padding: 0.75rem 1rem;
-    border-left: 3px solid #000;
+    border-left: 3px solid #d97706;
 }
 
 .ai-chat-message.user {
-    background: #000;
+    background: #d97706;
     color: #fff;
     border-left-color: #fff;
     text-align: right;
@@ -321,7 +321,7 @@
 .ai-chat-message.ai {
     background: #f0f0f0;
     color: #333;
-    border-left-color: #000;
+    border-left-color: #d97706;
     text-align: left;
 }
 
@@ -333,7 +333,7 @@
 
 .ai-chat-input {
     flex: 1;
-    border: 2px solid #000;
+    border: 2px solid #d97706;
     padding: 0.75rem 1rem;
     font-size: 0.95rem;
     transition: all 0.3s ease;
@@ -345,8 +345,8 @@
 
 .ai-chat-input:focus {
     outline: none;
-    border-color: #333;
-    box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+    border-color: #b45309;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
 }
 
 .ai-chat-send {
@@ -367,17 +367,17 @@
     justify-content: space-between;
     padding: 1rem 1.5rem;
     background: #f8f9fa;
-    border: 2px solid #000;
+    border: 2px solid #d97706;
     cursor: pointer;
     transition: all 0.3s ease;
     text-transform: uppercase;
     font-weight: 700;
     letter-spacing: 1px;
-    color: #000;
+    color: #d97706;
 }
 
 .combo-ai-section-title:hover {
-    background: #000;
+    background: #d97706;
     color: #fff;
 }
 
@@ -390,14 +390,14 @@
 }
 
 .combo-ai-chat-container {
-    border-top: 2px solid #000;
+    border-top: 2px solid #d97706;
     margin-top: 2rem;
     padding-top: 2rem;
 }
 
 .combo-ai-chat-input {
     flex: 1;
-    border: 2px solid #000;
+    border: 2px solid #d97706;
     padding: 0.75rem 1rem;
     font-size: 0.95rem;
     transition: all 0.3s ease;
@@ -409,8 +409,8 @@
 
 .combo-ai-chat-input:focus {
     outline: none;
-    border-color: #333;
-    box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+    border-color: #b45309;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
 }
 
 .combo-char-count {
@@ -434,7 +434,7 @@
 .ai-loading-icon {
     width: 80px;
     height: 80px;
-    background: #000;
+    background: #d97706;
     color: #fff;
     margin: 0 auto 1.5rem;
     display: flex;
@@ -448,7 +448,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #000;
+    color: #d97706;
     margin-bottom: 0.5rem;
 }
 
@@ -461,7 +461,7 @@
 .ai-loading-dot {
     width: 0.5rem;
     height: 0.5rem;
-    background: #000;
+    background: #d97706;
     animation: ai-loading-bounce 1.4s ease-in-out infinite both;
 }
 
@@ -518,7 +518,7 @@
 .ai-initial-icon {
     width: 80px;
     height: 80px;
-    background: #000;
+    background: #d97706;
     color: #fff;
     margin: 0 auto 1.5rem;
     display: flex;
@@ -532,7 +532,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #000;
+    color: #d97706;
     margin-bottom: 1rem;
 }
 
@@ -699,7 +699,7 @@
     right: 0;
     width: 100px;
     height: 100px;
-    background: #000;
+    background: #d97706;
     opacity: 0.03;
     transform: rotate(45deg);
     translate: 50px -50px;
@@ -716,7 +716,7 @@
     left: 0;
     width: 60px;
     height: 2px;
-    background: #000;
+    background: #d97706;
     opacity: 0.2;
 }
 
@@ -724,7 +724,7 @@
 .ai-btn:focus,
 .ai-chat-input:focus,
 .ai-section-title:focus {
-    outline: 2px solid #000;
+    outline: 2px solid #d97706;
     outline-offset: 2px;
 }
 
@@ -800,10 +800,10 @@
     opacity: 0.3;
 }
 
-/* Focus States */
+/* Focus States Enhancement */
 .ai-btn:focus-visible,
 .ai-chat-input:focus-visible {
-    outline: 2px solid #000;
+    outline: 2px solid #d97706;
     outline-offset: 2px;
 }
 </style>
