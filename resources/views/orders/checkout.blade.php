@@ -1672,6 +1672,15 @@ document.addEventListener('DOMContentLoaded', function () {
         existingAddressContent.classList.remove('hidden');
         newAddressContent.classList.add('hidden');
         
+        // Disable required validation cho các trường địa chỉ mới khi ẩn
+        const newAddressFields = ['tinh', 'quan', 'phuong', 'new_address_detail'];
+        newAddressFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.removeAttribute('required');
+            }
+        });
+        
         // Clear new address form validation
         clearNewAddressValidation();
     }
@@ -1686,6 +1695,20 @@ document.addEventListener('DOMContentLoaded', function () {
         // Show/hide content
         newAddressContent.classList.remove('hidden');
         existingAddressContent.classList.add('hidden');
+        
+        // Enable lại required validation cho các trường địa chỉ mới khi hiển thị
+        const newAddressFields = [
+            { id: 'tinh', name: 'new_address_city_id' },
+            { id: 'quan', name: 'new_address_district_id' },
+            { id: 'phuong', name: 'new_address_ward_id' },
+            { id: 'new_address_detail', name: 'new_address_detail' }
+        ];
+        newAddressFields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element) {
+                element.setAttribute('required', 'required');
+            }
+        });
         
         // Clear existing address selection
         const existingAddressInputs = document.querySelectorAll('input[name="address_id"]');
@@ -2357,10 +2380,72 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
+    // Khởi tạo trạng thái form khi trang load
+     function initializeFormState() {
+         console.log('Initializing form state...');
+         
+         // Kiểm tra tab nào đang active
+         const existingAddressContent = document.getElementById('existing-address-content');
+         const newAddressContent = document.getElementById('new-address-content');
+         
+         console.log('Existing address content hidden:', existingAddressContent?.classList.contains('hidden'));
+         console.log('New address content hidden:', newAddressContent?.classList.contains('hidden'));
+         
+         // Mặc định disable required cho tất cả các trường địa chỉ mới
+         // Vì tab "Địa chỉ có sẵn" thường là tab mặc định
+         const newAddressFields = ['tinh', 'quan', 'phuong', 'new_address_detail'];
+         newAddressFields.forEach(fieldId => {
+             const field = document.getElementById(fieldId);
+             if (field) {
+                 field.removeAttribute('required');
+                 console.log(`Removed required from ${fieldId}`);
+             }
+         });
+         
+         // Chỉ enable required nếu tab địa chỉ mới đang active
+         if (newAddressContent && !newAddressContent.classList.contains('hidden')) {
+             console.log('New address tab is active, enabling required validation');
+             const newAddressFieldsWithNames = [
+                 { id: 'tinh', name: 'new_address_city_id' },
+                 { id: 'quan', name: 'new_address_district_id' },
+                 { id: 'phuong', name: 'new_address_ward_id' },
+                 { id: 'new_address_detail', name: 'new_address_detail' }
+             ];
+             newAddressFieldsWithNames.forEach(field => {
+                 const element = document.getElementById(field.id);
+                 if (element) {
+                     element.setAttribute('required', 'required');
+                     console.log(`Added required to ${field.id}`);
+                 }
+             });
+         }
+     }
+    
     // Khôi phục dữ liệu khi trang load
-    document.addEventListener('DOMContentLoaded', function() {
-        restoreOldAddressData();
-    });
+     document.addEventListener('DOMContentLoaded', function() {
+         initializeFormState();
+         restoreOldAddressData();
+     });
+     
+     // Force remove required attributes ngay lập tức để tránh lỗi validation
+     (function() {
+         const forceRemoveRequired = function() {
+             const fields = ['tinh', 'quan', 'phuong'];
+             fields.forEach(fieldId => {
+                 const field = document.getElementById(fieldId);
+                 if (field) {
+                     field.removeAttribute('required');
+                     console.log(`Force removed required from ${fieldId}`);
+                 }
+             });
+         };
+         
+         // Chạy ngay lập tức
+         forceRemoveRequired();
+         
+         // Chạy lại sau 100ms để đảm bảo
+         setTimeout(forceRemoveRequired, 100);
+     })();
 
     // ...existing code...
 });
