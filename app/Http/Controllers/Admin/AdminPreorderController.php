@@ -3,21 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Preorder;
 use App\Models\Book;
 use App\Models\BookFormat;
-use App\Models\User;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Province;
-use App\Models\District;
-use App\Models\Ward;
+use App\Models\Preorder;
+use App\Models\User;
+use App\Services\GHNService;
+use App\Mail\PreorderStatusUpdate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\PreorderStatusUpdate;
 
 class AdminPreorderController extends Controller
 {
@@ -94,7 +92,13 @@ class AdminPreorderController extends Controller
             ->orderBy('name')
             ->get();
             
-        $provinces = Province::orderBy('name')->get(['id', 'name']);
+        $ghnService = new GHNService();
+        $provinces = collect($ghnService->getProvinces())->map(function($province) {
+            return [
+                'id' => $province['ProvinceID'],
+                'name' => $province['ProvinceName']
+            ];
+        });
         
         return view('admin.preorders.create', compact('preorderBooks', 'users', 'provinces'));
     }
@@ -152,20 +156,25 @@ class AdminPreorderController extends Controller
 
             // Nếu không phải ebook, tải thêm tên Tỉnh/Quận/Phường để lưu kèm
             if (!$bookFormat->format_name || !str_contains(strtolower($bookFormat->format_name), 'ebook')) {
+                $ghnService = new GHNService();
+
                 if ($validated['province_id']) {
-                    $province = Province::find($validated['province_id']);
-                    $provinceId = $province->id;
-                    $provinceName = $province->name;
+                    $provinces = $ghnService->getProvinces();
+                    $province = collect($provinces)->firstWhere('ProvinceID', $validated['province_id']);
+                    $provinceId = $province['ProvinceID'];
+                    $provinceName = $province['ProvinceName'];
                 }
                 if ($validated['district_id']) {
-                    $district = District::find($validated['district_id']);
-                    $districtId = $district->id;
-                    $districtName = $district->name;
+                    $districts = $ghnService->getDistricts($validated['province_id']);
+                    $district = collect($districts)->firstWhere('DistrictID', $validated['district_id']);
+                    $districtId = $district['DistrictID'];
+                    $districtName = $district['DistrictName'];
                 }
-                if ($validated['ward_id']) {
-                    $ward = Ward::find($validated['ward_id']);
-                    $wardId = $ward->id;
-                    $wardName = $ward->name;
+                if ($validated['ward_code']) {
+                    $wards = $ghnService->getWards($validated['district_id']);
+                    $ward = collect($wards)->firstWhere('WardCode', $validated['ward_code']);
+                    $wardId = $ward['WardCode'];
+                    $wardName = $ward['WardName'];
                 }
             }
 
@@ -226,7 +235,12 @@ class AdminPreorderController extends Controller
      */
     public function updateStatus(Request $request, Preorder $preorder)
     {
-        // dd(1);
+        // Kiểm tra nếu đơn đã chuyển thành đơn hàng
+        if ($preorder->status === 'delivered' || $preorder->status === 'Đã chuyển thành đơn hàng') {
+            toastr()->error('Không thể cập nhật trạng thái cho đơn đã chuyển thành đơn hàng.');
+            return back();
+        }
+
         // Cho phép nhập cả bộ trạng thái tiếng Việt/tiếng Anh nhằm tương thích UI
         $validated = $request->validate([
             'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled,Chờ xử lý,Đã xác nhận,Đang xử lý,Đã gửi,Đã giao,Đã hủy',
@@ -268,7 +282,7 @@ class AdminPreorderController extends Controller
                 try {
                     Mail::to($preorder->email)->send(new PreorderStatusUpdate($preorder, $oldStatus));
                 } catch (\Exception $e) {
-                    \Log::error('Lỗi gửi email cập nhật trạng thái preorder: ' . $e->getMessage());
+                    Log::error('Lỗi gửi email cập nhật trạng thái preorder: ' . $e->getMessage());
                 }
             }
 
@@ -276,7 +290,7 @@ class AdminPreorderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Lỗi cập nhật trạng thái preorder: ' . $e->getMessage());
+            Log::error('Lỗi cập nhật trạng thái preorder: ' . $e->getMessage());
             return back()->with('error', 'Có lỗi xảy ra khi cập nhật trạng thái.');
         }
     }
@@ -370,10 +384,12 @@ class AdminPreorderController extends Controller
                 'recipient_name' => $preorder->customer_name,
                 'phone' => $preorder->phone,
                 'address_detail' => $preorder->address ?? 'Địa chỉ từ đơn đặt trước',
-                // Các trường địa giới hành chính có thể map từ preorder nếu có
-                'city' => 'Hà Nội',
-                'district' => 'Quận 1', 
-                'ward' => 'Phường 1',
+                'city' => $preorder->province_name,
+                'district' => $preorder->district_name,
+                'ward' => $preorder->ward_name,
+                'province_id' => $preorder->province_code,
+                'district_id' => $preorder->district_code,
+                'ward_code' => $preorder->ward_code,
                 'is_default' => false,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -544,7 +560,7 @@ class AdminPreorderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Lỗi chuyển đổi preorder thành order: ' . $e->getMessage());
+            Log::error('Lỗi chuyển đổi preorder thành order: ' . $e->getMessage());
             return back()->with('error', 'Có lỗi xảy ra khi chuyển đổi đơn hàng.');
         }
     }
@@ -641,3 +657,4 @@ class AdminPreorderController extends Controller
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 }
+
