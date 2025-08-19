@@ -46,7 +46,7 @@
     </style>
 @endpush
 @section('account_content')
- <div class="bg-white border border-black shadow mb-8" style="border-radius:0;">
+    <div class="bg-white border border-black shadow mb-8" style="border-radius:0;">
         <div class="px-8 py-6 border-b border-black bg-black">
             <h1 class="text-2xl font-bold text-white uppercase tracking-wide">Đánh giá của tôi</h1>
         </div>
@@ -56,11 +56,10 @@
                 @foreach ([1 => 'Tất cả đánh giá', 2 => 'Chưa đánh giá', 3 => 'Đã đánh giá'] as $type => $label)
                     <a href="{{ route('account.purchase', ['type' => $type]) }}"
                         class="flex-1 text-center px-6 py-3 text-base font-semibold border-b-2 transition
-                       {{ request('type', '1') == $type ? 'border-black text-black bg-white' : 'border-transparent text-gray-500 hover:text-black hover:bg-gray-100' }}"
-                    >{{ $label }}</a>
+                       {{ request('type', '1') == $type ? 'border-black text-black bg-white' : 'border-transparent text-gray-500 hover:text-black hover:bg-gray-100' }}">{{ $label }}</a>
                 @endforeach
             </div>
-             <!-- Orders List -->
+            <!-- Orders List -->
             <div class="space-y-6">
                 @forelse($orders as $order)
                     <div class="bg-white order-card border-2 border-gray-200 relative overflow-hidden">
@@ -691,13 +690,12 @@
                                                     @endif
 
                                                     <div class="flex items-center gap-6 text-sm">
-                                                        <span class="text-gray-600 uppercase tracking-wide">Số lượng: <span
-                                                                class="font-bold text-black">{{ $item->quantity }}</span></span>
-                                                        <span class="text-gray-600 uppercase tracking-wide">Đơn giá: <span
-                                                                class="font-bold text-black">{{ number_format($item->price) }}đ</span></span>
-                                                        <span class="text-gray-600 uppercase tracking-wide">Thành tiền:
-                                                            <span
-                                                                class="font-bold text-black">{{ number_format($item->price * $item->quantity) }}đ</span></span>
+                                                        <span class="text-gray-600 uppercase tracking-wide">Số lượng: 
+                                                            <span class="font-bold text-black">{{ $item->quantity }}</span>
+                                                        </span>
+                                                        <span class="text-gray-600 uppercase tracking-wide">Đơn giá: 
+                                                            <span class="font-bold text-black">{{ number_format($item->price) }}đ</span>
+                                                        </span>
                                                     </div>
                                                 </div>
 
@@ -975,7 +973,7 @@
                     </div>
                 @endforelse
             </div>
-             <!-- Pagination -->
+            <!-- Pagination -->
             @if ($orders->hasPages())
                 <div class="mt-12">
                     <div class="bg-white border-2 border-gray-200 hover:border-black transition-all duration-500 p-6">
@@ -1329,5 +1327,3 @@
         </div>
     </div>
 @endpush
-
-
