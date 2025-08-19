@@ -332,15 +332,14 @@
                                                                     @endforeach
                                                                 </div>
                                                             @endif
-                                                            
                                                             <!-- Hiển thị quà tặng -->
-                                                            @if(!$item->isCombo() && $item->book && $item->book->gifts && $item->book->gifts->count() > 0 && $item->bookFormat && $item->bookFormat->format_name !== 'Ebook')
+                                                            @if(!$item->isCombo() && $item->book && $item->book->gifts && $item->book->gifts->first()->quantity > 0 && $item->bookFormat && $item->bookFormat->format_name !== 'Ebook')
                                                                 <div class="mb-2">
                                                                     <div class="flex items-center gap-2 mb-1">
                                                                         <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                                                                             <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
                                                                         </svg>
-                                                                        <span class="text-sm font-bold text-red-600 uppercase tracking-wide">Quà tặng:</span>
+                                                                        <span class="text-sm font-bold text-red-600 uppercase tracking-wide">Quà tặngg:</span>
                                                                     </div>
                                                                     <div class="space-y-1">
                                                                         @foreach($item->book->gifts as $gift)
@@ -689,7 +688,7 @@
                                                 @endif
                                                 
                                                 <!-- Hiển thị quà tặng -->
-                                                @if(!$item->isCombo() && $item->book && $item->book->gifts && $item->book->gifts->count() > 0 && $item->bookFormat && $item->bookFormat->format_name !== 'Ebook')
+                                                @if(!$item->isCombo() && $item->book && $item->book->gifts && $item->book->gifts->first()->quantity > 0 && $item->bookFormat && $item->bookFormat->format_name !== 'Ebook')
                                                     <div class="mb-2">
                                                         <div class="flex items-center gap-2 mb-1">
                                                             <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
