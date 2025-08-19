@@ -227,110 +227,149 @@ class ReviewClientController extends Controller
 
     public function update(Request $request, $id)
     {
-        $review = Review::findOrFail($id);
+        try {
+            $review = Review::findOrFail($id);
 
-        // Kiểm tra quyền sở hữu
-        if ($review->user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        // Kiểm tra thời gian (24h)
-        $timeLimit = $review->created_at->addHours(24);
-        if (now()->gt($timeLimit)) {
-            $message = 'Chỉ có thể cập nhật đánh giá trong vòng 24 giờ';
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $message
-                ], 403);
+            // Kiểm tra quyền sở hữu
+            if ($review->user_id !== Auth::id()) {
+                throw new \Exception('Bạn không có quyền sửa đánh giá này', 403);
             }
-            return redirect()->back()->with('error', $message);
-        }
 
-        $validated = $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000',
-            'images' => 'nullable|array|max:5',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-        ], [
-            'images.max' => 'Chỉ được tải lên tối đa 5 hình ảnh',
-            'images.*.image' => 'File phải là hình ảnh',
-            'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif',
-            'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB'
-        ]);
+            // Kiểm tra thời gian (24h)
+            $timeLimit = $review->created_at->addHours(24);
+            if (now()->gt($timeLimit)) {
+                throw new \Exception('Chỉ có thể cập nhật đánh giá trong vòng 24 giờ', 403);
+            }
 
-        // Handle image uploads for update
-        $imagePaths = $review->images ?? [];
-        if ($request->hasFile('images')) {
-            // Delete old images if new ones are uploaded
-            if (!empty($review->images)) {
-                foreach ($review->images as $oldImagePath) {
-                    if (file_exists(storage_path('app/public/' . $oldImagePath))) {
-                        unlink(storage_path('app/public/' . $oldImagePath));
+            // Kiểm tra trạng thái đơn hàng
+            $order = $review->order;
+            if (!$order || $order->orderStatus->name !== 'Thành công') {
+                throw new \Exception('Chỉ có thể đánh giá đơn hàng đã hoàn thành', 403);
+            }
+
+            $validated = $request->validate([
+                'rating' => 'required|integer|min:1|max:5',
+                'comment' => 'nullable|string|max:1000',
+                'images' => 'nullable|array|max:5',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            ], [
+                'rating.required' => 'Vui lòng chọn số sao đánh giá',
+                'rating.integer' => 'Đánh giá không hợp lệ',
+                'rating.min' => 'Đánh giá phải từ 1 đến 5 sao',
+                'rating.max' => 'Đánh giá phải từ 1 đến 5 sao',
+                'comment.max' => 'Nội dung đánh giá không được vượt quá 1000 ký tự',
+                'images.max' => 'Chỉ được tải lên tối đa 5 hình ảnh',
+                'images.*.image' => 'File phải là hình ảnh',
+                'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif',
+                'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB'
+            ]);
+
+            // Handle image uploads for update
+            $imagePaths = $review->images ?? [];
+            if ($request->hasFile('images')) {
+                // Delete old images if new ones are uploaded
+                if (!empty($review->images)) {
+                    foreach ($review->images as $oldImagePath) {
+                        $fullPath = storage_path('app/public/' . $oldImagePath);
+                        if (file_exists($fullPath)) {
+                            unlink($fullPath);
+                        }
                     }
+                }
+
+                // Upload new images
+                $imagePaths = [];
+                foreach ($request->file('images') as $image) {
+                    $imageName = time() . '_' . Str::uuid() . '.' . $image->getClientOriginalExtension();
+                    $imagePath = $image->storeAs('reviews', $imageName, 'public');
+                    $imagePaths[] = $imagePath;
                 }
             }
 
-            // Upload new images
-            $imagePaths = [];
-            foreach ($request->file('images') as $image) {
-                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                $imagePath = $image->storeAs('reviews', $imageName, 'public');
-                $imagePaths[] = $imagePath;
-            }
-        }
-
-        $review->update([
-            'rating' => $validated['rating'],
-            'comment' => $validated['comment'] ?? '',
-            'images' => !empty($imagePaths) ? $imagePaths : null,
-        ]);
-
-        $successMessage = 'Cập nhật đánh giá thành công';
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => $successMessage
+            $review->update([
+                'rating' => $validated['rating'],
+                'comment' => $validated['comment'] ?? '',
+                'images' => !empty($imagePaths) ? $imagePaths : null,
             ]);
+
+            $successMessage = 'Cập nhật đánh giá thành công';
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMessage
+                ]);
+            }
+            return redirect()->back()->with('success', $successMessage);
+
+        } catch (\Exception $e) {
+            $errorMessage = $e->getMessage();
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], $e->getCode() === 403 ? 403 : 400);
+            }
+            return redirect()->back()->with('error', $errorMessage)->withInput();
         }
-        return redirect()->back()->with('success', $successMessage);
     }
 
     public function destroy(Request $request, $id)
     {
-        $review = Review::findOrFail($id);
+        try {
+            $review = Review::findOrFail($id);
 
-        // Kiểm tra quyền sở hữu
-        if ($review->user_id !== Auth::id()) {
-            abort(403);
-        }
+            // Kiểm tra quyền sở hữu
+            if ($review->user_id !== Auth::id()) {
+                throw new \Exception('Bạn không có quyền xóa đánh giá này', 403);
+            }
 
-        // Kiểm tra thời gian (7 ngày)
-        $timeLimit = $review->created_at->addDays(7);
-        if (now()->gt($timeLimit)) {
-            $message = 'Chỉ có thể xóa đánh giá trong vòng 7 ngày';
+            // Kiểm tra thời gian (7 ngày)
+            $timeLimit = $review->created_at->addDays(7);
+            if (now()->gt($timeLimit)) {
+                throw new \Exception('Chỉ có thể xóa đánh giá trong vòng 7 ngày', 403);
+            }
+
+            // Kiểm tra trạng thái đơn hàng
+            $order = $review->order;
+            if (!$order || $order->orderStatus->name !== 'Thành công') {
+                throw new \Exception('Không thể xóa đánh giá của đơn hàng chưa hoàn thành', 403);
+            }
+
+            // Xóa hình ảnh
+            if (!empty($review->images)) {
+                foreach ($review->images as $imagePath) {
+                    $fullPath = storage_path('app/public/' . $imagePath);
+                    if (file_exists($fullPath)) {
+                        unlink($fullPath);
+                    }
+                }
+            }
+
+            $review->delete();
+
+            $successMessage = 'Xóa đánh giá thành công';
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMessage
+                ]);
+            }
+
+            Toastr::success($successMessage, 'Thành công');
+            return redirect()->back();
+
+        } catch (\Exception $e) {
+            $errorMessage = $e->getMessage();
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $message
-                ], 403);
+                    'message' => $errorMessage
+                ], $e->getCode() === 403 ? 403 : 400);
             }
-            Toastr::error($message, 'Lỗi');
+            
+            Toastr::error($errorMessage, 'Lỗi');
             return redirect()->back();
         }
-
-        $review->delete();
-
-        $successMessage = 'Xóa đánh giá thành công';
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => $successMessage
-            ]);
-        }
-
-        Toastr::success($successMessage, 'Thành công');
-        return redirect()->back();
     }
 
     public function createForm(Request $request, $orderId, $bookId = null, $collectionId = null)
