@@ -68,7 +68,7 @@
                     <h2 class="text-lg font-black uppercase tracking-wide text-black">LỌC THEO TRẠNG THÁI</h2>
                 </div>
                 
-                <div class="flex flex-wrap gap-3">
+                <div class="flex flex-wrap gap-1 border-b border-black">
                     @php
                         $statuses = [
                             'all' => 'Tất cả',
@@ -82,9 +82,16 @@
                     @endphp
                     @foreach($statuses as $statusKey => $label)
                         <a href="{{ route('account.orders.unified', ['status' => $statusKey]) }}"
-                           class="px-6 py-3 text-sm font-bold uppercase tracking-wider border-2 transition-all duration-300 
-                                  {{ request('status', 'all') == $statusKey ? 'order-tab-active border-black' : 'border-gray-300 text-gray-700 hover:border-black hover:bg-gray-50' }}">
+                           class="flex-1 text-center px-6 py-3 text-base font-semibold border-b-2 transition
+                           {{ request('status', 'all') == $statusKey ? 'border-black text-black bg-white' : 'border-transparent text-gray-500 hover:text-black hover:bg-gray-100' }}"
+                        >
                             {{ $label }}
+                            @if($statusKey !== 'all' && isset($orderCounts[$statusKey]) && $orderCounts[$statusKey] > 0)
+                                <span class="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none 
+                                    {{ request('status', 'all') == $statusKey ? 'text-white bg-black' : 'text-black bg-gray-200' }} rounded-full">
+                                    {{ $orderCounts[$statusKey] }}
+                                </span>
+                            @endif
                         </a>
                     @endforeach
                 </div>
@@ -684,17 +691,22 @@
                                                 <!-- Hiển thị quà tặng -->
                                                 @if(!$item->isCombo() && $item->book && $item->book->gifts && $item->book->gifts->count() > 0 && $item->bookFormat && $item->bookFormat->format_name !== 'Ebook')
                                                     <div class="mb-2">
-                                                        <p class="text-sm font-semibold text-red-600 uppercase tracking-wide mb-1">🎁 Quà tặng kèm:</p>
-                                                        <div class="flex flex-wrap gap-2">
+                                                        <div class="flex items-center gap-2 mb-1">
+                                                            <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                                                            </svg>
+                                                            <span class="text-sm font-bold text-red-600 uppercase tracking-wide">Quà tặng:</span>
+                                                        </div>
+                                                        <div class="space-y-1">
                                                             @foreach($item->book->gifts as $gift)
-                                                                <div class="flex items-center gap-2 px-2 py-1 bg-red-50 text-red-700 text-xs font-medium rounded border border-red-200">
-                                                                    @if($gift->image)
-                                                                        <img src="{{ asset('storage/' . $gift->image) }}" 
-                                                                             alt="{{ $gift->name }}" 
-                                                                             class="w-4 h-4 object-cover rounded">
+                                                                <div class="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded text-sm">
+                                                                    @if($gift->gift_image)
+                                                                        <img src="{{ asset('storage/' . $gift->gift_image) }}" 
+                                                                             alt="{{ $gift->gift_name }}" 
+                                                                             class="w-6 h-6 object-cover rounded">
                                                                     @endif
-                                                                    <span>{{ $gift->name }}</span>
-                                                                    <span class="text-red-500">x{{ $gift->pivot->quantity ?? 1 }}</span>
+                                                                    <span class="text-red-800 font-medium">{{ $gift->gift_name }}</span>
+                                                                    <span class="text-red-600 text-xs">(x{{ $item->quantity }})</span>
                                                                 </div>
                                                             @endforeach
                                                         </div>
