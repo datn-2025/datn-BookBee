@@ -152,7 +152,7 @@
                             
                             <!-- Checkbox chọn sản phẩm để mua -->
                             <div class="flex items-center mb-2">
-                                <input type="checkbox" class="select-cart-item mr-2" 
+                                <input type="checkbox" class="select-cart-item mr-3 w-5 h-5 text-black border-2 border-gray-300 rounded focus:ring-black focus:ring-2" 
                                     data-cart-id="{{ $item->id }}"
                                     {{ $item->is_selected ? 'checked' : '' }}>
                                 <span class="text-xs text-gray-500">Chọn để mua</span>
@@ -322,7 +322,7 @@
                             
                             <!-- Checkbox chọn sản phẩm để mua -->
                             <div class="flex items-center mb-2">
-                                <input type="checkbox" class="select-cart-item mr-2" 
+                                <input type="checkbox" class="select-cart-item mr-3 w-5 h-5 text-black border-2 border-gray-300 rounded focus:ring-black focus:ring-2" 
                                     data-cart-id="{{ $item->id }}"
                                     {{ $item->is_selected ? 'checked' : '' }}>
                                 <span class="text-xs text-gray-500">Chọn để mua</span>
