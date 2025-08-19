@@ -1,4 +1,5 @@
-@extends('layouts.app')
+{{-- @extends('layouts.app') --}}
+@extends('layouts.account.layout')
 @section('title', 'Quản lý đơn hàng')
 
 @push('styles')
@@ -47,7 +48,7 @@
     </style>
 @endpush
 
-@section('content')
+@section('account_content')
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-white py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
