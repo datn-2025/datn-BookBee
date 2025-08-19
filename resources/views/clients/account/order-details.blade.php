@@ -234,6 +234,29 @@
                                                                     <span>SL: {{ $item->quantity }}</span>
                                                                     <span>{{ number_format($item->price) }}đ</span>
                                                                 </div>
+                                                                
+                                                                <!-- View Details Button for Child Order Items -->
+                                                                <div class="mt-2">
+                                                                    @if($item->isCombo())
+                                                                        <a href="{{ route('combos.show', $item->collection->slug ?? $item->collection->id) }}" 
+                                                                           class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-black hover:text-white text-black text-xs font-bold uppercase tracking-wide transition-all duration-300 border border-gray-300 hover:border-black">
+                                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                                            </svg>
+                                                                            Xem combo
+                                                                        </a>
+                                                                    @else
+                                                                        <a href="{{ route('books.show', $item->book->slug) }}" 
+                                                                           class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-black hover:text-white text-black text-xs font-bold uppercase tracking-wide transition-all duration-300 border border-gray-300 hover:border-black">
+                                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                                            </svg>
+                                                                            Xem chi tiết
+                                                                        </a>
+                                                                    @endif
+                                                                </div>
                                                             </div>
                                                             
                                                             <!-- Item Total -->
@@ -516,19 +539,41 @@
                                                 </div>
                                             @endif
                                         @endif
-                                        
-                                        <div class="flex items-center gap-4 mt-2 text-xs text-gray-600 uppercase tracking-wide">
-                                            <span>SL: {{ $item->quantity }}</span>
-                                            <span>GIÁ: {{ number_format($item->price) }}đ</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Price -->
-                                    <div class="text-right">
-                                        <p class="text-lg font-black text-black">
-                                            {{ number_format($item->price * $item->quantity) }}đ
-                                        </p>
-                                    </div>
+                                                         <div class="flex items-center gap-4 mt-2 text-xs text-gray-600 uppercase tracking-wide">
+                            <span>SL: {{ $item->quantity }}</span>
+                            <span>GIÁ: {{ number_format($item->price) }}đ</span>
+                        </div>
+                        
+                        <!-- View Details Button -->
+                        <div class="mt-3">
+                            @if($item->isCombo())
+                                <a href="{{ route('combos.show', $item->collection->slug ?? $item->collection->id) }}" 
+                                   class="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 hover:bg-black hover:text-white text-black text-xs font-bold uppercase tracking-wide transition-all duration-300 border border-gray-300 hover:border-black">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    Xem combo
+                                </a>
+                            @else
+                                <a href="{{ route('books.show', $item->book->slug) }}" 
+                                   class="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 hover:bg-black hover:text-white text-black text-xs font-bold uppercase tracking-wide transition-all duration-300 border border-gray-300 hover:border-black">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    Xem chi tiết
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    <!-- Price -->
+                    <div class="text-right">
+                        <p class="text-lg font-black text-black">
+                            {{ number_format($item->price * $item->quantity) }}đ
+                        </p>
+                    </div>
                                 </div>
                             @endforeach
                         </div>
