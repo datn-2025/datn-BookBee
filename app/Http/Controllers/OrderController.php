@@ -409,10 +409,11 @@ class OrderController extends Controller
 
             // ✅ Ghi nhận voucher đã dùng cho đơn thường (nếu có)
             $this->recordAppliedVoucher($order, $request->voucher_code ?? null, $user);
+            // dd($isWalletPayment);
 
             if ($isWalletPayment) {
                 $this->orderService->processWalletPayment($order, $user);
-                
+                // dd(1);
                 $payment = $this->paymentService->createPayment([
                     'order_id' => $order->id,
                     'transaction_id' => $order->order_code . '_WALLET',
@@ -421,7 +422,8 @@ class OrderController extends Controller
                     'amount' => $order->total_amount,
                     'paid_at' => now()
                 ]);
-                
+                // dd($payment);
+
                 // clear cart
                 $this->orderService->clearUserCart($user);
                 
@@ -464,7 +466,7 @@ class OrderController extends Controller
                         'error' => $e->getMessage()
                     ]);
                 }
-                
+                // dd($order);
                 // Tạo thông báo thanh toán thành công
                  $this->notificationService->createPaymentSuccessNotification($order, $user);
                 

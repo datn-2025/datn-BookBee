@@ -463,6 +463,7 @@ class OrderService
                 $this->createBookOrderItem($order, $cartItem);
             }
         }
+        DB::commit();
 
         return $order;
     }
@@ -1399,6 +1400,7 @@ class OrderService
             $actualDiscountAmount,
             $shipping_method
         );
+        // dd($orderData);
 
         // 8. Nếu là thanh toán ví, kiểm tra số dư trước khi tạo đơn hàng
         if ($isWalletPayment) {
@@ -1407,7 +1409,7 @@ class OrderService
 
         // 9. Tạo đơn hàng
         $order = $this->createOrderWithItems($orderData, $cartItems);
-
+        // dd($order);
         return [
             'order' => $order,
             'payment_method' => $paymentMethod,
