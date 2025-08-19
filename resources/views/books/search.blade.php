@@ -982,7 +982,7 @@
                             </span>
                         @endif
                         
-                        <a href="{{ route('books.search', ['search' => $searchTerm]) }}" 
+                        <a href="{{ route('books.index') }}" 
                            class="bg-black text-white px-4 py-1 text-xs uppercase tracking-wider font-medium hover:bg-gray-800 transition-colors text-decoration-none rounded">
                             <i class="fas fa-times mr-1"></i>XÓA TẤT CẢ
                         </a>
@@ -1131,7 +1131,7 @@
                     <i class="fas fa-search"></i>
                     <h4>KHÔNG TÌM THẤY SẢN PHẨM NÀO</h4>
                     <p>HÃY THỬ TÌM KIẾM VỚI TỪ KHÓA KHÁC HOẶC BỎ BỚT BỘ LỌC</p>
-                    <a href="{{ route('books.search', ['search' => $searchTerm]) }}" 
+                    <a href="{{ route('books.index') }}" 
                        class="bg-black text-white px-8 py-3 font-bold text-sm uppercase tracking-wider hover:bg-gray-800 transition-colors inline-block">
                         <i class="fas fa-times mr-2"></i>XÓA BỘ LỌC
                     </a>
