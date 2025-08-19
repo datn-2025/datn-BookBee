@@ -7,6 +7,7 @@ use App\Models\OrderItem;
 use App\Models\OrderStatus;
 use App\Models\PaymentStatus;
 use App\Models\User;
+use App\Models\BookGift;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -15,6 +16,12 @@ class MixedOrderService
     protected $orderService;
     protected $emailService;
     protected $qrCodeService;
+    
+    /**
+     * Track books that have already had their gift stock decreased in current order session
+     * to avoid double processing when the same book has multiple variants
+     */
+    private $processedGiftBooks = [];
 
     public function __construct(
         OrderService $orderService,
@@ -306,6 +313,37 @@ class MixedOrderService
             
             $orderItem = OrderItem::create($orderItemData);
             
+            // ✨ THÊM MỚI: Logic trừ stock
+            // Trừ stock combo
+            if (isset($item->is_combo) && $item->is_combo && $item->collection) {
+                if ($item->collection->combo_stock !== null) {
+                    $item->collection->decrement('combo_stock', $item->quantity);
+                    
+                    Log::info('Decreased combo stock in mixed order:', [
+                        'collection_id' => $item->collection_id,
+                        'quantity_decreased' => $item->quantity,
+                        'remaining_stock' => $item->collection->fresh()->combo_stock
+                    ]);
+                }
+            }
+            // Trừ stock sách vật lý (chỉ trừ khi không phải ebook)
+            elseif ($item->bookFormat && stripos($item->bookFormat->format_name, 'ebook') === false) {
+                $item->bookFormat->decrement('stock', $item->quantity);
+                
+                Log::info('Decreased book format stock in mixed order:', [
+                    'book_id' => $item->book_id,
+                    'book_format_id' => $item->book_format_id,
+                    'quantity_decreased' => $item->quantity,
+                    'remaining_stock' => $item->bookFormat->fresh()->stock
+                ]);
+                
+                // Trừ stock thuộc tính sản phẩm
+                $this->decreaseAttributeStock($item);
+                
+                // Trừ số lượng quà tặng
+                $this->decreaseGiftStock($item);
+            }
+            
             // Lưu thuộc tính sản phẩm vào bảng order_item_attribute_values
             if (!empty($item->attribute_value_ids) && $item->attribute_value_ids !== '[]' && !$item->is_combo) {
                 $attributeIds = [];
@@ -387,5 +425,102 @@ class MixedOrderService
         
         // Xóa giỏ hàng
         $this->orderService->clearUserCart($user);
+    }
+    
+    /**
+     * Trừ stock thuộc tính sản phẩm
+     */
+    private function decreaseAttributeStock($cartItem)
+    {
+        if (empty($cartItem->attribute_value_ids) || $cartItem->attribute_value_ids === '[]') {
+            return;
+        }
+
+        $attributeValueIds = [];
+        if (is_string($cartItem->attribute_value_ids)) {
+            $decoded = json_decode($cartItem->attribute_value_ids, true);
+            if (is_array($decoded)) {
+                $attributeValueIds = $decoded;
+            }
+        } elseif (is_array($cartItem->attribute_value_ids)) {
+            $attributeValueIds = $cartItem->attribute_value_ids;
+        }
+
+        if (empty($attributeValueIds)) {
+            return;
+        }
+
+        foreach ($attributeValueIds as $attributeValueId) {
+            $bookAttributeValue = \App\Models\BookAttributeValue::where('book_id', $cartItem->book_id)
+                ->where('attribute_value_id', $attributeValueId)
+                ->first();
+
+            if ($bookAttributeValue && $bookAttributeValue->stock >= $cartItem->quantity) {
+                $bookAttributeValue->decrement('stock', $cartItem->quantity);
+                
+                Log::info('Decreased attribute stock in mixed order:', [
+                    'book_id' => $cartItem->book_id,
+                    'attribute_value_id' => $attributeValueId,
+                    'quantity_decreased' => $cartItem->quantity,
+                    'remaining_stock' => $bookAttributeValue->fresh()->stock
+                ]);
+            }
+        }
+    }
+    
+    /**
+     * Trừ số lượng quà tặng khi tạo đơn hàng
+     */
+    private function decreaseGiftStock($cartItem)
+    {
+        if (!isset($cartItem->book_id) || in_array($cartItem->book_id, $this->processedGiftBooks)) {
+            return;
+        }
+
+        $this->processedGiftBooks[] = $cartItem->book_id;
+
+        $giftBooks = \App\Models\BookGift::where('book_id', $cartItem->book_id)
+            ->where(function ($query) {
+                $query->whereNull('start_date')
+                    ->orWhere('start_date', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', now());
+            })
+            ->where('quantity', '>', 0)
+            ->get();
+
+        foreach ($giftBooks as $giftBook) {
+            if ($giftBook->quantity >= $cartItem->quantity) {
+                $giftBook->decrement('quantity', $cartItem->quantity);
+                
+                Log::info('Decreased gift stock in mixed order:', [
+                    'gift_book_id' => $giftBook->id,
+                    'book_id' => $cartItem->book_id,
+                    'quantity_decreased' => $cartItem->quantity,
+                    'remaining_stock' => $giftBook->fresh()->quantity
+                ]);
+            } else {
+                Log::warning('Insufficient gift stock in mixed order:', [
+                    'gift_book_id' => $giftBook->id,
+                    'book_id' => $cartItem->book_id,
+                    'available_quantity' => $giftBook->quantity,
+                    'quantity_needed' => $cartItem->quantity
+                ]);
+                
+                // Nếu không đủ quà tặng, trừ hết số lượng còn lại
+                if ($giftBook->quantity > 0) {
+                    $remainingQuantity = $giftBook->quantity;
+                    $giftBook->update(['quantity' => 0]);
+                    
+                    Log::info('Used remaining gift stock in mixed order:', [
+                        'gift_book_id' => $giftBook->id,
+                        'quantity_used' => $remainingQuantity,
+                        'quantity_still_needed' => $cartItem->quantity - $remainingQuantity
+                    ]);
+                }
+            }
+        }
     }
 }
