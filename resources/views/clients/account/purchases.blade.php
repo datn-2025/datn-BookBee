@@ -696,6 +696,9 @@
                                                         <span class="text-gray-600 uppercase tracking-wide">Đơn giá: 
                                                             <span class="font-bold text-black">{{ number_format($item->price) }}đ</span>
                                                         </span>
+                                                         <span class="text-gray-600 uppercase tracking-wide">Thành tiền:
+                                                            <span class="font-bold text-black">{{ number_format($item->price * $item->quantity) }}đ</span>
+                                                            </span>
                                                     </div>
                                                 </div>
 
