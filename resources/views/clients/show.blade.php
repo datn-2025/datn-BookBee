@@ -1607,7 +1607,7 @@
                                                 $statusDot = 'bg-blue-500';
                                                 $badgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
                                             } elseif ($defaultStock == 0) {
-                                                $statusText = 'HẾT HÀNG (Stock)';
+                                                $statusText = 'HẾT HÀNG';
                                                 $statusDot = 'bg-red-500';
                                                 $badgeClass = 'bg-red-50 text-red-700 border-red-200';
                                             } elseif ($defaultStock >= 1 && $defaultStock <= 9) {
@@ -1666,13 +1666,13 @@
                                         <ul class="space-y-3">
                                             @foreach($bookGifts as $gift)
                                                 <li
-                                                    class="flex items-start gap-4 p-4 bg-white border border-gray-200 hover:border-black transition-all duration-200 shadow-sm">
+                                                    class="flex items-start gap-4 p-4 bg-white border border-gray-200 hover:border-black transition-all duration-200 shadow-sm {{ $gift->quantity <= 0 ? 'opacity-60 bg-gray-50' : '' }}">
                                                     @if($gift->gift_image)
                                                         <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="{{ $gift->gift_name }}"
-                                                            class="w-16 h-16 object-cover shadow border border-gray-200">
+                                                            class="w-16 h-16 object-cover shadow border border-gray-200 {{ $gift->quantity <= 0 ? 'grayscale' : '' }}">
                                                     @else
                                                         <span
-                                                            class="w-16 h-16 flex items-center justify-center bg-gray-100 text-2xl border border-gray-200"><i
+                                                            class="w-16 h-16 flex items-center justify-center bg-gray-100 text-2xl border border-gray-200 {{ $gift->quantity <= 0 ? 'text-gray-400' : '' }}"><i
                                                                 class="fas fa-gift"></i></span>
                                                     @endif
                                                     <div class="flex-1">
@@ -1682,6 +1682,10 @@
                                                         @endif
                                                         @if($gift->quantity > 0)
                                                             <div class="text-xs text-green-700 mt-1">Số lượng: {{ $gift->quantity }}</div>
+                                                        @else
+                                                            <div class="text-xs text-red-600 mt-1 font-semibold uppercase tracking-wider">
+                                                                <i class="fas fa-exclamation-triangle mr-1"></i>Hết hàng
+                                                            </div>
                                                         @endif
                                                         @if($gift->start_date || $gift->end_date)
                                                             <div class="text-xs text-gray-500 mt-1 flex flex-wrap gap-2">
@@ -2302,7 +2306,7 @@
                                     switch ($related->status) {
                                         case 'Ngừng Kinh Doanh':
                                             $shouldShowOutOfStock = true;
-                                            $outOfStockText = 'NGƯNG KINH DOANH';
+                                            $outOfStockText = 'NGỪNG KINH DOANH';
                                             break;
                                         case 'Sắp Ra Mắt':
                                             $shouldShowOutOfStock = true;
@@ -2311,6 +2315,10 @@
                                         case 'Hết Hàng Tồn Kho':
                                             $shouldShowOutOfStock = true;
                                             $outOfStockText = 'HẾT HÀNG TỒN KHO';
+                                            break;
+                                        case 'Hết Hàng':
+                                            $shouldShowOutOfStock = true;
+                                            $outOfStockText = 'HẾT HÀNG';
                                             break;
                                         case 'Còn Hàng':
                                         default:
@@ -2662,7 +2670,7 @@
                         badge: 'blue',
                         dot: 'blue'
                     } : stock == 0 ? {
-                        text: 'HẾT HÀNG (Stock)',
+                        text: 'HẾT HÀNG',
                         badge: 'red',
                         dot: 'red'
                     } : stock >= 1 && stock <= 9 ? {
