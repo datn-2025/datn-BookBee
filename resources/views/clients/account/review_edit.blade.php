@@ -1,4 +1,4 @@
-@extends('layouts.account.layout')
+{{-- @extends('layouts.account.layout')
 
 @section('account_content')
 <div class="max-w-xl mx-auto bg-white border border-black shadow mb-8 rounded-none">
@@ -253,4 +253,4 @@ function removeImage(index) {
 }
 </script>
 @endpush
-@endsection
+@endsection --}}
