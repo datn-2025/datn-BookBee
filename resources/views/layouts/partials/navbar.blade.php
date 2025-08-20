@@ -401,14 +401,7 @@
         z-index: 9999;
     }
 
-    .user-dropdown .dropdown-menu.show {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-        pointer-events: auto;
-    }
-
-    /* User dropdown hover effect - đây là phần quan trọng */
+    .user-dropdown .dropdown-menu.show,
     .user-dropdown:hover .dropdown-menu {
         opacity: 1 !important;
         visibility: visible !important;
@@ -425,6 +418,11 @@
         position: absolute;
         left: 0;
         top: 100%;
+        margin-top: 0.5rem;
+        width: 12rem;
+        background-color: white;
+        border: 2px solid #e5e7eb;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         opacity: 0;
         visibility: hidden;
         transform: translateY(-8px);
@@ -435,10 +433,27 @@
 
     .shop-dropdown:hover .dropdown-menu,
     .shop-dropdown .dropdown-menu.show {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-        pointer-events: auto;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: translateY(0) !important;
+        pointer-events: auto !important;
+    }
+
+    /* Force dropdown to show on hover - fallback */
+    .shop-dropdown:hover > .dropdown-menu {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: translateY(0) !important;
+        pointer-events: auto !important;
+    }
+
+    .user-dropdown:hover > .dropdown-menu {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: translateY(0) !important;
+        pointer-events: auto !important;
     }
 
     /* Books dropdown with submenu */
@@ -465,14 +480,18 @@
         pointer-events: auto !important;
     }
 
-    /* Keep parent dropdown open when hovering submenu */
+    /* Keep parent dropdown open when hovering over submenu */
     .shop-dropdown:hover .dropdown-menu,
-    .books-dropdown-item:hover ~ .dropdown-menu,
-    .dropdown-menu:hover {
+    .dropdown-menu:hover,
+    .books-submenu:hover {
         opacity: 1 !important;
         visibility: visible !important;
         transform: translateY(0) !important;
         pointer-events: auto !important;
+    }
+
+    .books-submenu:hover {
+        transform: translateX(0) !important;
     }
 
     /* User dropdown hover effect */
@@ -483,14 +502,12 @@
         pointer-events: auto !important;
     }
 
-    /* Debug - để test hover effect */
-    .user-dropdown:hover {
-        background-color: rgba(255, 0, 0, 0.1) !important;
-    }
-
-    /* Force show dropdown for testing */
-    .user-dropdown .dropdown-menu {
-        display: block !important;
+    /* Keep dropdown open when hovering over the dropdown menu itself */
+    .user-dropdown .dropdown-menu:hover {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: translateY(0) !important;
+        pointer-events: auto !important;
     }
 
     /* Mobile menu */
@@ -507,12 +524,36 @@
         .shop-dropdown:hover button svg {
             transform: rotate(180deg);
         }
-        
+
+        /* Ensure smooth transitions when hovering */
+        .user-dropdown:hover .dropdown-menu,
         .shop-dropdown:hover .dropdown-menu {
-            opacity: 1 !important;
-            visibility: visible !important;
-            transform: translateY(0) !important;
-            pointer-events: auto !important;
+            transition-delay: 0ms !important;
+        }
+
+        /* Keep dropdowns open when moving mouse between trigger and menu */
+        .user-dropdown::before,
+        .shop-dropdown::before {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            height: 0.5rem;
+            background: transparent;
+            z-index: 9998;
+        }
+
+        /* Additional spacing for books submenu */
+        .books-dropdown-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 100%;
+            bottom: 0;
+            width: 0.5rem;
+            background: transparent;
+            z-index: 59;
         }
     }
     
@@ -574,40 +615,44 @@
             const dropdownMenu = shopDropdown.querySelector('.dropdown-menu');
             const shopBtn = shopDropdown.querySelector('button');
 
-            // Click functionality
+            let clickToggled = false;
+
+            // Click functionality for toggle
             if (shopBtn && dropdownMenu) {
                 shopBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    const isVisible = dropdownMenu.style.opacity === '1' || dropdownMenu.classList.contains('show');
+                    clickToggled = !clickToggled;
                     
-                    if (isVisible) {
-                        dropdownMenu.style.opacity = '0';
-                        dropdownMenu.style.visibility = 'hidden';
-                        dropdownMenu.style.transform = 'translateY(-8px)';
-                        dropdownMenu.style.pointerEvents = 'none';
-                        dropdownMenu.classList.remove('show');
-                        shopBtn.querySelector('svg').style.transform = 'rotate(0deg)';
-                        shopBtn.setAttribute('aria-expanded', 'false');
-                    } else {
-                        dropdownMenu.style.opacity = '1';
-                        dropdownMenu.style.visibility = 'visible';
-                        dropdownMenu.style.transform = 'translateY(0)';
-                        dropdownMenu.style.pointerEvents = 'auto';
+                    // Toggle the 'show' class for click-based control
+                    if (clickToggled) {
                         dropdownMenu.classList.add('show');
                         shopBtn.querySelector('svg').style.transform = 'rotate(180deg)';
                         shopBtn.setAttribute('aria-expanded', 'true');
+                    } else {
+                        dropdownMenu.classList.remove('show');
+                        shopBtn.querySelector('svg').style.transform = 'rotate(0deg)';
+                        shopBtn.setAttribute('aria-expanded', 'false');
+                    }
+                });
+
+                // Reset click state when mouse leaves the dropdown
+                shopDropdown.addEventListener('mouseleave', function() {
+                    if (clickToggled) {
+                        setTimeout(() => {
+                            clickToggled = false;
+                            dropdownMenu.classList.remove('show');
+                            shopBtn.querySelector('svg').style.transform = 'rotate(0deg)';
+                            shopBtn.setAttribute('aria-expanded', 'false');
+                        }, 300); // Small delay to prevent flicker
                     }
                 });
 
                 // Close dropdown when clicking outside
                 document.addEventListener('click', function(e) {
                     if (!shopDropdown.contains(e.target)) {
-                        dropdownMenu.style.opacity = '0';
-                        dropdownMenu.style.visibility = 'hidden';
-                        dropdownMenu.style.transform = 'translateY(-8px)';
-                        dropdownMenu.style.pointerEvents = 'none';
+                        clickToggled = false;
                         dropdownMenu.classList.remove('show');
                         shopBtn.querySelector('svg').style.transform = 'rotate(0deg)';
                         shopBtn.setAttribute('aria-expanded', 'false');
@@ -617,10 +662,7 @@
                 // Close dropdown on escape key
                 document.addEventListener('keydown', function(e) {
                     if (e.key === 'Escape') {
-                        dropdownMenu.style.opacity = '0';
-                        dropdownMenu.style.visibility = 'hidden';
-                        dropdownMenu.style.transform = 'translateY(-8px)';
-                        dropdownMenu.style.pointerEvents = 'none';
+                        clickToggled = false;
                         dropdownMenu.classList.remove('show');
                         shopBtn.querySelector('svg').style.transform = 'rotate(0deg)';
                         shopBtn.setAttribute('aria-expanded', 'false');
@@ -635,42 +677,47 @@
             const dropdownMenu = dropdown.querySelector('.dropdown-menu');
             const userBtn = dropdown.querySelector('.user-btn');
 
-            // Click functionality for mobile/touch devices
+            let clickToggled = false;
+
+            // Click functionality for toggle
             if (userBtn && dropdownMenu) {
                 userBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    if (dropdownMenu.style.opacity === '1') {
-                        dropdownMenu.style.opacity = '0';
-                        dropdownMenu.style.visibility = 'hidden';
-                        dropdownMenu.style.transform = 'translateY(-8px)';
-                        dropdownMenu.style.pointerEvents = 'none';
+                    clickToggled = !clickToggled;
+                    
+                    // Toggle the 'show' class for click-based control
+                    if (clickToggled) {
+                        dropdownMenu.classList.add('show');
                     } else {
-                        dropdownMenu.style.opacity = '1';
-                        dropdownMenu.style.visibility = 'visible';
-                        dropdownMenu.style.transform = 'translateY(0)';
-                        dropdownMenu.style.pointerEvents = 'auto';
+                        dropdownMenu.classList.remove('show');
+                    }
+                });
+
+                // Reset click state when mouse leaves the dropdown
+                dropdown.addEventListener('mouseleave', function() {
+                    if (clickToggled) {
+                        setTimeout(() => {
+                            clickToggled = false;
+                            dropdownMenu.classList.remove('show');
+                        }, 300); // Small delay to prevent flicker
                     }
                 });
 
                 // Close dropdown when clicking outside
                 document.addEventListener('click', function(e) {
                     if (!dropdown.contains(e.target)) {
-                        dropdownMenu.style.opacity = '0';
-                        dropdownMenu.style.visibility = 'hidden';
-                        dropdownMenu.style.transform = 'translateY(-8px)';
-                        dropdownMenu.style.pointerEvents = 'none';
+                        clickToggled = false;
+                        dropdownMenu.classList.remove('show');
                     }
                 });
 
                 // Close dropdown on escape key
                 document.addEventListener('keydown', function(e) {
                     if (e.key === 'Escape') {
-                        dropdownMenu.style.opacity = '0';
-                        dropdownMenu.style.visibility = 'hidden';
-                        dropdownMenu.style.transform = 'translateY(-8px)';
-                        dropdownMenu.style.pointerEvents = 'none';
+                        clickToggled = false;
+                        dropdownMenu.classList.remove('show');
                         userBtn.focus();
                     }
                 });
