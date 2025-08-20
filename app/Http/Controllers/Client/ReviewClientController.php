@@ -185,6 +185,37 @@ class ReviewClientController extends Controller
         return back();
     }
 
+    public function editForm($reviewId)
+    {
+        $user = Auth::user();
+
+        $review = $user->reviews()->findOrFail($reviewId);
+
+        $order = $user->orders()
+            ->with(['orderItems.book', 'orderItems.collection', 'orderStatus', 'address', 'paymentMethod'])
+            ->findOrFail($review->order_id);
+
+        if ($review->book_id) {
+            $orderItem = $order->orderItems->where('book_id', $review->book_id)->first();
+            $product = $orderItem->book;
+            $productType = 'book';
+        } elseif ($review->collection_id) {
+            $orderItem = $order->orderItems->where('collection_id', $review->collection_id)->first();
+            $product = $orderItem->collection;
+            $productType = 'combo';
+        } else {
+            Toastr::error('Không tìm thấy sản phẩm liên quan đến đánh giá');
+            return redirect()->back();
+        }
+
+        if (!$orderItem) {
+            Toastr::error('Không tìm thấy sản phẩm trong đơn hàng');
+            return redirect()->back();
+        }
+
+        return view('clients.account.review_edit', compact('order', 'orderItem', 'review', 'product', 'productType'));
+    }
+    
     public function update(Request $request, $id)
     {
         try {
@@ -328,92 +359,5 @@ class ReviewClientController extends Controller
             Toastr::error($errorMessage, 'Lỗi');
             return redirect()->back();
         }
-    }
-
-    public function createForm(Request $request, $orderId, $bookId = null, $collectionId = null)
-    {
-        $user = Auth::user();
-
-        // Get collectionId from request if not in URL (for combo route)
-        if (!$collectionId && $request->route()->getName() === 'account.reviews.create.combo') {
-            $collectionId = $request->route('collectionId');
-        }
-
-        // Check if the order belongs to the user and is completed
-        $order = $user->orders()
-            ->where('id', $orderId)
-            ->whereHas('orderStatus', function ($q) {
-                $q->where('name', 'Thành công');
-            })
-            ->with(['orderItems.book', 'orderItems.collection'])
-            ->firstOrFail();
-
-        if ($bookId) {
-            // Check if the book is in the order
-            $orderItem = $order->orderItems()
-                ->where('book_id', $bookId)
-                ->with('book')
-                ->firstOrFail();
-
-            $product = $orderItem->book;
-            $productType = 'book';
-
-            // Check if review already exists
-            $existingReview = Review::where('user_id', $user->id)
-                ->where('book_id', $bookId)
-                ->where('order_id', $order->id)
-                ->first();
-        } elseif ($collectionId) {
-            // Check if the combo is in the order
-            $orderItem = $order->orderItems()
-                ->where('collection_id', $collectionId)
-                ->with('collection')
-                ->firstOrFail();
-
-            $product = $orderItem->collection;
-            $productType = 'combo';
-
-            // Check if review already exists
-            $existingReview = Review::where('user_id', $user->id)
-                ->where('collection_id', $collectionId)
-                ->where('order_id', $order->id)
-                ->first();
-        } else {
-            abort(400, 'Phải có book_id hoặc collection_id');
-        }
-
-        if ($existingReview) {
-            return redirect()->route('account.reviews.edit', $existingReview->id)
-                ->with('info', 'Bạn đã đánh giá sản phẩm này. Bạn có thể chỉnh sửa đánh giá.');
-        }
-
-        return view('clients.account.review_form', compact('order', 'product', 'orderItem', 'productType'));
-    }
-
-    public function editForm($reviewId)
-    {
-        $user = Auth::user();
-        $review = $user->reviews()->where('id', $reviewId)->firstOrFail();
-
-        $order = $user->orders()
-            ->with(['orderItems.book', 'orderItems.collection', 'orderStatus', 'address', 'paymentMethod'])
-            ->where('id', $review->order_id)
-            ->firstOrFail();
-
-        if ($review->book_id) {
-            $orderItem = $order->orderItems->where('book_id', $review->book_id)->first();
-            $product = $orderItem->book;
-            $productType = 'book';
-        } elseif ($review->collection_id) {
-            $orderItem = $order->orderItems->where('collection_id', $review->collection_id)->first();
-            $product = $orderItem->collection;
-            $productType = 'combo';
-        } else {
-            abort(404, 'Không tìm thấy sản phẩm trong đánh giá');
-        }
-
-        if (!$orderItem) abort(404);
-
-        return view('clients.account.review_edit', compact('order', 'orderItem', 'review', 'product', 'productType'));
     }
 }
