@@ -762,8 +762,8 @@ class OrderService
      */
     public function handleDeliveryAddress($request, User $user)
     {
-        // Nếu là đơn hàng ebook, không cần địa chỉ giao hàng
-        if ($request->delivery_method === 'ebook') {
+        // Nếu là đơn hàng ebook hoặc pickup, không cần địa chỉ giao hàng
+        if ($request->delivery_method === 'ebook' || $request->delivery_method === 'pickup') {
             return null;
         }
         
@@ -1239,8 +1239,8 @@ class OrderService
         // 1. Xử lý địa chỉ giao hàng
         $addressId = $this->handleDeliveryAddress($request, $user);
         
-        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook
-        if (!$addressId && $request->delivery_method !== 'ebook') {
+        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook hoặc pickup
+        if (!$addressId && $request->delivery_method !== 'ebook' && $request->delivery_method !== 'pickup') {
             throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
         }
 
@@ -1372,8 +1372,8 @@ class OrderService
         // dd($request->all());
         $addressId = $this->handleDeliveryAddress($request, $user);
         
-        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook
-        if (!$addressId && $request->delivery_method !== 'ebook') {
+        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook hoặc pickup
+        if (!$addressId && $request->delivery_method !== 'ebook' && $request->delivery_method !== 'pickup') {
             throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
         }
 

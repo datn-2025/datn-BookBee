@@ -215,7 +215,7 @@ class OrderController extends Controller
             'note' => 'nullable|string|max:500',
         ];
         
-        if (!$isEbookOrder) {
+        if (!$isEbookOrder && $request->delivery_method !== 'pickup') {
             $rules = array_merge($rules, [
                 'address_id' => [
                     'required_without:new_address_city_name',
@@ -279,7 +279,7 @@ class OrderController extends Controller
             'new_email.string' => 'Email phải là chuỗi ký tự.',
             'new_email.max' => 'Email không được quá 50 ký tự.',
         ];
-
+        // dd($request->all());
         $request->validate($rules, $messages);
         $newAddressCreated = !$request->address_id;
         

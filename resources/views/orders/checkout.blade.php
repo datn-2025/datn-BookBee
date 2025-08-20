@@ -237,7 +237,7 @@
                             
                             <!-- Tab Navigation cho Địa chỉ -->
                             @if(!$hasOnlyEbooks)
-                            <div class="mb-8">
+                            <div class="mb-8" id="address-section">
                                 <div class="flex items-center gap-4 mb-6">
                                     <div class="w-1 h-6 bg-black"></div>
                                     <h3 class="text-lg font-black uppercase tracking-wide text-black">
@@ -1648,8 +1648,29 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         if (e.target.name === 'shipping_method') {
-            document.getElementById('form_hidden_shipping_method').value = e.target.value;
-            document.getElementById('form_hidden_delivery_method').value = 'delivery';
+            console.log('nhận tại của hàng');
+            
+            document.getElementById('form_hidden_delivery_method').value = e.target.value;
+            // Cập nhật delivery_method dựa trên shipping_method được chọn
+            if (e.target.value === 'pickup') {
+                document.getElementById('form_hidden_delivery_method').value = 'pickup';
+                // Ẩn phí ship cho pickup
+                document.getElementById('shipping-fee').textContent = '0đ';
+                document.getElementById('form_hidden_shipping_fee').value = 0;
+                // Ẩn phần địa chỉ giao hàng khi chọn pickup
+                // const addressSection = document.getElementById('address-section');
+                // if (addressSection) {
+                //     addressSection.style.display = 'none';
+                // }
+            }
+            //  else {
+            //     document.getElementById('form_hidden_delivery_method').value = 'delivery';
+            //     // Hiện phần địa chỉ giao hàng khi chọn delivery
+            //     const addressSection = document.getElementById('address-section');
+            //     if (addressSection) {
+            //         addressSection.style.display = 'block';
+            //     }
+            // }
             updateTotal();
         }
     });
@@ -1782,6 +1803,12 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Validate address form on change
     function validateAddressForm() {
+        // Bỏ qua validation nếu chọn pickup
+        const deliveryMethod = document.getElementById('form_hidden_delivery_method').value;
+        if (deliveryMethod === 'pickup') {
+            return; // Không cần validate địa chỉ khi pickup
+        }
+        
         const city = document.getElementById('tinh').value;
         const district = document.getElementById('quan').value;
         const ward = document.getElementById('phuong').value;
