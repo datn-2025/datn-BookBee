@@ -17,176 +17,107 @@ class ReviewClientController extends Controller
     public function index(Request $request)
     {
         if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để xem đánh giá');
+            Toastr::error('Bạn cần đăng nhập để xem đánh giá', 'Lỗi');
+            return redirect()->route('login');
         }
 
         $user = Auth::user();
         $type = $request->query('type', '1');
 
-        // Get completed orders (assuming status 'Thành công' means completed)
-        $completedStatus = OrderStatus::where('name', 'Thành công')->first();
+        // 2. Lấy ID trạng thái đơn hàng "Thành công" (completed)
+        $completedStatusId = OrderStatus::where('name', 'Thành công')->value('id');
 
-        if (!$completedStatus) {
-            return redirect()->back()->with('error', 'Không tìm thấy trạng thái đơn hàng đã hoàn thành');
+        if (!$completedStatusId) {
+            Toastr::error('Không tìm thấy trạng thái đơn hàng đã hoàn thành', 'Lỗi');
+            return redirect()->back();
         }
 
-        // Thêm eager loading cho paymentMethod và các quan hệ cần thiết
+        // Build query cơ bản với eager loading
         $query = $user->orders()
             ->with([
                 'orderItems.book',
                 'reviews',
-                'paymentMethod',  // Thêm quan hệ paymentMethod
-                'orderStatus',    // Thêm quan hệ orderStatus
-                'address'        // Thêm quan hệ địa chỉ nếu cần
+                'paymentMethod',
+                'orderStatus',
+                'address',
             ])
-            ->where('order_status_id', $completedStatus->id);
+            ->where('order_status_id', $completedStatusId);
 
-        // Filter based on review status
+        // Lọc theo trạng thái review
         switch ($type) {
-            case '2': // Not reviewed
+            case '2':
                 $query->whereDoesntHave('reviews');
                 break;
-            case '3': // Already reviewed
+            case '3':
                 $query->whereHas('reviews');
                 break;
-                // Default (type=1): Show all
         }
 
-        $orders = $query->withCount(['reviews' => function ($q) {
-            $q->whereNull('deleted_at');
-        }])
-            ->orderBy('reviews_count', 'asc') // Sắp xếp đơn hàng chưa đánh giá lên đầu
-            ->latest('orders.created_at') // Sau đó sắp xếp theo thời gian tạo mới nhất
+        // Thêm số lượng review (chỉ tính chưa xóa mềm)
+        $orders = $query->withCount([
+            'reviews' =>  fn($q) => $q->whereNull('deleted_at')
+        ])
+            ->orderBy('reviews_count', 'asc') // Ưu tiên đơn chưa đánh giá
+            ->latest('orders.created_at') // Tiếp theo là đơn mới nhất
             ->paginate(10);
 
-        return view('clients.account.purchases', [
-            'orders' => $orders,
-            'currentType' => $type,
-        ]);
+        return view('clients.account.purchases', compact('orders', 'type'));
     }
 
     public function storeReview(Request $request)
     {
-        Log::info('Review data:', $request->all());
-        Log::info('User ID:', ['user_id' => Auth::id()]);
-
-        // Validate for both book and combo reviews
         $rules = [
-            'order_id' => 'required|exists:orders,id',
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000',
-            'images' => 'nullable|array|max:5',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'order_id'  => 'required|exists:orders,id',
+            'rating'    => 'required|integer|min:1|max:5',
+            'comment'   => 'nullable|string|max:1000',
+            'images'    => 'nullable|array|max:5',
+            'images.*'  => 'image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
 
-        // Either book_id or collection_id must be present
+        // Phải có book_id hoặc collection_id
         if ($request->has('book_id')) {
             $rules['book_id'] = 'required|exists:books,id';
         } elseif ($request->has('collection_id')) {
             $rules['collection_id'] = 'required|exists:collections,id';
         } else {
-            return response()->json([
-                'success' => false,
-                'error' => 'Phải có book_id hoặc collection_id'
-            ], 400);
+            return $this->errorResponse('Phải có book_id hoặc collection_id');
         }
 
         $request->validate($rules, [
-            'order_id.required' => 'Đơn hàng không hợp lệ',
-            'book_id.required' => 'Sách không hợp lệ',
+            'order_id.required'      => 'Đơn hàng không hợp lệ',
+            'book_id.required'       => 'Sách không hợp lệ',
             'collection_id.required' => 'Combo không hợp lệ',
-            'rating.required' => 'Đánh giá không hợp lệ',
-            'rating.min' => 'Đánh giá phải từ 1 đến 5',
-            'rating.max' => 'Đánh giá phải từ 1 đến 5',
-            'comment.max' => 'Nội dung đánh giá không hợp lệ',
-            'images.max' => 'Chỉ được tải lên tối đa 5 hình ảnh',
-            'images.*.image' => 'File phải là hình ảnh',
-            'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif',
-            'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB'
+            'rating.required'        => 'Đánh giá không hợp lệ',
+            'rating.min'             => 'Đánh giá phải từ 1 đến 5',
+            'rating.max'             => 'Đánh giá phải từ 1 đến 5',
+            'comment.max'            => 'Nội dung đánh giá không hợp lệ',
+            'images.max'             => 'Chỉ được tải lên tối đa 5 hình ảnh',
+            'images.*.image'         => 'File phải là hình ảnh',
+            'images.*.mimes'         => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif',
+            'images.*.max'           => 'Kích thước hình ảnh không được vượt quá 2MB'
         ]);
 
         $user = Auth::user();
 
-        // Check if the order belongs to the user and is completed
+        // Check order hợp lệ
         $order = $user->orders()
             ->where('id', $request->order_id)
-            ->whereHas('orderStatus', function ($q) {
-                $q->where('name', 'Thành công');
-            })
+            ->whereHas('orderStatus', fn($q) => $q->where('name', 'Thành công'))
             ->firstOrFail();
 
-        // Check if the book/combo is in the order
-        if ($request->has('book_id')) {
-            $order->orderItems()
-                ->where('book_id', $request->book_id)
-                ->firstOrFail();
+        // 4. Kiểm tra book/combo 
+        $itemKey = $request->has('book_id') ? 'book_id' : 'collection_id';
+        $itemId  = $request->$itemKey;
 
-            // Check if review already exists for book (bao gồm cả review đã xóa)
-            $existingReview = Review::withTrashed()
-                ->where('user_id', $user->id)
-                ->where('book_id', $request->book_id)
-                ->where('order_id', $order->id)
-                ->first();
-        } else {
-            $order->orderItems()
-                ->where('collection_id', $request->collection_id)
-                ->firstOrFail();
+        $order->orderItems()->where($itemKey, $itemId)->firstOrFail();
 
-            // Check if review already exists for combo (bao gồm cả review đã xóa)
-            $existingReview = Review::withTrashed()
-                ->where('user_id', $user->id)
-                ->where('collection_id', $request->collection_id)
-                ->where('order_id', $order->id)
-                ->first();
-        }
+        $existingReview = Review::withTrashed()
+            ->where('user_id', $user->id)
+            ->where($itemKey, $itemId)
+            ->where('order_id', $order->id)
+            ->first();
 
-        if ($existingReview) {
-            if ($existingReview->trashed()) {
-                // Nếu review đã bị xóa, restore và cập nhật thông tin mới
-                $existingReview->restore();
-
-                // Handle image uploads
-                $imagePaths = [];
-                if ($request->hasFile('images')) {
-                    foreach ($request->file('images') as $image) {
-                        $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                        $imagePath = $image->storeAs('reviews', $imageName, 'public');
-                        $imagePaths[] = $imagePath;
-                    }
-                }
-
-                // Update review với thông tin mới
-                $existingReview->update([
-                    'rating' => $request->rating,
-                    'comment' => $request->comment,
-                    'images' => empty($imagePaths) ? null : json_encode($imagePaths),
-                    'status' => 'visible'
-                ]);
-
-                // $message = $request->has('book_id') ?
-                //     'Bạn đã xóa đánh giá cho sản phẩm này và không thể đánh giá lại' :
-                //     'Bạn đã xóa đánh giá cho combo này và không thể đánh giá lại';
-                $message = $request->has('book_id') ?
-                    'Đánh giá sản phẩm thành công!' :
-                    'Đánh giá combo thành công!';
-
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => true, 'message' => $message]);
-                }
-                return redirect()->back()->with('success', $message);
-            }
-
-            $message = $request->has('book_id') ?
-                'Bạn đã đánh giá sản phẩm này rồi' :
-                'Bạn đã đánh giá combo này rồi';
-
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'error' => $message], 400);
-            }
-            return redirect()->back()->with('error', $message);
-        }
-
-        // Handle image uploads
+        // Upload ảnh (nếu có)
         $imagePaths = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
@@ -196,24 +127,51 @@ class ReviewClientController extends Controller
             }
         }
 
-        // Create the review
-        $reviewData = [
-            'id' => (string) Str::uuid(),
-            'user_id' => $user->id,
-            'order_id' => $order->id,
-            'rating' => $request->rating,
-            'comment' => $request->comment ?? '',
-            'images' => !empty($imagePaths) ? $imagePaths : null,
-            'status' => 'approved',
-        ];
+        if ($existingReview) {
+            if ($existingReview->trashed()) {
+                $existingReview->restore();
+                $existingReview->update([
+                    'rating' => $request->rating,
+                    'comment' => $request->comment,
+                    'images' => $imagePaths ? json_encode($imagePaths) : null,
+                    'status' => 'visible'
+                ]);
 
-        if ($request->has('book_id')) {
-            $reviewData['book_id'] = $request->book_id;
-        } else {
-            $reviewData['collection_id'] = $request->collection_id;
+                $message = $request->has('book_id') ?
+                    'Đánh giá sản phẩm thành công!' :
+                    'Đánh giá combo thành công!';
+
+                // Nếu request JSON thì trả về JSON
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => true, 'message' => $message]);
+                }
+
+                Toastr::success($message);
+                return back();
+            }
+
+            $message = $request->has('book_id') ?
+                'Bạn đã đánh giá sản phẩm này rồi' :
+                'Bạn đã đánh giá combo này rồi';
+
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'error' => $message], 400);
+            }
+            Toastr::success($message);
+            return back();
         }
 
-        Review::create($reviewData);
+        // Nếu chưa có review → tạo mới
+        Review::create([
+            'id'            => (string) Str::uuid(),
+            'user_id'       => $user->id,
+            'order_id'      => $order->id,
+            $itemKey        => $itemId,
+            'rating'        => $request->rating,
+            'comment'       => $request->comment ?? '',
+            'images'        => $imagePaths ?: null,
+            'status'        => 'approved'
+        ]);
 
         $successMessage = $request->has('book_id') ?
             'Cảm ơn bạn đã đánh giá sản phẩm!' :
@@ -222,7 +180,9 @@ class ReviewClientController extends Controller
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'message' => $successMessage]);
         }
-        return redirect()->back()->with('success', $successMessage);
+
+        Toastr::success($successMessage);
+        return back();
     }
 
     public function update(Request $request, $id)
@@ -300,7 +260,6 @@ class ReviewClientController extends Controller
                 ]);
             }
             return redirect()->back()->with('success', $successMessage);
-
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
             if ($request->expectsJson()) {
@@ -357,7 +316,6 @@ class ReviewClientController extends Controller
 
             Toastr::success($successMessage, 'Thành công');
             return redirect()->back();
-
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
             if ($request->expectsJson()) {
@@ -366,7 +324,7 @@ class ReviewClientController extends Controller
                     'message' => $errorMessage
                 ], $e->getCode() === 403 ? 403 : 400);
             }
-            
+
             Toastr::error($errorMessage, 'Lỗi');
             return redirect()->back();
         }
