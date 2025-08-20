@@ -173,12 +173,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/purchase', [ReviewClientController::class, 'index'])->name('purchase');
 
         Route::prefix('reviews')->name('reviews.')->group(function () {
-            Route::get('/create/{orderId}/{bookId?}', [ReviewClientController::class, 'createForm'])
-                ->where(['orderId' => '[0-9]+', 'bookId' => '[0-9]+'])
-                ->name('create');
-            Route::get('/create-combo/{orderId}/{collectionId}', [ReviewClientController::class, 'createForm'])
-                ->where(['orderId' => '[0-9]+', 'collectionId' => '[0-9]+'])
-                ->name('create.combo');
             Route::post('/', [ReviewClientController::class, 'storeReview'])->name('store');
 
             Route::get('/{id}/edit', [ReviewClientController::class, 'editForm'])->name('edit');
