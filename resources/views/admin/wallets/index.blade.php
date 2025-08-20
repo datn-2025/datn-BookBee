@@ -173,17 +173,29 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>
-                                            @if($transaction->type == 'Nap')
-                                                <span class="badge bg-success">Nạp tiền</span>
-                                            @elseif($transaction->type == 'Rut')
-                                                <span class="badge bg-danger">Rút Tiền</span>
-                                            @elseif($transaction->type == 'HoanTien')
-                                                <span class="badge bg-info">Hoàn tiền</span>
-                                            @else
-                                                <span class="badge bg-secondary">{{ $transaction->type }}</span>
-                                            @endif
-                                        </td>
+                                       <td >
+                                        @if($transaction->type === 'NAP')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                Nạp tiền
+                                            </span>
+                                        @elseif($transaction->type === 'RUT')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-800 text-white">
+                                                Rút tiền
+                                            </span>
+                                        @elseif($transaction->type === 'HOANTIEN')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                Hoàn tiền
+                                            </span>
+                                            @elseif($transaction->type === 'payment')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                Thanh Toán
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                {{ ucfirst($transaction->type) }}
+                                            </span>
+                                        @endif
+                                    </td>
                                         <td>
                                             @if($transaction->amount > 0)
                                                 <span class="text-success">+{{ number_format($transaction->amount, 0, ',', '.') }} đ</span>

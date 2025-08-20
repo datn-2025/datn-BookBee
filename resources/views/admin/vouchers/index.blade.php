@@ -190,7 +190,7 @@
                                             </a>
                                             @endpermission
                                             @permission('voucher.delete')
-                                            <form action="{{ route('admin.vouchers.destroy', $voucher) }}"
+                                            {{-- <form action="{{ route('admin.vouchers.destroy', $voucher) }}"
                                                   method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')
@@ -199,7 +199,7 @@
                                                         title="Xóa">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
-                                            </form>
+                                            </form> --}}
                                             @endpermission
                                         </div>
                                     </td>

@@ -232,7 +232,7 @@ class OrderClientController extends Controller
                 'confirmed' => 'Đã xác nhận', 
                 'preparing' => 'Đang chuẩn bị',
                 'shipping' => ['Đang giao hàng', 'Đã giao thành công'],
-                'delivered' => ['Đã giao', 'Đã giao hàng', 'Đã nhận hàng', 'Thành công'],
+                'delivered' => ['Đã nhận hàng', 'Thành công'],
                 'cancelled' => 'Đã hủy'
             ];
             
@@ -246,10 +246,34 @@ class OrderClientController extends Controller
         
         $orders = $query->paginate(10);
         
+        // Tính số lượng đơn hàng theo từng trạng thái
+        $baseQuery = Order::where('user_id', Auth::id())->whereNull('parent_order_id');
+        
+        $orderCounts = [
+            'pending' => (clone $baseQuery)->whereHas('orderStatus', function($q) {
+                $q->where('name', 'Chờ xác nhận');
+            })->count(),
+            'confirmed' => (clone $baseQuery)->whereHas('orderStatus', function($q) {
+                $q->where('name', 'Đã xác nhận');
+            })->count(),
+            'preparing' => (clone $baseQuery)->whereHas('orderStatus', function($q) {
+                $q->where('name', 'Đang chuẩn bị');
+            })->count(),
+            'shipping' => (clone $baseQuery)->whereHas('orderStatus', function($q) {
+                $q->whereIn('name', ['Đang giao hàng', 'Đã giao thành công']);
+            })->count(),
+            'delivered' => (clone $baseQuery)->whereHas('orderStatus', function($q) {
+                $q->whereIn('name', ['Đã nhận hàng', 'Thành công']);
+            })->count(),
+            'cancelled' => (clone $baseQuery)->whereHas('orderStatus', function($q) {
+                $q->where('name', 'Đã hủy');
+            })->count(),
+        ];
+        
         // Lấy thông tin cửa hàng
         $storeSettings = Setting::first();
         
-        return view('clients.account.orders', compact('orders', 'storeSettings'));
+        return view('clients.account.orders', compact('orders', 'storeSettings', 'orderCounts'));
     }
 
     /**
@@ -354,7 +378,7 @@ class OrderClientController extends Controller
             $order = Order::findOrFail($id);
             
             // Kiểm tra quyền sở hữu đơn hàng
-            if ($order->user_id !== auth()->id()) {
+            if ($order->user_id !== Auth::id()) {
                 return redirect()->back()->with('error', 'Bạn không có quyền thực hiện hành động này.');
             }
             
@@ -381,7 +405,7 @@ class OrderClientController extends Controller
             Log::info('Order confirmed as received by customer', [
                 'order_id' => $order->id,
                 'order_code' => $order->order_code,
-                'user_id' => auth()->id()
+                'user_id' => Auth::id()
             ]);
             
             DB::commit();

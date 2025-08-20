@@ -723,25 +723,29 @@ class OrderService
     private function saveOrderItemAttributes($orderItem, $cartItem)
     {
         $attributeValueIds = $cartItem->attribute_value_ids ?? [];
-        
+        // dd($attributeValueIds);
         // Xử lý attribute_value_ids có thể là JSON string hoặc array
         if (is_string($attributeValueIds) && !empty($attributeValueIds) && $attributeValueIds !== '[]') {
             $decoded = json_decode($attributeValueIds, true);
+            // dd($decoded);
             if (is_array($decoded)) {
                 $attributeValueIds = $decoded;
             } else {
                 $attributeValueIds = [];
             }
         } elseif (!is_array($attributeValueIds)) {
+            // dd($attributeValueIds);
             $attributeValueIds = [];
         }
         
         // Chỉ tạo record khi có thuộc tính hợp lệ
         if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
+            // dd($attributeValueIds);
             foreach ($attributeValueIds as $attributeValueId) {
+                // dd($attributeValueId, is_numeric($attributeValueId), $attributeValueId > 0);
                 // Kiểm tra attributeValueId hợp lệ (không phải 0, null, hoặc empty)
-                if ($attributeValueId && is_numeric($attributeValueId) && $attributeValueId > 0) {
-                    OrderItemAttributeValue::create([
+                if ($attributeValueId && $attributeValueId > 0) {
+                    $data =  OrderItemAttributeValue::create([
                         'id' => (string) Str::uuid(),
                         'order_item_id' => $orderItem->id,
                         'attribute_value_id' => $attributeValueId,
@@ -749,6 +753,7 @@ class OrderService
                 }
             }
         }
+        // dd($data);
         // Không tạo record nào nếu không có thuộc tính (ví dụ: ebook)
     }
 
@@ -757,8 +762,8 @@ class OrderService
      */
     public function handleDeliveryAddress($request, User $user)
     {
-        // Nếu là đơn hàng ebook, không cần địa chỉ giao hàng
-        if ($request->delivery_method === 'ebook') {
+        // Nếu là đơn hàng ebook hoặc pickup, không cần địa chỉ giao hàng
+        if ($request->delivery_method === 'ebook' || $request->delivery_method === 'pickup') {
             return null;
         }
         
@@ -1234,8 +1239,8 @@ class OrderService
         // 1. Xử lý địa chỉ giao hàng
         $addressId = $this->handleDeliveryAddress($request, $user);
         
-        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook
-        if (!$addressId && $request->delivery_method !== 'ebook') {
+        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook hoặc pickup
+        if (!$addressId && $request->delivery_method !== 'ebook' && $request->delivery_method !== 'pickup') {
             throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
         }
 
@@ -1367,8 +1372,8 @@ class OrderService
         // dd($request->all());
         $addressId = $this->handleDeliveryAddress($request, $user);
         
-        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook
-        if (!$addressId && $request->delivery_method !== 'ebook') {
+        // Chỉ yêu cầu địa chỉ khi không phải đơn hàng ebook hoặc pickup
+        if (!$addressId && $request->delivery_method !== 'ebook' && $request->delivery_method !== 'pickup') {
             throw new \Exception('Địa chỉ giao hàng không hợp lệ.');
         }
 

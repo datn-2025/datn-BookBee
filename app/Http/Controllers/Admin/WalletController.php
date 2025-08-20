@@ -179,11 +179,11 @@ class WalletController extends Controller
             $transaction->save();
             
             // Nếu là nạp thì cộng tiền, nếu là rút thì trừ wallet_lock
-            if ($transaction->type === 'Nap') {
+            if ($transaction->type === 'NAP') {
                 $transaction->wallet->increment('balance', $transaction->amount);
                 // dd(Auth::user());
                 event(new WalletDeposited($transaction->wallet->user, $transaction->amount ,$transaction->id, 'customer'));
-            } elseif ($transaction->type === 'Rut') {
+            } elseif ($transaction->type === 'RUT') {
                 // dd($transaction->wallet->user);
                 $user = $transaction->wallet->user;
                 $user->wallet_lock = max(0, ($user->wallet_lock ?? 0) - $transaction->amount);

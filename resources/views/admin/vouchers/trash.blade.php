@@ -102,7 +102,7 @@
                                                         <i class="fas fa-trash-restore"></i>
                                                     </button>
                                                 </form>
-                                                <form action="{{ route('admin.vouchers.force-delete', $voucher->id) }}"
+                                                {{-- <form action="{{ route('admin.vouchers.force-delete', $voucher->id) }}"
                                                     method="POST" class="d-inline">
                                                     @csrf
                                                     @method('DELETE')
@@ -110,7 +110,7 @@
                                                         onclick="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn?')">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
-                                                </form>
+                                                </form> --}}
                                             </td>
                                         </tr>
                                         @empty
