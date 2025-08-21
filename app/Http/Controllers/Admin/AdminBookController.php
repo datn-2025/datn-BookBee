@@ -283,12 +283,13 @@ class AdminBookController extends Controller
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             // Gift validation
             'gift_book_id' => 'nullable|uuid|exists:books,id',
-            'gift_name' => 'nullable|string|max:255',
+            'gift_name' => 'required_if:has_gift,1|string|max:255',
             'gift_description' => 'nullable|string',
             'gift_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'quantity' => 'nullable|integer|min:0',
-            'gift_start_date' => 'nullable|date',
-            'gift_end_date' => 'nullable|date|after_or_equal:gift_start_date',
+            'quantity' => 'nullable|integer|min:1',
+            'gift_date_range' => 'required_with:gift_name|string',
+            'gift_start_date' => 'required_with:gift_name|date',
+            'gift_end_date' => 'required_with:gift_name|date|after_or_equal:gift_start_date',
         ];
 
         // Different rules for create vs update
@@ -361,6 +362,25 @@ class AdminBookController extends Controller
             'publication_date.required' => 'Vui lòng nhập ngày xuất bản',
             'publication_date.date' => 'Ngày xuất bản không hợp lệ',
             'end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu',
+            // Gift validation messages
+            'gift_book_id.uuid' => 'Sách nhận quà tặng không hợp lệ',
+            'gift_book_id.exists' => 'Sách nhận quà tặng không tồn tại',
+            'gift_name.required_if' => 'Vui lòng nhập tên quà tặng',
+            'gift_name.string' => 'Tên quà tặng phải là chuỗi ký tự',
+            'gift_name.max' => 'Tên quà tặng không được vượt quá 255 ký tự',
+            'gift_description.string' => 'Mô tả quà tặng phải là chuỗi ký tự',
+            'gift_image.image' => 'File quà tặng phải là hình ảnh',
+            'gift_image.mimes' => 'File quà tặng phải có định dạng JPG, PNG, GIF hoặc WebP',
+            'gift_image.max' => 'Kích thước file quà tặng không được vượt quá 2MB',
+            'quantity.integer' => 'Số lượng quà tặng phải là số nguyên',
+            'quantity.min' => 'Số lượng quà tặng phải lớn hơn 0',
+            'gift_date_range.required_with' => 'Vui lòng chọn thời gian khuyến mãi quà tặng',
+            'gift_date_range.string' => 'Thời gian khuyến mãi quà tặng không hợp lệ',
+            'gift_start_date.required_with' => 'Vui lòng chọn ngày bắt đầu khuyến mãi',
+            'gift_start_date.date' => 'Ngày bắt đầu khuyến mãi không hợp lệ',
+            'gift_end_date.required_with' => 'Vui lòng chọn ngày kết thúc khuyến mãi',
+            'gift_end_date.date' => 'Ngày kết thúc khuyến mãi không hợp lệ',
+            'gift_end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu',
         ];
     }
 
