@@ -1648,9 +1648,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         if (e.target.name === 'shipping_method') {
-            console.log('nhận tại của hàng');
-            
-            document.getElementById('form_hidden_delivery_method').value = e.target.value;
+            document.getElementById('form_hidden_shipping_method').value = e.target.value;
             // Cập nhật delivery_method dựa trên shipping_method được chọn
             if (e.target.value === 'pickup') {
                 document.getElementById('form_hidden_delivery_method').value = 'pickup';
@@ -1658,19 +1656,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('shipping-fee').textContent = '0đ';
                 document.getElementById('form_hidden_shipping_fee').value = 0;
                 // Ẩn phần địa chỉ giao hàng khi chọn pickup
-                // const addressSection = document.getElementById('address-section');
-                // if (addressSection) {
-                //     addressSection.style.display = 'none';
-                // }
+                const addressSection = document.getElementById('address-section');
+                if (addressSection) {
+                    addressSection.style.display = 'none';
+                }
+            } else {
+                document.getElementById('form_hidden_delivery_method').value = 'delivery';
+                // Hiện phần địa chỉ giao hàng khi chọn delivery
+                const addressSection = document.getElementById('address-section');
+                if (addressSection) {
+                    addressSection.style.display = 'block';
+                }
             }
-            //  else {
-            //     document.getElementById('form_hidden_delivery_method').value = 'delivery';
-            //     // Hiện phần địa chỉ giao hàng khi chọn delivery
-            //     const addressSection = document.getElementById('address-section');
-            //     if (addressSection) {
-            //         addressSection.style.display = 'block';
-            //     }
-            // }
             updateTotal();
         }
     });
