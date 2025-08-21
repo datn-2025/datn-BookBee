@@ -589,6 +589,39 @@
                 opacity: 1;
             }
         }
+
+        /* Enhanced Admin Response Styling */
+        .product-detail-page .admin-response {
+            border-radius: 0;
+            overflow: hidden;
+            background: #fff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 1rem;
+        }
+
+        .product-detail-page .admin-response:hover {
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .product-detail-page .admin-response-text {
+            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
+            color: #1f2937;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        /* Responsive adjustments for admin response */
+        @media (max-width: 768px) {
+            .product-detail-page .admin-response {
+                margin-top: 0.75rem;
+            }
+            
+            .product-detail-page .admin-response-text {
+                font-size: 0.9rem;
+                line-height: 1.5;
+            }
+        }
     </style>
 @endpush
 @section('content')
@@ -2153,20 +2186,23 @@
 
                                         <!-- Review Images -->
                                         @if($review->images && count($review->images) > 0)
-                                            <div class="mt-4">
-                                                <div class="text-xs text-gray-600 mb-2 uppercase tracking-wider font-semibold">
-                                                    ẢNH ĐÁNH GIÁ
+                                            <div class="mt-5">
+                                                <div class="text-sm text-gray-700 mb-3 uppercase tracking-wider font-bold flex items-center">
+                                                    <i class="fas fa-camera mr-2 text-amber-600"></i>
+                                                    ẢNH ĐÁNH GIÁ ({{ count($review->images) }})
                                                 </div>
-                                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 max-w-2xl">
                                                     @foreach($review->images as $imagePath)
-                                                        <div class="relative group cursor-pointer review-image"
+                                                        <div class="relative group cursor-pointer review-image rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
                                                             onclick="showReviewImageModal('{{ asset('storage/' . $imagePath) }}')">
                                                             <img src="{{ asset('storage/' . $imagePath) }}" alt="Review Image"
-                                                                class="w-full h-20 object-cover border border-gray-300 group-hover:border-black transition-colors duration-200">
+                                                                class="w-full h-32 sm:h-36 md:h-40 object-cover group-hover:scale-110 transition-transform duration-300">
                                                             <div
-                                                                class="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-90 transition-all duration-200 flex items-center justify-center">
-                                                                <i
-                                                                    class="fas fa-expand-alt text-black opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-lg"></i>
+                                                                class="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 flex items-center justify-center">
+                                                                <div class="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
+                                                                    <i class="fas fa-search-plus text-2xl mb-1"></i>
+                                                                    <div class="text-xs font-medium">Xem lớn</div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     @endforeach
@@ -2197,6 +2233,47 @@
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <!-- Admin Response Section -->
+                                        @if($review->admin_response)
+                                            <div class="mt-4 bg-blue-50 border-l-4 border-blue-600 admin-response">
+                                                <!-- Admin Response Header -->
+                                                <div class="bg-blue-600 text-white px-4 py-2 flex items-center space-x-3">
+                                                    <div class="w-6 h-6 bg-white bg-opacity-20 flex items-center justify-center">
+                                                        <i class="fas fa-user-tie text-xs"></i>
+                                                    </div>
+                                                    <span class="font-bold uppercase tracking-wider text-sm adidas-font">PHẢN HỒI TỪ BOOKBEE</span>
+                                                    <div class="ml-auto">
+                                                        <div class="w-2 h-2 bg-white bg-opacity-60"></div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Admin Response Content -->
+                                                <div class="p-4">
+                                                    <div class="relative">
+                                                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-600 via-blue-400 to-blue-600"></div>
+                                                        <div class="pl-4">
+                                                            <p class="text-gray-800 leading-relaxed font-medium admin-response-text">
+                                                                {{ $review->admin_response }}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Admin Response Footer -->
+                                                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-blue-200">
+                                                        <div class="flex items-center space-x-2 text-xs text-blue-600 uppercase tracking-wider">
+                                                            <i class="fas fa-shield-alt"></i>
+                                                            <span class="font-semibold">Phản hồi chính thức</span>
+                                                        </div>
+                                                        <div class="flex space-x-1">
+                                                            <div class="w-2 h-2 bg-blue-600"></div>
+                                                            <div class="w-2 h-2 bg-blue-300"></div>
+                                                            <div class="w-2 h-2 bg-blue-300"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
 
                                         <!-- Bottom Accent -->
                                         <div class="flex items-center justify-between mt-6 pt-4 border-t">
@@ -4572,28 +4649,121 @@
             }
 
         </script>
-        <!-- Review Image Modal -->
-        <div id="reviewImageModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
-            <div class="relative max-w-4xl max-h-full p-4">
+        <!-- Enhanced Review Image Modal -->
+        <div id="reviewImageModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+            <div class="relative max-w-4xl max-h-[85vh] p-6 w-full flex items-center justify-center">
+                <!-- Close Button -->
                 <button onclick="closeReviewImageModal()"
-                    class="absolute top-2 right-2 text-white hover:text-gray-300 text-2xl z-10">
+                    class="absolute top-4 right-4 text-white hover:text-gray-300 text-3xl z-20 bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center transition-all duration-200">
                     <i class="fas fa-times"></i>
                 </button>
-                <img id="reviewModalImage" src="" alt="Review Image" class="max-w-full max-h-full object-contain">
+                
+                <!-- Loading Spinner -->
+                <div id="imageLoadingSpinner" class="absolute inset-0 flex items-center justify-center z-10">
+                    <div class="flex flex-col items-center text-white">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+                        <p class="text-sm">Đang tải ảnh...</p>
+                    </div>
+                </div>
+                
+                <!-- Error Message -->
+                <div id="imageErrorMessage" class="absolute inset-0 flex items-center justify-center z-10 hidden">
+                    <div class="flex flex-col items-center text-white text-center">
+                        <i class="fas fa-exclamation-triangle text-4xl mb-4 text-yellow-400"></i>
+                        <p class="text-lg mb-2">Không thể tải ảnh</p>
+                        <p class="text-sm text-gray-300">Vui lòng thử lại sau</p>
+                        <button onclick="retryLoadImage()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white transition-colors">
+                            <i class="fas fa-redo mr-2"></i>Thử lại
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Main Image -->
+                <img id="reviewModalImage" src="" alt="Review Image" 
+                    class="max-w-[90%] max-h-[70vh] object-contain rounded-lg shadow-2xl hidden"
+                    onload="handleImageLoad()" 
+                    onerror="handleImageError()">
             </div>
         </div>
 
         <script>
+            let currentImageSrc = '';
+            
             function showReviewImageModal(imageSrc) {
                 const modal = document.getElementById('reviewImageModal');
                 const modalImage = document.getElementById('reviewModalImage');
-                modalImage.src = imageSrc;
+                const loadingSpinner = document.getElementById('imageLoadingSpinner');
+                const errorMessage = document.getElementById('imageErrorMessage');
+                
+                // Store current image source
+                currentImageSrc = imageSrc;
+                
+                // Reset states
+                modalImage.classList.add('hidden');
+                loadingSpinner.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+                
+                // Show modal
                 modal.classList.remove('hidden');
+                
+                // Load image
+                modalImage.src = imageSrc;
+                
+                // Add body scroll lock
+                document.body.style.overflow = 'hidden';
+            }
+            
+            function handleImageLoad() {
+                const modalImage = document.getElementById('reviewModalImage');
+                const loadingSpinner = document.getElementById('imageLoadingSpinner');
+                const errorMessage = document.getElementById('imageErrorMessage');
+                
+                // Hide loading, show image
+                loadingSpinner.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+                modalImage.classList.remove('hidden');
+            }
+            
+            function handleImageError() {
+                const modalImage = document.getElementById('reviewModalImage');
+                const loadingSpinner = document.getElementById('imageLoadingSpinner');
+                const errorMessage = document.getElementById('imageErrorMessage');
+                
+                // Hide loading and image, show error
+                loadingSpinner.classList.add('hidden');
+                modalImage.classList.add('hidden');
+                errorMessage.classList.remove('hidden');
+                
+                console.error('Failed to load image:', currentImageSrc);
+            }
+            
+            function retryLoadImage() {
+                if (currentImageSrc) {
+                    const modalImage = document.getElementById('reviewModalImage');
+                    const loadingSpinner = document.getElementById('imageLoadingSpinner');
+                    const errorMessage = document.getElementById('imageErrorMessage');
+                    
+                    // Reset states
+                    modalImage.classList.add('hidden');
+                    errorMessage.classList.add('hidden');
+                    loadingSpinner.classList.remove('hidden');
+                    
+                    // Try to load image again with cache busting
+                    const cacheBuster = '?t=' + new Date().getTime();
+                    modalImage.src = currentImageSrc + cacheBuster;
+                }
             }
 
             function closeReviewImageModal() {
                 const modal = document.getElementById('reviewImageModal');
+                const modalImage = document.getElementById('reviewModalImage');
+                
                 modal.classList.add('hidden');
+                modalImage.src = ''; // Clear source to stop loading
+                currentImageSrc = '';
+                
+                // Remove body scroll lock
+                document.body.style.overflow = '';
             }
 
             // Close modal when clicking outside the image
