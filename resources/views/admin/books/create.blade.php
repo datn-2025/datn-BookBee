@@ -37,7 +37,7 @@
                                        id="title" name="title" value="{{ old('title') }}" 
                                        placeholder="Nhập tên sách...">
                                 @error('title')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             
@@ -53,7 +53,7 @@
                                     @endforeach
                                 </select>
                                 @error('category_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             
@@ -69,7 +69,7 @@
                                     @endforeach
                                 </select>
                                 @error('brand_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             
@@ -79,7 +79,7 @@
                                           id="description" name="description" rows="4"
                                           placeholder="Nhập mô tả sách...">{{ old('description') }}</textarea>
                                 @error('description')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
@@ -101,7 +101,7 @@
                                        id="isbn" name="isbn" value="{{ old('isbn') }}" 
                                        placeholder="Mã ISBN...">
                                 @error('isbn')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             
@@ -111,7 +111,7 @@
                                        id="page_count" name="page_count" value="{{ old('page_count') }}" 
                                        placeholder="Số trang..." min="1">
                                 @error('page_count')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             
@@ -120,7 +120,7 @@
                                 <input type="date" class="form-control @error('publication_date') is-invalid @enderror" 
                                        id="publication_date" name="publication_date" value="{{ old('publication_date') }}">
                                 @error('publication_date')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             
@@ -136,7 +136,10 @@
                                     <option value="Tiếng Hàn" {{ old('language') == 'Tiếng Hàn' ? 'selected' : '' }}>Tiếng Hàn</option>
                                 </select>
                                 @error('language')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                                @error('language')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
@@ -162,7 +165,10 @@
                             @endforeach
                         </select>
                         @error('author_ids')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
+                        @error('author_ids.*')
+                            <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
@@ -199,7 +205,7 @@
                                             @endforeach
                                         </select>
                                         @error('gift_book_id')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
                                         <div class="form-text">Để trống để tạo quà tặng cho sách hiện tại</div>
                                     </div>
@@ -210,7 +216,7 @@
                                                name="gift_name" value="{{ old('gift_name') }}" 
                                                placeholder="Ví dụ: Bookmark đặc biệt, Postcard...">
                                         @error('gift_name')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
                                     </div>
                                     
@@ -220,7 +226,7 @@
                                                name="quantity" value="{{ old('quantity', 1) }}" 
                                                placeholder="1" min="1">
                                         @error('quantity')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
                                     </div>
                                     
@@ -230,12 +236,12 @@
                                                   name="gift_description" rows="3" 
                                                   placeholder="Mô tả chi tiết về quà tặng...">{{ old('gift_description') }}</textarea>
                                         @error('gift_description')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
                                     </div>
                                     <div class="col-12">
                                         <label class="form-label fw-medium">Thời gian khuyến mãi quà tặng</label>
-                                        <input type="text" class="form-control @error('gift_date_range') is-invalid @enderror" 
+                                        <input type="text" class="form-control @error('gift_date_range') is-invalid @enderror @error('gift_start_date') is-invalid @enderror @error('gift_end_date') is-invalid @enderror" 
                                                id="gift_date_range" name="gift_date_range" 
                                                placeholder="Chọn khoảng thời gian khuyến mãi..." 
                                                value="{{ old('gift_date_range') }}">
@@ -245,13 +251,11 @@
                                         <input type="hidden" id="gift_end_date" name="gift_end_date" value="{{ old('gift_end_date') }}">
                                         
                                         @error('gift_date_range')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                        @error('gift_start_date')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                        @error('gift_end_date')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
+                                        @elseif($errors->has('gift_start_date'))
+                                            <div class="text-danger small mt-1">{{ $errors->first('gift_start_date') }}</div>
+                                        @elseif($errors->has('gift_end_date'))
+                                            <div class="text-danger small mt-1">{{ $errors->first('gift_end_date') }}</div>
                                         @enderror
                                         
                                         <div class="form-text">
@@ -265,7 +269,7 @@
                                         <input type="file" class="form-control @error('gift_image') is-invalid @enderror" 
                                                name="gift_image" accept="image/*">
                                         @error('gift_image')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
                                         <div class="form-text">Chấp nhận file ảnh JPG, PNG, GIF. Tối đa 2MB</div>
                                         <div id="gift_image_preview" class="mt-2"></div>
@@ -308,16 +312,25 @@
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][price]" 
                                                    id="physical_price" value="{{ old('formats.physical.price') }}" placeholder="0" min="0">
+                                            @error('formats.physical.price')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][discount]" 
                                                    id="physical_discount" value="{{ old('formats.physical.discount') }}" placeholder="0" min="0">
+                                            @error('formats.physical.discount')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Số lượng</label>
                                             <input type="number" class="form-control" name="formats[physical][stock]" 
                                                    value="{{ old('formats.physical.stock') }}" placeholder="0" min="0">
+                                            @error('formats.physical.stock')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                         </div>
                                     </div>
                                     
@@ -418,16 +431,25 @@
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][price]" 
                                                    id="ebook_price" value="{{ old('formats.ebook.price') }}" placeholder="0" min="0">
+                                            @error('formats.ebook.price')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][discount]" 
                                                    id="ebook_discount" value="{{ old('formats.ebook.discount') }}" placeholder="0" min="0">
+                                            @error('formats.ebook.discount')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label fw-medium">File Ebook</label>
                                             <input type="file" class="form-control" name="formats[ebook][file]" 
                                                    accept=".pdf,.epub">
+                                            @error('formats.ebook.file')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                             <div class="form-text">Chấp nhận file PDF hoặc EPUB, tối đa 50MB</div>
                                         </div>
                                         
@@ -435,6 +457,9 @@
                                             <label class="form-label fw-medium">File đọc thử</label>
                                             <input type="file" class="form-control" name="formats[ebook][sample_file]" 
                                                    accept=".pdf,.epub">
+                                            @error('formats.ebook.sample_file')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                             <div class="form-text">File đọc thử cho khách hàng. Chấp nhận file PDF hoặc EPUB, tối đa 10MB.</div>
                                         </div>
                                         
@@ -481,7 +506,7 @@
                             <input type="file" class="form-control @error('cover_image') is-invalid @enderror" 
                                    id="cover_image" name="cover_image" accept="image/*">
                             @error('cover_image')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
                             <div id="cover_preview" class="mt-3"></div>
                         </div>
@@ -492,7 +517,10 @@
                             <input type="file" class="form-control @error('images') is-invalid @enderror" 
                                    id="images" name="images[]" accept="image/*" multiple>
                             @error('images')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
+                            @error('images.*')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
                             <div id="images_preview" class="row mt-3"></div>
                         </div>
@@ -515,7 +543,7 @@
                             <option value="Ngừng Kinh Doanh" {{ old('status') == 'Ngừng Kinh Doanh' ? 'selected' : '' }}>Ngừng Kinh Doanh</option>
                         </select>
                         @error('status')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
