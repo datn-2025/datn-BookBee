@@ -3,19 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Preorder;
 use App\Models\Book;
 use App\Models\BookFormat;
-use App\Models\User;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Province;
-use App\Models\District;
-use App\Models\Ward;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
+use App\Models\Preorder;
+use App\Models\User;
+use App\Services\GHNService;
 use App\Mail\PreorderStatusUpdate;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class AdminPreorderController extends Controller
 {
@@ -24,19 +24,23 @@ class AdminPreorderController extends Controller
      */
     public function index(Request $request)
     {
+        // Eager-load để giảm N+1 query trên danh sách
         $query = Preorder::with(['user', 'book', 'bookFormat']);
 
         // Filter theo status
+        // Lọc theo trạng thái nếu có
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
         // Filter theo sách
+        // Lọc theo sách (book_id)
         if ($request->filled('book_id')) {
             $query->where('book_id', $request->book_id);
         }
 
         // Tìm kiếm theo tên khách hàng hoặc email
+        // Tìm kiếm theo tên/email/điện thoại
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -47,6 +51,7 @@ class AdminPreorderController extends Controller
         }
 
         // Filter theo ngày
+        // Lọc theo ngày tạo từ ... đến ...
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
@@ -57,6 +62,7 @@ class AdminPreorderController extends Controller
         $preorders = $query->orderBy('created_at', 'desc')->paginate(20);
 
         // Thống kê
+        // Thống kê nhanh theo scope trên model Preorder
         $stats = [
             'total' => Preorder::count(),
             'pending' => Preorder::pending()->count(),
@@ -77,6 +83,7 @@ class AdminPreorderController extends Controller
      */
     public function create()
     {
+        // Lấy danh sách sách đang mở preorder kèm các định dạng
         $preorderBooks = Book::where('pre_order', true)
             ->with('bookFormats')
             ->get(['id', 'title', 'cover_image', 'pre_order_price']);
@@ -85,7 +92,13 @@ class AdminPreorderController extends Controller
             ->orderBy('name')
             ->get();
             
-        $provinces = Province::orderBy('name')->get(['id', 'name']);
+        $ghnService = new GHNService();
+        $provinces = collect($ghnService->getProvinces())->map(function($province) {
+            return [
+                'id' => $province['ProvinceID'],
+                'name' => $province['ProvinceName']
+            ];
+        });
         
         return view('admin.preorders.create', compact('preorderBooks', 'users', 'provinces'));
     }
@@ -95,23 +108,8 @@ class AdminPreorderController extends Controller
      */
     public function store(Request $request)
     {
-        // Kiểm tra thông tin sách và định dạng trước để xác định validation rules
-        $book = null;
-        $bookFormat = null;
-        
-        if ($request->filled('book_id')) {
-            $book = Book::find($request->book_id);
-        }
-        
-        if ($request->filled('book_format_id')) {
-            $bookFormat = BookFormat::find($request->book_format_id);
-        }
-        
-        $isEbook = $bookFormat && str_contains(strtolower($bookFormat->format_name), 'ebook');
-        $isPreorderBook = $book && $book->pre_order;
-        
-        // Dynamic validation rules dựa trên loại sách
-        $rules = [
+        // Validate dữ liệu form tạo đơn đặt trước từ admin
+        $validated = $request->validate([
             'book_id' => 'required|exists:books,id',
             'book_format_id' => 'required|exists:book_formats,id',
             'quantity' => 'required|integer|min:1|max:10', // Giới hạn số lượng đặt trước
@@ -149,64 +147,24 @@ class AdminPreorderController extends Controller
         ]);
 
         try {
-            DB::beginTransaction();
+            DB::beginTransaction(); // Bắt đầu giao dịch để đảm bảo toàn vẹn dữ liệu
 
             // Lấy thông tin sách và format
+            // Tải sách và định dạng sách đã chọn
             $book = Book::findOrFail($validated['book_id']);
             $bookFormat = BookFormat::findOrFail($validated['book_format_id']);
 
             // Kiểm tra sách có phải pre-order không
             if (!$book->pre_order) {
-                DB::rollback();
-                return back()->withInput()->with('error', 'Sách này không hỗ trợ đặt trước.');
+                return back()->with('error', 'Sách này không hỗ trợ đặt trước.');
             }
 
-            // Kiểm tra giới hạn đặt trước
-            if ($book->stock_preorder_limit && 
-                ($book->preorder_count + $validated['quantity']) > $book->stock_preorder_limit) {
-                DB::rollback();
-                return back()->withInput()->with('error', 
-                    'Số lượng đặt trước vượt quá giới hạn. Còn lại: ' . 
-                    ($book->stock_preorder_limit - $book->preorder_count) . ' cuốn.');
-            }
+            
 
-            // Tính toán giá cơ bản - ưu tiên giá đặt trước
-            if ($book->pre_order && $book->pre_order_price) {
-                $unitPrice = $book->pre_order_price;
-            } else {
-                $unitPrice = $bookFormat->discount > 0 ? 
-                    ($bookFormat->price * (100 - $bookFormat->discount) / 100) : 
-                    $bookFormat->price;
-            }
-            
-            // Tính giá thuộc tính thêm
-            $attributePrice = 0;
-            $selectedAttributesData = [];
-            
-            if (!empty($validated['selected_attributes'])) {
-                $attributeValues = \App\Models\AttributeValue::whereIn('id', $validated['selected_attributes'])
-                    ->with('attribute')
-                    ->get();
-                    
-                foreach ($attributeValues as $attrValue) {
-                    $bookAttrValue = $book->attributeValues()
-                        ->where('attribute_value_id', $attrValue->id)
-                        ->first();
-                        
-                    if ($bookAttrValue) {
-                        $attributePrice += $bookAttrValue->extra_price;
-                        $selectedAttributesData[] = [
-                            'attribute_name' => $attrValue->attribute->name,
-                            'value' => $attrValue->value,
-                            'extra_price' => $bookAttrValue->extra_price
-                        ];
-                    }
-                }
-            }
-            
-            // Tính phí vận chuyển từ GHN API
-            $shippingFee = $validated['shipping_fee'] ?? 0;
-            $totalAmount = ($unitPrice + $attributePrice) * $validated['quantity'] + $shippingFee;
+            // Tính toán giá
+            // Tính giá dựa vào book format (ở phía user có thể dùng công thức preorder khác)
+            $unitPrice = $bookFormat->price;
+            $totalAmount = $unitPrice * $validated['quantity'];
 
             // Lấy thông tin địa chỉ nếu không phải ebook và không phải preorder
             $provinceId = null;
@@ -216,33 +174,33 @@ class AdminPreorderController extends Controller
             $districtName = null;
             $wardName = null;
 
-            // Chỉ xử lý địa chỉ cho sách vật lý thông thường (không phải ebook và không phải preorder)
-            if (!$isEbook && !$isPreorderBook) {
-                if (isset($validated['province_id']) && $validated['province_id']) {
-                    $province = Province::find($validated['province_id']);
-                    if ($province) {
-                        $provinceId = $province->id;
-                        $provinceName = $province->name;
-                    }
+            // Nếu không phải ebook, tải thêm tên Tỉnh/Quận/Phường để lưu kèm
+            if (!$bookFormat->format_name || !str_contains(strtolower($bookFormat->format_name), 'ebook')) {
+                $ghnService = new GHNService();
+
+                if ($validated['province_id']) {
+                    $provinces = $ghnService->getProvinces();
+                    $province = collect($provinces)->firstWhere('ProvinceID', $validated['province_id']);
+                    $provinceId = $province['ProvinceID'];
+                    $provinceName = $province['ProvinceName'];
                 }
-                if (isset($validated['district_id']) && $validated['district_id']) {
-                    $district = District::find($validated['district_id']);
-                    if ($district) {
-                        $districtId = $district->id;
-                        $districtName = $district->name;
-                    }
+                if ($validated['district_id']) {
+                    $districts = $ghnService->getDistricts($validated['province_id']);
+                    $district = collect($districts)->firstWhere('DistrictID', $validated['district_id']);
+                    $districtId = $district['DistrictID'];
+                    $districtName = $district['DistrictName'];
                 }
-                if (isset($validated['ward_id']) && $validated['ward_id']) {
-                    $ward = Ward::find($validated['ward_id']);
-                    if ($ward) {
-                        $wardId = $ward->id;
-                        $wardName = $ward->name;
-                    }
+                if ($validated['ward_code']) {
+                    $wards = $ghnService->getWards($validated['district_id']);
+                    $ward = collect($wards)->firstWhere('WardCode', $validated['ward_code']);
+                    $wardId = $ward['WardCode'];
+                    $wardName = $ward['WardName'];
                 }
             }
 
             // Tạo preorder
-            $preorderData = [
+            // Tạo bản ghi preorder trong DB
+            $preorder = Preorder::create([
                 'user_id' => $validated['user_id'],
                 'book_id' => $validated['book_id'],
                 'book_format_id' => $validated['book_format_id'],
@@ -279,6 +237,7 @@ class AdminPreorderController extends Controller
             $this->decreaseStockForPreorder($book, $bookFormat, $validated);
 
             // Cập nhật preorder_count của sách
+            // Tăng số lượng preorder của sách để thống kê
             $book->increment('preorder_count', $validated['quantity']);
 
             DB::commit();
@@ -288,7 +247,7 @@ class AdminPreorderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Lỗi tạo preorder từ admin: ' . $e->getMessage());
+            Log::error('Lỗi tạo preorder từ admin: ' . $e->getMessage());
             return back()->withInput()->with('error', 'Có lỗi xảy ra khi tạo đơn đặt trước.');
         }
     }
@@ -298,6 +257,7 @@ class AdminPreorderController extends Controller
      */
     public function show(Preorder $preorder)
     {
+        // Load thêm quan hệ để hiển thị đầy đủ trên view
         $preorder->load(['user', 'book', 'bookFormat']);
         
         return view('admin.preorders.show', compact('preorder'));
@@ -308,8 +268,15 @@ class AdminPreorderController extends Controller
      */
     public function updateStatus(Request $request, Preorder $preorder)
     {
+        // Kiểm tra nếu đơn đã chuyển thành đơn hàng
+        if ($preorder->status === 'delivered' || $preorder->status === 'Đã chuyển thành đơn hàng') {
+            toastr()->error('Không thể cập nhật trạng thái cho đơn đã chuyển thành đơn hàng.');
+            return back();
+        }
+
+        // Cho phép nhập cả bộ trạng thái tiếng Việt/tiếng Anh nhằm tương thích UI
         $validated = $request->validate([
-            'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled',
+            'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled,Chờ xử lý,Đã xác nhận,Đang xử lý,Đã gửi,Đã giao,Đã hủy',
             'notes' => 'nullable|string|max:1000'
         ]);
 
@@ -318,30 +285,27 @@ class AdminPreorderController extends Controller
         try {
             DB::beginTransaction();
 
-            // Xử lý đặc biệt cho trạng thái cancelled để hoàn trả stock
-            if ($validated['status'] === 'cancelled' && $preorder->status !== 'cancelled') {
-                $preorder->markAsCancelled();
-                if ($validated['notes']) {
-                    $preorder->update(['notes' => $validated['notes']]);
-                }
-            } else {
-                $preorder->update([
-                    'status' => $validated['status'],
-                    'notes' => $validated['notes']
-                ]);
+            // Cập nhật trạng thái chung và ghi chú
+            $preorder->update([
+                'status' => $validated['status'],
+                'notes' => $validated['notes']
+            ]);
 
-                // Cập nhật timestamp tương ứng
-                switch ($validated['status']) {
-                    case 'confirmed':
-                        $preorder->update(['confirmed_at' => now()]);
-                        break;
-                    case 'shipped':
-                        $preorder->update(['shipped_at' => now()]);
-                        break;
-                    case 'delivered':
-                        $preorder->update(['delivered_at' => now()]);
-                        break;
-                }
+            // Cập nhật timestamp tương ứng
+            // Đồng bộ các mốc thời gian tương ứng với trạng thái
+            switch ($validated['status']) {
+                case 'confirmed':
+                case 'Đã xác nhận':
+                    $preorder->update(['confirmed_at' => now()]);
+                    break;
+                case 'shipped':
+                case 'Đã gửi':
+                    $preorder->update(['shipped_at' => now()]);
+                    break;
+                case 'delivered':
+                case 'Đã giao':
+                    $preorder->update(['delivered_at' => now()]);
+                    break;
             }
 
             DB::commit();
@@ -351,7 +315,7 @@ class AdminPreorderController extends Controller
                 try {
                     Mail::to($preorder->email)->send(new PreorderStatusUpdate($preorder, $oldStatus));
                 } catch (\Exception $e) {
-                    \Log::error('Lỗi gửi email cập nhật trạng thái preorder: ' . $e->getMessage());
+                    Log::error('Lỗi gửi email cập nhật trạng thái preorder: ' . $e->getMessage());
                 }
             }
 
@@ -359,7 +323,7 @@ class AdminPreorderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Lỗi cập nhật trạng thái preorder: ' . $e->getMessage());
+            Log::error('Lỗi cập nhật trạng thái preorder: ' . $e->getMessage());
             return back()->with('error', 'Có lỗi xảy ra khi cập nhật trạng thái.');
         }
     }
@@ -369,12 +333,24 @@ class AdminPreorderController extends Controller
      */
     public function approvePreorder(Request $request, Preorder $preorder)
     {
+        Log::info('Approve preorder called', [
+            'preorder_id' => $preorder->id,
+            'current_status' => $preorder->status,
+            'request_data' => $request->all()
+        ]);
+
         // Kiểm tra trạng thái đơn hàng - chỉ cho phép duyệt đơn đang chờ xử lý
-        if ($preorder->status !== 'pending') {
+        // Chỉ cho phép duyệt nếu đang ở trạng thái chờ xác nhận
+        if ($preorder->status !== 'pending' && $preorder->status !== 'Chờ xác nhận') {
+            Log::warning('Cannot approve preorder - invalid status', [
+                'preorder_id' => $preorder->id,
+                'current_status' => $preorder->status
+            ]);
             return back()->with('error', 'Chỉ có thể duyệt đơn đang chờ xử lý.');
         }
 
         // Kiểm tra ngày phát hành và hiển thị cảnh báo nếu chưa phát hành
+        // Nếu sách chưa phát hành, yêu cầu xác nhận lại (có thể convert trước ngày phát hành)
         if (!$preorder->book->isReleased()) {
             if (!$request->has('force_approve')) {
                 $releaseDate = $preorder->book->release_date->format('d/m/Y');
@@ -388,11 +364,23 @@ class AdminPreorderController extends Controller
 
         try {
             // Cập nhật trạng thái preorder từ pending sang confirmed
-            $preorder->update(['status' => 'confirmed']);
+            // Chuyển từ pending sang Đã xác nhận và set mốc thời gian
+            $preorder->update([
+                'status' => 'Đã xác nhận',
+                'confirmed_at' => now()
+            ]);
+
+            Log::info('Preorder approved successfully', [
+                'preorder_id' => $preorder->id,
+                'new_status' => 'Đã xác nhận'
+            ]);
 
             return back()->with('success', 'Đã duyệt đơn đặt trước thành công!');
 
         } catch (\Exception $e) {
+            Log::error('Error approving preorder: ' . $e->getMessage(), [
+                'preorder_id' => $preorder->id
+            ]);
             return back()->with('error', 'Có lỗi xảy ra khi duyệt đơn hàng: ' . $e->getMessage());
         }
     }
@@ -402,81 +390,182 @@ class AdminPreorderController extends Controller
      */
     public function convertToOrder(Request $request, Preorder $preorder)
     {
-        // Kiểm tra trạng thái đơn hàng - chỉ cho phép chuyển đổi đơn đã xác nhận
-        if ($preorder->status !== 'confirmed') {
+        // B1: Chỉ cho phép convert khi preorder đã được admin xác nhận (an toàn nghiệp vụ)
+        if ($preorder->status !== 'Đã xác nhận' && $preorder->status !== 'confirmed') {
             return back()->with('error', 'Chỉ có thể chuyển đổi đơn đã được xác nhận.');
         }
 
-        // Kiểm tra sách đã phát hành
+        // Allow conversion even if book is not released yet, with a warning
+        // Cho phép convert kể cả khi sách chưa phát hành (ghi log cảnh báo)
         if (!$preorder->book->isReleased()) {
-            return back()->with('error', 'Không thể chuyển đổi đơn hàng khi sách chưa được phát hành.');
+            Log::info("Converting preorder to order before release date", [
+                'preorder_id' => $preorder->id,
+                'book_title' => $preorder->book->title,
+                'release_date' => $preorder->book->release_date,
+                'converted_by' => Auth::user()->email ?? 'system'
+            ]);
         }
 
         try {
             DB::beginTransaction();
 
-            // Tạo Address trước
+            // B2: Tạo địa chỉ giao hàng đơn giản dựa theo thông tin trong preorder
             $addressId = \Illuminate\Support\Str::uuid();
-            \DB::table('addresses')->insert([
+            DB::table('addresses')->insert([
                 'id' => $addressId,
                 'user_id' => $preorder->user_id,
                 'recipient_name' => $preorder->customer_name,
                 'phone' => $preorder->phone,
                 'address_detail' => $preorder->address ?? 'Địa chỉ từ đơn đặt trước',
-                'city' => 'Hà Nội',
-                'district' => 'Quận 1', 
-                'ward' => 'Phường 1',
+                'city' => $preorder->province_name,
+                'district' => $preorder->district_name,
+                'ward' => $preorder->ward_name,
+                'province_id' => $preorder->province_code,
+                'district_id' => $preorder->district_code,
+                'ward_code' => $preorder->ward_code,
                 'is_default' => false,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
             
-            // Tạo hoặc lấy order status và payment status
-            $orderStatusId = \DB::table('order_statuses')->where('name', 'Đã Thanh Toán')->value('id');
+            // B3: Lấy/khởi tạo trạng thái đơn hàng mặc định "Chờ xác nhận"
+            // B3: Đảm bảo có trạng thái đơn hàng mặc định "Chờ xác nhận"
+            $orderStatusId = DB::table('order_statuses')->where('name', 'Chờ xác nhận')->value('id');
             if (!$orderStatusId) {
                 $orderStatusId = \Illuminate\Support\Str::uuid();
-                \DB::table('order_statuses')->insert([
+                DB::table('order_statuses')->insert([
                     'id' => $orderStatusId,
-                    'name' => 'Đã Thanh Toán',
+                    'name' => 'Chờ xác nhận',
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
             }
             
-            $paymentStatusId = \DB::table('payment_statuses')->where('name', 'Đã Thanh Toán')->value('id');
-            if (!$paymentStatusId) {
-                $paymentStatusId = \Illuminate\Support\Str::uuid();
-                \DB::table('payment_statuses')->insert([
-                    'id' => $paymentStatusId,
+            // B4: Đảm bảo có trạng thái thanh toán Paid/Unpaid cho bảng orders
+            $paidStatusId = DB::table('payment_statuses')->where('name', 'Đã Thanh Toán')->value('id');
+            if (!$paidStatusId) {
+                $paidStatusId = \Illuminate\Support\Str::uuid();
+                DB::table('payment_statuses')->insert([
+                    'id' => $paidStatusId,
                     'name' => 'Đã Thanh Toán',
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
             }
+
+            $unpaidStatusId = DB::table('payment_statuses')->where('name', 'Chưa Thanh Toán')->value('id');
+            if (!$unpaidStatusId) {
+                $unpaidStatusId = \Illuminate\Support\Str::uuid();
+                DB::table('payment_statuses')->insert([
+                    'id' => $unpaidStatusId,
+                    'name' => 'Chưa Thanh Toán',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
             
-            // Tạo Order bằng raw SQL
+            // B5: Chuẩn bị ID và mã đơn
+            // B5: Sinh ID và mã đơn độc nhất
             $orderId = \Illuminate\Support\Str::uuid();
             $orderCode = 'ORD-' . time() . '-' . rand(1000, 9999);
             
-            \DB::table('orders')->insert([
+            // B6: Xác định phương thức thanh toán cho ORDER
+            //    - Mặc định dùng phương thức mà người dùng đã chọn khi tạo preorder
+            //    - Nếu preorder đã PAID: phân nhánh VNPay/Wallet dựa trên `vnpay_transaction_id`
+            //    - Nếu chưa xác định được: có fallback (đã paid → ưu tiên Ví; chưa paid → COD)
+            // Mặc định: dùng phương thức đã lưu trên preorder (lựa chọn ban đầu của KH)
+            $paymentMethodId = $preorder->payment_method_id;
+
+            // Nếu preorder đã thanh toán, suy luận PM dựa theo transaction id VNPay
+            if ($preorder->payment_status === 'paid') {
+                // Nếu đã thanh toán: phân biệt VNPay vs Ví điện tử theo dấu hiệu transaction
+                if ($preorder->vnpay_transaction_id) {
+                    $pm = DB::table('payment_methods')
+                        ->where('is_active', true)
+                        ->where(function($q){
+                            $q->where('name', 'like', '%vnpay%')
+                              ->orWhere('name', 'like', '%vn pay%')
+                              ->orWhere('name', 'like', '%vn-pay%');
+                        })
+                        ->first();
+                    // Ưu tiên áp dụng PM tìm được, nếu không có thì giữ nguyên
+                    $paymentMethodId = ($pm->id ?? null) ?: $paymentMethodId;
+                    Log::info('convertToOrder chose payment method (VNPay path)', ['pm' => $pm]);
+                } else {
+                    $pm = DB::table('payment_methods')
+                        ->where('is_active', true)
+                        ->where(function($q){
+                            $q->where('name', 'like', '%ví điện tử%')
+                              ->orWhere('name', 'like', '%vi dien tu%')
+                              ->orWhere('name', 'like', '%wallet%')
+                              ->orWhere('name', 'like', '%e-wallet%')
+                              ->orWhere('name', 'like', '%vi%')
+                              ->orWhere('name', 'like', '%momo%');
+                        })
+                        ->first();
+                    // Không có vnpay_transaction_id → hiểu là Ví điện tử
+                    $paymentMethodId = ($pm->id ?? null) ?: $paymentMethodId;
+                    Log::info('convertToOrder chose payment method (Wallet path)', ['pm' => $pm]);
+                }
+            }
+
+            // Fallback lần cuối để tránh hiển thị "Không xác định"
+            if (!$paymentMethodId) {
+                if ($preorder->payment_status === 'paid') {
+                    // Nếu đã thanh toán mà vẫn chưa xác định PM -> ưu tiên Ví điện tử
+                    $pm = DB::table('payment_methods')
+                        ->where('is_active', true)
+                        ->where(function($q){
+                            $q->where('name', 'like', '%ví điện tử%')
+                              ->orWhere('name', 'like', '%vi dien tu%')
+                              ->orWhere('name', 'like', '%wallet%')
+                              ->orWhere('name', 'like', '%e-wallet%')
+                              ->orWhere('name', 'like', '%momo%');
+                        })
+                        ->first();
+                    $paymentMethodId = ($pm->id ?? null) ?: $paymentMethodId;
+                    Log::info('convertToOrder fallback chose Wallet', ['pm' => $pm]);
+                } else {
+                    // Chưa thanh toán -> fallback COD
+                    $pm = DB::table('payment_methods')
+                        ->where('is_active', true)
+                        ->where(function($q){
+                            $q->where('name', 'like', '%thanh toán khi nhận hàng%')
+                              ->orWhere('name', 'like', '%khi nhận hàng%')
+                              ->orWhere('name', 'like', '%cash on delivery%')
+                              ->orWhere('name', 'like', '%COD%')
+                              ->orWhere('name', 'like', '%cod%');
+                        })
+                        ->first();
+                    $paymentMethodId = ($pm->id ?? null) ?: $paymentMethodId;
+                    Log::info('convertToOrder fallback chose COD', ['pm' => $pm]);
+                }
+            }
+
+            // B7: Tạo Order chính thức dựa trên dữ liệu từ preorder
+            // B7: Ghi Order chính thức vào DB
+            DB::table('orders')->insert([
                 'id' => $orderId,
                 'user_id' => $preorder->user_id,
                 'order_code' => $orderCode,
                 'total_amount' => $preorder->total_amount,
                 'address_id' => $addressId,
                 'order_status_id' => $orderStatusId,
-                'payment_status_id' => $paymentStatusId,
+                'payment_status_id' => $preorder->payment_status === 'paid' ? $paidStatusId : $unpaidStatusId,
+                'payment_method_id' => $paymentMethodId,
                 'note' => 'Chuyển đổi từ đơn đặt trước #' . $preorder->id,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
             
             // Tạo object Order để sử dụng cho phần còn lại
+            // Nạp model Order để dùng tiếp (ví dụ hiển thị, tạo items)
             $order = Order::find($orderId);
 
-            // Tạo OrderItem bằng raw SQL
+            // B8: Tạo OrderItem tương ứng (1 item duy nhất từ preorder)
+            // B8: Tạo OrderItem một-một từ preorder
             $orderItemId = \Illuminate\Support\Str::uuid();
-            \DB::table('order_items')->insert([
+            DB::table('order_items')->insert([
                  'id' => $orderItemId,
                  'order_id' => $order->id,
                  'book_id' => $preorder->book_id,
@@ -489,22 +578,22 @@ class AdminPreorderController extends Controller
                  'updated_at' => now()
              ]);
 
-            // Cập nhật trạng thái preorder
+            // B9: Cập nhật trạng thái preorder sau khi đã tạo order
+            // B9: Cập nhật trạng thái preorder sau khi đã tạo order (theo thiết kế hiện tại)
             $preorder->update([
                 'status' => 'delivered',
-                'delivered_at' => now(),
-                'notes' => ($preorder->notes ? $preorder->notes . "\n\n" : '') . 
-                          'Đã chuyển đổi thành đơn hàng #' . $order->id
+                'delivered_at' => now()
             ]);
 
             DB::commit();
 
+            // Điều hướng sang trang chi tiết đơn hàng vừa tạo
             return redirect()->route('admin.orders.show', $order)
                 ->with('success', 'Đã chuyển đổi thành đơn hàng #' . $order->id . ' thành công.');
 
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Lỗi chuyển đổi preorder thành order: ' . $e->getMessage());
+            Log::error('Lỗi chuyển đổi preorder thành order: ' . $e->getMessage());
             return back()->with('error', 'Có lỗi xảy ra khi chuyển đổi đơn hàng.');
         }
     }
@@ -620,32 +709,5 @@ class AdminPreorderController extends Controller
             ->header('Content-Type', 'text/csv')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
-
-    /**
-     * Trừ số lượng tồn kho khi tạo preorder
-     */
-    private function decreaseStockForPreorder($book, $bookFormat, $validated)
-    {
-        $quantity = $validated['quantity'];
-        
-        // Trừ stock của book format nếu có
-        if ($bookFormat && $bookFormat->stock > 0) {
-            $newStock = max(0, $bookFormat->stock - $quantity);
-            $bookFormat->update(['stock' => $newStock]);
-        }
-        
-        // Trừ stock của các thuộc tính được chọn
-        if (!empty($validated['selected_attributes'])) {
-            foreach ($validated['selected_attributes'] as $attributeValueId) {
-                $bookAttributeValue = \App\Models\BookAttributeValue::where('book_id', $book->id)
-                    ->where('attribute_value_id', $attributeValueId)
-                    ->first();
-                    
-                if ($bookAttributeValue && $bookAttributeValue->stock > 0) {
-                    $newStock = max(0, $bookAttributeValue->stock - $quantity);
-                    $bookAttributeValue->update(['stock' => $newStock]);
-                }
-            }
-        }
-    }
 }
+

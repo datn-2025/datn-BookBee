@@ -1241,6 +1241,7 @@
                                 <div class="flex items-end space-x-4">
                                     <span id="bookPrice" data-base-price="{{ $defaultPrice }}"
                                         data-book-status="{{ $book->status }}"
+                                        data-preorder-percent="{{ (float) ($book->preorder_discount_percent ?? 0) }}"
                                         class="text-4xl font-bold text-black adidas-font">{{ number_format($finalPrice, 0, ',', '.') }}₫</span>
                                     @if ($discount > 0)
                                         <span id="originalPrice"
@@ -1526,7 +1527,7 @@
                                                 </div>
                                             @endif
                                             <button onclick="window.location.href='{{ route('preorders.create', $book) }}'"
-                                                    class="w-full h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
+                                                    class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
                                                 <i class="ri-bookmark-line mr-3 text-xl"></i>
                                                 <span>ĐẶT TRƯỚC NGAY</span>
                                             </button>
@@ -2144,17 +2145,17 @@
                 }
 
                 const basePrice = parseFloat(bookPriceElement.dataset.basePrice) || 0;
+                const preorderPercent = parseFloat(bookPriceElement.dataset.preorderPercent) || 0; // % đặt trước
                 let finalPrice = basePrice;
                 let stock = 0;
                 let discount = 0;
                 let isEbook = false;
 
-                // Get format data
                 if (formatSelect && formatSelect.selectedOptions[0]) {
                     const selectedOption = formatSelect.selectedOptions[0];
-                    finalPrice = parseFloat(selectedOption.dataset.price) || basePrice;
+                    finalPrice = parseFloat(selectedOption.dataset.price) || basePrice; // Giá theo định dạng
                     stock = parseInt(selectedOption.dataset.stock) || 0;
-                    discount = parseFloat(selectedOption.dataset.discount) || 0;
+                    discount = parseFloat(selectedOption.dataset.discount) || 0; // Giảm theo định dạng (VND, cố định)
                     const selectedText = selectedOption.textContent.trim().toLowerCase();
                     isEbook = selectedText.includes('ebook');
                 }
@@ -2163,16 +2164,38 @@
                 attributeSelects.forEach(select => {
                     if (select.selectedOptions[0]) {
                         const extraPrice = parseFloat(select.selectedOptions[0].dataset.price) || 0;
-                        finalPrice += extraPrice;
+                        finalPrice += extraPrice; // Phụ thu thuộc tính
                     }
                 });
-                // Calculate final price with discount
-                const priceAfterDiscount = finalPrice - discount;
+                // Layered discounts: 1) Giảm theo định dạng (số tiền) -> 2) Giảm đặt trước (theo %)
+                const afterFormatDiscount = Math.max(0, finalPrice - discount);
+                let priceAfterDiscount = afterFormatDiscount;
+                if (preorderPercent > 0) {
+                    const preorderAmount = (afterFormatDiscount * preorderPercent) / 100;
+                    priceAfterDiscount = Math.max(0, afterFormatDiscount - preorderAmount);
+                }
                 // Update price display
                 bookPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(priceAfterDiscount) + '₫';
                 const originalPriceElement = document.getElementById('originalPrice');
                 const discountTextElement = document.getElementById('discountText');
                 const discountPercentElement = document.getElementById('discountPercent');
+
+                // Update original and discount badges
+                if (originalPriceElement && discountTextElement) {
+                    // Original: tổng trước khi áp tất cả giảm (giá định dạng + phụ thu thuộc tính)
+                    originalPriceElement.style.display = '';
+                    originalPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(finalPrice) + '₫';
+
+                    const saved = Math.max(0, finalPrice - priceAfterDiscount);
+                    discountTextElement.style.display = '';
+                    // Nếu có span con #discountAmount thì cập nhật, còn không thì set text trực tiếp
+                    const discountAmountSpan = document.getElementById('discountAmount');
+                    if (discountAmountSpan) {
+                        discountAmountSpan.textContent = new Intl.NumberFormat('vi-VN').format(saved);
+                    } else {
+                        discountTextElement.textContent = '-' + new Intl.NumberFormat('vi-VN').format(saved) + '₫';
+                    }
+                }
                 if (discount > 0) {
                     if (originalPriceElement) {
                         originalPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(finalPrice) + '₫';
@@ -2389,6 +2412,9 @@
                 attributeSelects.forEach(select => {
                     select.addEventListener('change', updatePriceAndStock);
                 });
+
+                // Recalculate on first render to apply layered discounts immediately
+                try { updatePriceAndStock(); } catch (e) { /* no-op */ }
 
 
                 // Handle add to cart button

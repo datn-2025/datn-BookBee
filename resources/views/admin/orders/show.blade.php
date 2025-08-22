@@ -100,6 +100,21 @@
                                     </div>
                                     <div class="card border shadow-none mb-3">
                                         <div class="card-body">
+                                            @if($order->delivery_method === 'ebook')
+                                            <div class="d-flex justify-content-between ">
+                                                <div>
+                                                    <p class="text-muted mb-2">Người nhận</p>
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fa-solid fa-signature"></i>
+                                                        <h6 class="fs-15 mb-0 ms-2">{{ $order->user->name ?? 'N/A' }} (Nhận qua email)</h6>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <i class="ri-phone-line me-2 fs-16 text-muted"></i>
+                                                <span>{{ $order->user->phone ?? 'N/A' }}</span>
+                                            </div>
+                                            @else
                                             <div class="d-flex justify-content-between ">
                                                 <div>
                                                     <p class="text-muted mb-2">Người nhận</p>
@@ -113,6 +128,7 @@
                                                 <i class="ri-phone-line me-2 fs-16 text-muted"></i>
                                                 <span>{{ $order->recipient_phone ?? 'N/A' }}</span>
                                             </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -123,6 +139,54 @@
                                     <div class="card border shadow-none mb-2">
                                         <div class="card-body">
                                             <ul class="list-unstyled mb-0 vstack gap-2">
+                                                @if($order->delivery_method === 'ebook')
+                                                <li>
+                                                    <div class="d-flex">
+                                                        <div class="flex-shrink-0 text-muted">
+                                                            <i class="ri-mail-line me-1 fs-16 align-middle"></i>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-1 fs-14">Phương thức giao hàng:</h6>
+                                                            <p class="text-muted mb-0">
+                                                                <span class="badge bg-success"><i class="ri-download-cloud-line me-1"></i>Giao hàng điện tử</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                                <li>
+                                                    <div class="d-flex">
+                                                        <div class="flex-shrink-0 text-muted">
+                                                            <i class="ri-user-line me-1 fs-16 align-middle"></i>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-1 fs-14">Người nhận:</h6>
+                                                            <p class="text-muted mb-0">{{ $order->user->name ?? 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                                <li>
+                                                    <div class="d-flex">
+                                                        <div class="flex-shrink-0 text-muted">
+                                                            <i class="ri-phone-line me-1 fs-16 align-middle"></i>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-1 fs-14">Số điện thoại:</h6>
+                                                            <p class="text-muted mb-0">{{ $order->user->phone ?? 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                                <li>
+                                                    <div class="d-flex">
+                                                        <div class="flex-shrink-0 text-muted">
+                                                            <i class="ri-mail-send-line me-1 fs-16 align-middle"></i>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-1 fs-14">Email nhận ebook:</h6>
+                                                            <p class="text-muted mb-0">{{ $order->user->email ?? 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                                @else
                                                 <li>
                                                     <div class="d-flex">
                                                         <div class="flex-shrink-0 text-muted">
@@ -131,9 +195,7 @@
                                                         <div class="flex-grow-1">
                                                             <h6 class="mb-1 fs-14">Địa chỉ giao hàng:</h6>
                                                             <p class="text-muted mb-0">
-                                                                @if($order->delivery_method === 'ebook')
-                                                                    Ebook - Không cần địa chỉ giao hàng
-                                                                @elseif($order->address)
+                                                                @if($order->address)
                                                                     {{ $order->address->address_detail }}
                                                                 @else
                                                                     Không có thông tin
@@ -142,7 +204,7 @@
                                                         </div>
                                                     </div>
                                                 </li>
-                                                @if($order->address && $order->delivery_method !== 'ebook')
+                                                @if($order->address)
                                                 <li>
                                                     <div class="d-flex">
                                                         <div class="flex-shrink-0 text-muted">
@@ -154,7 +216,6 @@
                                                         </div>
                                                     </div>
                                                 </li>
-                                                @endif
                                                 <li>
                                                     <div class="d-flex">
                                                         <div class="flex-shrink-0 text-muted">
@@ -166,6 +227,7 @@
                                                         </div>
                                                     </div>
                                                 </li>
+                                                @endif
                                                 <li>
                                                     <div class="d-flex">
                                                         <div class="flex-shrink-0 text-muted">
@@ -183,11 +245,13 @@
                                                         </div>
                                                     </div>
                                                 </li>
+                                                @endif
                                             </ul>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            @if($order->delivery_method !== 'ebook')
                             <div class="col-lg-4">
                                 <div class="mb-4">
                                     <h5 class="text-muted mb-3">Mã QR đơn hàng</h5>
@@ -208,6 +272,7 @@
                                     </div>
                                 </div>
                             </div>
+                            @endif
                         </div>
 
                         <div class="mt-4">
@@ -619,7 +684,17 @@
                                 <div class="flex-grow-1 ms-3">
                                     <h6 class="mb-1">Phương thức thanh toán</h6>
                                     <p class="text-muted mb-0">
-                                        @if(isset($order->payments) && count($order->payments) > 0)
+                                        @if($order->paymentMethod)
+                                            <span class="badge rounded-pill fs-12 badge-soft-primary text-dark">
+                                                <i class="ri-bank-card-line me-1 align-bottom "></i>
+                                                {{ $order->paymentMethod->name }}
+                                            </span>
+                                        @elseif($order->payment_method_id)
+                                            <span class="badge rounded-pill fs-12 badge-soft-warning text-dark">
+                                                <i class="ri-bank-card-line me-1 align-bottom "></i>
+                                                ID: {{ $order->payment_method_id }}
+                                            </span>
+                                        @elseif(isset($order->payments) && count($order->payments) > 0)
                                             @php
                                                 $payment = $order->payments[0];
                                                 $paymentMethod = $payment->paymentMethod;
@@ -630,11 +705,14 @@
                                                     {{ $paymentMethod->name }}
                                                 </span>
                                             @else
-                                                {{ $payment->payment_method_id ?? 'N/A' }}
+                                                <span class="badge rounded-pill fs-12 badge-soft-warning text-dark">
+                                                    Payment ID: {{ $payment->payment_method_id ?? 'N/A' }}
+                                                </span>
                                             @endif
                                         @else
-                                            Chưa có thông tin
+                                            <span class="text-muted">Chưa có thông tin</span>
                                         @endif
+                                        
                                     </p>
                                 </div>
                             </div>
@@ -719,9 +797,15 @@
                                     <a href="{{ route('admin.invoices.show', $order->invoice->id) }}" class="btn btn-primary btn-sm">
                                         <i class="ri-eye-line me-1"></i> Xem chi tiết hóa đơn
                                     </a>
+                                    @if($order->delivery_method !== 'ebook')
                                     <a href="{{ route('admin.invoices.generate-pdf', $order->invoice->id) }}" target="_blank" class="btn btn-success btn-sm">
                                         <i class="ri-file-pdf-line me-1"></i> Tải PDF hóa đơn
                                     </a>
+                                    @else
+                                    <a href="{{ route('admin.invoices.generate-pdf', $order->invoice->id) }}" target="_blank" class="btn btn-info btn-sm">
+                                        <i class="ri-download-cloud-line me-1"></i> Tải hóa đơn điện tử
+                                    </a>
+                                    @endif
                                 </div>
                             </div>
                         </div>

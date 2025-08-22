@@ -822,10 +822,18 @@
             <!-- Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 @foreach($preorderBooks as $book)
-                    <div class="group bg-white border-2 border-blue-100 hover:border-blue-500 transition-all duration-300 shadow-sm hover:shadow-lg cursor-pointer relative overflow-hidden">
+                    <div class="group bg-white border-2 border-blue-100 hover:border-blue-500 transition-all duration-300 shadow-sm hover:shadow-lg cursor-pointer relative overflow-hidden flex flex-col h-full">
+                        @php
+                            $originalPrice = $book->formats->first()->price ?? 0;
+                            $preorderPrice = $book->getPreorderPrice();
+                            $discountPercent = ($preorderPrice && $originalPrice > 0 && $preorderPrice < $originalPrice)
+                                ? round((($originalPrice - $preorderPrice) / $originalPrice) * 100)
+                                : 0;
+                        @endphp
                         
                         <!-- Preorder Badge -->
-                        <div class="absolute top-3 left-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-1 text-xs font-bold uppercase tracking-wide z-10 shadow-lg">
+                        <div class="absolute top-3 left-3 bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase tracking-wide z-10 shadow-lg
+">
                             ĐẶT TRƯỚC
                         </div>
 
@@ -833,29 +841,32 @@
                         <div class="absolute top-3 right-3 bg-yellow-400 text-black px-2 py-1 text-xs font-bold uppercase z-10">
                             {{ $book->release_date ? $book->release_date->format('d/m/Y') : 'TBD' }}
                         </div>
+                        @if($discountPercent > 0)
+                            <!-- Discount Percent Badge -->
+                            <div class="absolute top-12 left-3 bg-red-600 text-white px-2 py-1 text-xs font-bold uppercase z-10 shadow">
+                                -{{ $discountPercent }}%
+                            </div>
+                        @endif
                         
                         <!-- Image -->
-                        <div class="aspect-[3/4] bg-gray-50 overflow-hidden relative">
-                            @if($book->images && $book->images->isNotEmpty())
-                                <img src="{{ asset('storage/' . $book->images->first()->image_url) }}" 
-                                     alt="{{ $book->title }}" 
-                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                            @else
-                                <div class="w-full h-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
-                                    <i class="ri-book-line text-4xl text-blue-400"></i>
-                                </div>
-                            @endif
-                            
-                            <!-- Hover overlay -->
-                            <div class="absolute inset-0 bg-blue-900/20 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
-                                <div class="bg-white text-blue-600 px-4 py-2 font-bold text-sm uppercase tracking-wide transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                                    ĐẶT TRƯỚC NGAY
-                                </div>
-                            </div>
+                        <div class="aspect-[3/4] bg-white overflow-hidden relative">
+                            @php
+                                $cardImage = null;
+                                if ($book->images && $book->images->isNotEmpty()) {
+                                    $cardImage = asset('storage/' . $book->images->first()->image_url);
+                                } elseif (!empty($book->cover_image)) {
+                                    $cardImage = asset('storage/' . $book->cover_image);
+                                } else {
+                                    $cardImage = asset('images/default.jpg');
+                                }
+                            @endphp
+                            <img src="{{ $cardImage }}"
+                                 alt="{{ $book->title }}"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         </div>
                         
                         <!-- Content -->
-                        <div class="p-4 space-y-3">
+                        <div class="p-4 space-y-3 flex flex-col h-full">
                             <h3 class="font-bold text-gray-900 text-sm leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
                                 {{ $book->title }}
                             </h3>
@@ -872,6 +883,9 @@
                                     @php
                                         $preorderPrice = $book->getPreorderPrice();
                                         $originalPrice = $book->formats->first()->price ?? 0;
+                                        $savePercent = ($preorderPrice && $originalPrice > 0 && $preorderPrice < $originalPrice)
+                                            ? round((($originalPrice - $preorderPrice) / $originalPrice) * 100)
+                                            : 0;
                                     @endphp
                                     
                                     <div class="space-y-1">
@@ -895,14 +909,12 @@
                                     </div>
                                 </div>
                             </div>
-
                             <!-- Action Button -->
-                            <div class="pt-2">
-                                <button onclick="openPreorderModal('{{ $book->id }}')" 
-                                        class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2 px-4 text-xs font-bold uppercase tracking-wide transition-all duration-300 group">
-                                    <i class="ri-bookmark-line mr-1"></i>
-                                    ĐẶT TRƯỚC NGAY
-                                    <i class="ri-arrow-right-line ml-1 transform group-hover:translate-x-1 transition-transform duration-300"></i>
+                            <div class="pt-2 mt-auto">
+                                <button onclick="window.location.href='{{ route('preorders.create', $book) }}'"
+                                        class="adidas-btn-enhanced w-full h-12 bg-black text-white font-bold text-sm uppercase tracking-wider transition-all duration-300 flex items-center justify-center">
+                                    <i class="ri-bookmark-line mr-2 text-base"></i>
+                                    <span>ĐẶT TRƯỚC NGAY</span>
                                 </button>
                             </div>
                         </div>

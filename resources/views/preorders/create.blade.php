@@ -34,6 +34,17 @@
                                 <strong>Ngày ra mắt:</strong> 
                                 <span class="badge bg-info">{{ $book->release_date->format('d/m/Y') }}</span>
                             </p>
+                            @if(($preorderDiscountPercent ?? 0) > 0)
+                                <div class="mb-2 p-2 border border-success rounded bg-light">
+                                    <span class="me-2"><i class="ri-price-tag-3-line text-success"></i></span>
+                                    <span class="text-success fw-bold fs-5">Ưu đãi đặt trước: {{ $preorderDiscountPercent }}%</span>
+                                    <div class="mt-1" id="headerPriceInfo" style="display: none;">
+                                        <span class="me-2 text-muted">Giá gốc: <span id="headerOriginalPrice" class="text-decoration-line-through fw-semibold"></span></span>
+                                        <span class="text-muted">Giá sau giảm: <span id="headerDiscountedPrice" class="text-success fw-bold fs-6"></span></span>
+                                        <span class="mx-2 text-muted">/ 1 bản</span>
+                                    </div>
+                                </div>
+                            @endif
                             @if($book->preorder_description)
                                 <div class="alert alert-info">
                                     <i class="ri-information-line me-1"></i>
@@ -51,27 +62,26 @@
                         <div class="row g-3">
                             <!-- Chọn định dạng -->
                             @if($formats->count() > 0)
-                                <div class="col-md-6">
+                                <div class="col-12">
                                     <label class="form-label fw-medium">Định dạng sách <span class="text-danger">*</span></label>
                                     <select name="book_format_id" class="form-select" id="formatSelect" required>
                                         <option value="">-- Chọn định dạng --</option>
                                         @foreach($formats as $format)
-                                            @php
-                                                $displayPrice = $book->getPreorderPrice($format);
-                                            @endphp
-                                            <option value="{{ $format->id }}" data-price="{{ $displayPrice }}" data-is-ebook="{{ strtolower($format->format_name) === 'ebook' ? 'true' : 'false' }}">
+                                            <option value="{{ $format->id }}" data-price="{{ $format->price }}" data-is-ebook="{{ strtolower($format->format_name) === 'ebook' ? 'true' : 'false' }}">
+                                                @php
+                                                    $displayPrice = isset($preorderDiscountPercent) && $preorderDiscountPercent > 0
+                                                        ? $book->getPreorderPrice($format)
+                                                        : $format->price;
+                                                @endphp
                                                 {{ $format->format_name }} - {{ number_format($displayPrice, 0, ',', '.') }}đ
-                                                @if($book->pre_order_price && $book->pre_order_price < $format->price)
-                                                    <span class="text-success">(Giá ưu đãi)</span>
-                                                @endif
                                             </option>
                                         @endforeach
                                     </select>
                                 </div>
                             @endif
 
-                            <!-- Số lượng -->
-                            <div class="col-md-6">
+                            <!-- Số lượng (xuống dưới định dạng) -->
+                            <div class="col-12" id="quantitySection">
                                 <label class="form-label fw-medium">Số lượng <span class="text-danger">*</span></label>
                                 <input type="number" name="quantity" class="form-control" value="1" min="1" max="10" required>
                             </div>
@@ -184,16 +194,66 @@
                                       placeholder="Ghi chú thêm cho đơn hàng (tùy chọn)"></textarea>
                         </div>
 
+                        <!-- Phương thức thanh toán -->
+                        <hr class="my-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="ri-wallet-line me-1"></i>Phương thức thanh toán
+                        </h6>
+                        
+                        <div class="row g-3">
+                            @foreach($paymentMethods as $method)
+                                <div class="col-md-6">
+                                    <div class="card border payment-method-card" style="cursor: pointer;">
+                                        <div class="card-body p-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="payment_method_id" 
+                                                       value="{{ $method->id }}" id="payment_{{ $method->id }}" required>
+                                                <label class="form-check-label w-100" for="payment_{{ $method->id }}">
+                                                    <div class="d-flex align-items-center">
+                                                        @if(str_contains(strtolower($method->name), 'ví điện tử'))
+                                                            <i class="ri-wallet-3-line text-success me-2 fs-5"></i>
+                                                        @elseif(str_contains(strtolower($method->name), 'vnpay'))
+                                                            <i class="ri-bank-card-line text-primary me-2 fs-5"></i>
+                                                        @else
+                                                            <i class="ri-money-dollar-circle-line me-2 fs-5"></i>
+                                                        @endif
+                                                        <div class="flex-grow-1">
+                                                            <div class="fw-medium">{{ $method->name }}</div>
+                                                            @if(str_contains(strtolower($method->name), 'ví điện tử'))
+                                                                <small class="text-success">
+                                                                    Số dư: {{ $wallet ? number_format($wallet->balance) : '0' }}đ
+                                                                </small>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                         <!-- Tổng tiền -->
                         <div class="mt-4 p-3 bg-light rounded">
                             <div class="row g-2">
+                                @if($preorderDiscountPercent > 0)
                                 <div class="col-12">
                                     <div class="d-flex justify-content-between">
-                                        <span>Giá sách:</span>
-                                        <span id="bookPrice">0đ</span>
+                                        <span>Giá gốc:</span>
+                                        <span class="text-decoration-line-through text-muted" id="originalPrice">0đ</span>
                                     </div>
-                                    <div id="preorderPriceNotice" class="text-success small mt-1" style="display: none;">
-                                        <i class="ri-price-tag-3-line me-1"></i>Bạn đang được hưởng giá ưu đãi đặt trước!
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Giảm giá ({{ $preorderDiscountPercent }}%):</span>
+                                        <span class="text-success" id="discountAmount">-0đ</span>
+                                    </div>
+                                </div>
+                                @endif
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ $preorderDiscountPercent > 0 ? 'Giá sau giảm:' : 'Giá sách:' }}</span>
+                                        <span id="bookPrice" class="{{ $preorderDiscountPercent > 0 ? 'text-success fw-bold' : '' }}">0đ</span>
                                     </div>
                                 </div>
                                 <div class="col-12" id="attributePriceRow" style="display: none;">
@@ -244,6 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const addressSection = document.getElementById('addressSection');
     const attributesSection = document.getElementById('attributesSection');
     const quantityInput = document.querySelector('input[name="quantity"]');
+    const quantitySection = document.getElementById('quantitySection');
     const totalAmountElement = document.getElementById('totalAmount');
     const bookPriceElement = document.getElementById('bookPrice');
     const attributePriceElement = document.getElementById('attributePrice');
@@ -252,7 +313,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const shippingFeeSection = document.getElementById('shippingFeeSection');
     const shippingFeeText = document.getElementById('shippingFeeText');
     const shippingFeeInput = document.getElementById('shippingFeeInput');
-    const preorderPriceNotice = document.getElementById('preorderPriceNotice');
+    const headerPriceInfo = document.getElementById('headerPriceInfo');
+    const headerOriginalPrice = document.getElementById('headerOriginalPrice');
+    const headerDiscountedPrice = document.getElementById('headerDiscountedPrice');
     
     let basePrice = 0;
     let extraPrice = 0;
@@ -284,6 +347,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 shippingPriceRow.style.display = 'none';
                 shippingFee = 0;
                 extraPrice = 0;
+                // Ẩn và bỏ required số lượng cho ebook, đặt về 1
+                if (quantitySection) quantitySection.style.display = 'none';
+                if (quantityInput) {
+                    quantityInput.removeAttribute('required');
+                    quantityInput.value = 1;
+                }
                 // Xóa required cho các trường địa chỉ
                 addressSection.querySelectorAll('select, textarea').forEach(field => {
                     field.removeAttribute('required');
@@ -296,6 +365,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 addressSection.style.display = 'block';
                 attributesSection.style.display = 'block';
                 shippingPriceRow.style.display = 'block';
+                // Hiện và yêu cầu số lượng với sách vật lý
+                if (quantitySection) quantitySection.style.display = 'block';
+                if (quantityInput) quantityInput.setAttribute('required', '');
                 // Thêm required cho các trường địa chỉ
                 document.getElementById('provinceSelect').setAttribute('required', '');
                 document.getElementById('districtSelect').setAttribute('required', '');
@@ -324,9 +396,45 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Khởi tạo trạng thái ngay khi tải trang (ẩn số lượng nếu mặc định là ebook)
+    if (formatSelect) {
+        const selectedOnLoad = formatSelect.options[formatSelect.selectedIndex];
+        if (selectedOnLoad && selectedOnLoad.value) {
+            // Gọi sự kiện change để áp dụng tất cả logic ẩn/hiện
+            formatSelect.dispatchEvent(new Event('change'));
+        } else {
+            // Chưa chọn định dạng: đảm bảo số lượng hiển thị và required cho sách vật lý
+            if (quantitySection) quantitySection.style.display = 'block';
+            if (quantityInput) quantityInput.setAttribute('required', '');
+        }
+    }
+
     function updateTotalAmount() {
         const quantity = parseInt(quantityInput.value || 1);
-        const bookTotal = basePrice * quantity;
+        
+        // Áp dụng phần trăm giảm giá preorder nếu có
+        const preorderDiscountPercent = {{ $preorderDiscountPercent ?? 0 }};
+        let finalPrice = basePrice;
+        
+        // Cập nhật hiển thị giá gốc và giảm giá
+        if (preorderDiscountPercent > 0) {
+            const discountAmount = (basePrice * preorderDiscountPercent) / 100;
+            finalPrice = Math.max(0, basePrice - discountAmount);
+            
+            // Hiển thị giá gốc
+            const originalPriceElement = document.getElementById('originalPrice');
+            if (originalPriceElement) {
+                originalPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(basePrice * quantity) + 'đ';
+            }
+            
+            // Hiển thị số tiền giảm
+            const discountAmountElement = document.getElementById('discountAmount');
+            if (discountAmountElement) {
+                discountAmountElement.textContent = '-' + new Intl.NumberFormat('vi-VN').format(discountAmount * quantity) + 'đ';
+            }
+        }
+        
+        const bookTotal = finalPrice * quantity;
         const attributeTotal = extraPrice * quantity;
         const total = bookTotal + attributeTotal + (isEbookSelected ? 0 : shippingFee);
         
@@ -347,6 +455,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         totalAmountElement.textContent = new Intl.NumberFormat('vi-VN').format(total) + 'đ';
+        
+        // Cập nhật hiển thị thông tin giá ở phần tiêu đề (theo 1 bản)
+        if (headerPriceInfo) {
+            if (preorderDiscountPercent > 0 && basePrice > 0) {
+                headerPriceInfo.style.display = 'inline';
+                if (headerOriginalPrice) {
+                    headerOriginalPrice.textContent = new Intl.NumberFormat('vi-VN').format(basePrice) + 'đ';
+                }
+                if (headerDiscountedPrice) {
+                    headerDiscountedPrice.textContent = new Intl.NumberFormat('vi-VN').format(finalPrice) + 'đ';
+                }
+            } else {
+                headerPriceInfo.style.display = 'none';
+            }
+        }
     }
 
     // Load provinces từ API GHN

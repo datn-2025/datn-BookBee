@@ -51,15 +51,32 @@
                                 <div class="col-sm-6">
                                     <small class="text-muted">Chi tiết giá:</small><br>
                                     @php
-                                        $basePrice = $preorder->book->getPreorderPrice($preorder->bookFormat);
-                                        $attributePrice = $preorder->unit_price - $basePrice;
+                                        // Tính lại phí thuộc tính từ selected_attributes để khớp với lúc lưu
+                                        $attributeExtra = 0;
+                                        if (!$preorder->isEbook() && $preorder->selected_attributes && count($preorder->selected_attributes) > 0) {
+                                            foreach ($preorder->selected_attributes as $attrName => $attrValue) {
+                                                $bav = $preorder->book->bookAttributeValues()
+                                                    ->whereHas('attributeValue', function($q) use ($attrValue) {
+                                                        $q->where('value', $attrValue);
+                                                    })
+                                                    ->whereHas('attributeValue.attribute', function($q) use ($attrName) {
+                                                        $q->where('name', $attrName);
+                                                    })
+                                                    ->first();
+                                                if ($bav && $bav->extra_price > 0) {
+                                                    $attributeExtra += (float)$bav->extra_price;
+                                                }
+                                            }
+                                        }
+                                        // Suy ra giá cơ bản từ đơn giá đã lưu
+                                        $basePrice = max(0, (float)$preorder->unit_price - $attributeExtra);
                                     @endphp
                                     <div class="mb-1">
                                         <small>Giá cơ bản: <span class="fw-medium">{{ number_format($basePrice, 0, ',', '.') }}đ</span></small>
                                     </div>
-                                    @if($attributePrice > 0)
+                                    @if($attributeExtra > 0)
                                         <div class="mb-1">
-                                            <small>Phí thuộc tính: <span class="fw-medium text-info">+{{ number_format($attributePrice, 0, ',', '.') }}đ</span></small>
+                                            <small>Phí thuộc tính: <span class="fw-medium text-info">+{{ number_format($attributeExtra, 0, ',', '.') }}đ</span></small>
                                         </div>
                                     @endif
                                     <div class="mb-1">
@@ -116,14 +133,22 @@
                     @endif
 
                     <!-- Thuộc tính đã chọn -->
-                    @if($preorder->selected_attributes && count($preorder->selected_attributes) > 0)
+                    @php
+                        $selectedAttrs = $preorder->selected_attributes ?? [];
+                        if (is_array($selectedAttrs)) {
+                            $selectedAttrs = array_filter($selectedAttrs, function($v) { return $v !== null && $v !== ''; });
+                        } else {
+                            $selectedAttrs = [];
+                        }
+                    @endphp
+                    @if(!empty($selectedAttrs))
                         <div class="card mb-3">
                             <div class="card-header">
                                 <h6 class="mb-0"><i class="ri-price-tag-line me-1"></i>Thuộc tính đã chọn</h6>
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    @foreach($preorder->selected_attributes as $attr => $value)
+                                    @foreach($selectedAttrs as $attr => $value)
                                         <div class="col-md-6 mb-2">
                                             <small class="text-muted">{{ $attr }}:</small><br>
                                             <span class="fw-medium">{{ $value }}</span>
@@ -138,7 +163,7 @@
                     @if($preorder->notes)
                         <div class="card mb-3">
                             <div class="card-header">
-                                <h6 class="mb-0"><i class="ri-chat-3-line me-1"></i>Ghi chú</h6>
+                                <h6 class="mb-0"><i class="ri-chat-3-line me-1"></i>Ghi chú của khách hàng</h6>
                             </div>
                             <div class="card-body">
                                 {{ $preorder->notes }}

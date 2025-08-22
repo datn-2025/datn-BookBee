@@ -19,7 +19,7 @@
             <a href="{{ route('admin.preorders.index') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Quay lại
             </a>
-            @if($preorder->status === 'pending')
+            @if($preorder->status === 'pending' || $preorder->status === 'Chờ xác nhận')
                 <form action="{{ route('admin.preorders.approve', $preorder) }}" method="POST" class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-warning" 
@@ -28,7 +28,7 @@
                         Duyệt đơn hàng
                     </button>
                 </form>
-            @elseif($preorder->status === 'confirmed' && $preorder->book->isReleased())
+            @elseif(($preorder->status === 'confirmed' || $preorder->status === 'Đã xác nhận') && $preorder->book->isReleased())
                 <form action="{{ route('admin.preorders.convert-to-order', $preorder) }}" method="POST" class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-success" 
@@ -54,7 +54,13 @@
                             'processing' => 'primary',
                             'shipped' => 'success',
                             'delivered' => 'success',
-                            'cancelled' => 'danger'
+                            'cancelled' => 'danger',
+                            'Chờ xác nhận' => 'warning',
+                            'Đã xác nhận' => 'info',
+                            'Đang xử lý' => 'primary',
+                            'Đã gửi' => 'success',
+                            'Đã giao' => 'success',
+                            'Đã hủy' => 'danger'
                         ];
                     @endphp
                     <span class="badge bg-{{ $statusColors[$preorder->status] ?? 'secondary' }} fs-6">
@@ -150,14 +156,23 @@
             </div>
 
             <!-- Thuộc tính đã chọn -->
-            @if($preorder->selected_attributes && count($preorder->selected_attributes) > 0)
+            @php
+                $selectedAttrs = $preorder->selected_attributes ?? [];
+                if (is_array($selectedAttrs)) {
+                    // Loại bỏ các giá trị rỗng/null
+                    $selectedAttrs = array_filter($selectedAttrs, function($v) { return $v !== null && $v !== ''; });
+                } else {
+                    $selectedAttrs = [];
+                }
+            @endphp
+            @if(!empty($selectedAttrs))
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-primary">Thuộc Tính Đã Chọn</h6>
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            @foreach($preorder->selected_attributes as $attr => $value)
+                            @foreach($selectedAttrs as $attr => $value)
                                 <div class="col-md-6 mb-2">
                                     <strong>{{ $attr }}:</strong> {{ $value }}
                                 </div>
@@ -167,14 +182,23 @@
                 </div>
             @endif
 
-            <!-- Ghi chú -->
-            @if($preorder->notes)
+            <!-- Ghi chú của khách hàng -->
+            @php
+                $clientNotes = $preorder->notes;
+                // Loại bỏ ghi chú hệ thống đã từng được append khi chuyển đổi sang đơn hàng
+                if ($clientNotes) {
+                    // Xóa phần "Đã chuyển đổi thành đơn hàng #..." và mọi nội dung sau đó
+                    $clientNotes = preg_replace('/\n*\s*Đã chuyển đổi thành đơn hàng\s*#.*$/s', '', $clientNotes);
+                    $clientNotes = trim($clientNotes);
+                }
+            @endphp
+            @if(!empty($clientNotes))
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Ghi Chú</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Ghi chú của khách hàng</h6>
                     </div>
                     <div class="card-body">
-                        <p class="mb-0">{{ $preorder->notes }}</p>
+                        <p class="mb-0">{{ $clientNotes }}</p>
                     </div>
                 </div>
             @endif
@@ -236,39 +260,7 @@
             @endif
 
             <!-- Cập nhật trạng thái -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Cập Nhật Trạng Thái</h6>
-                </div>
-                <div class="card-body">
-                    <form action="{{ route('admin.preorders.update-status', $preorder) }}" method="POST">
-                        @csrf
-                        @method('PATCH')
-                        
-                        <div class="mb-3">
-                            <label for="status" class="form-label">Trạng thái</label>
-                            <select class="form-control" id="status" name="status" required>
-                                <option value="pending" {{ $preorder->status == 'pending' ? 'selected' : '' }}>Chờ xử lý</option>
-                                <option value="confirmed" {{ $preorder->status == 'confirmed' ? 'selected' : '' }}>Đã xác nhận</option>
-                                <option value="processing" {{ $preorder->status == 'processing' ? 'selected' : '' }}>Đang xử lý</option>
-                                <option value="shipped" {{ $preorder->status == 'shipped' ? 'selected' : '' }}>Đã gửi</option>
-                                <option value="delivered" {{ $preorder->status == 'delivered' ? 'selected' : '' }}>Đã giao</option>
-                                <option value="cancelled" {{ $preorder->status == 'cancelled' ? 'selected' : '' }}>Đã hủy</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="notes" class="form-label">Ghi chú</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="3" 
-                                      placeholder="Ghi chú về việc cập nhật trạng thái...">{{ $preorder->notes }}</textarea>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-save"></i> Cập nhật trạng thái
-                        </button>
-                    </form>
-                </div>
-            </div>
+
 
             <!-- Timeline trạng thái -->
             <div class="card shadow mb-4">
@@ -449,11 +441,38 @@ $(document).ready(function() {
         const url = $(this).attr('href');
         if (url.includes('approve')) {
             if (confirm('Xác nhận duyệt đơn hàng này?')) {
-                window.location.href = url;
+                // Tạo form POST để gửi request
+                const form = $('<form>', {
+                    'method': 'POST',
+                    'action': url
+                });
+                form.append($('<input>', {
+                    'type': 'hidden',
+                    'name': '_token',
+                    'value': $('meta[name="csrf-token"]').attr('content')
+                }));
+                form.append($('<input>', {
+                    'type': 'hidden',
+                    'name': 'force_approve',
+                    'value': '1'
+                }));
+                $('body').append(form);
+                form.submit();
             }
         } else {
             if (confirm('Xác nhận chuyển đổi đơn hàng thành đơn hàng chính thức?')) {
-                window.location.href = url;
+                // Tạo form POST để gửi request
+                const form = $('<form>', {
+                    'method': 'POST',
+                    'action': url
+                });
+                form.append($('<input>', {
+                    'type': 'hidden',
+                    'name': '_token',
+                    'value': $('meta[name="csrf-token"]').attr('content')
+                }));
+                $('body').append(form);
+                form.submit();
             }
         }
     });

@@ -86,6 +86,7 @@ class Preorder extends Model
         return $this->belongsTo(BookFormat::class);
     }
 
+
     /**
      * Scopes
      */
@@ -129,11 +130,16 @@ class Preorder extends Model
             'confirmed' => 'Đã xác nhận',
             'processing' => 'Đang xử lý',
             'shipped' => 'Đã gửi hàng',
-            'delivered' => 'Đã giao hàng',
+            'delivered' => 'Đã chuyển thành đơn hàng',
             'cancelled' => 'Đã hủy'
         ];
 
-        return $statuses[$this->status] ?? 'Không xác định';
+        // Nếu status đã là tiếng Việt, trả về luôn
+        if (in_array($this->status, $statuses)) {
+            return $this->status;
+        }
+
+        return $statuses[$this->status] ?? $this->status ?? 'Không xác định';
     }
 
     public function getFullAddressAttribute()

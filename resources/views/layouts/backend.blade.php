@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta content="BookBee Admin Dashboard" name="description" />
     <meta content="Your Team" name="author" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ get_setting()->name_website ?? 'BookBee' }} - @yield('title')</title>
 
     <!-- App favicon -->
