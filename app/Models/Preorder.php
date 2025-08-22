@@ -195,6 +195,48 @@ class Preorder extends Model
 
     public function markAsCancelled()
     {
-        $this->update(['status' => 'cancelled']);
+        \DB::transaction(function () {
+            // Hoàn trả stock khi hủy preorder
+            $this->restoreStockForCancelledPreorder();
+            
+            // Cập nhật status
+            $this->update(['status' => 'cancelled']);
+        });
+    }
+    
+    /**
+     * Hoàn trả số lượng tồn kho khi hủy preorder
+     */
+    private function restoreStockForCancelledPreorder()
+    {
+        // Trừ preorder_count của sách
+        $this->book->decrement('preorder_count', $this->quantity);
+        
+        // Hoàn trả stock của book format nếu có
+        if ($this->bookFormat) {
+            $this->bookFormat->increment('stock', $this->quantity);
+        }
+        
+        // Hoàn trả stock của các thuộc tính được chọn
+        if (!empty($this->selected_attributes)) {
+            foreach ($this->selected_attributes as $attributeData) {
+                if (isset($attributeData['attribute_name']) && isset($attributeData['value'])) {
+                    // Tìm attribute value dựa trên tên và giá trị
+                    $attributeValue = \App\Models\AttributeValue::whereHas('attribute', function($query) use ($attributeData) {
+                        $query->where('name', $attributeData['attribute_name']);
+                    })->where('value', $attributeData['value'])->first();
+                    
+                    if ($attributeValue) {
+                        $bookAttributeValue = \App\Models\BookAttributeValue::where('book_id', $this->book_id)
+                            ->where('attribute_value_id', $attributeValue->id)
+                            ->first();
+                            
+                        if ($bookAttributeValue) {
+                            $bookAttributeValue->increment('stock', $this->quantity);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

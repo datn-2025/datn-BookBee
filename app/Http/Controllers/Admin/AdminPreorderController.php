@@ -79,7 +79,7 @@ class AdminPreorderController extends Controller
     {
         $preorderBooks = Book::where('pre_order', true)
             ->with('bookFormats')
-            ->get(['id', 'title', 'cover_image']);
+            ->get(['id', 'title', 'cover_image', 'pre_order_price']);
             
         $users = User::select('id', 'name', 'email', 'phone')
             ->orderBy('name')
@@ -95,21 +95,57 @@ class AdminPreorderController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        // Kiểm tra thông tin sách và định dạng trước để xác định validation rules
+        $book = null;
+        $bookFormat = null;
+        
+        if ($request->filled('book_id')) {
+            $book = Book::find($request->book_id);
+        }
+        
+        if ($request->filled('book_format_id')) {
+            $bookFormat = BookFormat::find($request->book_format_id);
+        }
+        
+        $isEbook = $bookFormat && str_contains(strtolower($bookFormat->format_name), 'ebook');
+        $isPreorderBook = $book && $book->pre_order;
+        
+        // Dynamic validation rules dựa trên loại sách
+        $rules = [
             'book_id' => 'required|exists:books,id',
             'book_format_id' => 'required|exists:book_formats,id',
-            'quantity' => 'required|integer|min:1',
+            'quantity' => 'required|integer|min:1|max:10', // Giới hạn số lượng đặt trước
             'customer_name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'phone' => 'required|string|max:20',
+            'phone' => 'required|string|regex:/^[0-9+\-\s()]+$/|max:20',
             'user_id' => 'nullable|exists:users,id',
-            'province_id' => 'nullable|exists:provinces,id',
-            'district_id' => 'nullable|exists:districts,id',
-            'ward_id' => 'nullable|exists:wards,id',
-            'address' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:1000',
             'status' => 'required|in:pending,confirmed',
-            'expected_delivery_date' => 'nullable|date|after:today'
+            'shipping_fee' => 'nullable|numeric|min:0',
+            'expected_delivery_date' => 'nullable|date|after_or_equal:today',
+            'selected_attributes' => 'nullable|array',
+            'selected_attributes.*' => 'exists:attribute_values,id'
+        ];
+        
+        // Chỉ yêu cầu địa chỉ cho sách vật lý và không phải preorder
+        // Với preorder, địa chỉ có thể được thêm sau khi sách sẵn sàng giao
+        if (!$isEbook && !$isPreorderBook) {
+            $rules = array_merge($rules, [
+                'province_id' => 'required|exists:provinces,id',
+                'district_id' => 'required|exists:districts,id', 
+                'ward_id' => 'required|exists:wards,id',
+                'address' => 'required|string|max:500'
+            ]);
+        }
+        
+        $validated = $request->validate($rules, [
+            'quantity.max' => 'Số lượng đặt trước không được vượt quá 10.',
+            'phone.regex' => 'Số điện thoại không đúng định dạng.',
+            'expected_delivery_date.after_or_equal' => 'Ngày giao hàng dự kiến không được là ngày trong quá khứ.',
+            'province_id.required' => 'Vui lòng chọn tỉnh/thành phố cho sách vật lý thông thường.',
+            'district_id.required' => 'Vui lòng chọn quận/huyện cho sách vật lý thông thường.',
+            'ward_id.required' => 'Vui lòng chọn phường/xã cho sách vật lý thông thường.',
+            'address.required' => 'Vui lòng nhập địa chỉ cụ thể cho sách vật lý thông thường.'
         ]);
 
         try {
@@ -121,14 +157,58 @@ class AdminPreorderController extends Controller
 
             // Kiểm tra sách có phải pre-order không
             if (!$book->pre_order) {
-                return back()->with('error', 'Sách này không hỗ trợ đặt trước.');
+                DB::rollback();
+                return back()->withInput()->with('error', 'Sách này không hỗ trợ đặt trước.');
             }
 
-            // Tính toán giá
-            $unitPrice = $bookFormat->price;
-            $totalAmount = $unitPrice * $validated['quantity'];
+            // Kiểm tra giới hạn đặt trước
+            if ($book->stock_preorder_limit && 
+                ($book->preorder_count + $validated['quantity']) > $book->stock_preorder_limit) {
+                DB::rollback();
+                return back()->withInput()->with('error', 
+                    'Số lượng đặt trước vượt quá giới hạn. Còn lại: ' . 
+                    ($book->stock_preorder_limit - $book->preorder_count) . ' cuốn.');
+            }
 
-            // Lấy thông tin địa chỉ nếu không phải ebook
+            // Tính toán giá cơ bản - ưu tiên giá đặt trước
+            if ($book->pre_order && $book->pre_order_price) {
+                $unitPrice = $book->pre_order_price;
+            } else {
+                $unitPrice = $bookFormat->discount > 0 ? 
+                    ($bookFormat->price * (100 - $bookFormat->discount) / 100) : 
+                    $bookFormat->price;
+            }
+            
+            // Tính giá thuộc tính thêm
+            $attributePrice = 0;
+            $selectedAttributesData = [];
+            
+            if (!empty($validated['selected_attributes'])) {
+                $attributeValues = \App\Models\AttributeValue::whereIn('id', $validated['selected_attributes'])
+                    ->with('attribute')
+                    ->get();
+                    
+                foreach ($attributeValues as $attrValue) {
+                    $bookAttrValue = $book->attributeValues()
+                        ->where('attribute_value_id', $attrValue->id)
+                        ->first();
+                        
+                    if ($bookAttrValue) {
+                        $attributePrice += $bookAttrValue->extra_price;
+                        $selectedAttributesData[] = [
+                            'attribute_name' => $attrValue->attribute->name,
+                            'value' => $attrValue->value,
+                            'extra_price' => $bookAttrValue->extra_price
+                        ];
+                    }
+                }
+            }
+            
+            // Tính phí vận chuyển từ GHN API
+            $shippingFee = $validated['shipping_fee'] ?? 0;
+            $totalAmount = ($unitPrice + $attributePrice) * $validated['quantity'] + $shippingFee;
+
+            // Lấy thông tin địa chỉ nếu không phải ebook và không phải preorder
             $provinceId = null;
             $districtId = null;
             $wardId = null;
@@ -136,47 +216,67 @@ class AdminPreorderController extends Controller
             $districtName = null;
             $wardName = null;
 
-            if (!$bookFormat->format_name || !str_contains(strtolower($bookFormat->format_name), 'ebook')) {
-                if ($validated['province_id']) {
+            // Chỉ xử lý địa chỉ cho sách vật lý thông thường (không phải ebook và không phải preorder)
+            if (!$isEbook && !$isPreorderBook) {
+                if (isset($validated['province_id']) && $validated['province_id']) {
                     $province = Province::find($validated['province_id']);
-                    $provinceId = $province->id;
-                    $provinceName = $province->name;
+                    if ($province) {
+                        $provinceId = $province->id;
+                        $provinceName = $province->name;
+                    }
                 }
-                if ($validated['district_id']) {
+                if (isset($validated['district_id']) && $validated['district_id']) {
                     $district = District::find($validated['district_id']);
-                    $districtId = $district->id;
-                    $districtName = $district->name;
+                    if ($district) {
+                        $districtId = $district->id;
+                        $districtName = $district->name;
+                    }
                 }
-                if ($validated['ward_id']) {
+                if (isset($validated['ward_id']) && $validated['ward_id']) {
                     $ward = Ward::find($validated['ward_id']);
-                    $wardId = $ward->id;
-                    $wardName = $ward->name;
+                    if ($ward) {
+                        $wardId = $ward->id;
+                        $wardName = $ward->name;
+                    }
                 }
             }
 
             // Tạo preorder
-            $preorder = Preorder::create([
+            $preorderData = [
                 'user_id' => $validated['user_id'],
                 'book_id' => $validated['book_id'],
                 'book_format_id' => $validated['book_format_id'],
                 'quantity' => $validated['quantity'],
                 'unit_price' => $unitPrice,
+                'shipping_fee' => $shippingFee,
                 'total_amount' => $totalAmount,
                 'customer_name' => $validated['customer_name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
-                'province_id' => $provinceId,
-                'district_id' => $districtId,
-                'ward_id' => $wardId,
-                'province_name' => $provinceName,
-                'district_name' => $districtName,
-                'ward_name' => $wardName,
-                'address' => $validated['address'],
                 'status' => $validated['status'],
                 'notes' => $validated['notes'],
                 'expected_delivery_date' => $validated['expected_delivery_date'] ?: $book->release_date,
-                'confirmed_at' => $validated['status'] === 'confirmed' ? now() : null
-            ]);
+                'confirmed_at' => $validated['status'] === 'confirmed' ? now() : null,
+                'selected_attributes' => !empty($selectedAttributesData) ? json_encode($selectedAttributesData) : null
+            ];
+            
+            // Thêm thông tin địa chỉ nếu không phải ebook và không phải preorder
+            if (!$isEbook && !$isPreorderBook) {
+                $preorderData = array_merge($preorderData, [
+                    'province_code' => $provinceId,
+                    'district_code' => $districtId,
+                    'ward_code' => $wardId,
+                    'province_name' => $provinceName,
+                    'district_name' => $districtName,
+                    'ward_name' => $wardName,
+                    'address' => $validated['address']
+                ]);
+            }
+            
+            $preorder = Preorder::create($preorderData);
+
+            // Trừ số lượng tồn kho cho preorder
+            $this->decreaseStockForPreorder($book, $bookFormat, $validated);
 
             // Cập nhật preorder_count của sách
             $book->increment('preorder_count', $validated['quantity']);
@@ -218,22 +318,30 @@ class AdminPreorderController extends Controller
         try {
             DB::beginTransaction();
 
-            $preorder->update([
-                'status' => $validated['status'],
-                'notes' => $validated['notes']
-            ]);
+            // Xử lý đặc biệt cho trạng thái cancelled để hoàn trả stock
+            if ($validated['status'] === 'cancelled' && $preorder->status !== 'cancelled') {
+                $preorder->markAsCancelled();
+                if ($validated['notes']) {
+                    $preorder->update(['notes' => $validated['notes']]);
+                }
+            } else {
+                $preorder->update([
+                    'status' => $validated['status'],
+                    'notes' => $validated['notes']
+                ]);
 
-            // Cập nhật timestamp tương ứng
-            switch ($validated['status']) {
-                case 'confirmed':
-                    $preorder->update(['confirmed_at' => now()]);
-                    break;
-                case 'shipped':
-                    $preorder->update(['shipped_at' => now()]);
-                    break;
-                case 'delivered':
-                    $preorder->update(['delivered_at' => now()]);
-                    break;
+                // Cập nhật timestamp tương ứng
+                switch ($validated['status']) {
+                    case 'confirmed':
+                        $preorder->update(['confirmed_at' => now()]);
+                        break;
+                    case 'shipped':
+                        $preorder->update(['shipped_at' => now()]);
+                        break;
+                    case 'delivered':
+                        $preorder->update(['delivered_at' => now()]);
+                        break;
+                }
             }
 
             DB::commit();
@@ -427,10 +535,30 @@ class AdminPreorderController extends Controller
             'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled'
         ]);
 
-        $updated = Preorder::whereIn('id', $validated['preorder_ids'])
-            ->update(['status' => $validated['status']]);
-
-        return back()->with('success', "Đã cập nhật {$updated} đơn đặt trước.");
+        try {
+            DB::beginTransaction();
+            
+            $preorders = Preorder::whereIn('id', $validated['preorder_ids'])->get();
+            $updated = 0;
+            
+            foreach ($preorders as $preorder) {
+                // Xử lý đặc biệt cho trạng thái cancelled để hoàn trả stock
+                if ($validated['status'] === 'cancelled' && $preorder->status !== 'cancelled') {
+                    $preorder->markAsCancelled();
+                } else {
+                    $preorder->update(['status' => $validated['status']]);
+                }
+                $updated++;
+            }
+            
+            DB::commit();
+            return back()->with('success', "Đã cập nhật {$updated} đơn đặt trước.");
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+            \Log::error('Lỗi bulk update preorder status: ' . $e->getMessage());
+            return back()->with('error', 'Có lỗi xảy ra khi cập nhật hàng loạt.');
+        }
     }
 
     /**
@@ -491,5 +619,33 @@ class AdminPreorderController extends Controller
         return response($content)
             ->header('Content-Type', 'text/csv')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    /**
+     * Trừ số lượng tồn kho khi tạo preorder
+     */
+    private function decreaseStockForPreorder($book, $bookFormat, $validated)
+    {
+        $quantity = $validated['quantity'];
+        
+        // Trừ stock của book format nếu có
+        if ($bookFormat && $bookFormat->stock > 0) {
+            $newStock = max(0, $bookFormat->stock - $quantity);
+            $bookFormat->update(['stock' => $newStock]);
+        }
+        
+        // Trừ stock của các thuộc tính được chọn
+        if (!empty($validated['selected_attributes'])) {
+            foreach ($validated['selected_attributes'] as $attributeValueId) {
+                $bookAttributeValue = \App\Models\BookAttributeValue::where('book_id', $book->id)
+                    ->where('attribute_value_id', $attributeValueId)
+                    ->first();
+                    
+                if ($bookAttributeValue && $bookAttributeValue->stock > 0) {
+                    $newStock = max(0, $bookAttributeValue->stock - $quantity);
+                    $bookAttributeValue->update(['stock' => $newStock]);
+                }
+            }
+        }
     }
 }

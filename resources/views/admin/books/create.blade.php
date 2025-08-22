@@ -373,10 +373,10 @@
                             <div id="physical_format" style="display: none;">
                                 <div class="border rounded p-3 bg-light">
                                     <!-- Thông tin cơ bản sách vật lý -->
-                                    <div class="row g-3 mb-4">
+                                    <div class="row g-3 mb-4" id="physical_price_section">
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
-                                            <input type="number" class="form-control" name="formats[physical][price]" 
+                                            <input type="number" class="form-control format-price" name="formats[physical][price]" 
                                                    value="{{ old('formats.physical.price') }}" placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-4">
@@ -389,6 +389,12 @@
                                             <input type="number" class="form-control" name="formats[physical][stock]" 
                                                    value="{{ old('formats.physical.stock') }}" placeholder="0" min="0">
                                         </div>
+                                    </div>
+                                    
+                                    <!-- Thông báo khi bật preorder -->
+                                    <div class="alert alert-info preorder-price-notice" style="display: none;">
+                                        <i class="ri-information-line me-2"></i>
+                                        <strong>Chế độ đặt trước:</strong> Giá sách sẽ sử dụng "Giá ưu đãi đặt trước" đã cấu hình ở phần trên.
                                     </div>
                                     
                                     <!-- Thuộc tính sách vật lý -->
@@ -483,10 +489,10 @@
                             
                             <div id="ebook_format" style="display: none;">
                                 <div class="border rounded p-3 bg-light">
-                                    <div class="row g-3">
+                                    <div class="row g-3" id="ebook_price_section">
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
-                                            <input type="number" class="form-control" name="formats[ebook][price]" 
+                                            <input type="number" class="form-control format-price" name="formats[ebook][price]" 
                                                    value="{{ old('formats.ebook.price') }}" placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-6">
@@ -494,6 +500,13 @@
                                             <input type="number" class="form-control" name="formats[ebook][discount]" 
                                                    value="{{ old('formats.ebook.discount') }}" placeholder="0" min="0">
                                         </div>
+                                    </div>
+                                    
+                                    <!-- Thông báo khi bật preorder -->
+                                    <div class="alert alert-info preorder-price-notice" style="display: none;">
+                                        <i class="ri-information-line me-2"></i>
+                                        <strong>Chế độ đặt trước:</strong> Giá sách sẽ sử dụng "Giá ưu đãi đặt trước" đã cấu hình ở phần trên.
+                                    </div>
                                         <div class="col-12">
                                             <label class="form-label fw-medium">File Ebook</label>
                                             <input type="file" class="form-control" name="formats[ebook][file]" 
@@ -937,6 +950,8 @@ $(document).ready(function() {
     const preorderSection = document.getElementById('preorder_section');
     const releaseDateInput = document.getElementById('release_date');
     const stockPreorderLimitInput = document.getElementById('stock_preorder_limit');
+    const formatPriceSections = document.querySelectorAll('#physical_price_section, #ebook_price_section');
+    const preorderPriceNotices = document.querySelectorAll('.preorder-price-notice');
     
     if (preOrderCheckbox && preorderSection) {
         // Initial state
@@ -949,6 +964,14 @@ $(document).ready(function() {
                 preorderSection.style.display = 'block';
                 releaseDateInput.required = true;
                 stockPreorderLimitInput.required = true;
+                
+                // Ẩn phần giá format và hiện thông báo
+                formatPriceSections.forEach(section => {
+                    if (section) section.style.display = 'none';
+                });
+                preorderPriceNotices.forEach(notice => {
+                    if (notice) notice.style.display = 'block';
+                });
                 
                 // Set minimum date to tomorrow
                 const tomorrow = new Date();
@@ -973,6 +996,14 @@ $(document).ready(function() {
                 stockPreorderLimitInput.required = false;
                 releaseDateInput.value = '';
                 stockPreorderLimitInput.value = '';
+                
+                // Hiện lại phần giá format và ẩn thông báo
+                formatPriceSections.forEach(section => {
+                    if (section) section.style.display = 'flex';
+                });
+                preorderPriceNotices.forEach(notice => {
+                    if (notice) notice.style.display = 'none';
+                });
             }
         }
     }

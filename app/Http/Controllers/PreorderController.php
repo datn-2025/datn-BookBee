@@ -56,6 +56,7 @@ class PreorderController extends Controller
             'district_name' => 'nullable|string',
             'ward_code' => 'nullable|string',
             'ward_name' => 'nullable|string',
+            'shipping_fee' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:1000'
         ]);
 
@@ -103,8 +104,9 @@ class PreorderController extends Controller
             $unitPrice = $basePrice + $attributeExtraPrice;
             $totalAmount = $unitPrice * $validated['quantity'];
             
-            // Thêm phí ship nếu có (miễn phí cho preorder)
-            $shippingFee = 0; // Miễn phí ship cho đặt trước
+            // Tính phí vận chuyển từ GHN API
+            $shippingFee = $validated['shipping_fee'] ?? 0;
+            $totalAmount += $shippingFee;
 
             $preorderData = [
                 'user_id' => Auth::id(),
@@ -116,6 +118,7 @@ class PreorderController extends Controller
                 'quantity' => $validated['quantity'],
                 'unit_price' => $unitPrice,
                 'total_amount' => $totalAmount,
+                'shipping_fee' => $shippingFee,
                 'selected_attributes' => $validated['selected_attributes'] ?? [],
                 'status' => 'pending',
                 'notes' => $validated['notes'],
@@ -136,6 +139,9 @@ class PreorderController extends Controller
             }
 
             $preorder = Preorder::create($preorderData);
+
+            // Trừ số lượng tồn kho cho preorder
+            $this->decreaseStockForPreorder($book, $bookFormat, $validated);
 
             DB::commit();
 
@@ -182,6 +188,37 @@ class PreorderController extends Controller
             ->paginate(10);
 
         return view('preorders.index', compact('preorders'));
+    }
+
+    /**
+     * Trừ số lượng tồn kho khi tạo preorder
+     */
+    private function decreaseStockForPreorder($book, $bookFormat, $validated)
+    {
+        $quantity = $validated['quantity'];
+        
+        // Trừ preorder_count của sách
+        $book->increment('preorder_count', $quantity);
+        
+        // Trừ stock của book format nếu có
+        if ($bookFormat && $bookFormat->stock > 0) {
+            $newStock = max(0, $bookFormat->stock - $quantity);
+            $bookFormat->update(['stock' => $newStock]);
+        }
+        
+        // Trừ stock của các thuộc tính được chọn
+        if (!empty($validated['selected_attributes'])) {
+            foreach ($validated['selected_attributes'] as $attributeValueId) {
+                $bookAttributeValue = \App\Models\BookAttributeValue::where('book_id', $book->id)
+                    ->where('attribute_value_id', $attributeValueId)
+                    ->first();
+                    
+                if ($bookAttributeValue && $bookAttributeValue->stock > 0) {
+                    $newStock = max(0, $bookAttributeValue->stock - $quantity);
+                    $bookAttributeValue->update(['stock' => $newStock]);
+                }
+            }
+        }
     }
 
     /**

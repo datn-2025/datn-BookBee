@@ -56,8 +56,14 @@
                                     <select name="book_format_id" class="form-select" id="formatSelect" required>
                                         <option value="">-- Chọn định dạng --</option>
                                         @foreach($formats as $format)
-                                            <option value="{{ $format->id }}" data-price="{{ $format->price }}" data-is-ebook="{{ strtolower($format->format_name) === 'ebook' ? 'true' : 'false' }}">
-                                                {{ $format->format_name }} - {{ number_format($format->price, 0, ',', '.') }}đ
+                                            @php
+                                                $displayPrice = $book->getPreorderPrice($format);
+                                            @endphp
+                                            <option value="{{ $format->id }}" data-price="{{ $displayPrice }}" data-is-ebook="{{ strtolower($format->format_name) === 'ebook' ? 'true' : 'false' }}">
+                                                {{ $format->format_name }} - {{ number_format($displayPrice, 0, ',', '.') }}đ
+                                                @if($book->pre_order_price && $book->pre_order_price < $format->price)
+                                                    <span class="text-success">(Giá ưu đãi)</span>
+                                                @endif
                                             </option>
                                         @endforeach
                                     </select>
@@ -159,16 +165,16 @@
                             </div>
                             
                             <!-- Phí vận chuyển -->
-                            <div class="mt-3" id="shippingFeeSection" style="display: none;">
-                                <div class="alert alert-info d-flex justify-content-between align-items-center">
-                                    <span>
-                                        <i class="ri-truck-line me-1"></i>
-                                        Phí vận chuyển: <strong id="shippingFeeText">0đ</strong>
-                                    </span>
-                                    <small class="text-muted">Miễn phí cho đơn đặt trước</small>
-                                </div>
-                                <input type="hidden" name="shipping_fee" id="shippingFeeInput" value="0">
-                            </div>
+            <div class="mt-3" id="shippingFeeSection" style="display: none;">
+                <div class="alert alert-info d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="ri-truck-line me-1"></i>
+                        Phí vận chuyển GHN: <span id="shippingFeeText">0đ</span>
+                    </span>
+                    <small class="text-muted">Phí vận chuyển từ GHN</small>
+                </div>
+                <input type="hidden" name="shipping_fee" id="shippingFeeInput" value="0">
+            </div>
                         </div>
 
                         <!-- Ghi chú -->
@@ -186,6 +192,9 @@
                                         <span>Giá sách:</span>
                                         <span id="bookPrice">0đ</span>
                                     </div>
+                                    <div id="preorderPriceNotice" class="text-success small mt-1" style="display: none;">
+                                        <i class="ri-price-tag-3-line me-1"></i>Bạn đang được hưởng giá ưu đãi đặt trước!
+                                    </div>
                                 </div>
                                 <div class="col-12" id="attributePriceRow" style="display: none;">
                                     <div class="d-flex justify-content-between">
@@ -196,8 +205,7 @@
                                 <div class="col-12" id="shippingPriceRow" style="display: none;">
                                     <div class="d-flex justify-content-between">
                                         <span>Phí vận chuyển:</span>
-                                        <span class="text-decoration-line-through text-muted" id="shippingPrice">0đ</span>
-                                        <span class="text-success ms-2">Miễn phí</span>
+                                        <span id="shippingPrice">0đ</span>
                                     </div>
                                 </div>
                                 <hr class="my-2">
@@ -209,9 +217,9 @@
                                 </div>
                             </div>
                             <small class="text-muted">
-                                <i class="ri-information-line me-1"></i>
-                                Bạn sẽ thanh toán khi sách được phát hành. Miễn phí vận chuyển cho tất cả đơn đặt trước.
-                            </small>
+                <i class="ri-information-line me-1"></i>
+                Bạn sẽ thanh toán khi sách được phát hành. Phí vận chuyển được tính theo khu vực giao hàng.
+            </small>
                         </div>
 
                         <!-- Nút submit -->
@@ -244,11 +252,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const shippingFeeSection = document.getElementById('shippingFeeSection');
     const shippingFeeText = document.getElementById('shippingFeeText');
     const shippingFeeInput = document.getElementById('shippingFeeInput');
+    const preorderPriceNotice = document.getElementById('preorderPriceNotice');
     
     let basePrice = 0;
     let extraPrice = 0;
     let shippingFee = 0;
     let isEbookSelected = false;
+    const bookPreorderPrice = {{ $book->pre_order_price ?? 'null' }};
 
     // Xử lý thay đổi định dạng
     if (formatSelect) {
@@ -258,6 +268,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const price = parseFloat(selectedOption.dataset.price || 0);
             
             basePrice = price;
+            
+            // Hiển thị thông báo giá ưu đãi preorder
+            if (bookPreorderPrice && selectedOption.textContent.includes('(Giá ưu đãi)')) {
+                preorderPriceNotice.style.display = 'block';
+            } else {
+                preorderPriceNotice.style.display = 'none';
+            }
             
             // Hiển thị/ẩn phần địa chỉ và thuộc tính
             if (isEbookSelected) {
@@ -321,6 +338,12 @@ document.addEventListener('DOMContentLoaded', function() {
             attributePriceRow.style.display = 'block';
         } else {
             attributePriceRow.style.display = 'none';
+        }
+        
+        // Cập nhật hiển thị phí vận chuyển
+        const shippingPriceElement = document.getElementById('shippingPrice');
+        if (shippingPriceElement) {
+            shippingPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(isEbookSelected ? 0 : shippingFee) + 'đ';
         }
         
         totalAmountElement.textContent = new Intl.NumberFormat('vi-VN').format(total) + 'đ';
@@ -485,33 +508,51 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!districtId || !wardCode) return;
         
-        fetch('/api/ghn/calculate-fee', {
+        fetch('/api/ghn/shipping-fee', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             body: JSON.stringify({
-                to_district_id: districtId,
+                to_district_id: parseInt(districtId),
                 to_ward_code: wardCode,
                 weight: 500, // Trọng lượng mặc định cho sách
-                length: 20,
-                width: 15,
-                height: 3
+                service_type_id: 2 // Giao hàng tiết kiệm
             })
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                shippingFee = data.fee;
-                shippingFeeText.textContent = new Intl.NumberFormat('vi-VN').format(shippingFee) + 'đ';
-                shippingFeeInput.value = shippingFee;
+            if (data.success && data.data && data.data.total) {
+                // Hiển thị và áp dụng phí vận chuyển thực tế từ GHN
+                const actualShippingFee = data.data.total;
+                shippingFeeText.textContent = new Intl.NumberFormat('vi-VN').format(actualShippingFee) + 'đ';
+                
+                // Áp dụng phí vận chuyển thực tế
+                shippingFee = actualShippingFee;
+                shippingFeeInput.value = actualShippingFee;
+                shippingFeeSection.style.display = 'block';
+                updateTotalAmount();
+                
+                console.log('Phí vận chuyển GHN:', actualShippingFee, 'Phí áp dụng:', shippingFee);
+            } else {
+                console.error('Không thể tính phí vận chuyển:', data.message);
+                // Fallback: phí vận chuyển mặc định
+                shippingFee = 30000;
+                shippingFeeText.textContent = '30,000đ';
+                shippingFeeInput.value = 30000;
                 shippingFeeSection.style.display = 'block';
                 updateTotalAmount();
             }
         })
         .catch(error => {
             console.error('Lỗi khi tính phí vận chuyển:', error);
+            // Fallback: phí vận chuyển mặc định
+            shippingFee = 30000;
+            shippingFeeText.textContent = '30,000đ';
+            shippingFeeInput.value = 30000;
+            shippingFeeSection.style.display = 'block';
+            updateTotalAmount();
         });
     }
 

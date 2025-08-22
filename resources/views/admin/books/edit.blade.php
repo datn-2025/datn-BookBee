@@ -332,8 +332,14 @@
                             
                             <div id="physical_format" style="display: {{ $physicalFormat ? 'block' : 'none' }};">
                                 <div class="border rounded p-3 bg-light">
+                                    <!-- Thông báo khi bật preorder -->
+                                    <div class="alert alert-info preorder-price-notice" style="display: none;">
+                                        <i class="ri-information-line me-2"></i>
+                                        <strong>Chế độ đặt trước:</strong> Giá sách sẽ sử dụng "Giá ưu đãi đặt trước" đã cấu hình ở phần trên.
+                                    </div>
+                                    
                                     <!-- Thông tin cơ bản sách vật lý -->
-                                    <div class="row g-3 mb-4">
+                                    <div id="physical_price_section" class="row g-3 mb-4">
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][price]" 
@@ -491,7 +497,13 @@
                             
                             <div id="ebook_format" style="display: {{ $ebookFormat ? 'block' : 'none' }};">
                                 <div class="border rounded p-3 bg-light">
-                                    <div class="row g-3">
+                                    <!-- Thông báo khi bật preorder -->
+                                    <div class="alert alert-info preorder-price-notice" style="display: none;">
+                                        <i class="ri-information-line me-2"></i>
+                                        <strong>Chế độ đặt trước:</strong> Giá sách sẽ sử dụng "Giá ưu đãi đặt trước" đã cấu hình ở phần trên.
+                                    </div>
+                                    
+                                    <div id="ebook_price_section" class="row g-3">
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][price]" 
@@ -612,6 +624,81 @@
                             @enderror
                             <div class="form-text">Có thể chọn nhiều ảnh. Ảnh mới sẽ thay thế ảnh cũ.</div>
                             <div id="images_preview" class="row mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preorder Section -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 text-dark fw-semibold">
+                            <i class="ri-bookmark-line me-2"></i>Cấu hình đặt trước sách
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Allow Preorder -->
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="pre_order" name="pre_order" 
+                                   value="1" {{ old('pre_order', $book->pre_order) ? 'checked' : '' }}>
+                            <label class="form-check-label fw-medium" for="pre_order">
+                                Cho phép đặt trước sách
+                            </label>
+                            <div class="form-text">Kích hoạt để khách hàng có thể đặt trước sách này trước ngày ra mắt</div>
+                        </div>
+                        
+                        <div id="preorder_section" style="display: {{ old('pre_order', $book->pre_order) ? 'block' : 'none' }};">
+                            <div class="p-3 bg-light rounded border">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="release_date" class="form-label fw-medium">Ngày ra mắt <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control @error('release_date') is-invalid @enderror"
+                                               id="release_date" name="release_date" 
+                                               value="{{ old('release_date', $book->release_date ? $book->release_date->format('Y-m-d') : '') }}">
+                                        @error('release_date')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="stock_preorder_limit" class="form-label fw-medium">Số lượng cho phép đặt trước <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control @error('stock_preorder_limit') is-invalid @enderror"
+                                               id="stock_preorder_limit" name="stock_preorder_limit" 
+                                               value="{{ old('stock_preorder_limit', $book->stock_preorder_limit) }}"
+                                               min="1" placeholder="Ví dụ: 100">
+                                        @error('stock_preorder_limit')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="pre_order_price" class="form-label fw-medium">Giá ưu đãi đặt trước</label>
+                                        <input type="number" class="form-control @error('pre_order_price') is-invalid @enderror"
+                                               id="pre_order_price" name="pre_order_price" 
+                                               value="{{ old('pre_order_price', $book->pre_order_price) }}"
+                                               min="0" step="1000" placeholder="Ví dụ: 150000">
+                                        @error('pre_order_price')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="preorder_count" class="form-label fw-medium">Số lượng đã đặt trước</label>
+                                        <input type="number" class="form-control @error('preorder_count') is-invalid @enderror"
+                                               id="preorder_count" name="preorder_count" 
+                                               value="{{ old('preorder_count', $book->preorder_count ?? 0) }}"
+                                               min="0" readonly>
+                                        @error('preorder_count')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="preorder_description" class="form-label fw-medium">Mô tả ưu đãi đặt trước</label>
+                                        <textarea class="form-control @error('preorder_description') is-invalid @enderror"
+                                                  id="preorder_description" name="preorder_description" rows="3"
+                                                  placeholder="Mô tả về ưu đãi hoặc thông tin đặc biệt cho khách đặt trước (ví dụ: Tặng kèm bookmark, giảm 20%, giao hàng miễn phí...)">{{ old('preorder_description', $book->preorder_description) }}</textarea>
+                                        @error('preorder_description')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -941,6 +1028,67 @@ $(document).ready(function() {
                 document.getElementById('gift_end_date').value = parts[1].trim();
             }
         });
+    }
+    
+    // Preorder section toggle
+    const preOrderCheckbox = document.getElementById('pre_order');
+    const preorderSection = document.getElementById('preorder_section');
+    const releaseDateInput = document.getElementById('release_date');
+    const stockPreorderLimitInput = document.getElementById('stock_preorder_limit');
+    const physicalPriceSection = document.getElementById('physical_price_section');
+    const ebookPriceSection = document.getElementById('ebook_price_section');
+    const preorderPriceNotices = document.querySelectorAll('.preorder-price-notice');
+    
+    if (preOrderCheckbox && preorderSection) {
+        // Set initial state
+        togglePreorderSection();
+        
+        preOrderCheckbox.addEventListener('change', togglePreorderSection);
+        
+        function togglePreorderSection() {
+            if (preOrderCheckbox.checked) {
+                preorderSection.style.display = 'block';
+                // Make required fields required
+                if (releaseDateInput) releaseDateInput.required = true;
+                if (stockPreorderLimitInput) stockPreorderLimitInput.required = true;
+                
+                // Set minimum date to today
+                if (releaseDateInput) {
+                    const today = new Date().toISOString().split('T')[0];
+                    releaseDateInput.min = today;
+                }
+                
+                // Hide price sections and show notices
+                if (physicalPriceSection) physicalPriceSection.style.display = 'none';
+                if (ebookPriceSection) ebookPriceSection.style.display = 'none';
+                preorderPriceNotices.forEach(notice => {
+                    notice.style.display = 'block';
+                });
+                
+                // Set default stock limit if empty
+                if (stockPreorderLimitInput && !stockPreorderLimitInput.value) {
+                    stockPreorderLimitInput.value = 100;
+                }
+            } else {
+                preorderSection.style.display = 'none';
+                // Remove required from fields
+                if (releaseDateInput) {
+                    releaseDateInput.required = false;
+                    releaseDateInput.value = '';
+                }
+                if (stockPreorderLimitInput) {
+                    stockPreorderLimitInput.required = false;
+                    stockPreorderLimitInput.value = '';
+                }
+                
+                // Show price sections and hide notices
+                if (physicalPriceSection) physicalPriceSection.style.display = 'block';
+                if (ebookPriceSection) ebookPriceSection.style.display = 'block';
+                preorderPriceNotices.forEach(notice => {
+                    notice.style.display = 'none';
+                });
+            }
+        }
     }
 });
 </script>
