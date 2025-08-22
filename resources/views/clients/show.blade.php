@@ -1692,48 +1692,109 @@
                                 @if(isset($bookGifts) && $bookGifts->count())
                                     <div id="giftsSection" class="book-gifts-section mt-8" @if(!$isPhysicalFormatSelected)
                                     style="display: none;" @endif>
-                                        <h3
-                                            class="text-lg font-bold text-black mb-3 flex items-center adidas-font uppercase tracking-wider">
-                                            <i class="fas fa-gift text-base mr-2 text-black"></i>Quà tặng kèm
-                                        </h3>
-                                        <ul class="space-y-3">
-                                            @foreach($bookGifts as $gift)
-                                                <li
-                                                    class="flex items-start gap-4 p-4 bg-white border border-gray-200 hover:border-black transition-all duration-200 shadow-sm {{ $gift->quantity <= 0 ? 'opacity-60 bg-gray-50' : '' }}">
-                                                    @if($gift->gift_image)
-                                                        <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="{{ $gift->gift_name }}"
-                                                            class="w-16 h-16 object-cover shadow border border-gray-200 {{ $gift->quantity <= 0 ? 'grayscale' : '' }}">
-                                                    @else
-                                                        <span
-                                                            class="w-16 h-16 flex items-center justify-center bg-gray-100 text-2xl border border-gray-200 {{ $gift->quantity <= 0 ? 'text-gray-400' : '' }}"><i
-                                                                class="fas fa-gift"></i></span>
-                                                    @endif
-                                                    <div class="flex-1">
-                                                        <div class="font-semibold text-black text-base adidas-font">{{ $gift->gift_name }}</div>
-                                                        @if($gift->gift_description)
-                                                            <div class="text-sm text-gray-700 mt-1">{{ $gift->gift_description }}</div>
-                                                        @endif
-                                                        @if($gift->quantity > 0)
-                                                            <div class="text-xs text-green-700 mt-1">Số lượng: {{ $gift->quantity }}</div>
-                                                        @else
-                                                            <div class="text-xs text-red-600 mt-1 font-semibold uppercase tracking-wider">
-                                                                <i class="fas fa-exclamation-triangle mr-1"></i>Hết hàng
-                                                            </div>
-                                                        @endif
-                                                        @if($gift->start_date || $gift->end_date)
-                                                            <div class="text-xs text-gray-500 mt-1 flex flex-wrap gap-2">
-                                                                @if($gift->start_date)
-                                                                    <span>Bắt đầu: {{ Carbon::parse($gift->start_date)->format('d/m/Y') }}</span>
-                                                                @endif
-                                                                @if($gift->end_date)
-                                                                    <span>Kết thúc: {{ Carbon::parse($gift->end_date)->format('d/m/Y') }}</span>
-                                                                @endif
-                                                            </div>
-                                                        @endif
+                                        <!-- Enhanced Gift Section - Adidas Style -->
+                                        <div class="bg-white border-2 border-gray-100 relative overflow-hidden">
+                                            <!-- Header Bar -->
+                                            <div class="bg-amber-600 text-white px-6 py-4 flex items-center justify-between">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="w-8 h-8 bg-white bg-opacity-20 flex items-center justify-center">
+                                                        <i class="fas fa-gift text-sm"></i>
                                                     </div>
-                                                </li>
-                                            @endforeach
-                                        </ul>
+                                                    <h3 class="font-bold uppercase tracking-wider text-lg adidas-font">QUÀ TẶNG KÈM</h3>
+                                                </div>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="bg-black bg-opacity-20 px-2 py-1 text-xs font-bold uppercase tracking-wider">
+                                                        {{ $bookGifts->count() }} món
+                                                    </span>
+                                                    <div class="w-6 h-6 border border-white border-opacity-30 flex items-center justify-center">
+                                                        <i class="fas fa-star text-xs"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Content Area -->
+                                            <div class="p-6">
+                                                <ul class="space-y-4">
+                                                    @foreach($bookGifts as $gift)
+                                                        <li class="gift-item bg-white border border-gray-200 relative overflow-hidden hover:border-amber-600 transition-all duration-300 {{ $gift->quantity <= 0 ? 'opacity-60 bg-gray-50' : '' }}">
+                                                            <!-- Gift Item Header -->
+                                                            <div class="flex items-start gap-4 p-4">
+                                                                <!-- Gift Image/Icon -->
+                                                                <div class="flex-shrink-0">
+                                                                    @if($gift->gift_image)
+                                                                        <img src="{{ asset('storage/' . $gift->gift_image) }}" alt="{{ $gift->gift_name }}"
+                                                                            class="w-16 h-16 object-cover border border-gray-200 {{ $gift->quantity <= 0 ? 'grayscale' : '' }}">
+                                                                    @else
+                                                                        <div class="w-16 h-16 flex items-center justify-center bg-amber-50 border border-amber-200 {{ $gift->quantity <= 0 ? 'text-gray-400' : 'text-amber-600' }}">
+                                                                            <i class="fas fa-gift text-2xl"></i>
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+
+                                                                <!-- Gift Info -->
+                                                                <div class="flex-1 min-w-0">
+                                                                    <div class="flex items-start justify-between">
+                                                                        <div class="flex-1">
+                                                                            <h4 class="font-bold text-black text-base adidas-font uppercase tracking-wider">{{ $gift->gift_name }}</h4>
+                                                                            @if($gift->gift_description)
+                                                                                <p class="text-sm text-gray-700 mt-1 font-medium">{{ $gift->gift_description }}</p>
+                                                                            @endif
+                                                                        </div>
+                                                                        
+                                                                        <!-- Status Badge -->
+                                                                        <div class="flex-shrink-0 ml-4">
+                                                                            @if($gift->quantity > 0)
+                                                                                <span class="bg-green-100 text-green-800 px-3 py-1 text-xs font-bold uppercase tracking-wider border border-green-200">
+                                                                                    Còn {{ $gift->quantity }}
+                                                                                </span>
+                                                                            @else
+                                                                                <span class="bg-red-100 text-red-800 px-3 py-1 text-xs font-bold uppercase tracking-wider border border-red-200">
+                                                                                    <i class="fas fa-exclamation-triangle mr-1"></i>Hết hàng
+                                                                                </span>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <!-- Gift Dates -->
+                                                                    @if($gift->start_date || $gift->end_date)
+                                                                        <div class="mt-3 p-2 bg-amber-50 border border-amber-200">
+                                                                            <div class="flex items-center space-x-4 text-xs text-amber-800 font-semibold uppercase tracking-wider">
+                                                                                <i class="fas fa-calendar-alt text-amber-600"></i>
+                                                                                @if($gift->start_date)
+                                                                                    <span>Từ: {{ Carbon::parse($gift->start_date)->format('d/m/Y') }}</span>
+                                                                                @endif
+                                                                                @if($gift->end_date)
+                                                                                    <span>Đến: {{ Carbon::parse($gift->end_date)->format('d/m/Y') }}</span>
+                                                                                @endif
+                                                                            </div>
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Gift Item Side Accent -->
+                                                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600"></div>
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+
+                                                <!-- Bottom Section -->
+                                                <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                                                    <div class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider">
+                                                        <i class="fas fa-info-circle"></i>
+                                                        <span class="font-semibold">Chỉ áp dụng cho sách vật lý</span>
+                                                    </div>
+                                                    <div class="flex space-x-1">
+                                                        <div class="w-2 h-2 bg-amber-600"></div>
+                                                        <div class="w-2 h-2 bg-amber-300"></div>
+                                                        <div class="w-2 h-2 bg-amber-300"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Section Side Accent -->
+                                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600"></div>
+                                        </div>
                                     </div>
                                 @endif
                             @endif
@@ -2053,21 +2114,64 @@
                         $showBookMore = \Illuminate\Support\Str::length($bookDesc) > 200;
                     @endphp
                     @if(isset($book))
-                        <div class="mt-16 bg-white/90 shadow-sm border border-gray-200 p-6">
-                            <h2 class="text-2xl font-bold mb-4 border-b border-black/10 pb-2 text-black flex items-center">
-                                <i class="fas fa-align-left mr-2 text-black"></i>Mô tả sách
-                            </h2>
-                            <div id="bookDescription" class="text-gray-700 text-base leading-relaxed text-left"
-                                data-full="{{ $bookDesc }}" data-short="{{ \Illuminate\Support\Str::limit($bookDesc, 200, '...') }}">
-                                @if (empty($bookDesc))
-                                    <div class="text-center"><span class="italic text-gray-400">Không có mô tả nào</span></div>
-                                @else
-                                    {{ $showBookMore ? \Illuminate\Support\Str::limit($bookDesc, 200, '...') : $bookDesc }}
-                                @endif
+                        <!-- Enhanced Description Section - Adidas Style -->
+                        <div class="mt-16 bg-white border-2 border-gray-100 relative overflow-hidden">
+                            <!-- Header Bar -->
+                            <div class="bg-amber-600 text-white px-6 py-4 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-white bg-opacity-20 flex items-center justify-center">
+                                        <i class="fas fa-align-left text-sm"></i>
+                                    </div>
+                                    <h2 class="font-bold uppercase tracking-wider text-lg adidas-font">MÔ TẢ SÁCH</h2>
+                                </div>
+                                <div class="w-6 h-6 border border-white border-opacity-30 flex items-center justify-center">
+                                    <i class="fas fa-book text-xs"></i>
+                                </div>
                             </div>
-                            @if($showBookMore)
-                                <button id="showMoreBtn" class="text-blue-500 mt-2 text-sm hover:underline">Xem thêm</button>
-                            @endif
+
+                            <!-- Content Area -->
+                            <div class="p-6">
+                                <div class="relative">
+                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600"></div>
+                                    <div class="pl-6">
+                                        <div id="bookDescription" class="text-gray-800 text-base leading-relaxed font-medium"
+                                            data-full="{{ $bookDesc }}" data-short="{{ \Illuminate\Support\Str::limit($bookDesc, 200, '...') }}">
+                                            @if (empty($bookDesc))
+                                                <div class="text-center py-8">
+                                                    <div class="w-16 h-16 bg-amber-50 flex items-center justify-center mx-auto mb-4">
+                                                        <i class="fas fa-file-alt text-2xl text-amber-400"></i>
+                                                    </div>
+                                                    <span class="italic text-gray-400 text-lg">Không có mô tả nào</span>
+                                                </div>
+                                            @else
+                                                {{ $showBookMore ? \Illuminate\Support\Str::limit($bookDesc, 200, '...') : $bookDesc }}
+                                            @endif
+                                        </div>
+                                        @if($showBookMore)
+                                            <button id="showMoreBtn" 
+                                                class="mt-4 px-4 py-2 bg-amber-600 text-white font-bold uppercase tracking-wider text-sm hover:bg-amber-700 transition-all duration-300 border-none adidas-font">
+                                                Xem thêm
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <!-- Bottom Accent -->
+                                <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                                    <div class="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span class="font-semibold">Thông tin chi tiết</span>
+                                    </div>
+                                    <div class="flex space-x-1">
+                                        <div class="w-2 h-2 bg-amber-600"></div>
+                                        <div class="w-2 h-2 bg-amber-300"></div>
+                                        <div class="w-2 h-2 bg-amber-300"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Side accent -->
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600"></div>
                         </div>
                     @endif
 
@@ -2799,10 +2903,14 @@
                         if (isExpanded) {
                             div.innerHTML = div.dataset.short;
                             btn.textContent = 'Xem thêm';
+                            btn.classList.remove('bg-amber-700');
+                            btn.classList.add('bg-amber-600');
                             isExpanded = false;
                         } else {
                             div.innerHTML = div.dataset.full;
                             btn.textContent = 'Thu gọn';
+                            btn.classList.remove('bg-amber-600');
+                            btn.classList.add('bg-amber-700');
                             isExpanded = true;
                         }
                     });
@@ -4975,6 +5083,344 @@
 
                 50% {
                     opacity: 0.8;
+                }
+            }
+
+            /* Enhanced Description Section Styles */
+            .description-section {
+                position: relative;
+                overflow: hidden;
+                border-radius: 16px;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+                background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .description-section:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+            }
+
+            .description-header {
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #f59e0b 100%);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .description-header::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+                animation: headerShine 3s infinite;
+            }
+
+            @keyframes headerShine {
+                0% {
+                    left: -100%;
+                }
+                100% {
+                    left: 100%;
+                }
+            }
+
+            .description-content {
+                position: relative;
+                background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            }
+
+            .description-gradient-line {
+                height: 3px;
+                background: linear-gradient(90deg, #f59e0b 0%, #d97706 50%, #f59e0b 100%);
+                animation: gradientFlow 2s ease-in-out infinite alternate;
+            }
+
+            @keyframes gradientFlow {
+                0% {
+                    background: linear-gradient(90deg, #f59e0b 0%, #d97706 50%, #f59e0b 100%);
+                }
+                100% {
+                    background: linear-gradient(90deg, #d97706 0%, #f59e0b 50%, #d97706 100%);
+                }
+            }
+
+            .description-empty-state {
+                position: relative;
+                background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%);
+                border: 2px dashed #d1d5db;
+                border-radius: 12px;
+                transition: all 0.3s ease;
+            }
+
+            .description-empty-state:hover {
+                border-color: #f59e0b;
+                background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+                transform: scale(1.02);
+            }
+
+            .description-toggle-btn {
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+            }
+
+            .description-toggle-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+                background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            }
+
+            .description-toggle-btn::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+                transition: left 0.5s ease;
+            }
+
+            .description-toggle-btn:hover::before {
+                left: 100%;
+            }
+
+            /* Enhanced Gift Section Styles */
+            .gift-section {
+                position: relative;
+                overflow: hidden;
+                border-radius: 16px;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+                background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .gift-section:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+            }
+
+            .gift-header {
+                background: linear-gradient(135deg, #10b981 0%, #059669 50%, #10b981 100%);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .gift-header::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+                animation: giftHeaderShine 4s infinite;
+            }
+
+            @keyframes giftHeaderShine {
+                0% {
+                    left: -100%;
+                }
+                100% {
+                    left: 100%;
+                }
+            }
+
+            .gift-card {
+                position: relative;
+                background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+                border-radius: 12px;
+                overflow: hidden;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                border: 2px solid transparent;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            }
+
+            .gift-card:hover {
+                transform: translateY(-4px) scale(1.02);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+                border-color: #10b981;
+            }
+
+            .gift-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(45deg, transparent 30%, rgba(16, 185, 129, 0.1) 50%, transparent 70%);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .gift-card:hover::before {
+                opacity: 1;
+                animation: cardShimmer 0.6s ease-out;
+            }
+
+            @keyframes cardShimmer {
+                0% {
+                    transform: translateX(-100%);
+                }
+                100% {
+                    transform: translateX(100%);
+                }
+            }
+
+            .gift-image-container {
+                position: relative;
+                overflow: hidden;
+                border-radius: 8px;
+                transition: all 0.3s ease;
+            }
+
+            .gift-image-container:hover {
+                transform: scale(1.05);
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            }
+
+            .gift-status-badge {
+                position: relative;
+                overflow: hidden;
+                animation: badgePulse 2s infinite;
+            }
+
+            .gift-status-available {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+            }
+
+            .gift-status-unavailable {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+            }
+
+            @keyframes badgePulse {
+                0%, 100% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+                50% {
+                    transform: scale(1.05);
+                    opacity: 0.9;
+                }
+            }
+
+            .gift-date-display {
+                background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+                border-left: 4px solid #6366f1;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .gift-date-display::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 2px;
+                background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #6366f1 100%);
+                animation: dateGlow 2s ease-in-out infinite alternate;
+            }
+
+            @keyframes dateGlow {
+                0% {
+                    opacity: 0.6;
+                }
+                100% {
+                    opacity: 1;
+                }
+            }
+
+            /* Enhanced Button Animations */
+            .adidas-btn-enhanced {
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            }
+
+            .adidas-btn-enhanced::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+                transition: left 0.5s ease;
+            }
+
+            .adidas-btn-enhanced:hover::before {
+                left: 100%;
+            }
+
+            .adidas-btn-enhanced:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            }
+
+            /* Loading States */
+            .gift-loading {
+                background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+                background-size: 200% 100%;
+                animation: loadingShimmer 1.5s infinite;
+            }
+
+            @keyframes loadingShimmer {
+                0% {
+                    background-position: 200% 0;
+                }
+                100% {
+                    background-position: -200% 0;
+                }
+            }
+
+            /* Mobile Responsive Enhancements */
+            @media (max-width: 768px) {
+                .description-section,
+                .gift-section {
+                    border-radius: 12px;
+                    margin-bottom: 1.5rem;
+                }
+
+                .gift-card {
+                    margin-bottom: 1rem;
+                }
+
+                .gift-card:hover {
+                    transform: translateY(-2px) scale(1.01);
+                }
+
+                .description-toggle-btn,
+                .adidas-btn-enhanced {
+                    padding: 0.75rem 1.5rem;
+                    font-size: 0.875rem;
+                }
+            }
+
+            /* High Performance Animations */
+            @media (prefers-reduced-motion: reduce) {
+                .description-section,
+                .gift-section,
+                .gift-card,
+                .description-toggle-btn,
+                .adidas-btn-enhanced {
+                    animation: none;
+                    transition: none;
+                }
+
+                .description-section:hover,
+                .gift-section:hover,
+                .gift-card:hover {
+                    transform: none;
                 }
             }
         </style>
