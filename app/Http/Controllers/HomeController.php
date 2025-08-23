@@ -82,10 +82,17 @@ class HomeController extends Controller
             ->latest()
             ->get();
 
+        // Lấy các sách đặt trước
+        $preorderBooks = Book::with(['authors', 'images', 'formats'])
+            ->preorderable()
+            ->orderBy('release_date', 'asc')
+            ->take(8)
+            ->get();
+
         // Lấy thống kê thực tế từ database
         $statistics = $this->getStatistics();
 
-        return view('clients.home', compact('books', 'allBooks', 'categories', 'featuredBooks', 'latestBooks', 'bestReviewedBooks', 'saleBooks', 'reviews', 'articles', 'combos', 'statistics'));
+        return view('clients.home', compact('books', 'allBooks', 'categories', 'featuredBooks', 'latestBooks', 'bestReviewedBooks', 'saleBooks', 'reviews', 'articles', 'combos', 'preorderBooks', 'statistics'));
     }
 
     public function show($slug)
