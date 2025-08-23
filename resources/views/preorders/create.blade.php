@@ -61,31 +61,58 @@
 
                         <div class="row g-3">
                             <!-- Chọn định dạng -->
-                            @php
-                                $availableFormats = $formats->filter(function($format) {
-                                    return $format->stock > 0 || strtolower($format->format_name) === 'ebook';
-                                });
-                            @endphp
-                            @if($availableFormats->count() > 0)
-                                <div class="col-12">
-                                    <label class="form-label fw-medium">Định dạng sách <span class="text-danger">*</span></label>
-                                    <select name="book_format_id" class="form-select" id="formatSelect" required>
-                                        <option value="">-- Chọn định dạng --</option>
-                                        @foreach($formats as $format)
-                            @if($format->stock > 0 || strtolower($format->format_name) === 'ebook')
-                                <option value="{{ $format->id }}" data-price="{{ $format->price }}" data-is-ebook="{{ strtolower($format->format_name) === 'ebook' ? 'true' : 'false' }}">
-                                    @php
-                                        $displayPrice = isset($preorderDiscountPercent) && $preorderDiscountPercent > 0
-                                            ? $book->getPreorderPrice($format)
-                                            : $format->price;
-                                    @endphp
-                                    {{ $format->format_name }} - {{ number_format($displayPrice, 0, ',', '.') }}đ
-                                </option>
-                            @endif
-                        @endforeach
-                                    </select>
-                                </div>
-                            @endif
+                           @php
+    $availableFormats = $formats->filter(function($format) use ($book) {
+        // Ebook luôn có sẵn (không cần stock vật lý)
+        if (strtolower($format->format_name) === 'ebook') {
+            return true;
+        }
+        
+        // Sách vật lý: kiểm tra stock_preorder_limit từ bảng books
+        // Tính số lượng còn lại = giới hạn đặt trước - số đã đặt trước
+        $remainingStock = ($book->stock_preorder_limit ?? 0) - ($book->preorder_count ?? 0);
+        return $remainingStock > 0;
+    });
+@endphp
+
+@if($availableFormats->count() > 0)
+    <div class="col-12">
+        <label class="form-label fw-medium">Định dạng sách <span class="text-danger">*</span></label>
+        <select name="book_format_id" class="form-select" id="formatSelect" required>
+            <option value="">-- Chọn định dạng --</option>
+            @foreach($availableFormats as $format)
+                <option value="{{ $format->id }}" 
+                        data-price="{{ $format->price }}" 
+                        data-is-ebook="{{ strtolower($format->format_name) === 'ebook' ? 'true' : 'false' }}">
+                    @php
+                        $displayPrice = isset($preorderDiscountPercent) && $preorderDiscountPercent > 0
+                            ? $book->getPreorderPrice($format)
+                            : $format->price;
+                        
+                        // Hiển thị thông tin stock cho sách vật lý
+                        $stockInfo = '';
+                        if (strtolower($format->format_name) !== 'ebook') {
+                            $remainingStock = ($book->stock_preorder_limit ?? 0) - ($book->preorder_count ?? 0);
+                            $stockInfo = ' (Còn ' . $remainingStock . ' suất đặt trước)';
+                        }
+                    @endphp
+                    {{ $format->format_name }} - {{ number_format($displayPrice, 0, ',', '.') }}đ{{ $stockInfo }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+@else
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <i class="ri-information-line me-2"></i>
+            @if(($book->stock_preorder_limit ?? 0) <= ($book->preorder_count ?? 0))
+                Đã hết suất đặt trước cho sách này. Hiện tại đã có {{ $book->preorder_count ?? 0 }}/{{ $book->stock_preorder_limit ?? 0 }} đơn đặt trước.
+            @else
+                Hiện tại không có định dạng nào có sẵn cho đặt trước.
+            @endif
+        </div>
+    </div>
+@endif
 
                             <!-- Số lượng (xuống dưới định dạng) -->
                             <div class="col-12" id="quantitySection">
@@ -340,6 +367,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const headerOriginalPrice = document.getElementById('headerOriginalPrice');
     const headerDiscountedPrice = document.getElementById('headerDiscountedPrice');
     const preorderPriceNotice = document.querySelector('.preorder-price-notice') || document.createElement('div');
+    // Thêm vào phần đầu script, sau các biến khai báo
+    const bookStockPreorderLimit = {{ $book->stock_preorder_limit ?? 0 }};
+    const bookPreorderCount = {{ $book->preorder_count ?? 0 }};
+    const remainingPreorderStock = bookStockPreorderLimit - bookPreorderCount;
     
     let basePrice = 0;
     let extraPrice = 0;
@@ -368,60 +399,68 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Xử lý thay đổi định dạng
     if (formatSelect) {
-        formatSelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            isEbookSelected = selectedOption.dataset.isEbook === 'true';
-            const price = parseFloat(selectedOption.dataset.price || 0);
-            
-            basePrice = price;
-            
-            // Hiển thị thông báo giá ưu đãi preorder
-            if (bookPreorderPrice && selectedOption.textContent.includes('(Giá ưu đãi)')) {
-                preorderPriceNotice.style.display = 'block';
-            } else {
-                preorderPriceNotice.style.display = 'none';
+    formatSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        isEbookSelected = selectedOption.dataset.isEbook === 'true';
+        const price = parseFloat(selectedOption.dataset.price || 0);
+        
+        basePrice = price;
+        
+        // Hiển thị thông báo giá ưu đãi preorder
+        if (bookPreorderPrice && selectedOption.textContent.includes('(Giá ưu đãi)')) {
+            preorderPriceNotice.style.display = 'block';
+        } else {
+            preorderPriceNotice.style.display = 'none';
+        }
+        
+        // Hiển thị/ẩn phần địa chỉ và thuộc tính
+        if (isEbookSelected) {
+            addressSection.style.display = 'none';
+            attributesSection.style.display = 'none';
+            shippingFeeSection.style.display = 'none';
+            shippingPriceRow.style.display = 'none';
+            shippingFee = 0;
+            extraPrice = 0;
+            // Ẩn và bỏ required số lượng cho ebook, đặt về 1
+            if (quantitySection) quantitySection.style.display = 'none';
+            if (quantityInput) {
+                quantityInput.removeAttribute('required');
+                quantityInput.value = 1;
+                quantityInput.max = 1; // Ebook chỉ mua 1 bản
             }
-            
-            // Hiển thị/ẩn phần địa chỉ và thuộc tính
-            if (isEbookSelected) {
-                addressSection.style.display = 'none';
-                attributesSection.style.display = 'none';
-                shippingFeeSection.style.display = 'none';
-                shippingPriceRow.style.display = 'none';
-                shippingFee = 0;
-                extraPrice = 0;
-                // Ẩn và bỏ required số lượng cho ebook, đặt về 1
-                if (quantitySection) quantitySection.style.display = 'none';
-                if (quantityInput) {
-                    quantityInput.removeAttribute('required');
-                    quantityInput.value = 1;
+            // Xóa required cho các trường địa chỉ
+            addressSection.querySelectorAll('select, textarea').forEach(field => {
+                field.removeAttribute('required');
+            });
+            // Reset thuộc tính
+            attributesSection.querySelectorAll('select').forEach(select => {
+                select.value = '';
+            });
+        } else {
+            addressSection.style.display = 'block';
+            attributesSection.style.display = 'block';
+            shippingPriceRow.style.display = 'block';
+            // Hiện và yêu cầu số lượng với sách vật lý
+            if (quantitySection) quantitySection.style.display = 'block';
+            if (quantityInput) {
+                quantityInput.setAttribute('required', '');
+                // Set max quantity cho sách vật lý dựa trên remaining stock
+                quantityInput.max = Math.min(10, remainingPreorderStock);
+                if (parseInt(quantityInput.value) > remainingPreorderStock) {
+                    quantityInput.value = remainingPreorderStock;
                 }
-                // Xóa required cho các trường địa chỉ
-                addressSection.querySelectorAll('select, textarea').forEach(field => {
-                    field.removeAttribute('required');
-                });
-                // Reset thuộc tính
-                attributesSection.querySelectorAll('select').forEach(select => {
-                    select.value = '';
-                });
-            } else {
-                addressSection.style.display = 'block';
-                attributesSection.style.display = 'block';
-                shippingPriceRow.style.display = 'block';
-                // Hiện và yêu cầu số lượng với sách vật lý
-                if (quantitySection) quantitySection.style.display = 'block';
-                if (quantityInput) quantityInput.setAttribute('required', '');
-                // Thêm required cho các trường địa chỉ
-                document.getElementById('provinceSelect').setAttribute('required', '');
-                document.getElementById('districtSelect').setAttribute('required', '');
-                document.getElementById('wardSelect').setAttribute('required', '');
-                document.querySelector('textarea[name="address"]').setAttribute('required', '');
-                loadProvinces();
             }
-            
-            updateTotalAmount();
-        });
-    }
+            // Thêm required cho các trường địa chỉ
+            document.getElementById('provinceSelect').setAttribute('required', '');
+            document.getElementById('districtSelect').setAttribute('required', '');
+            document.getElementById('wardSelect').setAttribute('required', '');
+            document.querySelector('textarea[name="address"]').setAttribute('required', '');
+            loadProvinces();
+        }
+        
+        updateTotalAmount();
+    });
+}
 
     // Xử lý thay đổi số lượng
     if (quantityInput) {
@@ -461,68 +500,75 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function updateTotalAmount() {
-        const quantity = parseInt(quantityInput.value || 1);
+function updateTotalAmount() {
+    const quantity = parseInt(quantityInput.value || 1);
+    
+    // Kiểm tra giới hạn số lượng cho sách vật lý
+    if (!isEbookSelected && quantity > remainingPreorderStock) {
+        alert(`Chỉ còn ${remainingPreorderStock} suất đặt trước. Vui lòng giảm số lượng.`);
+        quantityInput.value = Math.min(quantity, remainingPreorderStock);
+        return;
+    }
+    
+    // Áp dụng phần trăm giảm giá preorder nếu có
+    const preorderDiscountPercent = {{ $preorderDiscountPercent ?? 0 }};
+    let finalPrice = basePrice;
+    
+    // Cập nhật hiển thị giá gốc và giảm giá
+    if (preorderDiscountPercent > 0) {
+        const discountAmount = (basePrice * preorderDiscountPercent) / 100;
+        finalPrice = Math.max(0, basePrice - discountAmount);
         
-        // Áp dụng phần trăm giảm giá preorder nếu có
-        const preorderDiscountPercent = {{ $preorderDiscountPercent ?? 0 }};
-        let finalPrice = basePrice;
-        
-        // Cập nhật hiển thị giá gốc và giảm giá
-        if (preorderDiscountPercent > 0) {
-            const discountAmount = (basePrice * preorderDiscountPercent) / 100;
-            finalPrice = Math.max(0, basePrice - discountAmount);
-            
-            // Hiển thị giá gốc
-            const originalPriceElement = document.getElementById('originalPrice');
-            if (originalPriceElement) {
-                originalPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(basePrice * quantity) + 'đ';
-            }
-            
-            // Hiển thị số tiền giảm
-            const discountAmountElement = document.getElementById('discountAmount');
-            if (discountAmountElement) {
-                discountAmountElement.textContent = '-' + new Intl.NumberFormat('vi-VN').format(discountAmount * quantity) + 'đ';
-            }
+        // Hiển thị giá gốc
+        const originalPriceElement = document.getElementById('originalPrice');
+        if (originalPriceElement) {
+            originalPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(basePrice * quantity) + 'đ';
         }
         
-        const bookTotal = finalPrice * quantity;
-        const attributeTotal = extraPrice * quantity;
-        const total = bookTotal + attributeTotal + (isEbookSelected ? 0 : shippingFee);
-        
-        // Cập nhật hiển thị từng phần
-        bookPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(bookTotal) + 'đ';
-        
-        if (attributeTotal > 0) {
-            attributePriceElement.textContent = new Intl.NumberFormat('vi-VN').format(attributeTotal) + 'đ';
-            attributePriceRow.style.display = 'block';
-        } else {
-            attributePriceRow.style.display = 'none';
-        }
-        
-        // Cập nhật hiển thị phí vận chuyển
-        const shippingPriceElement = document.getElementById('shippingPrice');
-        if (shippingPriceElement) {
-            shippingPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(isEbookSelected ? 0 : shippingFee) + 'đ';
-        }
-        
-        totalAmountElement.textContent = new Intl.NumberFormat('vi-VN').format(total) + 'đ';
-        
-        // Cập nhật hiển thị thông tin giá ở phần tiêu đề (theo 1 bản)
-        if (headerPriceInfo) {
-            if (preorderDiscountPercent > 0 && basePrice > 0) {
-                headerPriceInfo.style.display = 'inline';
-                if (headerOriginalPrice) {
-                    headerOriginalPrice.textContent = new Intl.NumberFormat('vi-VN').format(basePrice) + 'đ';
-                }
-                if (headerDiscountedPrice) {
-                    headerDiscountedPrice.textContent = new Intl.NumberFormat('vi-VN').format(finalPrice) + 'đ';
-                }
-            } else {
-                headerPriceInfo.style.display = 'none';
-            }
+        // Hiển thị số tiền giảm
+        const discountAmountElement = document.getElementById('discountAmount');
+        if (discountAmountElement) {
+            discountAmountElement.textContent = '-' + new Intl.NumberFormat('vi-VN').format(discountAmount * quantity) + 'đ';
         }
     }
+    
+    const bookTotal = finalPrice * quantity;
+    const attributeTotal = extraPrice * quantity;
+    const total = bookTotal + attributeTotal + (isEbookSelected ? 0 : shippingFee);
+    
+    // Cập nhật hiển thị từng phần
+    bookPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(bookTotal) + 'đ';
+    
+    if (attributeTotal > 0) {
+        attributePriceElement.textContent = new Intl.NumberFormat('vi-VN').format(attributeTotal) + 'đ';
+        attributePriceRow.style.display = 'block';
+    } else {
+        attributePriceRow.style.display = 'none';
+    }
+    
+    // Cập nhật hiển thị phí vận chuyển
+    const shippingPriceElement = document.getElementById('shippingPrice');
+    if (shippingPriceElement) {
+        shippingPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(isEbookSelected ? 0 : shippingFee) + 'đ';
+    }
+    
+    totalAmountElement.textContent = new Intl.NumberFormat('vi-VN').format(total) + 'đ';
+    
+    // Cập nhật hiển thị thông tin giá ở phần tiêu đề (theo 1 bản)
+    if (headerPriceInfo) {
+        if (preorderDiscountPercent > 0 && basePrice > 0) {
+            headerPriceInfo.style.display = 'inline';
+            if (headerOriginalPrice) {
+                headerOriginalPrice.textContent = new Intl.NumberFormat('vi-VN').format(basePrice) + 'đ';
+            }
+            if (headerDiscountedPrice) {
+                headerDiscountedPrice.textContent = new Intl.NumberFormat('vi-VN').format(finalPrice) + 'đ';
+            }
+        } else {
+            headerPriceInfo.style.display = 'none';
+        }
+    }
+}
 
     // Load provinces từ API GHN
     function loadProvinces() {
