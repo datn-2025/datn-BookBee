@@ -8,8 +8,18 @@
                         data-user-id="{{ $conversation->customer->id }}">
                         <!-- Avatar khách hàng -->
                         <div class="flex-shrink-0 me-3">
-                            <img src="{{ $conversation->customer->avatar ?? asset('images/default-user.png') }}"
-                                alt="Avatar" class="rounded-circle avatar-xs">
+                            @php $lav = isset($conversation->customer->avatar) ? str_replace('\\\\','/',$conversation->customer->avatar) : null; @endphp
+                            <img src="{{ $lav
+                                ? (\Illuminate\Support\Str::startsWith($lav, ['http://', 'https://', '/storage/'])
+                                    ? $lav
+                                    : (\Illuminate\Support\Str::startsWith($lav, ['public/'])
+                                        ? asset(str_replace('public/', 'storage/', $lav))
+                                        : (\Illuminate\Support\Str::startsWith($lav, ['storage/', 'avatars/'])
+                                            ? asset('storage/' . ltrim($lav, '/'))
+                                            : asset('storage/avatars/' . ltrim($lav, '/')))))
+                                : asset('images/avtchatbot.jpg') }}"
+                                alt="Avatar" class="rounded-circle avatar-xs"
+                                onerror="this.onerror=null; this.src='{{ asset('images/avtchatbot.jpg') }}'">
                         </div>
 
                         <!-- Nội dung -->
@@ -22,11 +32,11 @@
                             </p>
                             <small class="text-muted">
                                 @if ($conversation->customer->last_seen && $conversation->customer->last_seen->diffInMinutes(now()) <= 5)
-                                    <i class="bx bxs-circle text-success fs-10 me-1"></i>Online
+                                    <i class="bx bxs-circle text-success fs-10 me-1"></i>Trực tuyến
                                 @elseif($conversation->customer->last_seen && $conversation->customer->last_seen->diffInMinutes(now()) <= 30)
-                                    <i class="bx bxs-circle text-warning fs-10 me-1"></i>Away
+                                    <i class="bx bxs-circle text-warning fs-10 me-1"></i>Vừa hoạt động
                                 @else
-                                    <i class="bx bxs-circle text-muted fs-10 me-1"></i>Offline
+                                    <i class="bx bxs-circle text-muted fs-10 me-1"></i>Ngoại tuyến
                                 @endif
                             </small>
                         </div>
