@@ -134,7 +134,7 @@ class AdminProfileController extends Controller
 
             // Send notification email (optional)
             try {
-                Mail::to($admin->email)->send(new PasswordChangeMail($admin));
+                Mail::to($admin->email)->queue(new PasswordChangeMail($admin));
             } catch (\Exception $e) {
                 Log::error('Không thể gửi email thông báo đổi mật khẩu: ' . $e->getMessage());
             }

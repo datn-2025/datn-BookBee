@@ -140,14 +140,14 @@
                         <h3 class="font-bold text-blue-800 mb-2">CHÍNH SÁCH HOÀN TIỀN EBOOK</h3>
                         <ul class="text-sm text-blue-700 space-y-1">
                             <li>• <strong>Chưa tải file:</strong> Hoàn 100% giá trị ebook</li>
-                            <li>• <strong>Đã tải 1 lần:</strong> Hoàn 40% giá trị ebook</li>
+                            {{-- <li>• <strong>Đã tải 1 lần:</strong> Hoàn 40% giá trị ebook</li> --}}
                             <li>• <strong class="text-red-600">Đã tải trên 1 lần:</strong> <span class="text-red-600">Không được hoàn tiền</span></li>
                             <li>• Thời hạn yêu cầu: 7 ngày kể từ ngày mua</li>
                             <li>• Tiền sẽ được hoàn về ví điện tử trong 24-48 giờ</li>
                         </ul>
                         <div class="mt-3 p-2 bg-yellow-100 border border-yellow-300 rounded">
                             <p class="text-xs text-yellow-800 font-medium">
-                                ⚠️ <strong>Lưu ý:</strong> Chỉ ebook được tải tối đa 1 lần mới có thể yêu cầu hoàn tiền. Ebook đã tải nhiều hơn 1 lần sẽ không được hoàn tiền theo chính sách bảo vệ bản quyền.
+                                ⚠️ <strong>Lưu ý:</strong> Chỉ ebook chưa được tải mới có thể yêu cầu hoàn tiền. Ebook đã tải sẽ không được hoàn tiền theo chính sách bảo vệ bản quyền.
                             </p>
                         </div>
                     </div>

@@ -104,7 +104,7 @@ class ProfileClientController extends Controller
 
         // Gửi email thông báo
         try {
-            Mail::to($user->email)->send(new PasswordChangeMail($user->name));
+            Mail::to($user->email)->queue(new PasswordChangeMail($user->name));
         } catch (\Exception $e) {
             // Log lỗi nhưng không dừng quy trình
             Log::error('Không thể gửi email thông báo đổi mật khẩu: ' . $e->getMessage());
