@@ -44,21 +44,20 @@
     </style>
 @endpush
 
-@section('content')
+@section('account_content')
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-white py-8">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            <!-- Back Button - Adidas Style -->
-            <div class="mb-8">
-                <a href="{{ route('account.orders.unified') }}"
-                    class="inline-flex items-center gap-3 px-6 py-3 bg-white border-2 border-gray-300 hover:border-black text-black font-bold uppercase tracking-wide transition-all duration-300 hover:bg-gray-50">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                    QUAY LẠI DANH SÁCH
-                </a>
-            </div>
+        <!-- Back Button - Adidas Style -->
+        <div class="mb-8">
+            <a href="{{ route('account.purchase') }}"
+                class="inline-flex items-center gap-3 px-6 py-3 bg-white border-2 border-gray-300 hover:border-black text-black font-bold uppercase tracking-wide transition-all duration-300 hover:bg-gray-50">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                QUAY LẠI DANH SÁCH
+            </a>
+        </div>
 
             <!-- Order Header - Adidas Style -->
             <div
@@ -72,10 +71,9 @@
                             <div>
                                 <div class="flex items-center gap-4 mb-2">
                                     <div class="w-1 h-8 bg-white"></div>
-                                    <h1 class="text-3xl font-black uppercase tracking-wide">CHI TIẾT ĐƠN HÀNG</h1>
+                                    <h1 class="text-3xl font-black uppercase tracking-wide">SỬA ĐÁNH GIÁ</h1>
                                 </div>
-                                <p class="text-gray-300 text-sm uppercase tracking-wider">MÃ ĐƠN HÀNG:
-                                    {{ $order->order_code }}</p>
+                                <p class="text-gray-300 text-sm uppercase tracking-wider">ĐƠN HÀNG: {{ $order->order_code }}</p>
                                 @if ($order->delivery_method === 'mixed')
                                     <div
                                         class="mt-2 px-3 py-1 bg-yellow-500 text-black text-xs font-bold uppercase tracking-wide rounded">
@@ -1304,4 +1302,5 @@
             });
         </script>
     @endpush
+    </div>
 @endsection
