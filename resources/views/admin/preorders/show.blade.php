@@ -22,11 +22,11 @@
             @if($preorder->isPending())
                 <form action="{{ route('admin.preorders.approve', $preorder) }}" method="POST" class="d-inline">
                     @csrf
-                    <button type="submit" class="btn btn-warning" 
+                    {{-- <button type="submit" class="btn btn-warning" 
                             onclick="return confirm('Duyệt đơn hàng này?')">
                         <i class="fas fa-check"></i>
                         Duyệt đơn hàng
-                    </button>
+                    </button> --}}
                 </form>
             @elseif($preorder->isApproved() && $preorder->book->isReleased())
                 <button type="button" class="btn btn-success" 

@@ -275,11 +275,11 @@
                                                     <li>
                                                         <form action="{{ route('admin.preorders.approve', $preorder) }}" method="POST" class="d-inline">
                                                             @csrf
-                                                            <button type="submit" class="dropdown-item text-warning" 
+                                                            {{-- <button type="submit" class="dropdown-item text-warning" 
                                                                     onclick="return confirm('Duyệt đơn hàng này?')">
                                                                 <i class="fas fa-check"></i>
                                                                 Duyệt đơn hàng
-                                                            </button>
+                                                            </button> --}}
                                                         </form>
                                                     </li>
                                                 @elseif($preorder->isApproved())
@@ -291,11 +291,11 @@
                                                                 Chuyển thành đơn hàng
                                                             </button>
                                                         @else
-                                                            <button type="button" class="dropdown-item text-warning" 
+                                                            {{-- <button type="button" class="dropdown-item text-warning" 
                                                                     onclick="showConvertModal('{{ $preorder->id }}', '{{ $preorder->book->title }}', false, '{{ $preorder->book->release_date->format('d/m/Y') }}')">
                                                                 <i class="fas fa-exclamation-triangle"></i>
                                                                 Chuyển thành đơn hàng (Sớm)
-                                                            </button>
+                                                            </button> --}}
                                                         @endif
                                                     </li>
                                                 @elseif($preorder->isReadyToConvert())
