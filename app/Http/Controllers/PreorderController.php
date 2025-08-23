@@ -105,7 +105,8 @@ class PreorderController extends Controller
             'ward_code' => 'nullable|string',
             'ward_name' => 'nullable|string',
             'notes' => 'nullable|string|max:1000',
-            'payment_method_id' => 'required|exists:payment_methods,id'
+            'payment_method_id' => 'required|exists:payment_methods,id',
+            'shipping_fee' => 'nullable|numeric|min:0'
         ]);
 
         // 2) Tải đối tượng cần thiết để tính giá và xử lý thanh toán
@@ -170,10 +171,16 @@ class PreorderController extends Controller
             // Đơn giá cuối cùng = giá cơ bản + phụ thu từ thuộc tính
             $unitPrice = $basePrice + $attributeExtraPrice; // Tính đơn giá cuối cùng
             // Thành tiền = đơn giá cuối cùng * số lượng
-            $totalAmount = $unitPrice * $validated['quantity']; // Tính tổng tiền
+            $subtotal = $unitPrice * $validated['quantity']; // Tính tổng tiền sản phẩm
             
-            // Thêm phí ship nếu có (hiện tại: miễn phí cho preorder)
-            $shippingFee = 0; // Miễn phí ship cho đặt trước
+            // Tính phí vận chuyển (chỉ áp dụng cho sách vật lý)
+            $shippingFee = 0;
+            if (!$isEbook && isset($validated['shipping_fee'])) {
+                $shippingFee = $validated['shipping_fee'];
+            }
+            
+            // Tổng tiền cuối cùng = tiền sản phẩm + phí vận chuyển
+            $totalAmount = $subtotal + $shippingFee;
 
             // Lấy trạng thái thanh toán mặc định (hiển thị "Chờ Xử Lý" cho các giao dịch đang diễn ra)
             $paymentStatus = PaymentStatus::where('name', 'Chờ Xử Lý')->first();
@@ -192,8 +199,9 @@ class PreorderController extends Controller
                 'quantity' => $validated['quantity'],
                 'unit_price' => $unitPrice,
                 'total_amount' => $totalAmount,
+                'shipping_fee' => $shippingFee,
                 'selected_attributes' => $selectedAttributes,
-                'status' => 'pending',
+                'status' => Preorder::STATUS_CHO_DUYET,
                 'notes' => $validated['notes'],
                 'expected_delivery_date' => $book->release_date,
                 'payment_method_id' => $validated['payment_method_id'],
@@ -308,7 +316,7 @@ class PreorderController extends Controller
             abort(403);
         }
 
-        $preorder->load(['book', 'bookFormat']);
+        $preorder->load(['book', 'bookFormat', 'paymentMethod']);
         
         return view('preorders.show', compact('preorder'));
     }
@@ -571,4 +579,3 @@ class PreorderController extends Controller
         }
     }
 }
-

@@ -253,7 +253,7 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="province_id" class="form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
-                            <select class="form-control @error('province_id') is-invalid @enderror" id="province_id" name="province_id">
+                            <select class="form-control @error('province_id') is-invalid @enderror" id="province_id" name="province_id" data-required="true" required>
                                 <option value="">-- Chọn tỉnh/thành phố --</option>
                                 @foreach($provinces as $province)
                                     <option value="{{ $province->id }}" {{ old('province_id') == $province->id ? 'selected' : '' }}>
@@ -268,7 +268,7 @@
                         
                         <div class="mb-3">
                             <label for="district_id" class="form-label">Quận/Huyện <span class="text-danger">*</span></label>
-                            <select class="form-control @error('district_id') is-invalid @enderror" id="district_id" name="district_id" disabled>
+                            <select class="form-control @error('district_id') is-invalid @enderror" id="district_id" name="district_id" data-required="true" required disabled>
                                 <option value="">-- Chọn quận/huyện --</option>
                             </select>
                             @error('district_id')
@@ -278,7 +278,7 @@
                         
                         <div class="mb-3">
                             <label for="ward_id" class="form-label">Phường/Xã <span class="text-danger">*</span></label>
-                            <select class="form-control @error('ward_id') is-invalid @enderror" id="ward_id" name="ward_id" disabled>
+                            <select class="form-control @error('ward_id') is-invalid @enderror" id="ward_id" name="ward_id" data-required="true" required disabled>
                                 <option value="">-- Chọn phường/xã --</option>
                             </select>
                             @error('ward_id')
@@ -289,7 +289,7 @@
                         <div class="mb-3">
                             <label for="address" class="form-label">Địa chỉ cụ thể <span class="text-danger">*</span></label>
                             <textarea class="form-control @error('address') is-invalid @enderror" 
-                                      id="address" name="address" rows="3" 
+                                      id="address" name="address" rows="3" data-required="true" required
                                       placeholder="Số nhà, tên đường...">{{ old('address') }}</textarea>
                             @error('address')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -307,8 +307,10 @@
                         <div class="mb-3">
                             <label for="status" class="form-label">Trạng thái ban đầu</label>
                             <select class="form-control" id="status" name="status">
-                                <option value="pending" {{ old('status', 'pending') == 'pending' ? 'selected' : '' }}>Chờ xử lý</option>
-                                <option value="confirmed" {{ old('status') == 'confirmed' ? 'selected' : '' }}>Đã xác nhận</option>
+                                <option value="{{ \App\Models\Preorder::STATUS_CHO_DUYET }}" {{ old('status', \App\Models\Preorder::STATUS_CHO_DUYET) == \App\Models\Preorder::STATUS_CHO_DUYET ? 'selected' : '' }}>Chờ duyệt</option>
+                        <option value="{{ \App\Models\Preorder::STATUS_DA_DUYET }}" {{ old('status') == \App\Models\Preorder::STATUS_DA_DUYET ? 'selected' : '' }}>Đã duyệt</option>
+                        <option value="{{ \App\Models\Preorder::STATUS_SAN_SANG_CHUYEN_DOI }}" {{ old('status') == \App\Models\Preorder::STATUS_SAN_SANG_CHUYEN_DOI ? 'selected' : '' }}>Sẵn sàng chuyển đổi</option>
+                        <option value="{{ \App\Models\Preorder::STATUS_DA_HUY }}" {{ old('status') == \App\Models\Preorder::STATUS_DA_HUY ? 'selected' : '' }}>Đã hủy</option>
                             </select>
                         </div>
                         
@@ -461,23 +463,53 @@ $(document).ready(function() {
             
             currentUnitPrice = price;
             
-            // Ẩn/hiện địa chỉ giao hàng và phí vận chuyển
-            if (formatName.toLowerCase().includes('ebook')) {
+            // Kiểm tra xem có phải ebook không (kiểm tra cả tên định dạng và format name)
+            const isEbook = formatName.toLowerCase().includes('ebook') || format.name.toLowerCase().includes('ebook');
+            
+            if (isEbook) {
+                // Ẩn địa chỉ giao hàng, phí vận chuyển và thuộc tính sách cho ebook
                 $('#shipping-address').hide();
                 $('#shipping-fee-section').hide();
+                $('#book-attributes').hide();
+                
+                // Loại bỏ thuộc tính required cho các trường địa chỉ
                 $('#shipping-address input, #shipping-address select, #shipping-address textarea').prop('required', false);
+                
+                // Reset giá trị phí vận chuyển về 0
+                $('#shipping_fee').val(0);
+                
+                // Reset các thuộc tính đã chọn
+                selectedAttributes = {};
+                updateAttributesPrice();
             } else {
+                // Hiện địa chỉ giao hàng và phí vận chuyển cho sách vật lý
                 $('#shipping-address').show();
                 $('#shipping-fee-section').show();
+                
+                // Khôi phục thuộc tính required cho các trường địa chỉ
                 $('#shipping-address input[data-required], #shipping-address select[data-required], #shipping-address textarea[data-required]').prop('required', true);
+                
+                // Chỉ hiện thuộc tính nếu có dữ liệu
+                if (bookAttributes && bookAttributes.length > 0) {
+                    $('#book-attributes').show();
+                } else {
+                    $('#book-attributes').hide();
+                }
             }
         } else {
+            // Reset khi không chọn định dạng
             selectedFormat = null;
             $('#selected-format').text('');
             $('#format-price').text('');
             currentUnitPrice = 0;
+            
+            // Hiện lại tất cả các phần
             $('#shipping-address').show();
             $('#shipping-fee-section').show();
+            $('#book-attributes').hide();
+            
+            // Khôi phục thuộc tính required
+            $('#shipping-address input[data-required], #shipping-address select[data-required], #shipping-address textarea[data-required]').prop('required', true);
         }
         
         calculateTotal();

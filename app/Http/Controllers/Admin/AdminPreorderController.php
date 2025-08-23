@@ -10,6 +10,7 @@ use App\Models\OrderItem;
 use App\Models\Preorder;
 use App\Models\User;
 use App\Services\GHNService;
+use App\Services\InvoiceService;
 use App\Mail\PreorderStatusUpdate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -62,15 +63,14 @@ class AdminPreorderController extends Controller
         $preorders = $query->orderBy('created_at', 'desc')->paginate(20);
 
         // Thống kê
-        // Thống kê nhanh theo scope trên model Preorder
+        // Thống kê nhanh theo trạng thái mới
         $stats = [
             'total' => Preorder::count(),
-            'pending' => Preorder::pending()->count(),
-            'confirmed' => Preorder::confirmed()->count(),
-            'processing' => Preorder::processing()->count(),
-            'shipped' => Preorder::shipped()->count(),
-            'delivered' => Preorder::delivered()->count(),
-            'cancelled' => Preorder::cancelled()->count(),
+            'cho_duyet' => Preorder::where('status', Preorder::STATUS_CHO_DUYET)->count(),
+            'da_duyet' => Preorder::where('status', Preorder::STATUS_DA_DUYET)->count(),
+            'san_sang_chuyen_doi' => Preorder::where('status', Preorder::STATUS_SAN_SANG_CHUYEN_DOI)->count(),
+            'da_chuyen_doi' => Preorder::where('status', Preorder::STATUS_DA_CHUYEN_THANH_DON_HANG)->count(),
+            'da_huy' => Preorder::where('status', Preorder::STATUS_DA_HUY)->count(),
         ];
 
         $books = Book::where('pre_order', true)->get(['id', 'title']);
@@ -118,12 +118,15 @@ class AdminPreorderController extends Controller
             'phone' => 'required|string|regex:/^[0-9+\-\s()]+$/|max:20',
             'user_id' => 'nullable|exists:users,id',
             'notes' => 'nullable|string|max:1000',
-            'status' => 'required|in:pending,confirmed',
+            'status' => 'required|in:' . implode(',', [
+                Preorder::STATUS_CHO_DUYET,
+                Preorder::STATUS_DA_DUYET
+            ]),
             'shipping_fee' => 'nullable|numeric|min:0',
             'expected_delivery_date' => 'nullable|date|after_or_equal:today',
             'selected_attributes' => 'nullable|array',
             'selected_attributes.*' => 'exists:attribute_values,id'
-        ];
+        ]);
         
         // Chỉ yêu cầu địa chỉ cho sách vật lý và không phải preorder
         // Với preorder, địa chỉ có thể được thêm sau khi sách sẵn sàng giao
@@ -214,9 +217,9 @@ class AdminPreorderController extends Controller
                 'status' => $validated['status'],
                 'notes' => $validated['notes'],
                 'expected_delivery_date' => $validated['expected_delivery_date'] ?: $book->release_date,
-                'confirmed_at' => $validated['status'] === 'confirmed' ? now() : null,
+                'confirmed_at' => $validated['status'] === Preorder::STATUS_DA_DUYET ? now() : null,
                 'selected_attributes' => !empty($selectedAttributesData) ? json_encode($selectedAttributesData) : null
-            ];
+            ]);
             
             // Thêm thông tin địa chỉ nếu không phải ebook và không phải preorder
             if (!$isEbook && !$isPreorderBook) {
@@ -258,7 +261,7 @@ class AdminPreorderController extends Controller
     public function show(Preorder $preorder)
     {
         // Load thêm quan hệ để hiển thị đầy đủ trên view
-        $preorder->load(['user', 'book', 'bookFormat']);
+        $preorder->load(['user', 'book', 'bookFormat', 'paymentMethod']);
         
         return view('admin.preorders.show', compact('preorder'));
     }
@@ -269,62 +272,88 @@ class AdminPreorderController extends Controller
     public function updateStatus(Request $request, Preorder $preorder)
     {
         // Kiểm tra nếu đơn đã chuyển thành đơn hàng
-        if ($preorder->status === 'delivered' || $preorder->status === 'Đã chuyển thành đơn hàng') {
+        if ($preorder->isConverted()) {
             toastr()->error('Không thể cập nhật trạng thái cho đơn đã chuyển thành đơn hàng.');
             return back();
         }
 
-        // Cho phép nhập cả bộ trạng thái tiếng Việt/tiếng Anh nhằm tương thích UI
+        // Validate trạng thái với constants mới
         $validated = $request->validate([
-            'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled,Chờ xử lý,Đã xác nhận,Đang xử lý,Đã gửi,Đã giao,Đã hủy',
+            'status' => 'required|in:' . implode(',', [
+                 Preorder::STATUS_CHO_DUYET,
+                 Preorder::STATUS_DA_DUYET, 
+                 Preorder::STATUS_SAN_SANG_CHUYEN_DOI,
+                 Preorder::STATUS_DA_HUY,
+                 // Tương thích ngược với UI cũ
+                 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled',
+                 'Chờ xử lý', 'Đã xác nhận', 'Đang xử lý', 'Đã gửi', 'Đã giao', 'Đã hủy'
+             ]),
             'notes' => 'nullable|string|max:1000'
         ]);
 
         $oldStatus = $preorder->status;
         
+        // Chuẩn hóa trạng thái từ UI cũ sang mới
+        $newStatus = Preorder::STATUS_MAPPING[$validated['status']] ?? $validated['status'];
+        
         try {
             DB::beginTransaction();
 
-            // Cập nhật trạng thái chung và ghi chú
-            $preorder->update([
-                'status' => $validated['status'],
+            // Kiểm tra xem có thể chuyển đổi trạng thái không
+            if (!$preorder->canTransitionTo($newStatus)) {
+                toastr()->error("Không thể chuyển từ trạng thái '{$preorder->status}' sang '{$newStatus}'.");
+                return back();
+            }
+
+            // Sử dụng State Machine để chuyển đổi trạng thái
+            $preorder->transitionTo($newStatus, [
                 'notes' => $validated['notes']
             ]);
 
-            // Cập nhật timestamp tương ứng
-            // Đồng bộ các mốc thời gian tương ứng với trạng thái
-            switch ($validated['status']) {
-                case 'confirmed':
-                case 'Đã xác nhận':
-                    $preorder->update(['confirmed_at' => now()]);
+            // Xử lý logic đặc biệt cho từng trạng thái
+            switch ($newStatus) {
+                case Preorder::STATUS_SAN_SANG_CHUYEN_DOI:
+                    // Kiểm tra nếu là sách chưa phát hành
+                    if ($preorder->book && $preorder->book->release_date > now()) {
+                        Log::info('Preorder ready to convert but book not released yet', [
+                            'preorder_id' => $preorder->id,
+                            'book_release_date' => $preorder->book->release_date
+                        ]);
+                    }
                     break;
-                case 'shipped':
-                case 'Đã gửi':
-                    $preorder->update(['shipped_at' => now()]);
-                    break;
-                case 'delivered':
-                case 'Đã giao':
-                    $preorder->update(['delivered_at' => now()]);
+                case Preorder::STATUS_DA_HUY:
+                    // Logic hủy đơn đã được xử lý trong markAsCancelled()
                     break;
             }
 
             DB::commit();
 
             // Gửi email thông báo nếu trạng thái thay đổi
-            if ($oldStatus !== $validated['status']) {
+            if ($oldStatus !== $newStatus) {
                 try {
-                    Mail::to($preorder->email)->send(new PreorderStatusUpdate($preorder, $oldStatus));
+                    // Mail::to($preorder->email)->send(new PreorderStatusUpdate($preorder, $oldStatus));
+                    Log::info('Status changed, email notification should be sent', [
+                        'preorder_id' => $preorder->id,
+                        'old_status' => $oldStatus,
+                        'new_status' => $newStatus
+                    ]);
                 } catch (\Exception $e) {
                     Log::error('Lỗi gửi email cập nhật trạng thái preorder: ' . $e->getMessage());
                 }
             }
 
-            return back()->with('success', 'Đã cập nhật trạng thái thành công.');
+            toastr()->success('Đã cập nhật trạng thái thành công.');
+            return back();
 
+        } catch (\InvalidArgumentException $e) {
+            DB::rollback();
+            toastr()->error($e->getMessage());
+            return back();
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Lỗi cập nhật trạng thái preorder: ' . $e->getMessage());
-            return back()->with('error', 'Có lỗi xảy ra khi cập nhật trạng thái.');
+            toastr()->error('Có lỗi xảy ra khi cập nhật trạng thái.');
+            return back();
         }
     }
 
@@ -339,9 +368,8 @@ class AdminPreorderController extends Controller
             'request_data' => $request->all()
         ]);
 
-        // Kiểm tra trạng thái đơn hàng - chỉ cho phép duyệt đơn đang chờ xử lý
-        // Chỉ cho phép duyệt nếu đang ở trạng thái chờ xác nhận
-        if ($preorder->status !== 'pending' && $preorder->status !== 'Chờ xác nhận') {
+        // Kiểm tra điều kiện duyệt đơn
+        if (!$preorder->canBeApproved()) {
             Log::warning('Cannot approve preorder - invalid status', [
                 'preorder_id' => $preorder->id,
                 'current_status' => $preorder->status
@@ -363,19 +391,16 @@ class AdminPreorderController extends Controller
         }
 
         try {
-            // Cập nhật trạng thái preorder từ pending sang confirmed
-            // Chuyển từ pending sang Đã xác nhận và set mốc thời gian
-            $preorder->update([
-                'status' => 'Đã xác nhận',
-                'confirmed_at' => now()
-            ]);
-
+            // Sử dụng State Machine để chuyển đổi trạng thái
+            $preorder->transitionTo(Preorder::STATUS_DA_DUYET);
+            
             Log::info('Preorder approved successfully', [
-                'preorder_id' => $preorder->id,
-                'new_status' => 'Đã xác nhận'
-            ]);
+                 'preorder_id' => $preorder->id,
+                 'new_status' => $preorder->status
+             ]);
 
-            return back()->with('success', 'Đã duyệt đơn đặt trước thành công!');
+            toastr()->success('Đã duyệt đơn đặt trước thành công!');
+            return back();
 
         } catch (\Exception $e) {
             Log::error('Error approving preorder: ' . $e->getMessage(), [
@@ -390,11 +415,51 @@ class AdminPreorderController extends Controller
      */
     public function convertToOrder(Request $request, Preorder $preorder)
     {
-        // B1: Chỉ cho phép convert khi preorder đã được admin xác nhận (an toàn nghiệp vụ)
-        if ($preorder->status !== 'Đã xác nhận' && $preorder->status !== 'confirmed') {
-            return back()->with('error', 'Chỉ có thể chuyển đổi đơn đã được xác nhận.');
+        Log::info('Convert to order called', [
+            'preorder_id' => $preorder->id,
+            'current_status' => $preorder->status,
+            'request_data' => $request->all(),
+            'user' => Auth::user()->email ?? 'system'
+        ]);
+        // dd(!$preorder->canBeConverted());
+        // B1: Kiểm tra điều kiện chuyển đổi
+        if (!$preorder->canBeConverted()) {
+            // dd(10);
+            Log::warning('Cannot convert preorder - invalid status', [
+                'preorder_id' => $preorder->id,
+                'current_status' => $preorder->status
+            ]);
+            return back()->with('error', 'Chỉ có thể chuyển đổi đơn đã được duyệt và chưa chuyển đổi.');
         }
+        // dd(1);
+        
+        Log::info('Preorder can be converted', ['preorder_id' => $preorder->id]);
+        
+        // Kiểm tra đã được chuyển đổi chưa
+        // dd($preorder->isConverted());
+        if ($preorder->isConverted()) {
+            // dd(1);
+            Log::warning('Preorder already converted', ['preorder_id' => $preorder->id]);
+            return back()->with('error', 'Đơn đặt trước này đã được chuyển đổi thành đơn hàng.');
+        }
+        // dd(10);
+        
+        Log::info('Preorder not yet converted, proceeding', ['preorder_id' => $preorder->id]);
 
+        // Thêm cảnh báo xác nhận cho admin trước khi chuyển đổi
+        if (!$request->has('force_convert')) {
+            // dd(3);
+            $bookTitle = $preorder->book->title;
+            $customerName = $preorder->customer_name;
+            $totalAmount = number_format($preorder->total_amount, 0, ',', '.') . ' VNĐ';
+            // dd($bookTitle, $customerName, $totalAmount);
+            return back()->with('warning', [
+                'message' => "Bạn có chắc chắn muốn chuyển đổi đơn đặt trước của khách hàng '{$customerName}' cho sách '{$bookTitle}' (Tổng tiền: {$totalAmount}) thành đơn hàng chính thức không? Hành động này không thể hoàn tác.",
+                'confirm_url' => route('admin.preorders.convert-to-order', $preorder) . '?force_convert=1',
+                'preorder_id' => $preorder->id
+            ]);
+        }
+        // dd(1);
         // Allow conversion even if book is not released yet, with a warning
         // Cho phép convert kể cả khi sách chưa phát hành (ghi log cảnh báo)
         if (!$preorder->book->isReleased()) {
@@ -404,12 +469,20 @@ class AdminPreorderController extends Controller
                 'release_date' => $preorder->book->release_date,
                 'converted_by' => Auth::user()->email ?? 'system'
             ]);
+            
+            // Thêm thông báo cảnh báo cho admin
+            toastr()->warning(
+                'Cảnh báo: Sách "' . $preorder->book->title . '" chưa đến ngày phát hành (' . 
+                $preorder->book->release_date->format('d/m/Y') . '). Đơn hàng vẫn được tạo thành công.'
+            );
         }
 
         try {
+            Log::info('Starting database transaction for conversion', ['preorder_id' => $preorder->id]);
             DB::beginTransaction();
 
             // B2: Tạo địa chỉ giao hàng đơn giản dựa theo thông tin trong preorder
+            Log::info('Creating shipping address', ['preorder_id' => $preorder->id]);
             $addressId = \Illuminate\Support\Str::uuid();
             DB::table('addresses')->insert([
                 'id' => $addressId,
@@ -428,8 +501,11 @@ class AdminPreorderController extends Controller
                 'updated_at' => now()
             ]);
             
+            Log::info('Address created successfully', ['preorder_id' => $preorder->id, 'address_id' => $addressId]);
+            
             // B3: Lấy/khởi tạo trạng thái đơn hàng mặc định "Chờ xác nhận"
             // B3: Đảm bảo có trạng thái đơn hàng mặc định "Chờ xác nhận"
+            Log::info('Getting or creating order status', ['preorder_id' => $preorder->id]);
             $orderStatusId = DB::table('order_statuses')->where('name', 'Chờ xác nhận')->value('id');
             if (!$orderStatusId) {
                 $orderStatusId = \Illuminate\Support\Str::uuid();
@@ -466,89 +542,27 @@ class AdminPreorderController extends Controller
             
             // B5: Chuẩn bị ID và mã đơn
             // B5: Sinh ID và mã đơn độc nhất
+            Log::info('Generating order ID and code', ['preorder_id' => $preorder->id]);
             $orderId = \Illuminate\Support\Str::uuid();
-            $orderCode = 'ORD-' . time() . '-' . rand(1000, 9999);
+            $orderCode = 'BBE' . '-' . rand(1000, 9999);
+            Log::info('Order ID and code generated', ['preorder_id' => $preorder->id, 'order_id' => $orderId, 'order_code' => $orderCode]);
             
             // B6: Xác định phương thức thanh toán cho ORDER
-            //    - Mặc định dùng phương thức mà người dùng đã chọn khi tạo preorder
-            //    - Nếu preorder đã PAID: phân nhánh VNPay/Wallet dựa trên `vnpay_transaction_id`
-            //    - Nếu chưa xác định được: có fallback (đã paid → ưu tiên Ví; chưa paid → COD)
-            // Mặc định: dùng phương thức đã lưu trên preorder (lựa chọn ban đầu của KH)
-            $paymentMethodId = $preorder->payment_method_id;
-
-            // Nếu preorder đã thanh toán, suy luận PM dựa theo transaction id VNPay
-            if ($preorder->payment_status === 'paid') {
-                // Nếu đã thanh toán: phân biệt VNPay vs Ví điện tử theo dấu hiệu transaction
-                if ($preorder->vnpay_transaction_id) {
-                    $pm = DB::table('payment_methods')
-                        ->where('is_active', true)
-                        ->where(function($q){
-                            $q->where('name', 'like', '%vnpay%')
-                              ->orWhere('name', 'like', '%vn pay%')
-                              ->orWhere('name', 'like', '%vn-pay%');
-                        })
-                        ->first();
-                    // Ưu tiên áp dụng PM tìm được, nếu không có thì giữ nguyên
-                    $paymentMethodId = ($pm->id ?? null) ?: $paymentMethodId;
-                    Log::info('convertToOrder chose payment method (VNPay path)', ['pm' => $pm]);
-                } else {
-                    $pm = DB::table('payment_methods')
-                        ->where('is_active', true)
-                        ->where(function($q){
-                            $q->where('name', 'like', '%ví điện tử%')
-                              ->orWhere('name', 'like', '%vi dien tu%')
-                              ->orWhere('name', 'like', '%wallet%')
-                              ->orWhere('name', 'like', '%e-wallet%')
-                              ->orWhere('name', 'like', '%vi%')
-                              ->orWhere('name', 'like', '%momo%');
-                        })
-                        ->first();
-                    // Không có vnpay_transaction_id → hiểu là Ví điện tử
-                    $paymentMethodId = ($pm->id ?? null) ?: $paymentMethodId;
-                    Log::info('convertToOrder chose payment method (Wallet path)', ['pm' => $pm]);
-                }
-            }
-
-            // Fallback lần cuối để tránh hiển thị "Không xác định"
-            if (!$paymentMethodId) {
-                if ($preorder->payment_status === 'paid') {
-                    // Nếu đã thanh toán mà vẫn chưa xác định PM -> ưu tiên Ví điện tử
-                    $pm = DB::table('payment_methods')
-                        ->where('is_active', true)
-                        ->where(function($q){
-                            $q->where('name', 'like', '%ví điện tử%')
-                              ->orWhere('name', 'like', '%vi dien tu%')
-                              ->orWhere('name', 'like', '%wallet%')
-                              ->orWhere('name', 'like', '%e-wallet%')
-                              ->orWhere('name', 'like', '%momo%');
-                        })
-                        ->first();
-                    $paymentMethodId = ($pm->id ?? null) ?: $paymentMethodId;
-                    Log::info('convertToOrder fallback chose Wallet', ['pm' => $pm]);
-                } else {
-                    // Chưa thanh toán -> fallback COD
-                    $pm = DB::table('payment_methods')
-                        ->where('is_active', true)
-                        ->where(function($q){
-                            $q->where('name', 'like', '%thanh toán khi nhận hàng%')
-                              ->orWhere('name', 'like', '%khi nhận hàng%')
-                              ->orWhere('name', 'like', '%cash on delivery%')
-                              ->orWhere('name', 'like', '%COD%')
-                              ->orWhere('name', 'like', '%cod%');
-                        })
-                        ->first();
-                    $paymentMethodId = ($pm->id ?? null) ?: $paymentMethodId;
-                    Log::info('convertToOrder fallback chose COD', ['pm' => $pm]);
-                }
-            }
+            Log::info('Determining payment method', ['preorder_id' => $preorder->id]);
+            $paymentMethodId = $this->determinePaymentMethodForOrder($preorder);
+            Log::info('Payment method determined', ['preorder_id' => $preorder->id, 'payment_method_id' => $paymentMethodId]);
 
             // B7: Tạo Order chính thức dựa trên dữ liệu từ preorder
             // B7: Ghi Order chính thức vào DB
+            Log::info('Creating order record', ['preorder_id' => $preorder->id, 'order_id' => $orderId]);
             DB::table('orders')->insert([
                 'id' => $orderId,
                 'user_id' => $preorder->user_id,
                 'order_code' => $orderCode,
                 'total_amount' => $preorder->total_amount,
+                'shipping_fee' => $preorder->shipping_fee ?? 0,
+                'recipient_name' => $preorder->customer_name,
+                'recipient_email' => $preorder->email,
                 'address_id' => $addressId,
                 'order_status_id' => $orderStatusId,
                 'payment_status_id' => $preorder->payment_status === 'paid' ? $paidStatusId : $unpaidStatusId,
@@ -558,12 +572,42 @@ class AdminPreorderController extends Controller
                 'updated_at' => now()
             ]);
             
+            Log::info('Order record created successfully', ['preorder_id' => $preorder->id, 'order_id' => $orderId]);
+            
             // Tạo object Order để sử dụng cho phần còn lại
             // Nạp model Order để dùng tiếp (ví dụ hiển thị, tạo items)
+            Log::info('Loading order model', ['preorder_id' => $preorder->id, 'order_id' => $orderId]);
             $order = Order::find($orderId);
+            
+            if (!$order) {
+                Log::error('Failed to load order model', ['preorder_id' => $preorder->id, 'order_id' => $orderId]);
+                throw new \Exception('Không thể tải thông tin đơn hàng vừa tạo');
+            }
+            
+            Log::info('Order model loaded successfully', ['preorder_id' => $preorder->id, 'order_id' => $order->id]);
+
+            // Tạo hóa đơn tự động nếu đơn đã thanh toán
+            if ($preorder->payment_status === 'paid') {
+                try {
+                    $invoiceService = new InvoiceService();
+                    $invoice = $invoiceService->createInvoiceForOrder($order);
+                    Log::info('Invoice created for converted preorder', [
+                        'preorder_id' => $preorder->id,
+                        'order_id' => $order->id,
+                        'invoice_id' => $invoice->id
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create invoice for converted preorder: ' . $e->getMessage(), [
+                        'preorder_id' => $preorder->id,
+                        'order_id' => $order->id
+                    ]);
+                    // Không throw exception để không làm gián đoạn quá trình chuyển đổi
+                }
+            }
 
             // B8: Tạo OrderItem tương ứng (1 item duy nhất từ preorder)
             // B8: Tạo OrderItem một-một từ preorder
+            Log::info('Creating order item', ['preorder_id' => $preorder->id, 'order_id' => $order->id]);
             $orderItemId = \Illuminate\Support\Str::uuid();
             DB::table('order_items')->insert([
                  'id' => $orderItemId,
@@ -578,23 +622,74 @@ class AdminPreorderController extends Controller
                  'updated_at' => now()
              ]);
 
-            // B9: Cập nhật trạng thái preorder sau khi đã tạo order
-            // B9: Cập nhật trạng thái preorder sau khi đã tạo order (theo thiết kế hiện tại)
-            $preorder->update([
-                'status' => 'delivered',
-                'delivered_at' => now()
-            ]);
+            Log::info('Order item created successfully', ['preorder_id' => $preorder->id, 'order_item_id' => $orderItemId]);
 
+            // B8.1: Xử lý selected_attributes nếu có (cho sách vật lý)
+            Log::info('Processing selected attributes', ['preorder_id' => $preorder->id, 'selected_attributes' => $preorder->selected_attributes]);
+            if (!empty($preorder->selected_attributes)) {
+                $selectedAttributes = is_string($preorder->selected_attributes) 
+                    ? json_decode($preorder->selected_attributes, true) 
+                    : $preorder->selected_attributes;
+                
+                if (is_array($selectedAttributes)) {
+                    foreach ($selectedAttributes as $attributeName => $attributeValue) {
+                        // Tìm attribute_value_id từ attribute name và value
+                        $attributeValueId = DB::table('attribute_values')
+                            ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
+                            ->where('attributes.name', $attributeName)
+                            ->where('attribute_values.value', $attributeValue)
+                            ->value('attribute_values.id');
+                        
+                        if ($attributeValueId) {
+                            DB::table('order_item_attribute_values')->insert([
+                                'id' => \Illuminate\Support\Str::uuid(),
+                                'order_item_id' => $orderItemId,
+                                'attribute_value_id' => $attributeValueId,
+                                'created_at' => now(),
+                                'updated_at' => now()
+                            ]);
+                        } else {
+                            \Log::warning("Không tìm thấy attribute_value_id cho {$attributeName}: {$attributeValue}");
+                        }
+                    }
+                }
+            }
+
+            // B9: Cập nhật trạng thái preorder sau khi đã tạo order
+            // Sử dụng State Machine để chuyển đổi trạng thái theo đúng luồng
+            Log::info('Updating preorder status', ['preorder_id' => $preorder->id, 'current_status' => $preorder->status]);
+            
+            // Nếu đang ở trạng thái 'Đã duyệt', cần chuyển qua 'Sẵn sàng chuyển đổi' trước
+            if ($preorder->status === Preorder::STATUS_DA_DUYET) {
+                Log::info('Transitioning to ready to convert status', ['preorder_id' => $preorder->id]);
+                $preorder->transitionTo(Preorder::STATUS_SAN_SANG_CHUYEN_DOI);
+                Log::info('Transitioned to ready to convert', ['preorder_id' => $preorder->id, 'new_status' => $preorder->status]);
+            }
+            
+            // Sau đó chuyển sang 'Đã chuyển thành đơn hàng'
+            Log::info('Transitioning to converted status', ['preorder_id' => $preorder->id]);
+            $preorder->transitionTo(Preorder::STATUS_DA_CHUYEN_THANH_DON_HANG, [
+                'converted_order_id' => $order->id
+            ]);
+            Log::info('Preorder status updated to converted', ['preorder_id' => $preorder->id, 'final_status' => $preorder->status]);
+
+            Log::info('Committing transaction', ['preorder_id' => $preorder->id, 'order_id' => $order->id]);
             DB::commit();
+            Log::info('Transaction committed successfully', ['preorder_id' => $preorder->id, 'order_id' => $order->id]);
 
             // Điều hướng sang trang chi tiết đơn hàng vừa tạo
+            Log::info('Conversion completed successfully', ['preorder_id' => $preorder->id, 'order_id' => $order->id]);
             return redirect()->route('admin.orders.show', $order)
                 ->with('success', 'Đã chuyển đổi thành đơn hàng #' . $order->id . ' thành công.');
 
         } catch (\Exception $e) {
             DB::rollback();
-            Log::error('Lỗi chuyển đổi preorder thành order: ' . $e->getMessage());
-            return back()->with('error', 'Có lỗi xảy ra khi chuyển đổi đơn hàng.');
+            Log::error('Lỗi chuyển đổi preorder thành order', [
+                'preorder_id' => $preorder->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->with('error', 'Có lỗi xảy ra khi chuyển đổi đơn hàng: ' . $e->getMessage());
         }
     }
 
@@ -621,7 +716,13 @@ class AdminPreorderController extends Controller
         $validated = $request->validate([
             'preorder_ids' => 'required|array',
             'preorder_ids.*' => 'exists:preorders,id',
-            'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled'
+            'status' => 'required|in:' . implode(',', [
+                Preorder::STATUS_CHO_DUYET,
+                Preorder::STATUS_DA_DUYET,
+                Preorder::STATUS_SAN_SANG_CHUYEN_DOI,
+                Preorder::STATUS_DA_CHUYEN_THANH_DON_HANG,
+                Preorder::STATUS_DA_HUY
+            ])
         ]);
 
         try {
@@ -631,8 +732,8 @@ class AdminPreorderController extends Controller
             $updated = 0;
             
             foreach ($preorders as $preorder) {
-                // Xử lý đặc biệt cho trạng thái cancelled để hoàn trả stock
-                if ($validated['status'] === 'cancelled' && $preorder->status !== 'cancelled') {
+                // Xử lý đặc biệt cho trạng thái hủy để hoàn trả stock
+                if ($validated['status'] === Preorder::STATUS_DA_HUY && $preorder->status !== Preorder::STATUS_DA_HUY) {
                     $preorder->markAsCancelled();
                 } else {
                     $preorder->update(['status' => $validated['status']]);
@@ -709,5 +810,58 @@ class AdminPreorderController extends Controller
             ->header('Content-Type', 'text/csv')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
-}
 
+    /**
+     * Xác định phương thức thanh toán cho đơn hàng dựa trên preorder
+     */
+    private function determinePaymentMethodForOrder(Preorder $preorder)
+    {
+        // Ưu tiên sử dụng payment method đã chọn trong preorder
+        if ($preorder->payment_method_id) {
+            return $preorder->payment_method_id;
+        }
+
+        // Nếu không có, xác định dựa trên trạng thái thanh toán
+        if ($preorder->payment_status === 'paid') {
+            // Đã thanh toán: kiểm tra có VNPay transaction không
+            if ($preorder->vnpay_transaction_id) {
+                return $this->findPaymentMethodByType('vnpay');
+            } else {
+                return $this->findPaymentMethodByType('wallet');
+            }
+        } else {
+            // Chưa thanh toán: mặc định COD
+            return $this->findPaymentMethodByType('cod');
+        }
+    }
+
+    /**
+     * Tìm payment method theo loại
+     */
+    private function findPaymentMethodByType($type)
+    {
+        $searchTerms = [
+            'vnpay' => ['vnpay', 'vn pay', 'vn-pay'],
+            'wallet' => ['ví điện tử', 'vi dien tu', 'wallet', 'e-wallet', 'momo'],
+            'cod' => ['thanh toán khi nhận hàng', 'khi nhận hàng', 'cash on delivery', 'COD', 'cod']
+        ];
+
+        $terms = $searchTerms[$type] ?? [];
+        
+        $paymentMethod = DB::table('payment_methods')
+            ->where('is_active', true)
+            ->where(function($query) use ($terms) {
+                foreach ($terms as $term) {
+                    $query->orWhere('name', 'like', "%{$term}%");
+                }
+            })
+            ->first();
+
+        Log::info("Payment method selected for type: {$type}", [
+            'type' => $type,
+            'method' => $paymentMethod
+        ]);
+
+        return $paymentMethod->id ?? null;
+    }
+}

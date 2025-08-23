@@ -139,7 +139,7 @@
                         </div>
 
                         <!-- Địa chỉ giao hàng (chỉ hiển thị cho sách vật lý) -->
-                        <div id="addressSection" style="display: none;">
+                        <div id="addressSection">
                             <hr class="my-4">
                             <h6 class="fw-bold mb-3">
                                 <i class="ri-map-pin-line me-1"></i>Địa chỉ giao hàng
@@ -316,12 +316,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const headerPriceInfo = document.getElementById('headerPriceInfo');
     const headerOriginalPrice = document.getElementById('headerOriginalPrice');
     const headerDiscountedPrice = document.getElementById('headerDiscountedPrice');
+    const preorderPriceNotice = document.querySelector('.preorder-price-notice') || document.createElement('div');
     
     let basePrice = 0;
     let extraPrice = 0;
     let shippingFee = 0;
     let isEbookSelected = false;
     const bookPreorderPrice = {{ $book->pre_order_price ?? 'null' }};
+
+    // Khởi tạo trạng thái ban đầu
+    function initializeFormState() {
+        if (formatSelect && formatSelect.selectedIndex >= 0) {
+            const selectedOption = formatSelect.options[formatSelect.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                isEbookSelected = selectedOption.dataset.isEbook === 'true';
+                if (isEbookSelected) {
+                    addressSection.style.display = 'none';
+                    attributesSection.style.display = 'none';
+                    if (shippingFeeSection) shippingFeeSection.style.display = 'none';
+                    if (shippingPriceRow) shippingPriceRow.style.display = 'none';
+                }
+            }
+        }
+    }
+    
+    // Gọi khởi tạo ngay khi DOM load
+    initializeFormState();
 
     // Xử lý thay đổi định dạng
     if (formatSelect) {
@@ -403,9 +423,18 @@ document.addEventListener('DOMContentLoaded', function() {
             // Gọi sự kiện change để áp dụng tất cả logic ẩn/hiện
             formatSelect.dispatchEvent(new Event('change'));
         } else {
-            // Chưa chọn định dạng: đảm bảo số lượng hiển thị và required cho sách vật lý
+            // Chưa chọn định dạng: đảm bảo hiển thị các phần cho sách vật lý
             if (quantitySection) quantitySection.style.display = 'block';
             if (quantityInput) quantityInput.setAttribute('required', '');
+            if (addressSection) addressSection.style.display = 'block';
+            if (attributesSection) attributesSection.style.display = 'block';
+            if (shippingPriceRow) shippingPriceRow.style.display = 'block';
+            // Thêm required cho các trường địa chỉ
+            document.getElementById('provinceSelect').setAttribute('required', '');
+            document.getElementById('districtSelect').setAttribute('required', '');
+            document.getElementById('wardSelect').setAttribute('required', '');
+            document.querySelector('textarea[name="address"]').setAttribute('required', '');
+            loadProvinces();
         }
     }
 

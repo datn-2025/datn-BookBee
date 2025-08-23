@@ -40,8 +40,8 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Chờ xử lý</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($stats['pending']) }}</div>
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Chờ duyệt</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($stats['cho_duyet'] ?? 0) }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-clock fa-2x text-gray-300"></i>
@@ -56,8 +56,8 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Đã xác nhận</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($stats['confirmed']) }}</div>
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Đã duyệt</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($stats['da_duyet'] ?? 0) }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-check fa-2x text-gray-300"></i>
@@ -72,11 +72,27 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Đã giao</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($stats['delivered']) }}</div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Sẵn sàng chuyển đổi</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($stats['san_sang_chuyen_doi'] ?? 0) }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-truck fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-purple shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-purple text-uppercase mb-1">Đã chuyển đổi</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($stats['da_chuyen_doi'] ?? 0) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exchange-alt fa-2x text-gray-300"></i>
                         </div>
                     </div>
                 </div>
@@ -89,7 +105,7 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Đã hủy</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($stats['cancelled']) }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($stats['da_huy'] ?? 0) }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-times fa-2x text-gray-300"></i>
@@ -117,8 +133,11 @@
                         <label for="status" class="form-label">Trạng thái</label>
                         <select class="form-control" id="status" name="status">
                             <option value="">Tất cả</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Chờ xử lý</option>
-                            <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Đã xác nhận</option>
+                            <option value="{{ \App\Models\Preorder::STATUS_CHO_DUYET }}" {{ request('status') == \App\Models\Preorder::STATUS_CHO_DUYET ? 'selected' : '' }}>Chờ duyệt</option>
+                    <option value="{{ \App\Models\Preorder::STATUS_DA_DUYET }}" {{ request('status') == \App\Models\Preorder::STATUS_DA_DUYET ? 'selected' : '' }}>Đã duyệt</option>
+                    <option value="{{ \App\Models\Preorder::STATUS_SAN_SANG_CHUYEN_DOI }}" {{ request('status') == \App\Models\Preorder::STATUS_SAN_SANG_CHUYEN_DOI ? 'selected' : '' }}>Sẵn sàng chuyển đổi</option>
+                    <option value="{{ \App\Models\Preorder::STATUS_DA_CHUYEN_THANH_DON_HANG }}" {{ request('status') == \App\Models\Preorder::STATUS_DA_CHUYEN_THANH_DON_HANG ? 'selected' : '' }}>Đã chuyển đổi</option>
+                    <option value="{{ \App\Models\Preorder::STATUS_DA_HUY }}" {{ request('status') == \App\Models\Preorder::STATUS_DA_HUY ? 'selected' : '' }}>Đã hủy</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -223,12 +242,11 @@
                                     <td>
                                         @php
                                             $statusColors = [
-                                                'pending' => 'warning',
-                                                'confirmed' => 'info',
-                                                'processing' => 'primary',
-                                                'shipped' => 'success',
-                                                'delivered' => 'success',
-                                                'cancelled' => 'danger'
+                                                \App\Models\Preorder::STATUS_CHO_DUYET => 'warning',
+                                                \App\Models\Preorder::STATUS_DA_DUYET => 'info',
+                                                \App\Models\Preorder::STATUS_SAN_SANG_CHUYEN_DOI => 'success',
+                                                \App\Models\Preorder::STATUS_DA_CHUYEN_THANH_DON_HANG => 'primary',
+                                                \App\Models\Preorder::STATUS_DA_HUY => 'danger'
                                             ];
                                         @endphp
                                         <span class="badge bg-{{ $statusColors[$preorder->status] ?? 'secondary' }}">
@@ -253,7 +271,7 @@
                                                         <i class="fas fa-edit"></i> Cập nhật trạng thái
                                                     </button>
                                                 </li>
-                                                @if($preorder->status === 'Chờ xử lý' || $preorder->status === 'pending')
+                                                @if($preorder->isPending())
                                                     <li>
                                                         <form action="{{ route('admin.preorders.approve', $preorder) }}" method="POST" class="d-inline">
                                                             @csrf
@@ -264,30 +282,32 @@
                                                             </button>
                                                         </form>
                                                     </li>
-                                                @elseif($preorder->status === 'Đã xác nhận' || $preorder->status === 'confirmed')
+                                                @elseif($preorder->isApproved())
                                                     <li>
                                                         @if($preorder->book->isReleased())
-                                                            <form action="{{ route('admin.preorders.convert-to-order', $preorder) }}" method="POST" class="d-inline">
-                                                                @csrf
-                                                                <button type="submit" class="dropdown-item text-success" 
-                                                                        onclick="return confirm('Chuyển đổi đơn đặt trước thành đơn hàng?')">
-                                                                    <i class="fas fa-exchange-alt"></i>
-                                                                    Chuyển thành đơn hàng
-                                                                </button>
-                                                            </form>
+                                                            <button type="button" class="dropdown-item text-success" 
+                                                                    onclick="showConvertModal('{{ $preorder->id }}', '{{ $preorder->book->title }}', true, '{{ $preorder->book->release_date->format('d/m/Y') }}')">
+                                                                <i class="fas fa-exchange-alt"></i>
+                                                                Chuyển thành đơn hàng
+                                                            </button>
                                                         @else
-                                                            <form action="{{ route('admin.preorders.convert-to-order', $preorder) }}" method="POST" class="d-inline">
-                                                                @csrf
-                                                                <button type="submit" class="dropdown-item text-warning" 
-                                                                        onclick="return confirm('Sách chưa được phát hành ({{ $preorder->book->release_date->format('d/m/Y') }}). Bạn có chắc muốn chuyển đổi đơn đặt trước thành đơn hàng không?')">
-                                                                    <i class="fas fa-exclamation-triangle"></i>
-                                                                    Chuyển thành đơn hàng (Sớm)
-                                                                </button>
-                                                            </form>
+                                                            <button type="button" class="dropdown-item text-warning" 
+                                                                    onclick="showConvertModal('{{ $preorder->id }}', '{{ $preorder->book->title }}', false, '{{ $preorder->book->release_date->format('d/m/Y') }}')">
+                                                                <i class="fas fa-exclamation-triangle"></i>
+                                                                Chuyển thành đơn hàng (Sớm)
+                                                            </button>
                                                         @endif
                                                     </li>
+                                                @elseif($preorder->isReadyToConvert())
+                                                    <li>
+                                                        <button type="button" class="dropdown-item text-info" 
+                                                                onclick="showConvertModal('{{ $preorder->id }}', '{{ $preorder->book->title }}', true, '{{ $preorder->book->release_date->format('d/m/Y') }}')">
+                                                            <i class="fas fa-rocket"></i>
+                                                            Chuyển thành đơn hàng
+                                                        </button>
+                                                    </li>
                                                 @endif
-                                                @if($preorder->status == 'Đã hủy' || $preorder->status == 'cancelled')
+                                                @if($preorder->isCancelled())
                                                     <li>
                                                         <form action="{{ route('admin.preorders.destroy', $preorder) }}" method="POST" class="d-inline">
                                                             @csrf
@@ -297,6 +317,14 @@
                                                                 <i class="fas fa-trash"></i> Xóa
                                                             </button>
                                                         </form>
+                                                    </li>
+                                                @endif
+                                                @if($preorder->isConverted())
+                                                    <li>
+                                                        <a class="dropdown-item text-primary" href="{{ route('admin.orders.show', $preorder->converted_order_id) }}">
+                                                            <i class="fas fa-external-link-alt"></i>
+                                                            Xem đơn hàng đã chuyển đổi
+                                                        </a>
                                                     </li>
                                                 @endif
                                             </ul>
@@ -323,6 +351,50 @@
     </div>
 </div>
 
+<!-- Modal xác nhận chuyển đổi -->
+<div class="modal fade" id="convertModal" tabindex="-1" aria-labelledby="convertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="convertModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    Xác nhận chuyển đổi đơn đặt trước
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info" id="convertInfo">
+                    <strong>Thông tin đơn hàng:</strong>
+                    <br>• Sách: <span id="bookTitle"></span>
+                    <br>• Ngày phát hành: <span id="releaseDate"></span>
+                </div>
+                <div class="alert alert-warning" id="earlyWarning" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Cảnh báo:</strong> Sách chưa đến ngày phát hành chính thức. 
+                    Việc chuyển đổi sớm có thể ảnh hưởng đến quy trình giao hàng.
+                </div>
+                <div class="alert alert-success" id="readyInfo" style="display: none;">
+                    <i class="fas fa-check-circle"></i>
+                    Sách đã được phát hành và sẵn sàng để chuyển đổi thành đơn hàng.
+                </div>
+                <p><strong>Bạn có chắc chắn muốn chuyển đổi đơn đặt trước này thành đơn hàng chính thức không?</strong></p>
+                <p class="text-muted small">Sau khi chuyển đổi, đơn đặt trước sẽ trở thành đơn hàng và không thể hoàn tác.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Hủy bỏ
+                </button>
+                <form id="convertForm" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-primary" id="confirmConvertBtn">
+                        <i class="fas fa-exchange-alt"></i> Xác nhận chuyển đổi
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal cập nhật trạng thái -->
 <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -338,8 +410,10 @@
                     <div class="mb-3">
                         <label for="status" class="form-label">Trạng thái mới</label>
                         <select class="form-control" id="modalStatus" name="status" required>
-                            <option value="Chờ xử lý">Chờ xử lý</option>
-                            <option value="confirmed">Đã xác nhận</option>
+                            <option value="{{ \App\Models\Preorder::STATUS_CHO_DUYET }}">Chờ duyệt</option>
+                            <option value="{{ \App\Models\Preorder::STATUS_DA_DUYET }}">Đã duyệt</option>
+                            <option value="{{ \App\Models\Preorder::STATUS_SAN_SANG_CHUYEN_DOI }}">Sẵn sàng chuyển đổi</option>
+                            <option value="{{ \App\Models\Preorder::STATUS_DA_HUY }}">Đã hủy</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -371,8 +445,10 @@
                     <div class="mb-3">
                         <label for="bulkStatus" class="form-label">Trạng thái mới</label>
                         <select class="form-control" id="bulkStatus" name="status" required>
-                            <option value="Chờ xử lý">Chờ xử lý</option>
-                            <option value="Đã xác nhận">Đã xác nhận</option>
+                            <option value="{{ \App\Models\Preorder::STATUS_CHO_DUYET }}">Chờ duyệt</option>
+                            <option value="{{ \App\Models\Preorder::STATUS_DA_DUYET }}">Đã duyệt</option>
+                            <option value="{{ \App\Models\Preorder::STATUS_SAN_SANG_CHUYEN_DOI }}">Sẵn sàng chuyển đổi</option>
+                            <option value="{{ \App\Models\Preorder::STATUS_DA_HUY }}">Đã hủy</option>
                         </select>
                     </div>
                     <div class="alert alert-info">
@@ -438,6 +514,51 @@ function updateBulkUpdateButton() {
     const checkedBoxes = document.querySelectorAll('.preorder-checkbox:checked');
     const bulkUpdateBtn = document.getElementById('bulkUpdateBtn');
     bulkUpdateBtn.disabled = checkedBoxes.length === 0;
+}
+
+// Modal xác nhận chuyển đổi
+function showConvertModal(preorderId, bookTitle, isReleased, releaseDate) {
+    // Cập nhật thông tin trong modal
+    document.getElementById('bookTitle').textContent = bookTitle;
+    document.getElementById('releaseDate').textContent = releaseDate;
+    
+    // Hiển thị cảnh báo phù hợp
+    const earlyWarning = document.getElementById('earlyWarning');
+    const readyInfo = document.getElementById('readyInfo');
+    const confirmBtn = document.getElementById('confirmConvertBtn');
+    
+    if (isReleased) {
+        earlyWarning.style.display = 'none';
+        readyInfo.style.display = 'block';
+        confirmBtn.className = 'btn btn-success';
+        confirmBtn.innerHTML = '<i class="fas fa-exchange-alt"></i> Xác nhận chuyển đổi';
+    } else {
+        earlyWarning.style.display = 'block';
+        readyInfo.style.display = 'none';
+        confirmBtn.className = 'btn btn-warning';
+        confirmBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Xác nhận chuyển đổi sớm';
+    }
+    
+    // Cập nhật action của form
+    const form = document.getElementById('convertForm');
+    form.action = `/admin/preorders/${preorderId}/convert-to-order`;
+    
+    // Xóa input force_convert cũ nếu có
+    const existingInput = form.querySelector('input[name="force_convert"]');
+    if (existingInput) {
+        existingInput.remove();
+    }
+    
+    // Thêm input force_convert=1
+    const forceConvertInput = document.createElement('input');
+    forceConvertInput.type = 'hidden';
+    forceConvertInput.name = 'force_convert';
+    forceConvertInput.value = '1';
+    form.appendChild(forceConvertInput);
+    
+    // Hiển thị modal
+    const modal = new bootstrap.Modal(document.getElementById('convertModal'));
+    modal.show();
 }
 
 // Modal cập nhật trạng thái

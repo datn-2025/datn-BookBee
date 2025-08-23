@@ -33,7 +33,7 @@
                                     <span class="fw-medium">#{{ substr($preorder->id, 0, 8) }}</span>
                                 </div>
                                 <div class="col-sm-6">
-                                    <small class="text-muted">Trạng thái:</small><br>
+                                    <small class="text-muted">Trạng thái đơn hàng:</small><br>
                                     <span class="badge bg-warning">{{ $preorder->status_text }}</span>
                                 </div>
                                 <div class="col-sm-6">
@@ -47,6 +47,26 @@
                                 <div class="col-sm-6">
                                     <small class="text-muted">Ngày ra mắt:</small><br>
                                     <span class="fw-medium text-info">{{ $preorder->expected_delivery_date->format('d/m/Y') }}</span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <small class="text-muted">Phương thức thanh toán:</small><br>
+                                    <span class="fw-medium">{{ $preorder->paymentMethod ? $preorder->paymentMethod->name : 'Chưa xác định' }}</span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <small class="text-muted">Trạng thái thanh toán:</small><br>
+                                    @php
+                                        $paymentStatusClass = match($preorder->payment_status) {
+                                            'paid' => 'bg-success',
+                                            'failed' => 'bg-danger',
+                                            default => 'bg-warning'
+                                        };
+                                        $paymentStatusText = match($preorder->payment_status) {
+                                            'paid' => 'Đã thanh toán',
+                                            'failed' => 'Thanh toán thất bại',
+                                            default => 'Chờ thanh toán'
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $paymentStatusClass }}">{{ $paymentStatusText }}</span>
                                 </div>
                                 <div class="col-sm-6">
                                     <small class="text-muted">Chi tiết giá:</small><br>
@@ -85,11 +105,18 @@
                                     <div class="mb-1">
                                         <small>Số lượng: <span class="fw-medium">{{ $preorder->quantity }}</span></small>
                                     </div>
+                                    @if(!$preorder->isEbook() && $preorder->shipping_fee > 0)
+                                        <div class="mb-1">
+                                            <small>Phí vận chuyển: <span class="fw-medium text-info">{{ number_format($preorder->shipping_fee, 0, ',', '.') }}đ</span></small>
+                                        </div>
+                                    @endif
                                     <hr class="my-2">
                                     <span class="fw-bold text-success fs-5">Tổng: {{ number_format($preorder->total_amount, 0, ',', '.') }}đ</span>
-                                    <div class="mt-1">
-                                        <small class="text-success"><i class="ri-truck-line me-1"></i>Miễn phí vận chuyển</small>
-                                    </div>
+                                    @if($preorder->isEbook() || $preorder->shipping_fee == 0)
+                                        <div class="mt-1">
+                                            <small class="text-success"><i class="ri-truck-line me-1"></i>Miễn phí vận chuyển</small>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>

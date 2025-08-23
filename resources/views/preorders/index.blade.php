@@ -22,8 +22,11 @@
                                         <small class="text-muted">#{{ substr($preorder->id, 0, 8) }}</small>
                                         <span class="badge 
                                             @switch($preorder->status)
-                                                @case('pending') bg-warning @break
-                                                @case('confirmed') bg-info @break
+                                                @case(\App\Models\Preorder::STATUS_CHO_DUYET) bg-warning @break
+                        @case(\App\Models\Preorder::STATUS_DA_DUYET) bg-info @break
+                        @case(\App\Models\Preorder::STATUS_SAN_SANG_CHUYEN_DOI) bg-success @break
+                        @case(\App\Models\Preorder::STATUS_DA_CHUYEN_THANH_DON_HANG) bg-primary @break
+                        @case(\App\Models\Preorder::STATUS_DA_HUY) bg-danger @break
                                                 @case('processing') bg-primary @break
                                                 @case('shipped') bg-success @break
                                                 @case('delivered') bg-success @break
