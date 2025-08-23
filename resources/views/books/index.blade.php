@@ -151,105 +151,120 @@
         </div>
 
         <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 items-center px-6 md:px-10 gap-10 max-w-screen-xl mx-auto">
-            {{-- Left text - Typography Style --}}
+            {{-- Left text - Enhanced Home Style --}}
             <div class="space-y-8 text-gray-900">
-                <!-- Pre-title -->
+                <!-- Enhanced Pre-title với icon -->
                 <div class="flex items-center gap-4 mb-2">
-                    <div class="w-8 h-0.5 bg-black"></div>
-                    <span class="text-xs font-bold uppercase tracking-[0.2em] text-gray-600">
-                        BOOKBEE COLLECTION
+                    <div class="w-8 h-0.5 bg-gradient-to-r from-amber-600 to-orange-600"></div>
+                    <span class="text-xs font-bold uppercase tracking-[0.2em] text-gray-600 flex items-center gap-2">
+                        <i class="fas fa-book-open text-amber-500"></i>
+                        BỘ SƯU TẬP ĐẶC BIỆT BOOKBEE
                     </span>
                 </div>
 
-                <!-- Main headline -->
-                <h1 class="text-5xl md:text-7xl font-black uppercase leading-[0.9] tracking-tight text-black">
-                    <span class="block">BOOK</span>
-                    <span class="block text-gray-400">STORE</span>
-                    <span class="block">PREMIUM</span>
-                </h1>
+                <!-- Main headline - Exactly same as home -->
+                <h2 class="hero-title text-5xl md:text-7xl font-black uppercase leading-[0.9] tracking-tight text-black">
+                    <span class="block">TRI THỨC</span>
+                    <span class="block text-amber-600">KHÔNG</span>
+                    <span class="block">GIỚI HẠN</span>
+                </h2>
 
-                <!-- Subtitle -->
+                <!-- Subtitle - Exactly same as home -->
                 <div class="space-y-4">
-                    <p class="text-xl md:text-2xl font-medium text-gray-700 max-w-lg">
-                        Khám phá những cuốn sách hay nhất thế giới. Bộ sưu tập cao cấp dành cho độc giả đam mê.
+                    <p class="body-text text-xl md:text-2xl font-medium text-gray-700 max-w-lg">
+                        Bộ sưu tập sách đặc biệt với tri thức không giới hạn dành cho mọi lứa tuổi
                     </p>
 
-                    <!-- Stats highlight -->
+                    <!-- Highlight - Exactly same as home -->
                     <div class="flex items-center gap-4">
-                        <span class="bg-red-600 text-white px-4 py-2 text-sm font-bold uppercase tracking-wide">
-                            {{ $books->total() }}+ SÁCH
-                        </span>
-                        <span class="text-lg font-bold text-black">Đa dạng thể loại</span>
+                        <span class="text-2xl font-bold text-amber-600">Mua ngay hôm nay!</span>
                     </div>
                 </div>
 
-                <!-- Breadcrumb -->
+                <!-- Action Button - Exactly same as home -->
+                <div class="pt-4">
+                    <a href="{{ route('books.index') }}"
+                        class="group bg-amber-600 text-white px-10 py-4 font-bold text-sm uppercase tracking-[0.1em] hover:bg-amber-700 transition-all duration-300 flex items-center gap-3 w-max button-text">
+                        <i class="fas fa-search text-white"></i>
+                        <span>KHÁM PHÁ NGAY</span>
+                        <div class="w-4 h-0.5 bg-white transform group-hover:w-8 transition-all duration-300"></div>
+                    </a>
+                </div>
+
+                <!-- Enhanced Breadcrumb -->
                 <div class="flex items-center gap-3 text-sm uppercase tracking-wider pt-4">
-                    <a href="{{ route('home') }}" class="text-gray-600 hover:text-black transition-colors duration-300 hover:underline font-medium">Trang chủ</a>
-                    <div class="w-4 h-0.5 bg-gray-400"></div>
-                    <span class="text-black font-bold">Cửa hàng</span>
+                    <a href="{{ route('home') }}" class="text-gray-600 hover:text-amber-600 transition-colors duration-300 hover:underline font-medium">
+                        <i class="fas fa-home mr-1"></i>Trang chủ
+                    </a>
+                    <div class="w-4 h-0.5 bg-amber-400"></div>
+                    @if($category)
+                        <a href="{{ route('books.index') }}" class="text-gray-600 hover:text-amber-600 transition-colors duration-300 font-medium">Cửa hàng</a>
+                        <div class="w-4 h-0.5 bg-amber-400"></div>
+                        <span class="text-amber-600 font-bold">{{ $category->name }}</span>
+                    @else
+                        <span class="text-amber-600 font-bold">Cửa hàng</span>
+                    @endif
                 </div>
             </div>
 
-            {{-- Right image --}}
+            {{-- Enhanced Right image - Home style background approach --}}
             <div class="flex justify-center">
                 <div class="relative group">
-                    <div class="relative">
-                        <img src="{{ asset('storage/images/banner-image2.png') }}"
-                            class="h-80 md:h-96 object-contain transform group-hover:scale-105 transition-transform duration-700"
-                            alt="BookBee Store">
-
-                        <!-- Badge -->
-                        <div class="absolute -top-6 -left-6 bg-black text-white px-6 py-3 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-500">
+                    <!-- Enhanced Background image style như home -->
+                    <div class="relative h-80 md:h-96 w-80 md:w-96 bg-cover bg-center bg-no-repeat transform group-hover:scale-105 transition-transform duration-700"
+                         style="background-image: url('{{ asset('storage/images/banner-image2.png') }}');">
+                        
+                        <!-- Enhanced Badge với amber theme -->
+                        <div class="absolute -top-6 -left-6 bg-amber-600 text-white px-6 py-3 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-500 shadow-lg">
                             <div class="text-center">
-                                <div class="text-sm font-bold uppercase tracking-wide">NEW</div>
-                                <div class="text-xs uppercase tracking-wider text-gray-300">ARRIVALS</div>
+                                {{-- <div class="text-sm font-bold uppercase tracking-wide">HOT</div> --}}
+                                {{-- <div class="text-xs uppercase tracking-wider text-amber-100">COLLECTION</div> --}}
                             </div>
                         </div>
 
-                        <!-- Accent -->
-                        <div class="absolute -bottom-4 -right-4 bg-white border-2 border-black px-4 py-2 transform group-hover:translate-x-1 group-hover:translate-y-1 transition-transform duration-500">
-                            <span class="text-xs font-bold uppercase tracking-wide text-black">Premium</span>
+                        <!-- Enhanced Accent với amber theme -->
+                        <div class="absolute -bottom-4 -right-4 bg-white border-2 border-amber-600 px-4 py-2 transform group-hover:translate-x-1 group-hover:translate-y-1 transition-transform duration-500 shadow-lg">
+                            {{-- <span class="text-xs font-bold uppercase tracking-wide text-amber-600">Premium</span> --}}
                         </div>
                     </div>
 
-                    <!-- Background shape -->
-                    <div class="absolute inset-0 -z-10 bg-gray-100 transform translate-x-4 translate-y-4 group-hover:translate-x-2 group-hover:translate-y-2 transition-transform duration-700"></div>
+                    <!-- Enhanced Background geometric shape -->
+                    <div class="absolute inset-0 -z-10 bg-amber-100 transform translate-x-4 translate-y-4 group-hover:translate-x-2 group-hover:translate-y-2 transition-transform duration-700"></div>
                 </div>
             </div>
         </div>
     </section>
  
-    <!-- Stats Section theo phong cách trang chủ -->
+    <!-- Enhanced Stats Section theo phong cách trang chủ -->
     <section class="bg-white py-20 md:py-24 relative overflow-hidden">
-        <!-- Background Elements -->
+        <!-- Enhanced Background Elements -->
         <div class="absolute inset-0 pointer-events-none">
-            <div class="absolute top-0 right-0 w-64 h-1 bg-black opacity-20"></div>
-            <div class="absolute bottom-0 left-0 w-32 h-32 bg-black opacity-5 transform rotate-45"></div>
-            <div class="absolute top-1/2 right-10 w-0.5 h-24 bg-black opacity-30"></div>
+            <div class="absolute top-0 right-0 w-64 h-1 bg-amber-600 opacity-20"></div>
+            <div class="absolute bottom-0 left-0 w-32 h-32 bg-amber-600 opacity-5 transform rotate-45"></div>
+            <div class="absolute top-1/2 right-10 w-0.5 h-24 bg-amber-600 opacity-30"></div>
         </div>
 
         <div class="relative z-10 max-w-screen-xl mx-auto px-6">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-                <div class="group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
-                    <div class="absolute top-0 right-0 w-16 h-16 bg-red-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-red-100 group-hover:scale-110 transition-all duration-500"></div>
+                <div class="group bg-white border border-gray-100 hover:border-amber-600 hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
+                    <div class="absolute top-0 right-0 w-16 h-16 bg-amber-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-amber-100 group-hover:scale-110 transition-all duration-500"></div>
                     <div class="p-8 text-center relative z-10">
-                        <div class="text-3xl font-black text-black mb-2 group-hover:text-red-600 transition-colors duration-300">{{ $books->total() }}+</div>
+                        <div class="text-3xl font-black text-black mb-2 group-hover:text-amber-600 transition-colors duration-300">{{ $books->total() }}+</div>
                         <div class="text-sm text-gray-600 uppercase tracking-wide font-medium group-hover:text-gray-800 transition-colors duration-300">Sách có sẵn</div>
-                        <div class="absolute bottom-0 left-0 h-1 bg-red-500 w-0 group-hover:w-full transition-all duration-700"></div>
+                        <div class="absolute bottom-0 left-0 h-1 bg-amber-500 w-0 group-hover:w-full transition-all duration-700"></div>
                     </div>
                 </div>
                 
-                <div class="group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
-                    <div class="absolute top-0 right-0 w-16 h-16 bg-green-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-green-100 group-hover:scale-110 transition-all duration-500"></div>
+                <div class="group bg-white border border-gray-100 hover:border-amber-600 hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
+                    <div class="absolute top-0 right-0 w-16 h-16 bg-orange-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-orange-100 group-hover:scale-110 transition-all duration-500"></div>
                     <div class="p-8 text-center relative z-10">
-                        <div class="text-3xl font-black text-black mb-2 group-hover:text-green-600 transition-colors duration-300">{{ $categories->count() }}+</div>
+                        <div class="text-3xl font-black text-black mb-2 group-hover:text-orange-600 transition-colors duration-300">{{ $categories->count() }}+</div>
                         <div class="text-sm text-gray-600 uppercase tracking-wide font-medium group-hover:text-gray-800 transition-colors duration-300">Thể loại</div>
-                        <div class="absolute bottom-0 left-0 h-1 bg-green-500 w-0 group-hover:w-full transition-all duration-700"></div>
+                        <div class="absolute bottom-0 left-0 h-1 bg-orange-500 w-0 group-hover:w-full transition-all duration-700"></div>
                     </div>
                 </div>
                 
-                <div class="group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
+                <div class="group bg-white border border-gray-100 hover:border-amber-600 hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
                     <div class="absolute top-0 right-0 w-16 h-16 bg-blue-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-blue-100 group-hover:scale-110 transition-all duration-500"></div>
                     <div class="p-8 text-center relative z-10">
                         <div class="text-3xl font-black text-black mb-2 group-hover:text-blue-600 transition-colors duration-300">{{ $authors->count() }}+</div>
@@ -258,7 +273,7 @@
                     </div>
                 </div>
                 
-                <div class="group bg-white border border-gray-100 hover:border-black hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
+                <div class="group bg-white border border-gray-100 hover:border-amber-600 hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer transform hover:-translate-y-2">
                     <div class="absolute top-0 right-0 w-16 h-16 bg-yellow-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-yellow-100 group-hover:scale-110 transition-all duration-500"></div>
                     <div class="p-8 text-center relative z-10">
                         <div class="text-3xl font-black text-black mb-2 group-hover:text-yellow-600 transition-colors duration-300">24/7</div>
@@ -331,13 +346,13 @@
                 
                 <div class="relative z-10">
                   <div class="flex items-center gap-2 mb-4">
-                    <div class="w-4 h-0.5 bg-gray-600"></div>
+                    <div class="w-4 h-0.5 bg-amber-600"></div>
                     <span class="text-xs font-bold uppercase tracking-[0.2em] text-gray-600">ACTIVE FILTERS</span>
                   </div>
                   
                   <div class="flex flex-wrap gap-3">
                     @if(request('search'))
-                      <span class="inline-flex items-center gap-2 bg-black text-white px-3 py-2 text-sm font-medium">
+                      <span class="inline-flex items-center gap-2 bg-amber-600 text-white px-3 py-2 text-sm font-medium">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
@@ -389,7 +404,7 @@
                     @endif
                     
                     @if(request('min_price') || request('max_price'))
-                      <span class="inline-flex items-center gap-2 bg-red-600 text-white px-3 py-2 text-sm font-medium">
+                      <span class="inline-flex items-center gap-2 bg-amber-600 text-white px-3 py-2 text-sm font-medium">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                         </svg>
@@ -411,7 +426,7 @@
                     
                     <!-- Clear All Filters -->
                     <a href="{{ route('books.index') }}" 
-                       class="inline-flex items-center gap-2 bg-gray-600 text-white px-3 py-2 text-sm font-medium hover:bg-gray-700 transition-colors">
+                       class="inline-flex items-center gap-2 bg-slate-600 text-white px-3 py-2 text-sm font-medium hover:bg-slate-700 transition-colors">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                       </svg>
@@ -462,13 +477,13 @@
                     <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div class="flex space-x-2">
                         <a href="{{ route('books.show', $book->slug) }}" 
-                           class="bg-black text-white p-3 hover:bg-gray-800 transition-colors duration-300">
+                           class="bg-amber-600 text-white p-3 hover:bg-amber-700 transition-colors duration-300">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                           </svg>
                         </a>
-                        <button class="btn-wishlist bg-white text-red-600 border border-gray-200 p-3 hover:bg-red-600 hover:text-white transition-colors duration-300" 
+                        <button class="btn-wishlist bg-white text-amber-600 border border-gray-200 p-3 hover:bg-amber-600 hover:text-white transition-colors duration-300" 
                                 data-book-id="{{ $book->id }}">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
@@ -482,7 +497,7 @@
                   <div class="p-6">
                     <!-- Category Tag -->
                     <div class="mb-3">
-                      <span class="inline-block bg-gray-100 text-black px-3 py-1 text-xs font-bold uppercase tracking-wide">
+                      <span class="inline-block bg-amber-100 text-amber-800 px-3 py-1 text-xs font-bold uppercase tracking-wide">
                         {{ $book->category_name ?? 'Chưa phân loại' }}
                       </span>
                     </div>
@@ -588,7 +603,7 @@
                           @endif
                         </div>
                         <a href="{{ route('books.show', $book->slug) }}" 
-                           class="bg-black text-white px-4 py-2 text-sm font-bold uppercase tracking-wide hover:bg-gray-800 transition-colors duration-300">
+                           class="bg-amber-600 text-white px-4 py-2 text-sm font-bold uppercase tracking-wide hover:bg-amber-700 transition-colors duration-300">
                           Chi tiết
                         </a>
                       </div>
@@ -637,7 +652,7 @@
                         <!-- Category Tag & Title -->
                         <div class="flex items-start justify-between mb-4">
                           <div>
-                            <span class="inline-block bg-gray-100 text-black px-3 py-1 text-xs font-bold uppercase tracking-wide mb-3">
+                            <span class="inline-block bg-amber-100 text-amber-800 px-3 py-1 text-xs font-bold uppercase tracking-wide mb-3">
                               {{ $book->category_name ?? 'Chưa phân loại' }}
                             </span>
                             <h3 class="font-black text-xl text-black group-hover:text-gray-700 transition-colors duration-300 leading-tight line-clamp-2">
@@ -650,13 +665,13 @@
                           <!-- Actions -->
                           <div class="flex space-x-2">
                             <a href="{{ route('books.show', $book->slug) }}" 
-                               class="bg-white border-2 border-gray-200 text-black p-3 hover:bg-black hover:border-black hover:text-white transition-all duration-300">
+                               class="bg-white border-2 border-gray-200 text-black p-3 hover:bg-amber-600 hover:border-amber-600 hover:text-white transition-all duration-300">
                               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                               </svg>
                             </a>
-                            <button class="btn-wishlist bg-white border-2 border-gray-200 text-black p-3 hover:bg-red-600 hover:border-red-600 hover:text-white transition-all duration-300" 
+                            <button class="btn-wishlist bg-white border-2 border-gray-200 text-black p-3 hover:bg-amber-600 hover:border-amber-600 hover:text-white transition-all duration-300" 
                                     data-book-id="{{ $book->id }}">
                               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
@@ -788,7 +803,7 @@
                       </span>
                     @else
                       <a href="{{ $books->previousPageUrl() }}" 
-                         class="px-6 py-3 text-black hover:bg-black hover:text-white transition-all duration-300 font-medium uppercase tracking-wide border border-gray-200 hover:border-black">
+                         class="px-6 py-3 text-black hover:bg-amber-600 hover:text-white transition-all duration-300 font-medium uppercase tracking-wide border border-gray-200 hover:border-amber-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
@@ -798,12 +813,12 @@
                     <!-- Page Numbers -->
                     @foreach ($books->getUrlRange(1, $books->lastPage()) as $page => $url)
                       @if ($page == $books->currentPage())
-                        <span class="px-6 py-3 bg-black text-white font-black uppercase tracking-wide">
+                        <span class="px-6 py-3 bg-amber-600 text-white font-black uppercase tracking-wide">
                           {{ $page }}
                         </span>
                       @else
                         <a href="{{ $url }}" 
-                           class="px-6 py-3 text-black hover:bg-black hover:text-white transition-all duration-300 font-medium uppercase tracking-wide border border-gray-200 hover:border-black">
+                           class="px-6 py-3 text-black hover:bg-amber-600 hover:text-white transition-all duration-300 font-medium uppercase tracking-wide border border-gray-200 hover:border-amber-600">
                           {{ $page }}
                         </a>
                       @endif
@@ -812,7 +827,7 @@
                     <!-- Next Button -->
                     @if ($books->hasMorePages())
                       <a href="{{ $books->nextPageUrl() }}" 
-                         class="px-6 py-3 text-black hover:bg-black hover:text-white transition-all duration-300 font-medium uppercase tracking-wide border border-gray-200 hover:border-black">
+                         class="px-6 py-3 text-black hover:bg-amber-600 hover:text-white transition-all duration-300 font-medium uppercase tracking-wide border border-gray-200 hover:border-amber-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
@@ -845,7 +860,7 @@
                 <div class="mb-8">
                   <!-- Title với pre-title -->
                   <div class="flex items-center gap-2 mb-4">
-                    <div class="w-6 h-0.5 bg-black"></div>
+                    <div class="w-6 h-0.5 bg-amber-600"></div>
                     <span class="text-xs font-bold uppercase tracking-[0.2em] text-gray-600">SEARCH</span>
                   </div>
                   <h3 class="text-lg font-black text-black mb-6 uppercase tracking-wide">
@@ -859,7 +874,7 @@
                       aria-label="Search"
                       value="{{ request('search') ?? '' }}"
                       id="search-input"
-                      class="w-full px-4 py-3 pr-20 border-2 border-gray-200 focus:border-black focus:outline-none transition-colors duration-300 hover:border-gray-400">
+                      class="w-full px-4 py-3 pr-20 border-2 border-gray-200 focus:border-amber-600 focus:outline-none transition-colors duration-300 hover:border-gray-400">
                     
                     @if(request('search'))
                       <a href="{{ route('books.index') }}" 
@@ -872,7 +887,7 @@
                     @endif
                     
                     <button type="submit" 
-                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-black transition-colors duration-300">
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-amber-600 transition-colors duration-300">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                       </svg>
@@ -883,7 +898,7 @@
                 <!-- Categories Filter -->
                 <div class="mb-8">
                   <div class="flex items-center gap-2 mb-4">
-                    <div class="w-6 h-0.5 bg-black"></div>
+                    <div class="w-6 h-0.5 bg-amber-600"></div>
                     <span class="text-xs font-bold uppercase tracking-[0.2em] text-gray-600">CATEGORY</span>
                   </div>
                   <h3 class="text-lg font-black text-black mb-6 uppercase tracking-wide">
@@ -892,7 +907,7 @@
                   <select
                     aria-label="Chọn danh mục"
                     onchange="location = this.value;"
-                    class="w-full px-4 py-3 border-2 border-gray-200 focus:border-black focus:outline-none transition-colors duration-300 bg-white hover:border-gray-400">
+                    class="w-full px-4 py-3 border-2 border-gray-200 focus:border-amber-600 focus:outline-none transition-colors duration-300 bg-white hover:border-gray-400">
                     <option value="{{ url('/books') . '?' . http_build_query(request()->except('category')) }}"
                       {{ request()->segment(2) === null ? 'selected' : '' }}>
                       Tất cả danh mục
@@ -909,7 +924,7 @@
                 <!-- Authors Filter -->
                 <div class="mb-8">
                   <div class="flex items-center gap-2 mb-4">
-                    <div class="w-6 h-0.5 bg-black"></div>
+                    <div class="w-6 h-0.5 bg-amber-600"></div>
                     <span class="text-xs font-bold uppercase tracking-[0.2em] text-gray-600">AUTHOR</span>
                   </div>
                   <h3 class="text-lg font-black text-black mb-6 uppercase tracking-wide">
@@ -918,7 +933,7 @@
                   <select
                     aria-label="Chọn tác giả"
                     onchange="location = this.value;"
-                    class="w-full px-4 py-3 border-2 border-gray-200 focus:border-black focus:outline-none transition-colors duration-300 bg-white hover:border-gray-400">
+                    class="w-full px-4 py-3 border-2 border-gray-200 focus:border-amber-600 focus:outline-none transition-colors duration-300 bg-white hover:border-gray-400">
                     <option value="{{ url()->current() . '?' . http_build_query(request()->except('authors')) }}">
                       Tất cả tác giả
                     </option>
@@ -934,7 +949,7 @@
                 <!-- Publishers Filter -->
                 <div class="mb-8">
                   <div class="flex items-center gap-2 mb-4">
-                    <div class="w-6 h-0.5 bg-black"></div>
+                    <div class="w-6 h-0.5 bg-amber-600"></div>
                     <span class="text-xs font-bold uppercase tracking-[0.2em] text-gray-600">PUBLISHER</span>
                   </div>
                   <h3 class="text-lg font-black text-black mb-6 uppercase tracking-wide">
@@ -943,7 +958,7 @@
                   <select
                     aria-label="Chọn nhà xuất bản"
                     onchange="location = this.value;"
-                    class="w-full px-4 py-3 border-2 border-gray-200 focus:border-black focus:outline-none transition-colors duration-300 bg-white hover:border-gray-400">
+                    class="w-full px-4 py-3 border-2 border-gray-200 focus:border-amber-600 focus:outline-none transition-colors duration-300 bg-white hover:border-gray-400">
                     <option value="{{ url()->current() . '?' . http_build_query(request()->except('brands')) }}">
                       Tất cả nhà xuất bản
                     </option>
@@ -959,7 +974,7 @@
                 <!-- Price Filter -->
                 <div class="mb-8">
                   <div class="flex items-center gap-2 mb-4">
-                    <div class="w-6 h-0.5 bg-black"></div>
+                    <div class="w-6 h-0.5 bg-amber-600"></div>
                     <span class="text-xs font-bold uppercase tracking-[0.2em] text-gray-600">PRICE</span>
                   </div>
                   <h3 class="text-lg font-black text-black mb-6 uppercase tracking-wide">
@@ -986,13 +1001,13 @@
                                name="min_price" 
                                placeholder="Giá từ" 
                                value="{{ request('min_price') }}"
-                               class="flex-1 px-4 py-3 border-2 border-gray-200 focus:border-black focus:outline-none transition-colors duration-300 hover:border-gray-400">
+                               class="flex-1 px-4 py-3 border-2 border-gray-200 focus:border-amber-600 focus:outline-none transition-colors duration-300 hover:border-gray-400">
                         <span class="flex items-center px-2 text-gray-500 font-medium">-</span>
                         <input type="number" 
                                name="max_price" 
                                placeholder="Giá đến" 
                                value="{{ request('max_price') }}"
-                               class="flex-1 px-4 py-3 border-2 border-gray-200 focus:border-black focus:outline-none transition-colors duration-300 hover:border-gray-400">
+                               class="flex-1 px-4 py-3 border-2 border-gray-200 focus:border-amber-600 focus:outline-none transition-colors duration-300 hover:border-gray-400">
                       </div>
                       
                       <p class="text-xs text-gray-500 font-medium">
@@ -1004,7 +1019,7 @@
                       
                       <div class="flex space-x-3">
                         <button type="submit"
-                                class="flex-1 bg-black text-white py-3 font-bold uppercase tracking-wide hover:bg-gray-800 transition-colors duration-300">
+                                class="flex-1 bg-amber-600 text-white py-3 font-bold uppercase tracking-wide hover:bg-amber-700 transition-colors duration-300">
                           Áp dụng
                         </button>
                         
@@ -1024,7 +1039,7 @@
                 <!-- Reset Filter -->
                 <div class="pt-6 border-t border-gray-100">
                   <a href="{{ url('/books') }}" 
-                     class="w-full block text-center bg-gray-100 text-black py-3 font-bold uppercase tracking-wide hover:bg-gray-200 transition-colors duration-300">
+                     class="w-full block text-center bg-amber-100 text-amber-800 py-3 font-bold uppercase tracking-wide hover:bg-amber-200 transition-colors duration-300">
                     Xóa tất cả bộ lọc
                   </a>
                 </div>
@@ -1074,8 +1089,8 @@
         gridViewBtn.addEventListener('click', function() {
           // Update button states
           gridViewBtn.classList.remove('bg-gray-100', 'text-gray-600');
-          gridViewBtn.classList.add('bg-black', 'text-white');
-          listViewBtn.classList.remove('bg-black', 'text-white');
+          gridViewBtn.classList.add('bg-amber-600', 'text-white');
+          listViewBtn.classList.remove('bg-amber-600', 'text-white');
           listViewBtn.classList.add('bg-gray-100', 'text-gray-600');
 
           // Update container layout
@@ -1090,8 +1105,8 @@
         listViewBtn.addEventListener('click', function() {
           // Update button states
           listViewBtn.classList.remove('bg-gray-100', 'text-gray-600');
-          listViewBtn.classList.add('bg-black', 'text-white');
-          gridViewBtn.classList.remove('bg-black', 'text-white');
+          listViewBtn.classList.add('bg-amber-600', 'text-white');
+          gridViewBtn.classList.remove('bg-amber-600', 'text-white');
           gridViewBtn.classList.add('bg-gray-100', 'text-gray-600');
 
           // Update container layout
@@ -1151,11 +1166,12 @@
       // Simple toast notification system
       function showToast(message, type = 'info') {
         const toast = document.createElement('div');
-        toast.className = `fixed top-4 right-4 z-50 p-4 rounded shadow-lg transform transition-all duration-300 translate-x-full ${
+        toast.className = `fixed top-20 right-4 p-4 rounded shadow-lg transform transition-all duration-300 translate-x-full ${
           type === 'success' ? 'bg-green-600 text-white' : 
           type === 'error' ? 'bg-red-600 text-white' : 
           'bg-black text-white'
         }`;
+        toast.style.zIndex = '9999'; // Cao hơn navbar (z-index: 1000)
         toast.innerHTML = `<span class="font-semibold">${message}</span>`;
         
         document.body.appendChild(toast);
