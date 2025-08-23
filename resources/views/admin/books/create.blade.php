@@ -191,12 +191,11 @@
                                                     @enderror
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label for="preorder_discount_percent" class="form-label fw-medium">Phần trăm giảm giá đặt trước (%)</label>
-                                                    <input type="number" class="form-control @error('preorder_discount_percent') is-invalid @enderror" 
-                                                           id="preorder_discount_percent" name="preorder_discount_percent" value="{{ old('preorder_discount_percent') }}" 
-                                                           placeholder="Ví dụ: 20" min="0" max="100" step="1">
-                                                    <div class="form-text">Nhập phần trăm giảm giá (0-100%)</div>
-                                                    @error('preorder_discount_percent')
+                                                    <label for="pre_order_price" class="form-label fw-medium">Giá ưu đãi đặt trước</label>
+                                                    <input type="number" class="form-control @error('pre_order_price') is-invalid @enderror" 
+                                                           id="pre_order_price" name="pre_order_price" value="{{ old('pre_order_price') }}" 
+                                                           min="0" step="1000" placeholder="Ví dụ: 150000">
+                                                    @error('pre_order_price')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
                                                 </div>
@@ -405,7 +404,7 @@
                                     <!-- Thông báo khi bật preorder -->
                                     <div class="alert alert-info preorder-price-notice" style="display: none;">
                                         <i class="ri-information-line me-2"></i>
-                                        <strong>Chế độ đặt trước:</strong> Giá sách sẽ sử dụng "Giá ưu đãi đặt trước" đã cấu hình ở phần trên.
+                                        <strong>Chế độ đặt trước:</strong> Khi bật chế độ đặt trước, giá bán sẽ được sử dụng từ "Giá ưu đãi đặt trước" đã cấu hình ở phần trên thay vì giá định dạng này.
                                     </div>
                                     
                                     <!-- Thuộc tính sách vật lý -->
@@ -516,7 +515,7 @@
                                     <!-- Thông báo khi bật preorder -->
                                     <div class="alert alert-info preorder-price-notice" style="display: none;">
                                         <i class="ri-information-line me-2"></i>
-                                        <strong>Chế độ đặt trước:</strong> Giá sách sẽ sử dụng "Giá ưu đãi đặt trước" đã cấu hình ở phần trên.
+                                        <strong>Chế độ đặt trước:</strong> Khi bật chế độ đặt trước, giá bán sẽ được sử dụng từ "Giá ưu đãi đặt trước" đã cấu hình ở phần trên thay vì giá định dạng này.
                                     </div>
                                         <div class="col-12">
                                             <label class="form-label fw-medium">File Ebook</label>
@@ -695,6 +694,9 @@ function toggleFormatSections() {
     if (ebookCheckbox && ebookForm) {
         ebookForm.style.display = ebookCheckbox.checked ? 'block' : 'none';
     }
+    
+    // Call preorder toggle to update price sections
+    togglePreorderSection();
 }
 
 // Toggle gift section
@@ -707,12 +709,97 @@ function toggleGiftSection() {
     }
 }
 
+// Preorder section toggle
+function togglePreorderSection() {
+    const preOrderCheckbox = document.getElementById('pre_order');
+    const preorderSection = document.getElementById('preorder_section');
+    const releaseDateInput = document.getElementById('release_date');
+    const stockPreorderLimitInput = document.getElementById('stock_preorder_limit');
+    const physicalPriceSection = document.getElementById('physical_price_section');
+    const ebookPriceSection = document.getElementById('ebook_price_section');
+    const preorderPriceNotices = document.querySelectorAll('.preorder-price-notice');
+    const physicalCheckbox = document.getElementById('has_physical');
+    const ebookCheckbox = document.getElementById('has_ebook');
+    
+    if (!preOrderCheckbox || !preorderSection) {
+        return;
+    }
+    
+    if (preOrderCheckbox.checked) {
+        preorderSection.style.display = 'block';
+        
+        // Make required fields required
+        if (releaseDateInput) releaseDateInput.required = true;
+        if (stockPreorderLimitInput) stockPreorderLimitInput.required = true;
+        
+        // Set minimum date to today
+        if (releaseDateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            releaseDateInput.min = today;
+        }
+        
+        // Hide price sections and show notices only for enabled formats
+        if (physicalPriceSection && physicalCheckbox && physicalCheckbox.checked) {
+            physicalPriceSection.style.display = 'none';
+        }
+        if (ebookPriceSection && ebookCheckbox && ebookCheckbox.checked) {
+            ebookPriceSection.style.display = 'none';
+        }
+        
+        // Show preorder notices for enabled formats
+        preorderPriceNotices.forEach(notice => {
+            const parentCard = notice.closest('.border');
+            if (parentCard) {
+                // Check if this is physical format notice
+                if (parentCard.closest('#physical_format') && physicalCheckbox && physicalCheckbox.checked) {
+                    notice.style.display = 'block';
+                }
+                // Check if this is ebook format notice
+                else if (parentCard.closest('#ebook_format') && ebookCheckbox && ebookCheckbox.checked) {
+                    notice.style.display = 'block';
+                }
+            }
+        });
+        
+        // Set default stock limit if empty
+        if (stockPreorderLimitInput && !stockPreorderLimitInput.value) {
+            stockPreorderLimitInput.value = 100;
+        }
+    } else {
+        preorderSection.style.display = 'none';
+        
+        // Remove required from fields
+        if (releaseDateInput) {
+            releaseDateInput.required = false;
+            releaseDateInput.value = '';
+        }
+        if (stockPreorderLimitInput) {
+            stockPreorderLimitInput.required = false;
+            stockPreorderLimitInput.value = '';
+        }
+        
+        // Show price sections and hide notices for enabled formats
+        if (physicalPriceSection && physicalCheckbox && physicalCheckbox.checked) {
+            physicalPriceSection.style.display = 'block';
+        }
+        if (ebookPriceSection && ebookCheckbox && ebookCheckbox.checked) {
+            ebookPriceSection.style.display = 'block';
+        }
+        
+        preorderPriceNotices.forEach(notice => {
+            notice.style.display = 'none';
+        });
+    }
+}
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
     const physicalCheckbox = document.getElementById('has_physical');
     const ebookCheckbox = document.getElementById('has_ebook');
     const giftCheckbox = document.getElementById('has_gift');
+    const preOrderCheckbox = document.getElementById('pre_order');
     
+    // Add event listeners
     if (physicalCheckbox) {
         physicalCheckbox.addEventListener('change', toggleFormatSections);
     }
@@ -725,9 +812,14 @@ document.addEventListener('DOMContentLoaded', function() {
         giftCheckbox.addEventListener('change', toggleGiftSection);
     }
     
+    if (preOrderCheckbox) {
+        preOrderCheckbox.addEventListener('change', togglePreorderSection);
+    }
+    
     // Initial toggle
     toggleFormatSections();
     toggleGiftSection();
+    togglePreorderSection();
     
     // Preview images
     const coverInput = document.getElementById('cover_image');
@@ -873,10 +965,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     // Initialize gift date range picker
     const giftDateRangePicker = document.getElementById('gift_date_range');
-    if (giftDateRangePicker) {
+    if (giftDateRangePicker && typeof flatpickr !== 'undefined') {
         flatpickr(giftDateRangePicker, {
             mode: 'range',
             dateFormat: 'Y-m-d',
@@ -908,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Initialize Select2
+// Initialize Select2 and other jQuery-dependent code
 $(document).ready(function() {
     // Initialize Select2
     if (typeof $.fn.select2 !== 'undefined') {
@@ -970,71 +1062,9 @@ $(document).ready(function() {
                 reader.readAsDataURL(file);
             });
         }
-    });
-
-    // Preorder section toggle
-    const preOrderCheckbox = document.getElementById('pre_order');
-    const preorderSection = document.getElementById('preorder_section');
-    const releaseDateInput = document.getElementById('release_date');
-    const stockPreorderLimitInput = document.getElementById('stock_preorder_limit');
-    const formatPriceSections = document.querySelectorAll('#physical_price_section, #ebook_price_section');
-    const preorderPriceNotices = document.querySelectorAll('.preorder-price-notice');
-    
-    if (preOrderCheckbox && preorderSection) {
-        // Initial state
-        togglePreorderSection();
-        
-        preOrderCheckbox.addEventListener('change', togglePreorderSection);
-        
-        function togglePreorderSection() {
-            if (preOrderCheckbox.checked) {
-                preorderSection.style.display = 'block';
-                releaseDateInput.required = true;
-                stockPreorderLimitInput.required = true;
-                
-                // Ẩn phần giá format và hiện thông báo
-                formatPriceSections.forEach(section => {
-                    if (section) section.style.display = 'none';
-                });
-                preorderPriceNotices.forEach(notice => {
-                    if (notice) notice.style.display = 'block';
-                });
-                
-                // Set minimum date to tomorrow
-                const tomorrow = new Date();
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                const minDate = tomorrow.toISOString().split('T')[0];
-                releaseDateInput.min = minDate;
-                
-                // Set default release date if empty
-                if (!releaseDateInput.value) {
-                    const defaultReleaseDate = new Date();
-                    defaultReleaseDate.setMonth(defaultReleaseDate.getMonth() + 1); // 1 month from now
-                    releaseDateInput.value = defaultReleaseDate.toISOString().split('T')[0];
-                }
-                
-                // Set default stock limit if empty
-                if (!stockPreorderLimitInput.value) {
-                    stockPreorderLimitInput.value = 100;
-                }
-            } else {
-                preorderSection.style.display = 'none';
-                releaseDateInput.required = false;
-                stockPreorderLimitInput.required = false;
-                releaseDateInput.value = '';
-                stockPreorderLimitInput.value = '';
-                
-                // Hiện lại phần giá format và ẩn thông báo
-                formatPriceSections.forEach(section => {
-                    if (section) section.style.display = 'block';
-                });
-                preorderPriceNotices.forEach(notice => {
-                    if (notice) notice.style.display = 'none';
-                });
-            }
-        }
     }
 });
+
 </script>
 @endpush
 @endsection
