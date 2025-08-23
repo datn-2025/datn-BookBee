@@ -116,18 +116,22 @@ class Voucher extends Model
         return $this->conditions()
             ->where(function ($query) use ($book) {
                 $query->where(function ($q) use ($book) {
+                    // Specific book
                     $q->where('type', 'book')
                       ->where('condition_id', $book->id);
                 })
                 ->orWhere(function ($q) use ($book) {
+                    // Category
                     $q->where('type', 'category')
                       ->where('condition_id', $book->category_id);
                 })
                 ->orWhere(function ($q) use ($book) {
+                    // Author (many-to-many relationship)
                     $q->where('type', 'author')
-                      ->where('condition_id', $book->author_id);
+                      ->whereIn('condition_id', $book->authors->pluck('id'));
                 })
                 ->orWhere(function ($q) use ($book) {
+                    // Brand
                     $q->where('type', 'brand')
                       ->where('condition_id', $book->brand_id);
                 });

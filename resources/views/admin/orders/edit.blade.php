@@ -263,23 +263,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <div class="mt-4 pt-3 text-center border-top">
-                            @if($order->qr_code)
-                            <h5 class="fs-14 mb-3">Mã QR đơn hàng</h5>
-                            <img src="{{ asset('storage/' . $order->qr_code) }}" alt="QR Code" class="img-fluid rounded"
-                                style="max-width: 150px">
-                            @else
-                            <div class="d-flex justify-content-center">
-                                <div class="avatar-md">
-                                    <div class="avatar-title bg-light text-secondary rounded-circle fs-2">
-                                        <i class="ri-qr-code-line"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="text-muted mt-2 mb-0">Chưa có mã QR</p>
-                            @endif
-                        </div>
                     </div>
                 </div>
             </div>

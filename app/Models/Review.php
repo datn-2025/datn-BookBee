@@ -19,6 +19,7 @@ class Review extends Model
         'order_id',
         'rating',
         'comment',
+        'images',
         'status',
         'admin_response'
     ];
@@ -30,7 +31,8 @@ class Review extends Model
     const STATUS_VISIBLE = 'visible';    // Hiển thị (legacy)
 
     protected $casts = [
-        'rating' => 'integer'
+        'rating' => 'integer',
+        'images' => 'array'
     ];
 
     protected $dates = ['deleted_at'];

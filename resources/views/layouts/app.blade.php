@@ -9,6 +9,10 @@
     <title>{{ get_setting() ? get_setting()->name_website : 'BookBee' }} - @yield('title')</title>
     <link rel="shortcut icon" href="{{ asset('storage/' . (get_setting() ? get_setting()->favicon : 'default_favicon.ico')) }}" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Disable hover effects -->
+    <link href="{{ asset('css/disable-hover-effects.css') }}" rel="stylesheet" />
+    <!-- Nuclear option - disable all effects -->
+    <link href="{{ asset('css/disable-all-effects.css') }}" rel="stylesheet" />
    
 
     <!-- Bootstrap CSS -->
@@ -27,15 +31,24 @@
 
     @stack('styles')
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- Pusher Configuration -->
+    <meta name="pusher-key" content="{{ env('VITE_PUSHER_APP_KEY') }}">
+    <meta name="pusher-cluster" content="{{ env('VITE_PUSHER_APP_CLUSTER') }}">
+    <meta name="user-id" content="{{ auth()->id() ?? '' }}">
+    <meta name="user-role" content="{{ auth()->user()->role->name ?? '' }}">
 
     <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
     
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     
     <!-- Cart Count Manager -->
     <script src="{{ asset('js/cart-count-manager.js') }}"></script>
+    
+    <!-- Wishlist Count Manager -->
+    <script src="{{ asset('js/wishlist-count-manager.js') }}"></script>
 
     <!-- Prevent FOUC Script -->
     <script>
@@ -224,10 +237,27 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    {{-- Chat Widget --}}
+    {{-- Chat Widget - Chỉ hiển thị khi đăng nhập --}}
+    @auth
+        @include('components.chat-widget')
+    @endauth
+
     @include('components.chatbot-widget')
 
+
     @stack('scripts')
+    
+    <!-- Laravel Echo & Notifications -->
+    @vite(['resources/js/echo.js'])
+    <script src="{{ asset('js/notifications.js') }}"></script>
+    <script src="{{ asset('js/frontend-notifications.js') }}"></script>
+    
+    <!-- Set user role for JavaScript -->
+    <script>
+        window.userRole = '{{ auth()->user()->role->name ?? "guest" }}';
+        window.userId = {{ auth()->id() ?? 'null' }};
+    </script>
+    
     @include('layouts.partials.footer')
 
     <!-- Test broadcast script removed - file not found -->

@@ -1,5 +1,5 @@
 <!-- Tmart-style Chatbot Widget -->
-<div id="chatbot-widget" class="fixed bottom-4 right-4 z-50 font-sans" role="region" aria-label="BookBee Chatbot Assistant">
+<div id="chatbot-widget" class="fixed bottom-24 right-5 z-50 font-sans" role="region" aria-label="BookBee Chatbot Assistant">
     <!-- Floating Action Button - Tmart Style -->
     <button id="chatbot-toggle" 
             class="group relative bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white w-16 h-16 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-teal-300/50"
@@ -18,16 +18,16 @@
         </div> --}}
         
         <!-- Notification Badge -->
-        <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+        {{-- <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
             <span class="text-white text-xs font-bold">1</span>
-        </div>
-        <img style=" border-radius: 50%; object-fit: cover;" src="{{ asset('images/avtchatbot.jpg') }}" alt="">
+        </div> --}}
+        <img style=" border-radius: 50%; object-fit: cover;" src="{{ asset('storage/avtchatbot.jpg') }}" alt="">
     </button>
 
     <!-- Chat Window - Style -->
     <div id="chatbot-window" 
-         class="hidden fixed bottom-25 right-4 w-99 h-[650px] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bg-white transform transition-all duration-300 scale-95 opacity-0"
-         style="display: none;"
+         class="hidden fixed bottom-44 right-5 rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bg-white transform transition-all duration-300 scale-95 opacity-0"
+         style="display: none; width: 350px; height: 500px;"
          role="dialog" 
          aria-labelledby="chatbot-title" 
          aria-modal="true">
@@ -183,14 +183,48 @@
     
     /* Chat Window Styles */
     #chatbot-window {
-        display: flex;
+        display: none;
         flex-direction: column;
+        z-index: 1000;
     }
     
     #chatbot-window.show {
         display: flex !important;
         opacity: 1;
         transform: scale(1);
+    }
+    
+    /* Ensure proper z-index layering */
+    #chatbot-overlay {
+        z-index: 998;
+    }
+    
+    #chatbot-widget {
+        z-index: 999;
+    }
+    
+    #chatbot-window {
+        z-index: 1000;
+    }
+    
+    /* Prevent body scroll when mobile chatbot is open */
+    body.chatbot-mobile-open {
+        overflow: hidden !important;
+        position: fixed !important;
+        width: 100% !important;
+    }
+    
+    /* Smooth transitions */
+    #chatbot-window {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    #chatbot-toggle {
+        transition: all 0.2s ease;
+    }
+    
+    #chatbot-toggle:active {
+        transform: scale(0.95);
     }
     
     /* Scrollbar Styles */
@@ -279,12 +313,22 @@
         }
     }
     
+    /* Animation Classes with Better Performance */
     .animate-slide-up {
-        animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
     
     .animate-slide-down {
-        animation: slideDown 0.2s ease-in;
+        animation: slideDown 0.2s ease-in forwards;
+    }
+    
+    /* Prevent Animation Conflicts */
+    #chatbot-window.show {
+        animation-fill-mode: forwards !important;
+    }
+    
+    #chatbot-window.hidden {
+        animation-fill-mode: forwards !important;
     }
     
     /* Quick Action Buttons */
@@ -300,20 +344,40 @@
     
     /* Mobile Responsive */
     @media (max-width: 640px) {
+        #chatbot-widget {
+            right: 16px !important;
+            bottom: 20px !important;
+        }
+        
+        #chatbot-toggle {
+            width: 56px !important;
+            height: 56px !important;
+        }
+        
         #chatbot-window {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
             right: 0 !important;
             bottom: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
+            width: 100vw !important;
+            height: 100vh !important;
             border-radius: 0 !important;
             margin: 0 !important;
+            z-index: 9999 !important;
         }
         
-        #chatbot-toggle {
-            bottom: 20px !important;
+        #chatbot-overlay {
+            z-index: 9998 !important;
+        }
+    }
+    
+    /* Tablet Responsive */
+    @media (min-width: 641px) and (max-width: 1024px) {
+        #chatbot-window {
+            width: 380px !important;
+            height: 600px !important;
+            bottom: 140px !important;
             right: 20px !important;
         }
     }
@@ -377,12 +441,38 @@ class ChatbotWidget {
         this.apiUrl = '/api/chatbot/message';
         this.csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         
-        this.initializeElements();
+        // Cleanup any existing instances
+        this.cleanup();
+        
+        if (!this.initializeElements()) {
+            console.error('Failed to initialize chatbot elements');
+            return;
+        }
+        
         this.attachEventListeners();
         this.setupMobileHandler();
         this.setupCharacterCounter();
         
         console.log('BookBee ChatBot initialized successfully! 🤖');
+    }
+    
+    cleanup() {
+        // Reset any existing states
+        const existingWindow = document.getElementById('chatbot-window');
+        if (existingWindow) {
+            existingWindow.style.display = 'none';
+            existingWindow.classList.add('hidden');
+            existingWindow.classList.remove('show', 'animate-slide-up', 'animate-slide-down');
+        }
+        
+        const existingOverlay = document.getElementById('chatbot-overlay');
+        if (existingOverlay) {
+            existingOverlay.classList.add('hidden');
+        }
+        
+        // Reset body overflow and classes
+        document.body.classList.remove('chatbot-mobile-open');
+        document.body.style.overflow = '';
     }
     
     initializeElements() {
@@ -398,24 +488,62 @@ class ChatbotWidget {
         
         if (!this.widget) {
             console.error('Chatbot widget not found!');
-            return;
+            return false;
         }
+        
+        if (!this.window) {
+            console.error('Chatbot window not found!');
+            return false;
+        }
+        
+        return true;
     }
     
     attachEventListeners() {
-        // Toggle chatbot
-        this.toggleBtn?.addEventListener('click', () => this.openChat());
-        this.closeBtn?.addEventListener('click', () => this.closeChat());
-        this.overlay?.addEventListener('click', () => this.closeChat());
+        // Toggle chatbot - ensure only one listener
+        if (this.toggleBtn) {
+            this.toggleBtn.removeEventListener('click', this.handleToggle);
+            this.handleToggle = () => {
+                if (this.isOpen) {
+                    this.closeChat();
+                } else {
+                    this.openChat();
+                }
+            };
+            this.toggleBtn.addEventListener('click', this.handleToggle);
+        }
+        
+        // Close chatbot - ensure only one listener
+        if (this.closeBtn) {
+            this.closeBtn.removeEventListener('click', this.handleClose);
+            this.handleClose = () => this.closeChat();
+            this.closeBtn.addEventListener('click', this.handleClose);
+        }
+        
+        // Overlay click to close
+        if (this.overlay) {
+            this.overlay.removeEventListener('click', this.handleOverlayClick);
+            this.handleOverlayClick = () => this.closeChat();
+            this.overlay.addEventListener('click', this.handleOverlayClick);
+        }
         
         // Send message
-        this.sendBtn?.addEventListener('click', () => this.sendMessage());
-        this.input?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.sendMessage();
-            }
-        });
+        if (this.sendBtn) {
+            this.sendBtn.removeEventListener('click', this.handleSend);
+            this.handleSend = () => this.sendMessage();
+            this.sendBtn.addEventListener('click', this.handleSend);
+        }
+        
+        if (this.input) {
+            this.input.removeEventListener('keypress', this.handleKeypress);
+            this.handleKeypress = (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendMessage();
+                }
+            };
+            this.input.addEventListener('keypress', this.handleKeypress);
+        }
         
         // Quick suggestions and actions
         document.addEventListener('click', (e) => {
@@ -468,34 +596,44 @@ class ChatbotWidget {
     }
     
     openChat() {
+        if (this.isOpen) return; // Prevent multiple calls
+        
         this.isOpen = true;
         this.window.style.display = 'flex';
-        this.window.classList.add('show', 'animate-slide-up');
         this.window.classList.remove('hidden', 'scale-95', 'opacity-0');
+        this.window.classList.add('show', 'animate-slide-up');
         
         if (window.innerWidth <= 640) {
-            this.overlay.classList.remove('hidden');
+            this.overlay?.classList.remove('hidden');
+            document.body.classList.add('chatbot-mobile-open');
             document.body.style.overflow = 'hidden';
         }
         
-        this.input?.focus();
-        this.scrollToBottom();
+        // Focus on input after animation
+        setTimeout(() => {
+            this.input?.focus();
+        }, 100);
         
-        // Add analytics
+        this.scrollToBottom();
         this.trackEvent('chatbot_opened');
     }
     
     closeChat() {
+        if (!this.isOpen) return; // Prevent multiple calls
+        
         this.isOpen = false;
         this.window.classList.add('animate-slide-down');
-        this.window.classList.remove('animate-slide-up');
+        this.window.classList.remove('animate-slide-up', 'show');
+        
+        // Remove mobile overlay immediately
+        this.overlay?.classList.add('hidden');
+        document.body.classList.remove('chatbot-mobile-open');
+        document.body.style.overflow = '';
         
         setTimeout(() => {
             this.window.style.display = 'none';
-            this.window.classList.remove('show', 'animate-slide-down');
+            this.window.classList.remove('animate-slide-down');
             this.window.classList.add('hidden', 'scale-95', 'opacity-0');
-            this.overlay.classList.add('hidden');
-            document.body.style.overflow = '';
         }, 200);
         
         this.trackEvent('chatbot_closed');
@@ -753,21 +891,65 @@ class ChatbotWidget {
         this.closeChat();
     }
     
+    toggle() {
+        if (this.isOpen) {
+            this.closeChat();
+        } else {
+            this.openChat();
+        }
+    }
+    
     sendQuickMessage(message) {
-        this.input.value = message;
-        this.sendMessage();
+        if (this.input) {
+            this.input.value = message;
+            this.sendMessage();
+        }
+    }
+    
+    // Destroy method for cleanup
+    destroy() {
+        this.cleanup();
+        if (this.toggleBtn && this.handleToggle) {
+            this.toggleBtn.removeEventListener('click', this.handleToggle);
+        }
+        if (this.closeBtn && this.handleClose) {
+            this.closeBtn.removeEventListener('click', this.handleClose);
+        }
+        if (this.overlay && this.handleOverlayClick) {
+            this.overlay.removeEventListener('click', this.handleOverlayClick);
+        }
+        if (this.sendBtn && this.handleSend) {
+            this.sendBtn.removeEventListener('click', this.handleSend);
+        }
+        if (this.input && this.handleKeypress) {
+            this.input.removeEventListener('keypress', this.handleKeypress);
+        }
     }
 }
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
+    // Destroy existing instance if any
+    if (window.bookbeeChatbot) {
+        window.bookbeeChatbot.destroy();
+    }
+    
+    // Create new instance
     window.bookbeeChatbot = new ChatbotWidget();
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (window.bookbeeChatbot) {
+        window.bookbeeChatbot.destroy();
+    }
 });
 
 // Global API for external access
 window.BookBeeChat = {
     open: () => window.bookbeeChatbot?.open(),
     close: () => window.bookbeeChatbot?.close(),
+    toggle: () => window.bookbeeChatbot?.toggle(),
     send: (message) => window.bookbeeChatbot?.sendQuickMessage(message)
 };
 </script>

@@ -254,13 +254,13 @@
                                         <input type="text" class="form-control @error('gift_date_range') is-invalid @enderror" 
                                                id="gift_date_range" name="gift_date_range" 
                                                placeholder="Chọn khoảng thời gian khuyến mãi..." 
-                                               value="@if($currentGift && $currentGift->start_date && $currentGift->end_date){{ $currentGift->start_date->format('Y-m-d') }} to {{ $currentGift->end_date->format('Y-m-d') }}@endif">
+                                               value="@if($currentGift && $currentGift->start_date && $currentGift->end_date){{ $currentGift->start_date }} to {{ $currentGift->end_date }}@endif">
                                         
                                         <!-- Hidden inputs để lưu giá trị ngày -->
                                         <input type="hidden" id="gift_start_date" name="gift_start_date" 
-                                               value="{{ old('gift_start_date', $currentGift && $currentGift->start_date ? $currentGift->start_date->format('Y-m-d') : '') }}">
+                                               value="{{ old('gift_start_date', $currentGift && $currentGift->start_date ? $currentGift->start_date : '') }}">
                                         <input type="hidden" id="gift_end_date" name="gift_end_date" 
-                                               value="{{ old('gift_end_date', $currentGift && $currentGift->end_date ? $currentGift->end_date->format('Y-m-d') : '') }}">
+                                               value="{{ old('gift_end_date', $currentGift && $currentGift->end_date ? $currentGift->end_date : '') }}">
                                         
                                         @error('gift_date_range')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -343,13 +343,13 @@
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][price]" 
-                                                   value="{{ old('formats.physical.price', $physicalFormat->price ?? '') }}" 
+                                                   id="physical_price" value="{{ old('formats.physical.price', $physicalFormat->price ?? '') }}" 
                                                    placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][discount]" 
-                                                   value="{{ old('formats.physical.discount', $physicalFormat->discount ?? '') }}" 
+                                                   id="physical_discount" value="{{ old('formats.physical.discount', $physicalFormat->discount ?? '') }}" 
                                                    placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-4">
@@ -507,13 +507,13 @@
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][price]" 
-                                                   value="{{ old('formats.ebook.price', $ebookFormat->price ?? '') }}" 
+                                                   id="ebook_price" value="{{ old('formats.ebook.price', $ebookFormat->price ?? '') }}" 
                                                    placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][discount]" 
-                                                   value="{{ old('formats.ebook.discount', $ebookFormat->discount ?? '') }}" 
+                                                   id="ebook_discount" value="{{ old('formats.ebook.discount', $ebookFormat->discount ?? '') }}" 
                                                    placeholder="0" min="0">
                                         </div>
                                         <div class="col-12">
@@ -605,16 +605,32 @@
                             <label for="images" class="form-label fw-medium">Ảnh phụ</label>
                             @if($book->images->count() > 0)
                                 <div class="mb-2">
-                                    <div class="row">
+                                    <div class="row" id="existing-images">
                                         @foreach($book->images as $image)
-                                            <div class="col-6 mb-2">
-                                                <img src="{{ asset('storage/' . $image->image_path) }}" 
-                                                     class="img-thumbnail w-100" style="height: 80px; object-fit: cover;" 
-                                                     alt="Ảnh phụ">
+                                            <div class="col-6 mb-2" id="image-item-{{ $image->id }}">
+                                                <div class="card border-0 shadow-sm">
+                                                    <div class="position-relative">
+                                                        <img src="{{ asset('storage/' . $image->image_url) }}" 
+                                                             class="card-img-top" style="height: 100px; object-fit: cover;" 
+                                                             alt="Ảnh phụ">
+                                                        <div class="position-absolute top-0 end-0 p-1">
+                                                            <button type="button" class="btn btn-danger btn-sm rounded-circle delete-image-btn" 
+                                                                    data-image-id="{{ $image->id }}"
+                                                                    style="width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="ri-delete-bin-line" style="font-size: 14px;"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body p-2">
+                                                        <small class="text-muted">Ảnh {{ $loop->iteration }}</small>
+                                                    </div>
+                                                </div>
                                             </div>
                                         @endforeach
                                     </div>
                                     <div class="small text-muted">Ảnh phụ hiện tại</div>
+                                    <!-- Hidden inputs to track deleted images -->
+                                    <div id="deleted-images-inputs"></div>
                                 </div>
                             @endif
                             <input type="file" class="form-control @error('images') is-invalid @enderror" 
@@ -775,6 +791,11 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
+    console.log('jQuery is loaded and ready!'); // Debug log
+    
+    // Test if delete buttons exist
+    console.log('Delete buttons found:', $('.delete-existing-image').length);
+    
     // Initialize Select2
     if (typeof $.fn.select2 !== 'undefined') {
         $('.select2-authors').select2({

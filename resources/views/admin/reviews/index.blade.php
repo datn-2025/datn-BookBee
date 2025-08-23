@@ -124,7 +124,6 @@
                                         <tr>
                                             <th>#</th>
                                             <th>Sản phẩm</th>
-                                            <th>Loại & Định dạng</th>
                                             <th>Bình luận</th>
                                             <th>Phản hồi Admin</th>
                                             <th class="text-center">Thao tác</th>
@@ -134,47 +133,115 @@
                                         @foreach ($reviews as $index => $review)
                                             <tr class="{{ in_array($review->status, ['hidden', 'pending']) ? 'table-light text-muted' : '' }}">
                                                 <td>{{ $reviews->firstItem() + $index }}</td>
-                                                <td style="max-width: 200px; white-space: normal;">
-                                                    @if($review->isComboReview())
-                                                        @if($review->collection)
-                                                            <a href="{{ route('combos.show', $review->collection->id) }}" 
-                                                               class="text-decoration-none fw-medium text-success" 
-                                                               target="_blank">
-                                                                {{ $review->collection->name }}
-                                                            </a>
-                                                        @else
-                                                            <span class="text-muted">Combo đã bị xóa</span>
-                                                        @endif
-                                                    @else
-                                                        @if ($review->book)
-                                                        @permission('review.show')
-                                                            <a href="{{ route('admin.books.show', ['id' => $review->book->id, 'slug' => Str::slug($review->book->title)]) }}"
-                                                                class="text-decoration-none fw-medium">
-                                                                {{ $review->book->title }}
-                                                            </a>
-                                                            @endpermission
-                                                        @else
-                                                            <span class="text-muted">Sản phẩm đã xóa</span>
-                                                        @endif
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex flex-column gap-1">
-                                                        <span class="badge {{ $review->isComboReview() ? 'bg-success' : 'bg-primary' }} text-white">
-                                                            {{ $review->product_type }}
-                                                        </span>
-                                                        @if($review->order && $review->order->orderItems->count() > 0)
-                                                            @php
-                                                                $orderItem = $review->isComboReview() 
-                                                                    ? $review->order->orderItems->where('collection_id', $review->collection_id)->first()
-                                                                    : $review->order->orderItems->where('book_id', $review->book_id)->first();
-                                                            @endphp
-                                                            @if($orderItem)
-                                                                <span class="badge {{ strtolower($orderItem->format) === 'ebook' ? 'bg-info' : 'bg-secondary' }} text-white">
-                                                                    {{ $orderItem->format }}
-                                                                </span>
+                                                <td style="max-width: 250px; white-space: normal;">
+                                                    <div class="d-flex align-items-start gap-3">
+                                                        {{-- Product Image --}}
+                                                        <div class="flex-shrink-0">
+                                                            @if($review->isComboReview())
+                                                                @if($review->collection && $review->collection->cover_image)
+                                                                    <img src="{{ asset('storage/' . $review->collection->cover_image) }}" 
+                                                                         alt="{{ $review->collection->name }}" 
+                                                                         class="rounded border"
+                                                                         style="width: 70px; height: 90px; object-fit: cover;">
+                                                                @else
+                                                                    <div class="bg-light rounded border d-flex align-items-center justify-content-center text-muted"
+                                                                         style="width: 70px; height: 90px; font-size: 16px;">
+                                                                        <i class="ri-book-2-line"></i>
+                                                                    </div>
+                                                                @endif
+                                                            @else
+                                                                @if($review->book && $review->book->cover_image)
+                                                                    <img src="{{ asset('storage/' . $review->book->cover_image) }}" 
+                                                                         alt="{{ $review->book->title }}" 
+                                                                         class="rounded border"
+                                                                         style="width: 70px; height: 90px; object-fit: cover;">
+                                                                @else
+                                                                    <div class="bg-light rounded border d-flex align-items-center justify-content-center text-muted"
+                                                                         style="width: 70px; height: 90px; font-size: 16px;">
+                                                                        <i class="ri-book-line"></i>
+                                                                    </div>
+                                                                @endif
                                                             @endif
-                                                        @endif
+                                                        </div>
+                                                        
+                                                        {{-- Product Info --}}
+                                                        <div class="flex-grow-1 min-w-0">
+                                                            @if($review->isComboReview())
+                                                                @if($review->collection)
+                                                                    <div class="fw-bold text-success mb-1" style="font-size: 14px; line-height: 1.3;">
+                                                                        <a href="{{ route('combos.show', $review->collection->id) }}" 
+                                                                           class="text-decoration-none text-success" 
+                                                                           target="_blank"
+                                                                           title="{{ $review->collection->name }}">
+                                                                            {{ Str::limit($review->collection->name, 40) }}
+                                                                        </a>
+                                                                    </div>
+                                                                    <small class="text-muted d-block">
+                                                                        <i class="ri-stack-line me-1"></i>Combo sách
+                                                                    </small>
+                                                                    @if($review->order && $review->order->orderItems->count() > 0)
+                                                                        @php
+                                                                            $orderItem = $review->order->orderItems->where('collection_id', $review->collection_id)->first();
+                                                                        @endphp
+                                                                        @if($orderItem && $orderItem->bookFormat)
+                                                                            <small class="text-muted d-block mt-1">
+                                                                                <i class="ri-file-text-line me-1"></i>
+                                                                                <span class="badge {{ strtolower($orderItem->bookFormat->format_name) === 'ebook' ? 'bg-info' : 'bg-secondary' }} text-white" style="font-size: 10px;">
+                                                                                    {{ $orderItem->bookFormat->format_name }}
+                                                                                </span>
+                                                                            </small>
+                                                                        @endif
+                                                                    @endif
+                                                                @else
+                                                                    <div class="fw-bold text-muted mb-1">Combo đã bị xóa</div>
+                                                                    <small class="text-muted d-block">
+                                                                        <i class="ri-stack-line me-1"></i>Combo sách
+                                                                    </small>
+                                                                @endif
+                                                            @else
+                                                                @if ($review->book)
+                                                                    <div class="fw-bold text-primary mb-1" style="font-size: 14px; line-height: 1.3;">
+                                                                        @permission('review.show')
+                                                                            <a href="{{ route('admin.books.show', ['id' => $review->book->id, 'slug' => Str::slug($review->book->title)]) }}"
+                                                                                class="text-decoration-none text-primary"
+                                                                                title="{{ $review->book->title }}">
+                                                                                {{ Str::limit($review->book->title, 40) }}
+                                                                            </a>
+                                                                        @else
+                                                                            <span title="{{ $review->book->title }}">
+                                                                                {{ Str::limit($review->book->title, 40) }}
+                                                                            </span>
+                                                                        @endpermission
+                                                                    </div>
+                                                                    <small class="text-muted d-block">
+                                                                        <i class="ri-user-line me-1"></i>
+                                                                        @if($review->book->authors && $review->book->authors->count() > 0)
+                                                                            {{ $review->book->authors->first()->name }}
+                                                                        @else
+                                                                            Tác giả: N/A
+                                                                        @endif
+                                                                    </small>
+                                                                    @if($review->order && $review->order->orderItems->count() > 0)
+                                                                        @php
+                                                                            $orderItem = $review->order->orderItems->where('book_id', $review->book_id)->first();
+                                                                        @endphp
+                                                                        @if($orderItem && $orderItem->bookFormat)
+                                                                            <small class="text-muted d-block mt-1">
+                                                                                <i class="ri-file-text-line me-1"></i>
+                                                                                <span class="badge {{ strtolower($orderItem->bookFormat->format_name) === 'ebook' ? 'bg-info' : 'bg-secondary' }} text-white" style="font-size: 10px;">
+                                                                                    {{ $orderItem->bookFormat->format_name }}
+                                                                                </span>
+                                                                            </small>
+                                                                        @endif
+                                                                    @endif
+                                                                @else
+                                                                    <div class="fw-bold text-muted mb-1">Sản phẩm đã xóa</div>
+                                                                    <small class="text-muted d-block">
+                                                                        <i class="ri-book-line me-1"></i>Sách
+                                                                    </small>
+                                                                @endif
+                                                            @endif
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td style="max-width: 400px;">
@@ -203,6 +270,27 @@
                                                         </span>
                                                     </div>
                                                     <div class="text-truncate small mt-1">{{ $review->comment }}</div>
+                                                    @if($review->images && count($review->images) > 0)
+                                                        <div class="mt-2">
+                                                            <small class="text-muted">Ảnh đánh giá:</small>
+                                                            <div class="d-flex gap-1 mt-1">
+                                                                @foreach(array_slice($review->images, 0, 3) as $imagePath)
+                                                                    <img src="{{ asset('storage/' . $imagePath) }}" 
+                                                                         alt="Review Image" 
+                                                                         class="rounded" 
+                                                                         style="width: 40px; height: 40px; object-fit: cover; cursor: pointer;"
+                                                                         onclick="showImageModal('{{ asset('storage/' . $imagePath) }}')"
+                                                                         title="Click để xem phóng to">
+                                                                @endforeach
+                                                                @if(count($review->images) > 3)
+                                                                    <div class="d-flex align-items-center justify-content-center bg-light rounded" 
+                                                                         style="width: 40px; height: 40px; font-size: 12px; color: #666;">
+                                                                        +{{ count($review->images) - 3 }}
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    @endif
                                                 </td>
                                                 <td style="max-width: 300px;">
                                                     <span
@@ -245,10 +333,32 @@
         </div>
     </div>
 
+    {{-- Modal hiển thị ảnh phóng to --}}
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">Ảnh đánh giá</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" src="" alt="Review Image" class="img-fluid rounded">
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Reset Toastr để không hiện lại khi dùng nút quay lại --}}
     <script>
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
+        }
+
+        // Function để hiển thị ảnh trong modal
+        function showImageModal(imageSrc) {
+            document.getElementById('modalImage').src = imageSrc;
+            var imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+            imageModal.show();
         }
     </script>
 @endsection

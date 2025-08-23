@@ -46,6 +46,7 @@ class StaffController extends Controller
             ->whereHas('role', function($q) {
                 $q->whereNotIn('name', ['User', 'Khách hàng']);
             })
+                        ->where('id', '!=', Auth::id()) // Ẩn tài khoản đang đăng nhập
             ->select('id', 'name', 'avatar', 'email', 'phone', 'status', 'role_id');
 
         if ($request->filled('search')) {

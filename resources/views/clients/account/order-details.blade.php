@@ -73,21 +73,48 @@
             @endif
                         </div>
                         <div class="flex items-center gap-4">
-                            @php
-                                $orderStatusName = $order->orderStatus->name ?? '';
-                                $orderStatusClass = match($orderStatusName) {
-                                    'Chờ xác nhận' => 'bg-yellow-500 text-white',
-                                    'Đã xác nhận' => 'bg-blue-500 text-white',
-                                    'Đang chuẩn bị' => 'bg-indigo-500 text-white',
-                                    'Đang giao hàng' => 'bg-purple-500 text-white',
-                                    'Đã giao', 'Thành công' => 'bg-green-500 text-white',
-                                    'Đã hủy' => 'bg-red-500 text-white',
-                                    default => 'bg-gray-500 text-white'
-                                };
-                            @endphp
-                            <span class="status-badge {{ $orderStatusClass }}">
-                                {{ $order->orderStatus->name }}
-                            </span>
+                            @if($order->refundRequests->isNotEmpty())
+                                @php 
+                                    $latestRefund = $order->refundRequests->sortByDesc('created_at')->first();
+                                    $refundStatusClass = match($latestRefund->status) {
+                                        'pending' => 'bg-yellow-500 text-white',
+                                        'processing' => 'bg-blue-500 text-white',
+                                        'completed' => 'bg-green-500 text-white',
+                                        'rejected' => 'bg-red-500 text-white',
+                                        default => 'bg-gray-500 text-white'
+                                    };
+                                    $refundStatusText = match($latestRefund->status) {
+                                        'pending' => 'CHỜ HOÀN TIỀN',
+                                        'processing' => 'ĐANG HOÀN TIỀN',
+                                        'completed' => 'ĐÃ HOÀN TIỀN',
+                                        'rejected' => 'TỪ CHỐI HOÀN TIỀN',
+                                        default => 'HOÀN TIỀN'
+                                    };
+                                @endphp
+                                <span class="status-badge {{ $refundStatusClass }}">
+                                    {{ $refundStatusText }}
+                                </span>
+                            @else
+                                @php
+                                    $orderStatusName = $order->orderStatus->name ?? '';
+                                    $orderStatusClass = match($orderStatusName) {
+                                        'Chờ xác nhận' => 'bg-yellow-500 text-white',
+                                        'Đã xác nhận' => 'bg-blue-500 text-white',
+                                        'Đang chuẩn bị' => 'bg-indigo-500 text-white',
+                                        'Đang đóng gói' => 'bg-orange-500 text-white',
+                                        'Đang giao hàng' => 'bg-purple-500 text-white',
+                                        'Đã giao hàng' => 'bg-green-500 text-white',
+                                        'Đã giao thành công' => 'bg-green-500 text-white',
+                                        'Đã giao', 'Thành công' => 'bg-green-500 text-white',
+                                        'Đã hủy' => 'bg-red-500 text-white',
+                                        'Hoàn trả' => 'bg-gray-500 text-white',
+                                        default => 'bg-gray-500 text-white'
+                                    };
+                                @endphp
+                                <span class="status-badge {{ $orderStatusClass }}">
+                                    {{ $order->orderStatus->name }}
+                                </span>
+                            @endif
                             <div class="text-right">
                                 <p class="text-sm text-gray-300 uppercase tracking-wide">Tổng tiền</p>
                                 <p class="text-2xl font-black text-white">
@@ -147,8 +174,8 @@
                                                                             </div>
                                                                         @endif
                                                                     @else
-                                                                        @if($item->book && $item->book->images->isNotEmpty())
-                                                                            <img src="{{ asset('storage/' . $item->book->images->first()->path) }}" 
+                                                                        @if($item->book && $item->book->cover_image)
+                                                                            <img src="{{ asset('storage/' . $item->book->cover_image) }}" 
                                                                                  alt="{{ $item->book->title }}" 
                                                                                  class="h-full w-full object-cover">
                                                                         @else
@@ -173,11 +200,62 @@
                                                                             <span class="text-gray-600">({{ $item->bookFormat->format_name }})</span>
                                                                         @endif
                                                                     </h6>
+                                                                    
+                                                                    <!-- Hiển thị thuộc tính biến thể cho child order -->
+                                                                    @if($item->attributeValues && $item->attributeValues->count() > 0)
+                                                                        <div class="flex flex-wrap gap-1 mt-1">
+                                                                            @foreach($item->attributeValues as $attributeValue)
+                                                                                <span class="px-1 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded border">
+                                                                                    {{ $attributeValue->attribute->name }}: {{ $attributeValue->value }}
+                                                                                </span>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    @endif
+                                                                    
+                                                                    <!-- Hiển thị quà tặng cho child order -->
+                                                                    @if($item->book && $item->book->gifts && $item->book->gifts->count() > 0 && $item->bookFormat && $item->bookFormat->format_name !== 'Ebook')
+                                                                        <div class="mt-1">
+                                                                            <div class="flex items-center gap-1 mb-1">
+                                                                                <svg class="w-3 h-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                                    <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                                                                                </svg>
+                                                                                <span class="text-xs font-bold text-red-600">Quà tặng:</span>
+                                                                            </div>
+                                                                            @foreach($item->book->gifts as $gift)
+                                                                                <div class="text-xs text-red-600 bg-red-50 px-1 py-0.5 rounded border border-red-200 mb-1">
+                                                                                    {{ $gift->gift_name }} (x{{ $item->quantity }})
+                                                                                </div>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    @endif
                                                                 @endif
                                                                 
                                                                 <div class="flex items-center gap-3 mt-1 text-xs text-gray-600">
                                                                     <span>SL: {{ $item->quantity }}</span>
                                                                     <span>{{ number_format($item->price) }}đ</span>
+                                                                </div>
+                                                                
+                                                                <!-- View Details Button for Child Order Items -->
+                                                                <div class="mt-2">
+                                                                    @if($item->isCombo())
+                                                                        <a href="{{ route('combos.show', $item->collection->slug ?? $item->collection->id) }}" 
+                                                                           class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-black hover:text-white text-black text-xs font-bold uppercase tracking-wide transition-all duration-300 border border-gray-300 hover:border-black">
+                                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                                            </svg>
+                                                                            Xem combo
+                                                                        </a>
+                                                                    @else
+                                                                        <a href="{{ route('books.show', $item->book->slug) }}" 
+                                                                           class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-black hover:text-white text-black text-xs font-bold uppercase tracking-wide transition-all duration-300 border border-gray-300 hover:border-black">
+                                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                                            </svg>
+                                                                            Xem chi tiết
+                                                                        </a>
+                                                                    @endif
                                                                 </div>
                                                             </div>
                                                             
@@ -384,8 +462,8 @@
                                                     </div>
                                                 @endif
                                             @else
-                                                @if($item->book && $item->book->images->isNotEmpty())
-                                                    <img src="{{ asset('storage/' . $item->book->images->first()->path) }}" 
+                                                @if($item->book && $item->book->cover_image)
+                                                    <img src="{{ asset('storage/' . $item->book->cover_image) }}" 
                                                          alt="{{ $item->book->title }}" 
                                                          class="h-full w-full object-cover">
                                                 @else
@@ -413,20 +491,89 @@
                                                     <span class="text-gray-600">({{ $item->bookFormat->format_name }})</span>
                                                 @endif
                                             </h5>
+                                            
+                                            <!-- Hiển thị thuộc tính biến thể -->
+                                            @if($item->attributeValues && $item->attributeValues->count() > 0)
+                                                <div class="flex flex-wrap gap-2 mt-1">
+                                                    @foreach($item->attributeValues as $attributeValue)
+                                                        <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded border">
+                                                            {{ $attributeValue->attribute->name }}: {{ $attributeValue->value }}
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                            
+                                            <!-- Hiển thị quà tặng -->
+                                            @if($item->book && $item->book->gifts && $item->book->gifts->count() > 0 && $item->bookFormat && $item->bookFormat->format_name !== 'Ebook')
+                                                <div class="mt-2">
+                                                    <div class="flex items-center gap-2 mb-1">
+                                                        <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                                                        </svg>
+                                                        <span class="text-xs font-bold text-red-600 uppercase tracking-wide">Quà tặng kèm:</span>
+                                                    </div>
+                                                    <div class="space-y-1">
+                                                        @foreach($item->book->gifts as $gift)
+                                                            <div class="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded">
+                                                                @if($gift->gift_image)
+                                                                    <img src="{{ asset('storage/' . $gift->gift_image) }}" 
+                                                                         alt="{{ $gift->gift_name }}" 
+                                                                         class="w-8 h-8 object-cover rounded border">
+                                                                @else
+                                                                    <div class="w-8 h-8 bg-red-200 rounded flex items-center justify-center">
+                                                                        <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                                                                        </svg>
+                                                                    </div>
+                                                                @endif
+                                                                <div class="flex-1">
+                                                                    <p class="text-xs font-medium text-red-800">{{ $gift->gift_name }}</p>
+                                                                    @if($gift->gift_description)
+                                                                        <p class="text-xs text-red-600">{{ $gift->gift_description }}</p>
+                                                                    @endif
+                                                                </div>
+                                                                <span class="text-xs font-bold text-red-600">x{{ $item->quantity }}</span>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
                                         @endif
-                                        
-                                        <div class="flex items-center gap-4 mt-2 text-xs text-gray-600 uppercase tracking-wide">
-                                            <span>SL: {{ $item->quantity }}</span>
-                                            <span>GIÁ: {{ number_format($item->price) }}đ</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Price -->
-                                    <div class="text-right">
-                                        <p class="text-lg font-black text-black">
-                                            {{ number_format($item->price * $item->quantity) }}đ
-                                        </p>
-                                    </div>
+                                                         <div class="flex items-center gap-4 mt-2 text-xs text-gray-600 uppercase tracking-wide">
+                            <span>SL: {{ $item->quantity }}</span>
+                            <span>GIÁ: {{ number_format($item->price) }}đ</span>
+                        </div>
+                        
+                        <!-- View Details Button -->
+                        <div class="mt-3">
+                            @if($item->isCombo())
+                                <a href="{{ route('combos.show', $item->collection->slug ?? $item->collection->id) }}" 
+                                   class="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 hover:bg-black hover:text-white text-black text-xs font-bold uppercase tracking-wide transition-all duration-300 border border-gray-300 hover:border-black">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    Xem combo
+                                </a>
+                            @else
+                                <a href="{{ route('books.show', $item->book->slug) }}" 
+                                   class="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 hover:bg-black hover:text-white text-black text-xs font-bold uppercase tracking-wide transition-all duration-300 border border-gray-300 hover:border-black">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    Xem chi tiết
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    <!-- Price -->
+                    <div class="text-right">
+                        <p class="text-lg font-black text-black">
+                            {{ number_format($item->price * $item->quantity) }}đ
+                        </p>
+                    </div>
                                 </div>
                             @endforeach
                         </div>
@@ -454,29 +601,112 @@
                     </div>
                     <div class="bg-gray-50 border-2 border-gray-200 p-6">
                         <div class="space-y-4">
+                            @php
+                                // Tính toán tạm tính dựa trên loại đơn hàng
+                                $subtotal = 0;
+                                $discountAmount = 0;
+                                $appliedVoucher = null;
+                                $voucherDiscount = 0;
+                                
+                                // Kiểm tra loại đơn hàng và tính subtotal
+                                if ($order->delivery_method === 'mixed' && is_null($order->parent_order_id) && $order->childOrders->count() > 0) {
+                                    // Đơn hàng cha của mixed order - tính tổng từ các đơn con
+                                    $subtotal = $order->childOrders->sum(function($childOrder) {
+                                        return $childOrder->orderItems->sum(function($item) {
+                                            return $item->price * $item->quantity;
+                                        });
+                                    });
+                                    
+                                    // Nếu vẫn = 0, dùng fallback
+                                    if ($subtotal == 0 && $order->total_amount > 0) {
+                                        $subtotal = $order->total_amount - $order->shipping_fee + $order->discount_amount;
+                                    }
+                                    
+                                    // Lấy voucher và discount từ đơn cha
+                                    if ($order->voucher) {
+                                        $appliedVoucher = $order->voucher;
+                                    }
+                                    $discountAmount = $order->discount_amount;
+                                } elseif ($order->parent_order_id) {
+                                    // Đây là đơn hàng con - tính từ orderItems của chính nó
+                                    $subtotal = $order->orderItems->sum(function($item) {
+                                        return $item->price * $item->quantity;
+                                    });
+                                    
+                                    // Lấy thông tin voucher từ đơn cha
+                                    $parentOrder = $order->parentOrder;
+                                    if ($parentOrder && $parentOrder->voucher) {
+                                        $appliedVoucher = $parentOrder->voucher;
+                                    }
+                                    // Sử dụng discount_amount được phân bổ cho đơn con
+                                    $discountAmount = $order->discount_amount;
+                                } else {
+                                    // Đơn hàng đơn lẻ bình thường
+                                    $subtotal = $order->orderItems->sum(function($item) {
+                                        return $item->price * $item->quantity;
+                                    });
+                                    
+                                    // Fallback nếu subtotal từ orderItems = 0
+                                    if ($subtotal == 0 && $order->total_amount > 0) {
+                                        $calculatedSubtotal = $order->total_amount - $order->shipping_fee + $order->discount_amount;
+                                        $subtotal = max(0, $calculatedSubtotal); // Đảm bảo không âm
+                                    }
+                                    
+                                    if ($order->voucher) {
+                                        $appliedVoucher = $order->voucher;
+                                        // Tính toán giảm giá dựa trên phần trăm hoặc số tiền cố định
+                                        if ($appliedVoucher->discount_percent > 0) {
+                                            // Giảm giá theo phần trăm
+                                            $discountByPercent = $subtotal * ($appliedVoucher->discount_percent / 100);
+                                            $voucherDiscount = $appliedVoucher->max_discount > 0 
+                                                ? min($discountByPercent, $appliedVoucher->max_discount)
+                                                : $discountByPercent;
+                                        } else {
+                                            // Giảm giá cố định
+                                            $voucherDiscount = $appliedVoucher->discount_amount;
+                                        }
+                                        $discountAmount = $voucherDiscount;
+                                    } else {
+                                        // Nếu không có voucher, sử dụng giá trị discount_amount từ đơn hàng
+                                        $discountAmount = $order->discount_amount;
+                                    }
+                                }
+                                
+                                // Đảm bảo giảm giá không vượt quá tổng tiền và không âm
+                                $discountAmount = max(0, min($discountAmount, $subtotal));
+                            @endphp
+                            
                             <div class="flex justify-between">
                                 <span class="text-gray-600 uppercase tracking-wide">Tạm tính</span>
-                                <span class="font-bold text-black">{{ number_format($order->total_amount - $order->shipping_fee + $order->discount_amount) }}đ</span>
+                                <span class="font-bold text-black" id="subtotal-amount">{{ number_format($subtotal) }}đ</span>
                             </div>
-                            @if($order->voucher)
-                                @php
-                                    $discountAmount = 0;
-                                    $discountByPercent = $order->total_amount * ($order->voucher->discount_percent / 100);
-                                    $discountAmount = min($discountByPercent, $order->voucher->max_discount);
-                                @endphp
+                            
+                            @if($discountAmount > 0)
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 uppercase tracking-wide">
-                                        Mã giảm giá ({{ $order->voucher->code }})
-                                        @if($order->voucher->discount_percent)
-                                            - {{ $order->voucher->discount_percent }}%
+                                        @if($appliedVoucher)
+                                            Mã giảm giá ({{ $appliedVoucher->code }})
+                                            @if($appliedVoucher->discount_percent > 0)
+                                                - {{ $appliedVoucher->discount_percent }}%
+                                                @if($appliedVoucher->max_discount > 0)
+                                                    (tối đa {{ number_format($appliedVoucher->max_discount) }}đ)
+                                                @endif
+                                            @endif
+                                            @if($order->parent_order_id)
+                                                <small class="block text-xs text-gray-500 mt-1">
+                                                    (Phân bổ từ đơn hàng hỗn hợp)
+                                                </small>
+                                            @endif
+                                        @else
+                                            Giảm giá
+                                            @if($order->parent_order_id)
+                                                <small class="block text-xs text-gray-500 mt-1">
+                                                    (Phân bổ từ đơn hàng hỗn hợp)
+                                                </small>
+                                            @endif
                                         @endif
                                     </span>
-                                    <span class="text-red-600 font-bold">-{{ number_format($discountAmount) }}đ</span>
-                                </div>
-                            @elseif($order->discount_amount > 0)
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600 uppercase tracking-wide">Giảm giá</span>
-                                    <span class="text-red-600 font-bold">-{{ number_format($order->discount_amount) }}đ</span>
+                                    <span class="text-red-600 font-bold" id="discount-amount">-{{ number_format($discountAmount) }}đ</span>
                                 </div>
                             @endif
                             <div class="flex justify-between">
@@ -508,7 +738,6 @@
                             }
                             return false;
                         });
-                        // dd($ebookItems);    
                     @endphp
                     
                     @if($ebookItems->isNotEmpty() && $order->paymentStatus->name === 'Đã Thanh Toán' && $hasEbook)
@@ -661,7 +890,6 @@
                             $canRefundResult = $ebookRefundService->canRefundEbook($order, auth()->user());
                             $canRefundEbook = $canRefundResult['can_refund'];
                         }
-                        // dd($hasEbook);
                     @endphp
                     
                     @if(!$order->isParentOrder() && (\App\Helpers\OrderStatusHelper::canBeCancelled($order->orderStatus->name) || $canRefundEbook))
@@ -735,156 +963,221 @@
                             $hasRefundRequest = $order->refundRequests()->exists();
                         @endphp
                         
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-1 h-5 bg-black"></div>
-                            <h4 class="text-base font-bold uppercase tracking-wide text-black">YÊU CẦU HOÀN TIỀN</h4>
-                        </div>
-                        
-                        <div class="flex gap-4">
-                            @if(!$hasRefundRequest)
-                                <a href="{{ route('account.orders.refund.create', $order->id) }}"
-                                   class="inline-flex items-center gap-3 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <!-- Refund Request Section -->
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8 border-2 border-gray-200">
+                            <!-- Header -->
+                            <div class="bg-black text-white px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
                                     </svg>
-                                    YÊU CẦU HOÀN TIỀN
-                                </a>
-                            @else
-                                <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                   class="inline-flex items-center gap-3 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    XEM TRẠNG THÁI HOÀN TIỀN
-                                </a>
-                            @endif
+                                    <h4 class="text-lg font-bold uppercase tracking-wide text-white">YÊU CẦU HOÀN TIỀN</h4>
+                                </div>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div class="p-6 bg-white">
+                                @if(!$hasRefundRequest)
+                                    <div class="text-center py-8">
+                                        <div class="mb-4">
+                                            <svg class="h-16 w-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                            </svg>
+                                        </div>
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Chưa có yêu cầu hoàn tiền</h3>
+                                        <p class="text-gray-600 mb-6">Bạn có thể yêu cầu hoàn tiền cho đơn hàng này nếu có vấn đề với sản phẩm.</p>
+                                        <a href="{{ route('account.orders.refund.create', $order->id) }}"
+                                           class="inline-flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+                                           style="display: inline-flex !important; visibility: visible !important; opacity: 1 !important; color: white !important; background: linear-gradient(to right, #f97316, #ef4444) !important;">
+                                            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                 style="color: white !important; stroke: white !important;">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                            </svg>
+                                            <span class="text-white font-bold" style="color: white !important; font-weight: bold !important;">TẠO YÊU CẦU HOÀN TIỀN</span>
+                                        </a>
+                                    </div>
+                                @else
+                                    <div class="text-center py-8">
+                                        <div class="mb-4">
+                                            <svg class="h-16 w-16 mx-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Đã có yêu cầu hoàn tiền</h3>
+                                        <p class="text-gray-600 mb-6">Bạn đã gửi yêu cầu hoàn tiền cho đơn hàng này. Nhấn vào nút bên dưới để xem trạng thái.</p>
+                                        <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                           class="inline-flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+                                           style="display: inline-flex !important; visibility: visible !important; opacity: 1 !important; color: white !important; background: linear-gradient(to right, #3b82f6, #6366f1) !important;">
+                                            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                 style="color: white !important; stroke: white !important;">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                            <span class="text-white font-bold" style="color: white !important; font-weight: bold !important;">XEM TRẠNG THÁI HOÀN TIỀN</span>
+                                        </a>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     @endif
 
-                    
-                    
                     @if($latestRefundRequest && in_array($order->delivery_method, ['delivery', 'pickup', 'mixed']))
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-1 h-5 bg-black"></div>
-                            <h4 class="text-base font-bold uppercase tracking-wide text-black">TRẠNG THÁI HOÀN TIỀN</h4>
-                        </div>
-                        
-                        @if($latestRefundRequest->status === 'pending')
-                            <div class="bg-yellow-50 border-2 border-yellow-200 p-6">
+                        <!-- Refund Status Section -->
+                        {{-- <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+                            <!-- Header -->
+                            <div class="bg-black text-white px-6 py-4">
                                 <div class="flex items-center gap-3">
-                                    <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    <div>
-                                        <h3 class="text-base font-bold text-yellow-800 uppercase tracking-wide">
-                                            ĐANG CHỜ XỬ LÝ HOÀN TIỀN
-                                        </h3>
-                                        <p class="text-sm text-yellow-700 mt-1">
-                                            Yêu cầu hoàn tiền của bạn đã được gửi và đang chờ admin xử lý.
-                                        </p>
-                                        <p class="text-xs text-yellow-600 mt-2">
-                                            <strong>Ngày gửi:</strong> {{ $latestRefundRequest->created_at->format('d/m/Y H:i') }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="mt-4">
-                                    <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                       class="inline-flex items-center gap-3 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        XEM CHI TIẾT HOÀN TIỀN
-                                    </a>
-                                </div>
-                            </div>
-                        @elseif($latestRefundRequest->status === 'processing')
-                            <div class="bg-blue-50 border-2 border-blue-200 p-6">
-                                <div class="flex items-center gap-3">
-                                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                    </svg>
-                                    <div>
-                                        <h3 class="text-base font-bold text-blue-800 uppercase tracking-wide">
-                                            ĐANG XỬ LÝ HOÀN TIỀN
-                                        </h3>
-                                        <p class="text-sm text-blue-700 mt-1">
-                                            Yêu cầu hoàn tiền của bạn đang được admin xử lý. Vui lòng chờ thông báo kết quả.
-                                        </p>
-                                        <p class="text-xs text-blue-600 mt-2">
-                                            <strong>Số tiền hoàn:</strong> {{ number_format($latestRefundRequest->amount, 0, ',', '.') }}đ
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="mt-4">
-                                    <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                       class="inline-flex items-center gap-3 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        XEM CHI TIẾT HOÀN TIỀN
-                                    </a>
-                                </div>
-                            </div>
-                        @elseif($latestRefundRequest->status === 'completed')
-                            <div class="bg-green-50 border-2 border-green-200 p-6">
-                                <div class="flex items-center gap-3">
-                                    <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
-                                    <div>
-                                        <h3 class="text-base font-bold text-green-800 uppercase tracking-wide">
-                                            ĐÃ HOÀN TIỀN THÀNH CÔNG
-                                        </h3>
-                                        <p class="text-sm text-green-700 mt-1">
-                                            Tiền đã được hoàn về tài khoản của bạn thành công.
-                                        </p>
-                                        <p class="text-xs text-green-600 mt-2">
-                                            <strong>Số tiền đã hoàn:</strong> {{ number_format($latestRefundRequest->amount, 0, ',', '.') }}đ<br>
-                                            <strong>Ngày hoàn tiền:</strong> {{ $latestRefundRequest->processed_at ? $latestRefundRequest->processed_at->format('d/m/Y H:i') : 'N/A' }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="mt-4">
-                                    <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                       class="inline-flex items-center gap-3 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        XEM CHI TIẾT HOÀN TIỀN
-                                    </a>
+                                    <h4 class="text-lg font-bold uppercase tracking-wide">TRẠNG THÁI HOÀN TIỀN</h4>
                                 </div>
                             </div>
-                        @elseif($latestRefundRequest->status === 'rejected')
-                            <div class="bg-red-50 border-2 border-red-200 p-6">
-                                <div class="flex items-center gap-3">
-                                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                    <div>
-                                        <h3 class="text-base font-bold text-red-800 uppercase tracking-wide">
-                                            YÊU CẦU HOÀN TIỀN BỊ TỪ CHỐI
-                                        </h3>
-                                        <p class="text-sm text-red-700 mt-1">
-                                            Yêu cầu hoàn tiền của bạn đã bị từ chối.
-                                        </p>
-                                        @if($latestRefundRequest->admin_note)
-                                            <p class="text-xs text-red-600 mt-2">
-                                                <strong>Lý do:</strong> {{ $latestRefundRequest->admin_note }}
-                                            </p>
-                                        @endif
+                            
+                            <!-- Content -->
+                            <div class="p-6">
+                                @if($latestRefundRequest->status === 'pending')
+                                    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400 p-6 rounded-lg">
+                                        <div class="flex items-start gap-4">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                                    <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h3 class="text-lg font-bold text-yellow-800 uppercase tracking-wide mb-2">
+                                                    ĐANG CHỜ XỬ LÝ HOÀN TIỀN
+                                                </h3>
+                                                <p class="text-yellow-700 mb-3">
+                                                    Yêu cầu hoàn tiền của bạn đã được gửi và đang chờ admin xử lý. Chúng tôi sẽ xem xét và phản hồi trong thời gian sớm nhất.
+                                                </p>
+                                                <div class="bg-white bg-opacity-50 rounded-lg p-3 mb-4">
+                                                    <p class="text-sm text-yellow-800">
+                                                        <strong>📅 Ngày gửi:</strong> {{ $latestRefundRequest->created_at->format('d/m/Y H:i') }}<br>
+                                                        <strong>💰 Số tiền yêu cầu:</strong> {{ number_format($latestRefundRequest->amount, 0, ',', '.') }}đ
+                                                    </p>
+                                                </div>
+                                                <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                                   class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                    XEM CHI TIẾT HOÀN TIỀN
+                                                </a>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="mt-4">
-                                    <a href="{{ route('account.orders.refund.status', $order->id) }}"
-                                       class="inline-flex items-center gap-3 px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold uppercase tracking-wide transition-all duration-300">
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        XEM CHI TIẾT
-                                    </a>
-                                </div>
+                                @elseif($latestRefundRequest->status === 'processing')
+                                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-400 p-6 rounded-lg">
+                                        <div class="flex items-start gap-4">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h3 class="text-lg font-bold text-blue-800 uppercase tracking-wide mb-2">
+                                                    ĐANG XỬ LÝ HOÀN TIỀN
+                                                </h3>
+                                                <p class="text-blue-700 mb-3">
+                                                    Yêu cầu hoàn tiền của bạn đang được admin xử lý. Chúng tôi đang xem xét và sẽ thông báo kết quả sớm nhất có thể.
+                                                </p>
+                                                <div class="bg-white bg-opacity-50 rounded-lg p-3 mb-4">
+                                                    <p class="text-sm text-blue-800">
+                                                        <strong>💰 Số tiền hoàn:</strong> {{ number_format($latestRefundRequest->amount, 0, ',', '.') }}đ<br>
+                                                        <strong>⏱️ Trạng thái:</strong> Đang được xem xét
+                                                    </p>
+                                                </div>
+                                                <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                                   class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                    XEM CHI TIẾT HOÀN TIỀN
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @elseif($latestRefundRequest->status === 'completed')
+                                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-400 p-6 rounded-lg">
+                                        <div class="flex items-start gap-4">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                                    <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h3 class="text-lg font-bold text-green-800 uppercase tracking-wide mb-2">
+                                                    ✅ ĐÃ HOÀN TIỀN THÀNH CÔNG
+                                                </h3>
+                                                <p class="text-green-700 mb-3">
+                                                    Chúc mừng! Tiền đã được hoàn về tài khoản của bạn thành công. Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi.
+                                                </p>
+                                                <div class="bg-white bg-opacity-50 rounded-lg p-3 mb-4">
+                                                    <p class="text-sm text-green-800">
+                                                        <strong>💰 Số tiền đã hoàn:</strong> {{ number_format($latestRefundRequest->amount, 0, ',', '.') }}đ<br>
+                                                        <strong>📅 Ngày hoàn tiền:</strong> {{ $latestRefundRequest->processed_at ? $latestRefundRequest->processed_at->format('d/m/Y H:i') : 'N/A' }}<br>
+                                                        <strong>✅ Trạng thái:</strong> Hoàn thành
+                                                    </p>
+                                                </div>
+                                                <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                                   class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                    XEM CHI TIẾT HOÀN TIỀN
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @elseif($latestRefundRequest->status === 'rejected')
+                                    <div class="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-400 p-6 rounded-lg">
+                                        <div class="flex items-start gap-4">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h3 class="text-lg font-bold text-red-800 uppercase tracking-wide mb-2">
+                                                    ❌ YÊU CẦU HOÀN TIỀN BỊ TỪ CHỐI
+                                                </h3>
+                                                <p class="text-red-700 mb-3">
+                                                    Rất tiếc, yêu cầu hoàn tiền của bạn đã bị từ chối. Vui lòng xem lý do chi tiết bên dưới.
+                                                </p>
+                                                @if($latestRefundRequest->admin_note)
+                                                    <div class="bg-white bg-opacity-50 rounded-lg p-3 mb-4">
+                                                        <p class="text-sm text-red-800">
+                                                            <strong>📝 Lý do từ chối:</strong><br>
+                                                            {{ $latestRefundRequest->admin_note }}
+                                                        </p>
+                                                    </div>
+                                                @endif
+                                                <a href="{{ route('account.orders.refund.status', $order->id) }}"
+                                                   class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold uppercase tracking-wide rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                    XEM CHI TIẾT HOÀN TIỀN
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
-                        @endif
+                        </div> --}}
                     @endif
                 </div>
             </div>

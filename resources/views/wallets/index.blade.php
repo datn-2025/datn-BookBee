@@ -115,15 +115,15 @@
                                         {{ $transactions->firstItem() + $i }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
-                                        @if($transaction->type === 'Nap')
+                                        @if($transaction->type === 'NAP')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                                 Nạp tiền
                                             </span>
-                                        @elseif($transaction->type === 'Rut')
+                                        @elseif($transaction->type === 'RUT')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-800 text-white">
                                                 Rút tiền
                                             </span>
-                                        @elseif($transaction->type === 'HoanTien')
+                                        @elseif($transaction->type === 'HOANTIEN')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                 Hoàn tiền
                                             </span>
@@ -137,8 +137,8 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ in_array($transaction->type, ['Nap', 'HoanTien']) ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ in_array($transaction->type, ['Nap', 'HoanTien']) ? '+' : '-' }}₫{{ number_format($transaction->amount, 0, ',', '.') }}
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium {{ in_array($transaction->type, ['NAP', 'HOANTIEN']) ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ in_array($transaction->type, ['NAP', 'HOANTIEN']) ? '+' : '-' }}₫{{ number_format($transaction->amount, 0, ',', '.') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">
                                         @if ($transaction->payment_method === 'bank_transfer')

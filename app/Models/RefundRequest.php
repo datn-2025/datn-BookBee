@@ -25,6 +25,7 @@ class RefundRequest extends Model
         'user_id',
         'reason',
         'details',
+        'images',
         'amount',
         'status',
         'refund_method',
@@ -40,6 +41,7 @@ class RefundRequest extends Model
     protected $casts = [
         'amount' => 'decimal:2',
         'processed_at' => 'datetime',
+        'images' => 'array',
     ];
 
     protected static function boot()

@@ -129,6 +129,8 @@ class ReviewClientController extends Controller
             'order_id' => 'required|exists:orders,id',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
         
         // Either book_id or collection_id must be present
@@ -150,7 +152,11 @@ class ReviewClientController extends Controller
             'rating.required' => 'Đánh giá không hợp lệ',
             'rating.min' => 'Đánh giá phải từ 1 đến 5',
             'rating.max' => 'Đánh giá phải từ 1 đến 5',
-            'comment.max' => 'Nội dung đánh giá không hợp lệ'
+            'comment.max' => 'Nội dung đánh giá không hợp lệ',
+            'images.max' => 'Chỉ được tải lên tối đa 5 hình ảnh',
+            'images.*.image' => 'File phải là hình ảnh',
+            'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif',
+            'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB'
         ]);
 
         $user = Auth::user();
@@ -169,7 +175,7 @@ class ReviewClientController extends Controller
                 ->where('book_id', $request->book_id)
                 ->firstOrFail();
                 
-            // Check if review already exists for book
+            // Check if review already exists for book (bao gồm cả review đã xóa)
             $existingReview = Review::withTrashed()
                 ->where('user_id', $user->id)
                 ->where('book_id', $request->book_id)
@@ -180,7 +186,7 @@ class ReviewClientController extends Controller
                 ->where('collection_id', $request->collection_id)
                 ->firstOrFail();
                 
-            // Check if review already exists for combo
+            // Check if review already exists for combo (bao gồm cả review đã xóa)
             $existingReview = Review::withTrashed()
                 ->where('user_id', $user->id)
                 ->where('collection_id', $request->collection_id)
@@ -190,14 +196,35 @@ class ReviewClientController extends Controller
 
         if ($existingReview) {
             if ($existingReview->trashed()) {
+                // Nếu review đã bị xóa, restore và cập nhật thông tin mới
+                $existingReview->restore();
+                
+                // Handle image uploads
+                $imagePaths = [];
+                if ($request->hasFile('images')) {
+                    foreach ($request->file('images') as $image) {
+                        $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                        $imagePath = $image->storeAs('reviews', $imageName, 'public');
+                        $imagePaths[] = $imagePath;
+                    }
+                }
+                
+                // Update review với thông tin mới
+                $existingReview->update([
+                    'rating' => $request->rating,
+                    'comment' => $request->comment,
+                    'images' => empty($imagePaths) ? null : json_encode($imagePaths),
+                    'status' => 'visible'
+                ]);
+                
                 $message = $request->has('book_id') ? 
-                    'Bạn đã xóa đánh giá cho sản phẩm này và không thể đánh giá lại' :
-                    'Bạn đã xóa đánh giá cho combo này và không thể đánh giá lại';
+                    'Đánh giá sản phẩm thành công!' :
+                    'Đánh giá combo thành công!';
                     
                 if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'error' => $message], 400);
+                    return response()->json(['success' => true, 'message' => $message]);
                 }
-                return redirect()->back()->with('error', $message);
+                return redirect()->back()->with('success', $message);
             }
             
             $message = $request->has('book_id') ? 
@@ -210,6 +237,16 @@ class ReviewClientController extends Controller
             return redirect()->back()->with('error', $message);
         }
 
+        // Handle image uploads
+        $imagePaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                $imagePath = $image->storeAs('reviews', $imageName, 'public');
+                $imagePaths[] = $imagePath;
+            }
+        }
+
         // Create the review
         $reviewData = [
             'id' => (string) Str::uuid(),
@@ -217,6 +254,7 @@ class ReviewClientController extends Controller
             'order_id' => $order->id,
             'rating' => $request->rating,
             'comment' => $request->comment ?? '',
+            'images' => !empty($imagePaths) ? $imagePaths : null,
             'status' => 'approved',
         ];
         
@@ -263,11 +301,40 @@ class ReviewClientController extends Controller
         $validated = $request->validate([
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'images.max' => 'Chỉ được tải lên tối đa 5 hình ảnh',
+            'images.*.image' => 'File phải là hình ảnh',
+            'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif',
+            'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB'
         ]);
+
+        // Handle image uploads for update
+        $imagePaths = $review->images ?? [];
+        if ($request->hasFile('images')) {
+            // Delete old images if new ones are uploaded
+            if (!empty($review->images)) {
+                foreach ($review->images as $oldImagePath) {
+                    if (file_exists(storage_path('app/public/' . $oldImagePath))) {
+                        unlink(storage_path('app/public/' . $oldImagePath));
+                    }
+                }
+            }
+            
+            // Upload new images
+            $imagePaths = [];
+            foreach ($request->file('images') as $image) {
+                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                $imagePath = $image->storeAs('reviews', $imageName, 'public');
+                $imagePaths[] = $imagePath;
+            }
+        }
 
         $review->update([
             'rating' => $validated['rating'],
             'comment' => $validated['comment'] ?? '',
+            'images' => !empty($imagePaths) ? $imagePaths : null,
         ]);
 
         $successMessage = 'Cập nhật đánh giá thành công';
@@ -299,7 +366,8 @@ class ReviewClientController extends Controller
                     'message' => $message
                 ], 403);
             }
-            return redirect()->back()->with('error', $message);
+            Toastr::error($message, 'Lỗi');
+            return redirect()->back();
         }
 
         $review->delete();
@@ -311,7 +379,9 @@ class ReviewClientController extends Controller
                 'message' => $successMessage
             ]);
         }
-        return redirect()->back()->with('success', $successMessage);
+        
+        Toastr::success($successMessage, 'Thành công');
+        return redirect()->back();
     }
 
     public function createForm(Request $request, $orderId, $bookId = null, $collectionId = null)

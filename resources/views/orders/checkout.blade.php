@@ -95,7 +95,7 @@
             </div>
         </div>
 
-        @if(isset($mixedFormatCart) && $mixedFormatCart)
+        {{-- @if(isset($mixedFormatCart) && $mixedFormatCart)
         <div class="bg-red-600 text-white p-6 mb-8 relative overflow-hidden">
             <div class="absolute top-0 right-0 w-16 h-16 bg-white/10 transform rotate-45 translate-x-8 -translate-y-8"></div>
             <div class="relative z-10">
@@ -134,15 +134,23 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-bold uppercase tracking-wide mb-2">ĐƠN HÀNG EBOOK</h3>
-                        <p class="text-sm leading-relaxed">
+                        <p class="text-sm leading-relaxed mb-3">
                             Giỏ hàng của bạn chỉ có <span class="font-bold">sách điện tử (ebook)</span>. 
-                            Bạn không cần nhập địa chỉ giao hàng và sẽ nhận link tải ebook qua email sau khi thanh toán thành công.
+                            Bạn sẽ nhận link tải ebook qua email sau khi thanh toán thành công.
                         </p>
+                        <div class="bg-white/10 p-4 rounded">
+                            <h4 class="font-bold text-sm mb-2">💳 PHƯƠNG THỨC THANH TOÁN:</h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• <span class="font-semibold">Thanh toán online:</span> Nhận link tải ngay sau khi thanh toán thành công</li>
+                                <li>• <span class="text-gray-300">Thanh toán khi nhận hàng không áp dụng cho ebook</span></li>
+                            </ul>
+                            <p class="text-xs mt-2 opacity-90">* Không cần nhập địa chỉ giao hàng cho ebook.</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        @endif
+        @endif --}}
 
         <div class="container mx-auto px-4 py-8">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 xl:gap-12">
@@ -229,7 +237,7 @@
                             
                             <!-- Tab Navigation cho Địa chỉ -->
                             @if(!$hasOnlyEbooks)
-                            <div class="mb-8">
+                            <div class="mb-8" id="address-section">
                                 <div class="flex items-center gap-4 mb-6">
                                     <div class="w-1 h-6 bg-black"></div>
                                     <h3 class="text-lg font-black uppercase tracking-wide text-black">
@@ -264,32 +272,45 @@
                                     <!-- Existing Addresses Tab -->
                                     <div id="existing-address-content" class="address-tab-content">
                                         @if($addresses && count($addresses) > 0)
-                                            <div class="space-y-3">
-                                                @foreach($addresses as $address)
-                                                <label class="group relative flex items-start p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-black hover:bg-gray-50 transition-all duration-300 has-[:checked]:border-black has-[:checked]:bg-gray-50">
-                                                    <input type="radio" name="address_id" value="{{ $address->id }}" class="sr-only">
-                                                    <div class="flex items-center justify-center w-4 h-4 border-2 border-gray-300 rounded-full group-has-[:checked]:border-black group-has-[:checked]:bg-black mr-4 mt-1 flex-shrink-0">
-                                                        <div class="w-1.5 h-1.5 bg-white rounded-full opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></div>
-                                                    </div>
-                                                    <div class="flex-1 min-w-0">
+                                            <!-- Selected Address Display -->
+                                            <div id="selected-address-display" class="hidden mb-6 p-4 border-2 border-green-500 bg-green-50 rounded-lg">
+                                                <div class="flex items-start justify-between">
+                                                    <div class="flex-1">
                                                         <div class="flex items-center gap-2 mb-2">
-                                                            <h4 class="font-bold text-gray-900">{{ $address->recipient_name }}</h4>
-                                                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                                {{ $address->phone }}
-                                                            </span>
+                                                            <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                            <h4 class="font-bold text-green-800">Địa chỉ đã chọn</h4>
                                                         </div>
-                                                        <p class="text-sm text-gray-600 leading-relaxed">
-                                                            {{ $address->address_detail }}, {{ $address->ward }}, {{ $address->district }}, {{ $address->city }}
-                                                        </p>
+                                                        <div id="selected-address-info" class="text-sm text-green-700">
+                                                            <!-- Address info will be populated here -->
+                                                        </div>
                                                     </div>
-                                                    <div class="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600 opacity-0 group-has-[:checked]:opacity-100 transition-opacity ml-3">
-                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                                        </svg>
-                                                    </div>
-                                                </label>
-                                                @endforeach
+                                                    <button type="button" onclick="openAddressModal()" 
+                                                            class="text-green-600 hover:text-green-800 font-medium text-sm underline">
+                                                        Thay đổi
+                                                    </button>
+                                                </div>
                                             </div>
+                                            
+                                            <!-- Choose Address Button -->
+                                            <div id="choose-address-btn-container" class="text-center">
+                                                <button type="button" onclick="openAddressModal()" 
+                                                        class="inline-flex items-center px-6 py-4 bg-black text-white font-bold text-sm uppercase tracking-wide hover:bg-gray-800 transition-all duration-300 rounded-lg group">
+                                                    <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    </svg>
+                                                    Chọn địa chỉ có sẵn
+                                                    <span class="ml-2 text-xs bg-white/20 px-2 py-1 rounded">
+                                                        {{ count($addresses) }} địa chỉ
+                                                    </span>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Hidden input for selected address -->
+                                            <input type="hidden" name="address_id" id="selected_address_id" value="">
+                                            
                                             @error('address_id')
                                             <p class="text-red-500 text-sm mt-3 font-medium">{{ $message }}</p>
                                             @enderror
@@ -316,14 +337,6 @@
                                         <div class="space-y-6">
                                             <!-- Quick Actions -->
                                             <div class="flex flex-wrap gap-3 mb-6">
-                                                <button type="button" id="detect-location-btn" 
-                                                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-colors duration-300">
-                                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                    </svg>
-                                                    Phát hiện vị trí
-                                                </button>
                                                 <button type="button" id="clear-form-btn" 
                                                         class="inline-flex items-center px-4 py-2 bg-gray-600 text-white font-medium text-sm rounded-lg hover:bg-gray-700 transition-colors duration-300">
                                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,8 +352,8 @@
                                                     <label for="tinh" class="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">
                                                         TỈNH/THÀNH PHỐ *
                                                     </label>
-                                                    <select id="tinh" name="new_address_city_id"
-                                                            class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
+                                                    <select id="tinh" name="new_address_city_id" required
+                                                            class="w-full border-2 border-gray-300 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
                                                         <option value="">Chọn Tỉnh/Thành phố</option>
                                                     </select>
                                                     <input type="hidden" name="new_address_city_name" id="ten_tinh">
@@ -351,8 +364,8 @@
                                                     <label for="quan" class="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">
                                                         QUẬN/HUYỆN *
                                                     </label>
-                                                    <select id="quan" name="new_address_district_id"
-                                                            class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
+                                                    <select id="quan" name="new_address_district_id" required
+                                                            class="w-full border-2 border-gray-300 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
                                                         <option value="">Chọn Quận/Huyện</option>
                                                     </select>
                                                     <input type="hidden" name="new_address_district_name" id="ten_quan">
@@ -363,8 +376,8 @@
                                                     <label for="phuong" class="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">
                                                         PHƯỜNG/XÃ *
                                                     </label>
-                                                    <select id="phuong" name="new_address_ward_id"
-                                                            class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
+                                                    <select id="phuong" name="new_address_ward_id" required
+                                                            class="w-full border-2 border-gray-300 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg">
                                                         <option value="">Chọn Phường/Xã</option>
                                                     </select>
                                                     <input type="hidden" name="new_address_ward_name" id="ten_phuong">
@@ -379,7 +392,8 @@
                                                      ĐỊA CHỈ CỤ THỂ *
                                                  </label>
                                                  <input type="text" name="new_address_detail" id="new_address_detail"
-                                                        class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg"
+                                                        class="w-full border-2 border-gray-300 px-4 py-3 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg"
+                                                        style="height: 3.5rem; line-height: 1.75; font-size: 14px;"
                                                         placeholder="Ví dụ: Số 123, Đường ABC, Tòa nhà XYZ" value="{{ old('new_address_detail') }}">
                                                  @error('new_address_detail') <p class="text-red-500 text-sm mt-2 font-medium">{{ $message }}</p> @enderror
                                              </div>
@@ -415,156 +429,259 @@
                         
                         <!-- Phương thức vận chuyển - Ẩn ban đầu, hiển thị khi chọn địa chỉ -->
                         @if(!$hasOnlyEbooks)
-                        <div class="mt-6 mb-6 shipping-section" style="display: none;">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-bold text-gray-900">Phương thức vận chuyển</h3>
-                                    <p class="text-sm text-gray-600">Chọn dịch vụ giao hàng</p>
-                                </div>
+                        <div class="mb-8 shipping-section" style="display: none;">
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="w-1 h-6 bg-black"></div>
+                                <h3 class="text-lg font-black uppercase tracking-wide text-black">
+                                    PHƯƠNG THỨC VẬN CHUYỂN
+                                </h3>
                             </div>
                             
                             <!-- Loading state -->
                             <div id="shipping-services-loading" class="text-center py-8">
-                                <div class="inline-flex items-center gap-2 text-gray-500">
-                                    <svg class="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                    </svg>
-                                    <span>Đang tải dịch vụ vận chuyển...</span>
+                                <div class="inline-flex items-center gap-3 text-gray-600">
+                                    <div class="w-8 h-8 bg-black text-white flex items-center justify-center">
+                                        <svg class="animate-spin w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                    </div>
+                                    <span class="font-bold uppercase tracking-wide">Đang tải dịch vụ vận chuyển...</span>
                                 </div>
                             </div>
                             
                             <!-- Services container -->
                             <div id="shipping-services-container" class="hidden">
-                                <div id="shipping-services-list" class="grid grid-cols-1 gap-3">
+                                <div id="shipping-services-list" class="space-y-4">
                                     <!-- Services will be loaded here -->
                                 </div>
                             </div>
                             
                             <!-- Fallback options -->
                             <div id="shipping-services-fallback" class="hidden">
-                                <div class="grid grid-cols-1 gap-3">
+                                <div class="space-y-4">
                                     <!-- Nhận hàng trực tiếp -->
-                                    <label class="group relative flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-300 hover:bg-green-50 transition-all duration-200 has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
-                                        <input type="radio" name="shipping_method" value="pickup" class="sr-only">
-                                        <div class="flex items-center justify-center w-4 h-4 border-2 border-gray-300 rounded-full group-has-[:checked]:border-green-500 group-has-[:checked]:bg-green-500 mr-3">
-                                            <div class="w-1.5 h-1.5 bg-white rounded-full opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></div>
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="flex items-center gap-2 mb-1">
-                                                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                                </svg>
-                                                <span class="font-medium text-gray-900">Nhận hàng trực tiếp</span>
-                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">FREE</span>
+                                    <label class="group cursor-pointer block">
+                                        <div class="relative border-2 border-gray-300 hover:border-black transition-all duration-500 bg-white group-hover:shadow-lg overflow-hidden">
+                                            <!-- Adidas-style accent line -->
+                                            <div class="absolute left-0 top-0 w-1 h-full bg-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                            
+                                            <div class="p-6 relative">
+                                                <!-- Radio button -->
+                                                <input type="radio" name="shipping_method" value="pickup"
+                                                       class="absolute right-6 top-6 h-5 w-5 text-black focus:ring-black focus:ring-2 border-2 border-gray-400">
+                                                
+                                                <!-- Content -->
+                                                <div class="pr-12">
+                                                    <div class="flex items-center gap-3 mb-3">
+                                                        <!-- Shipping icon -->
+                                                        <div class="w-10 h-10 bg-black text-white flex items-center justify-center">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                                            </svg>
+                                                        </div>
+                                                        
+                                                        <!-- Method info -->
+                                                        <div>
+                                                            <h4 class="text-base font-black uppercase tracking-wide text-black">
+                                                                Nhận hàng tại cửa hàng
+                                                            </h4>
+                                                            <p class="text-sm text-gray-600 mt-1">Miễn phí vận chuyển</p>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Price display -->
+                                                    <div class="mt-4 p-4 bg-gray-50 border-l-4 border-black">
+                                                        <div class="flex items-center justify-between">
+                                                            <span class="text-sm font-bold uppercase tracking-wide text-gray-700">PHÍ VẬN CHUYỂN:</span>
+                                                            <span class="text-lg font-black text-green-600">0đ</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Adidas-style corner accent -->
+                                                <div class="absolute top-0 right-0 w-8 h-8 bg-black opacity-5 transform rotate-45 translate-x-4 -translate-y-4 group-hover:opacity-10 transition-opacity duration-300"></div>
                                             </div>
-                                            <p class="text-xs text-gray-600">Đến cửa hàng nhận</p>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-sm font-bold text-green-600">0đ</div>
                                         </div>
                                     </label>
-                                    
-
-                                    
-
                                 </div>
                             </div>
                             
                             @error('shipping_method')
-                            <p class="text-red-500 text-xs mt-2">{{ $message }}</p>
+                            <div class="mt-4 p-4 bg-red-50 border-l-4 border-red-500">
+                                <p class="text-sm text-red-700 font-medium">{{ $message }}</p>
+                            </div>
                             @enderror
                         </div>
                         @endif
                         
                         <!-- Phương thức thanh toán -->
-                        <div class="mt-6 mb-6">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-bold text-gray-900">Phương thức thanh toán</h3>
-                                    <p class="text-sm text-gray-600">Chọn cách thanh toán</p>
-                                </div>
+                        <div class="mb-8">
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="w-1 h-6 bg-black"></div>
+                                <h3 class="text-lg font-black uppercase tracking-wide text-black">
+                                    PHƯƠNG THỨC THANH TOÁN
+                                </h3>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            
+                            <div class="space-y-4">
                                 @foreach($paymentMethods as $method)
-                                <label class="group cursor-pointer">
-                                    <div class="relative border-2 border-gray-200 rounded-lg p-4 transition-all duration-300 group-hover:border-black group-hover:shadow-md">
-                                        <input type="radio" name="payment_method_id" value="{{ $method->id }}"
-                                               class="absolute right-3 top-3 h-4 w-4 accent-black" required>
-                                        <div class="space-y-2">
-                                            <div class="flex items-center gap-2">
-                                                @if(str_contains(strtolower($method->name), 'ví điện tử'))
-                                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                                                    </svg>
-                                                @elseif(str_contains(strtolower($method->name), 'momo'))
-                                                    <svg class="w-5 h-5 text-pink-500" viewBox="0 0 24 24" fill="currentColor">
-                                                        <path d="M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10z"/>
-                                                    </svg>
-                                                @elseif(str_contains(strtolower($method->name), 'vnpay'))
-                                                    <svg class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-                                                        <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/>
-                                                    </svg>
-                                                @else
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                              d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/>
-                                                    </svg>
-                                                @endif
-                                                <span class="font-medium text-base">{{ $method->name }}</span>
-                                            </div>
-                                            @if(str_contains(strtolower($method->name), 'ví điện tử'))
-                                                <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded">
-                                                    <div class="flex items-center justify-between">
-                                                        <span class="text-xs font-medium text-green-700">Số dư:</span>
-                                                        <span class="text-xs font-bold text-green-800">
-                                                            @if($wallet)
-                                                                {{ number_format($wallet->balance) }}đ
-                                                            @else
-                                                                0đ
-                                                            @endif
-                                                        </span>
+                                <label class="group cursor-pointer block">
+                                    <div class="relative border-2 border-gray-300 hover:border-black transition-all duration-500 bg-white group-hover:shadow-lg overflow-hidden">
+                                        <!-- Adidas-style accent line -->
+                                        <div class="absolute left-0 top-0 w-1 h-full bg-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        
+                                        <div class="p-6 relative">
+                                            <!-- Radio button -->
+                                            <input type="radio" name="payment_method_id" value="{{ $method->id }}"
+                                                   class="absolute right-6 top-6 h-5 w-5 text-black focus:ring-black focus:ring-2 border-2 border-gray-400" required>
+                                            
+                                            <!-- Content -->
+                                            <div class="pr-12">
+                                                <div class="flex items-center gap-3 mb-3">
+                                                    <!-- Payment method icon -->
+                                                    <div class="w-10 h-10 bg-black text-white flex items-center justify-center">
+                                                        @if(str_contains(strtolower($method->name), 'ví điện tử'))
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                                            </svg>
+                                                        @elseif(str_contains(strtolower($method->name), 'momo'))
+                                                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10z"/>
+                                                            </svg>
+                                                        @elseif(str_contains(strtolower($method->name), 'vnpay'))
+                                                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+                                                            </svg>
+                                                        @else
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                                      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+                                                            </svg>
+                                                        @endif
+                                                    </div>
+                                                    
+                                                    <!-- Method name -->
+                                                    <div>
+                                                        <h4 class="text-base font-black uppercase tracking-wide text-black">
+                                                            {{ $method->name }}
+                                                        </h4>
+                                                        @if(str_contains(strtolower($method->name), 'ví điện tử'))
+                                                            <p class="text-sm text-gray-600 mt-1">Thanh toán nhanh chóng với ví điện tử</p>
+                                                        @elseif(str_contains(strtolower($method->name), 'momo'))
+                                                            <p class="text-sm text-gray-600 mt-1">Thanh toán qua ví MoMo</p>
+                                                        @elseif(str_contains(strtolower($method->name), 'vnpay'))
+                                                            <p class="text-sm text-gray-600 mt-1">Thanh toán qua cổng VNPay</p>
+                                                        @elseif(str_contains(strtolower($method->name), 'khi nhận hàng'))
+                                                            <p class="text-sm text-gray-600 mt-1">Thanh toán khi shipper giao hàng</p>
+                                                        @else
+                                                            <p class="text-sm text-gray-600 mt-1">Phương thức thanh toán an toàn</p>
+                                                        @endif
                                                     </div>
                                                 </div>
-                                            @endif
+                                                
+                                                <!-- Wallet balance for e-wallet -->
+                                                @if(str_contains(strtolower($method->name), 'ví điện tử'))
+                                                    <div class="mt-4 p-4 bg-gray-50 border-l-4 border-black">
+                                                        <div class="flex items-center justify-between">
+                                                            <span class="text-sm font-bold uppercase tracking-wide text-gray-700">SỐ DƯ VÍ:</span>
+                                                            <span class="text-lg font-black text-black">
+                                                                @if($wallet)
+                                                                    {{ number_format($wallet->balance) }}đ
+                                                                @else
+                                                                    0đ
+                                                                @endif
+                                                            </span>
+                                                        </div>
+                                                        @if(!$wallet || $wallet->balance == 0)
+                                                            <p class="text-xs text-red-600 mt-2 font-medium">
+                                                                ⚠️ Số dư ví không đủ để thanh toán
+                                                            </p>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                                
+                                                <!-- Special notes for payment methods -->
+                                                @if(str_contains(strtolower($method->name), 'khi nhận hàng') && $hasOnlyEbooks)
+                                                    <div class="mt-3 p-3 bg-red-50 border-l-4 border-red-500">
+                                                        <p class="text-xs text-red-700 font-medium">
+                                                            ❌ Không khả dụng cho đơn hàng ebook
+                                                        </p>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            
+                                            <!-- Adidas-style corner accent -->
+                                            <div class="absolute top-0 right-0 w-8 h-8 bg-black opacity-5 transform rotate-45 translate-x-4 -translate-y-4 group-hover:opacity-10 transition-opacity duration-300"></div>
                                         </div>
                                     </div>
                                 </label>
                                 @endforeach
                             </div>
+                            
                             @error('payment_method_id')
-                            <p class="text-red-500 text-xs mt-2">{{ $message }}</p>
+                            <div class="mt-4 p-4 bg-red-50 border-l-4 border-red-500">
+                                <p class="text-sm text-red-700 font-medium">{{ $message }}</p>
+                            </div>
                             @enderror
                         </div>
 
                         <!-- Ghi chú -->
-                        <div class="mt-12 mb-8">
+                        <div class="mb-8">
                             <div class="flex items-center gap-4 mb-6">
-                                <div class="w-6 h-0.5 bg-black"></div>
-                                <h6 class="text-xl font-bold uppercase tracking-wider">Ghi chú đơn hàng</h6>
+                                <div class="w-1 h-6 bg-black"></div>
+                                <h3 class="text-lg font-black uppercase tracking-wide text-black">
+                                    GHI CHÚ ĐƠN HÀNG
+                                </h3>
                             </div>
-                            <div class="relative">
-                                <textarea name="note" rows="4"
-                                    class="w-full border-2 border-gray-200 rounded-lg px-4 py-3 focus:border-black focus:ring-0 transition-colors"
-                                    placeholder="Nhập ghi chú cho đơn hàng của bạn (nếu có)"></textarea>
+                            
+                            <div class="group">
+                                <label class="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">
+                                    THÔNG TIN BỔ SUNG (TÙY CHỌN)
+                                </label>
+                                <div class="relative">
+                                    <textarea name="note" rows="4"
+                                        class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg resize-none"
+                                        placeholder="Nhập ghi chú cho đơn hàng của bạn (yêu cầu đặc biệt, thời gian giao hàng mong muốn...)">{{ old('note') }}</textarea>
+                                    
+                                    <!-- Adidas-style accent line -->
+                                    <div class="absolute left-0 top-0 w-1 h-full bg-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2 uppercase tracking-wide">
+                                    * Ghi chú sẽ được gửi đến bộ phận xử lý đơn hàng
+                                </p>
                             </div>
                         </div>
 
-                        <button type="submit"
-                            class="w-full bg-black text-white py-4 px-8 text-lg font-bold uppercase tracking-wider
-                                   hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 
-                                   transform hover:scale-[1.02] transition-all duration-300">
-                            ĐẶT HÀNG NGAY
-                        </button>
+                        <!-- Submit Button -->
+                        <div class="mt-12">
+                            <button type="submit"
+                                class="w-full bg-black text-white py-6 px-8 text-lg font-black uppercase tracking-wider
+                                       hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-400 focus:ring-offset-2 
+                                       transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden group">
+                                
+                                <!-- Button background effect -->
+                                <div class="absolute inset-0 bg-gradient-to-r from-gray-900 to-black transform -skew-x-12 -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+                                
+                                <!-- Button content -->
+                                <div class="relative z-10 flex items-center justify-center gap-3">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span>ĐẶT HÀNG NGAY</span>
+                                    <div class="w-1 h-6 bg-white opacity-50"></div>
+                                </div>
+                                
+                                <!-- Adidas-style corner accent -->
+                                <div class="absolute top-0 right-0 w-12 h-12 bg-white opacity-10 transform rotate-45 translate-x-6 -translate-y-6"></div>
+                            </button>
+                            
+                            <!-- Security notice -->
+                            <div class="mt-4 text-center">
+                                <p class="text-xs text-gray-500 uppercase tracking-wide">
+                                    🔒 Thanh toán an toàn & bảo mật
+                                </p>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -592,26 +709,10 @@
                     <div class="space-y-3 mb-6">
                         @foreach($cartItems as $item)
                         @php
-                            // Calculate attribute extra price for this item
-                            $attributeExtraPrice = 0;
-                            if (!empty($item->attribute_value_ids) && $item->attribute_value_ids !== '[]' && !$item->is_combo) {
-                                // Handle both array and JSON string formats
-                                if (is_array($item->attribute_value_ids)) {
-                                    $attributeIds = $item->attribute_value_ids;
-                                } else {
-                                    $attributeIds = json_decode($item->attribute_value_ids, true);
-                                }
-                                
-                                if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
-                                    $attributeExtraPrice = DB::table('book_attribute_values')
-                                        ->whereIn('attribute_value_id', $attributeIds)
-                                        ->where('book_id', $item->book_id)
-                                        ->sum('extra_price');
-                                }
-                            }
-                            $finalPrice = ($item->price ?? 0) + $attributeExtraPrice;
+                            // Sử dụng trực tiếp giá từ cart item (đã bao gồm discount và extra price)
+                            $finalPrice = $item->price ?? 0;
                         @endphp
-                        <div class="group flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-black transition-all duration-300">
+                        <div class="group flex items-start gap-3 p-3 border border-gray-200 rounded-lg hover:border-black transition-all duration-300 hover:shadow-md relative">
                             @if(isset($item->is_combo) && $item->is_combo)
                                 <!-- Hiển thị combo -->
                                 <div class="relative flex-shrink-0">
@@ -687,6 +788,29 @@
                                                     {{ $item->book->authors->pluck('name')->join(', ') }}
                                                 </span>
                                             </p>
+                                        @endif
+                                        
+                                        <!-- Hiển thị thuộc tính biến thể -->
+                                        @if(!$item->isCombo() && $item->attributeValues && $item->attributeValues->count() > 0)
+                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                @foreach($item->attributeValues as $attributeValue)
+                                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded border">
+                                                        {{ $attributeValue->attribute->name ?? 'Thuộc tính' }}: {{ $attributeValue->value }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                        
+                                        <!-- Hiển thị quà tặng kèm theo -->
+                                        @if(isset($item->gifts) && $item->gifts && $item->gifts->count() > 0)
+                                            <div class="mt-2 p-2 bg-orange-50 border border-orange-200 rounded">
+                                                <div class="flex items-center gap-1 text-xs text-orange-700">
+                                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                    <span class="font-medium">{{ $item->gifts->count() }} quà tặng kèm</span>
+                                                </div>
+                                            </div>
                                         @endif
                                     </div>
                                 </div>
@@ -915,6 +1039,92 @@
                     </svg>
                     <p class="text-gray-500 text-lg">Không có mã giảm giá nào</p>
                     <p class="text-gray-400 text-sm mt-1">Hiện tại chưa có voucher khả dụng</p>
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+
+<!-- Address Selection Modal -->
+<div id="address-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out opacity-0 pointer-events-none">
+    <div class="relative mx-auto p-6 w-full max-w-3xl max-h-[85vh] bg-white rounded-lg shadow-xl">
+        <div class="flex justify-between items-center pb-4 border-b">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900">Chọn địa chỉ giao hàng</h2>
+                <p class="text-sm text-gray-600 mt-1">Chọn một trong các địa chỉ đã lưu của bạn</p>
+            </div>
+            <button onclick="closeAddressModal()" class="text-gray-400 hover:text-gray-600 p-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="mt-4 space-y-3 max-h-96 overflow-y-auto">
+            @if($addresses && count($addresses) > 0)
+                @foreach($addresses as $address)
+                <div class="group border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer" 
+                     onclick="selectAddress('{{ $address->id }}', '{{ addslashes($address->recipient_name) }}', '{{ $address->phone }}', '{{ addslashes($address->address_detail) }}', '{{ addslashes($address->ward) }}', '{{ addslashes($address->district) }}', '{{ addslashes($address->city) }}')">
+                    <div class="p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <!-- Thông tin người nhận -->
+                                <div class="flex items-center gap-2 mb-2">
+                                    <h4 class="font-bold text-gray-900">{{ $address->recipient_name }}</h4>
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                        {{ $address->phone }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Địa chỉ chi tiết -->
+                                <p class="text-sm text-gray-600 leading-relaxed mb-3">
+                                    {{ $address->address_detail }}, {{ $address->ward }}, {{ $address->district }}, {{ $address->city }}
+                                </p>
+                                
+                                <!-- Thông tin bổ sung -->
+                                <div class="flex items-center gap-4 text-xs text-gray-500">
+                                    @if($address->district_id && $address->ward_code)
+                                        <div class="flex items-center gap-1">
+                                            <svg class="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            <span class="text-green-600 font-medium">Có thể tính phí ship</span>
+                                        </div>
+                                    @else
+                                        <div class="flex items-center gap-1">
+                                            <svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            <span class="text-orange-600 font-medium">Cần cập nhật thông tin GHN</span>
+                                        </div>
+                                    @endif
+                                    <div class="flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <span>{{ $address->created_at->format('d/m/Y') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Nút chọn -->
+                            <div class="ml-4">
+                                <div class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 group-hover:bg-blue-600">
+                                    Chọn địa chỉ này
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            @else
+                <div class="text-center py-8">
+                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <p class="text-gray-500 text-lg">Chưa có địa chỉ nào</p>
+                    <p class="text-gray-400 text-sm mt-1">Vui lòng thêm địa chỉ mới để tiếp tục</p>
                 </div>
             @endif
         </div>
@@ -1360,10 +1570,49 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('input[name="address_id"]').forEach(input => {
         input.addEventListener('change', function() {
             if (this.checked) {
-                showShippingMethods();
+                loadAddressForShipping(this.value);
             }
         });
     });
+
+    // Hàm lấy thông tin địa chỉ và tính phí ship
+    async function loadAddressForShipping(addressId) {
+        try {
+            const response = await fetch(`/account/addresses/${addressId}/shipping`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.data.district_id && data.data.ward_code) {
+                // Cập nhật hidden fields với thông tin địa chỉ
+                document.getElementById('form_hidden_district_id').value = data.data.district_id;
+                document.getElementById('form_hidden_ward_code').value = data.data.ward_code;
+                
+                // Hiển thị phần phương thức vận chuyển
+                showShippingMethods();
+                
+                // Load shipping services và tính phí
+                await loadShippingServices(data.data.district_id);
+                
+                // Tính phí ship với service mặc định
+                const defaultService = document.querySelector('input[name="shipping_method"]:checked');
+                if (defaultService) {
+                    await calculateShippingFeeWithService(data.data.district_id, data.data.ward_code);
+                }
+            } else {
+                console.error('Địa chỉ không có thông tin district_id hoặc ward_code');
+                resetShippingInfo();
+            }
+        } catch (error) {
+            console.error('Error loading address for shipping:', error);
+            resetShippingInfo();
+        }
+    }
     
     // Gắn sự kiện cho form địa chỉ mới
     function checkNewAddressComplete() {
@@ -1400,7 +1649,25 @@ document.addEventListener('DOMContentLoaded', function () {
         
         if (e.target.name === 'shipping_method') {
             document.getElementById('form_hidden_shipping_method').value = e.target.value;
-            document.getElementById('form_hidden_delivery_method').value = 'delivery';
+            // Cập nhật delivery_method dựa trên shipping_method được chọn
+            if (e.target.value === 'pickup') {
+                document.getElementById('form_hidden_delivery_method').value = 'pickup';
+                // Ẩn phí ship cho pickup
+                document.getElementById('shipping-fee').textContent = '0đ';
+                document.getElementById('form_hidden_shipping_fee').value = 0;
+                // Ẩn phần địa chỉ giao hàng khi chọn pickup
+                const addressSection = document.getElementById('address-section');
+                if (addressSection) {
+                    addressSection.style.display = 'none';
+                }
+            } else {
+                document.getElementById('form_hidden_delivery_method').value = 'delivery';
+                // Hiện phần địa chỉ giao hàng khi chọn delivery
+                const addressSection = document.getElementById('address-section');
+                if (addressSection) {
+                    addressSection.style.display = 'block';
+                }
+            }
             updateTotal();
         }
     });
@@ -1423,6 +1690,15 @@ document.addEventListener('DOMContentLoaded', function () {
         existingAddressContent.classList.remove('hidden');
         newAddressContent.classList.add('hidden');
         
+        // Disable required validation cho các trường địa chỉ mới khi ẩn
+        const newAddressFields = ['tinh', 'quan', 'phuong', 'new_address_detail'];
+        newAddressFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.removeAttribute('required');
+            }
+        });
+        
         // Clear new address form validation
         clearNewAddressValidation();
     }
@@ -1437,6 +1713,20 @@ document.addEventListener('DOMContentLoaded', function () {
         // Show/hide content
         newAddressContent.classList.remove('hidden');
         existingAddressContent.classList.add('hidden');
+        
+        // Enable lại required validation cho các trường địa chỉ mới khi hiển thị
+        const newAddressFields = [
+            { id: 'tinh', name: 'new_address_city_id' },
+            { id: 'quan', name: 'new_address_district_id' },
+            { id: 'phuong', name: 'new_address_ward_id' },
+            { id: 'new_address_detail', name: 'new_address_detail' }
+        ];
+        newAddressFields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element) {
+                element.setAttribute('required', 'required');
+            }
+        });
         
         // Clear existing address selection
         const existingAddressInputs = document.querySelectorAll('input[name="address_id"]');
@@ -1455,62 +1745,7 @@ document.addEventListener('DOMContentLoaded', function () {
     window.switchToNewAddressTab = switchToNewAddressTab;
     
     // ===== QUICK ACTIONS =====
-    const detectLocationBtn = document.getElementById('detect-location-btn');
     const clearFormBtn = document.getElementById('clear-form-btn');
-    
-    // Detect location functionality
-    if (detectLocationBtn) {
-        detectLocationBtn.addEventListener('click', function() {
-            if (navigator.geolocation) {
-                this.disabled = true;
-                this.innerHTML = `
-                    <svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    Đang phát hiện...
-                `;
-                
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        // Simulate address detection (in real app, use reverse geocoding API)
-                        setTimeout(() => {
-                            if (typeof toastr !== 'undefined') {
-                                toastr.success('Đã phát hiện vị trí! Vui lòng chọn tỉnh/thành phố từ danh sách.');
-                            }
-                            // Focus on city select
-                            document.getElementById('tinh')?.focus();
-                            
-                            this.disabled = false;
-                            this.innerHTML = `
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
-                                Phát hiện vị trí
-                            `;
-                        }, 1500);
-                    },
-                    (error) => {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error('Không thể phát hiện vị trí. Vui lòng nhập thủ công.');
-                        }
-                        this.disabled = false;
-                        this.innerHTML = `
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            Phát hiện vị trí
-                        `;
-                    }
-                );
-            } else {
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('Trình duyệt không hỗ trợ định vị.');
-                }
-            }
-        });
-    }
     
     // Clear form functionality
     if (clearFormBtn) {
@@ -1565,6 +1800,12 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Validate address form on change
     function validateAddressForm() {
+        // Bỏ qua validation nếu chọn pickup
+        const deliveryMethod = document.getElementById('form_hidden_delivery_method').value;
+        if (deliveryMethod === 'pickup') {
+            return; // Không cần validate địa chỉ khi pickup
+        }
+        
         const city = document.getElementById('tinh').value;
         const district = document.getElementById('quan').value;
         const ward = document.getElementById('phuong').value;
@@ -2023,7 +2264,286 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+    
+    // Address Modal Functions
+    window.openAddressModal = function() {
+        document.getElementById('address-modal').classList.remove('opacity-0', 'pointer-events-none');
+        document.getElementById('address-modal').classList.add('opacity-100');
+        document.body.style.overflow = 'hidden';
+    }
+
+    window.closeAddressModal = function() {
+        document.getElementById('address-modal').classList.add('opacity-0', 'pointer-events-none');
+        document.getElementById('address-modal').classList.remove('opacity-100');
+        document.body.style.overflow = 'auto';
+    }
+
+    window.selectAddress = function(addressId, recipientName, phone, addressDetail, ward, district, city) {
+        // Update hidden input
+        document.getElementById('selected_address_id').value = addressId;
+        
+        // Update display
+        const addressInfo = `<strong>${recipientName}</strong> - ${phone}<br>${addressDetail}, ${ward}, ${district}, ${city}`;
+        document.getElementById('selected-address-info').innerHTML = addressInfo;
+        
+        // Show selected address display and hide choose button
+        document.getElementById('selected-address-display').classList.remove('hidden');
+        document.getElementById('choose-address-btn-container').classList.add('hidden');
+        
+        // Close modal
+        closeAddressModal();
+        
+        // Calculate shipping fee for this address
+        fetch(`/account/addresses/${addressId}/shipping`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.data && data.data.district_id && data.data.ward_code) {
+                    // Update hidden fields
+                    document.getElementById('form_hidden_district_id').value = data.data.district_id;
+                    document.getElementById('form_hidden_ward_code').value = data.data.ward_code;
+                    
+                    // Calculate shipping fee
+                    calculateShippingFeeWithService(data.data.district_id, data.data.ward_code);
+                } else {
+                    console.error('Invalid response data:', data);
+                    toastr.error('Không thể lấy thông tin địa chỉ để tính phí ship');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching address shipping info:', error);
+                toastr.error('Lỗi khi lấy thông tin địa chỉ: ' + error.message);
+            });
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'address-modal') {
+            closeAddressModal();
+        }
+    });
+
+    // ===== KHÔI PHỤC DỮ LIỆU ĐỊA CHỈ CŨ KHI CÓ LỖI VALIDATION =====
+    function restoreOldAddressData() {
+        // Khôi phục dữ liệu từ Laravel old() helper
+        const oldCityName = '{{ old("new_address_city_name") }}';
+        const oldDistrictName = '{{ old("new_address_district_name") }}';
+        const oldWardName = '{{ old("new_address_ward_name") }}';
+        const oldCityId = '{{ old("new_address_city_id") }}';
+        const oldDistrictId = '{{ old("new_address_district_id") }}';
+        const oldWardId = '{{ old("new_address_ward_id") }}';
+        
+        // Nếu có dữ liệu cũ, khôi phục chúng
+        if (oldCityName || oldDistrictName || oldWardName) {
+            console.log('Khôi phục dữ liệu địa chỉ cũ...', {
+                city: oldCityName,
+                district: oldDistrictName, 
+                ward: oldWardName
+            });
+            
+            // Chuyển sang tab địa chỉ mới nếu có dữ liệu validation lỗi
+            const newAddressTab = document.getElementById('new-address-tab');
+            const existingAddressTab = document.getElementById('existing-address-tab');
+            
+            if (newAddressTab && existingAddressTab) {
+                // Kích hoạt tab địa chỉ mới
+                newAddressTab.click();
+            }
+            
+            // Khôi phục hidden fields
+            if (oldCityName) document.getElementById('ten_tinh').value = oldCityName;
+            if (oldDistrictName) document.getElementById('ten_quan').value = oldDistrictName;
+            if (oldWardName) document.getElementById('ten_phuong').value = oldWardName;
+            
+            // Load lại dữ liệu select boxes nếu cần
+            if (oldCityId && oldCityName) {
+                setTimeout(() => {
+                    loadProvinces().then(() => {
+                        const citySelect = document.getElementById('tinh');
+                        if (citySelect) {
+                            citySelect.value = oldCityId;
+                            // Trigger change event để load districts
+                            citySelect.dispatchEvent(new Event('change'));
+                            
+                            setTimeout(() => {
+                                if (oldDistrictId && oldDistrictName) {
+                                    const districtSelect = document.getElementById('quan');
+                                    if (districtSelect) {
+                                        districtSelect.value = oldDistrictId;
+                                        districtSelect.dispatchEvent(new Event('change'));
+                                        
+                                        setTimeout(() => {
+                                            if (oldWardId && oldWardName) {
+                                                const wardSelect = document.getElementById('phuong');
+                                                if (wardSelect) {
+                                                    wardSelect.value = oldWardId;
+                                                    wardSelect.dispatchEvent(new Event('change'));
+                                                }
+                                            }
+                                        }, 500);
+                                    }
+                                }
+                            }, 500);
+                        }
+                    });
+                }, 100);
+            }
+        }
+    }
+    
+    // Khởi tạo trạng thái form khi trang load
+     function initializeFormState() {
+         console.log('Initializing form state...');
+         
+         // Kiểm tra tab nào đang active
+         const existingAddressContent = document.getElementById('existing-address-content');
+         const newAddressContent = document.getElementById('new-address-content');
+         
+         console.log('Existing address content hidden:', existingAddressContent?.classList.contains('hidden'));
+         console.log('New address content hidden:', newAddressContent?.classList.contains('hidden'));
+         
+         // Mặc định disable required cho tất cả các trường địa chỉ mới
+         // Vì tab "Địa chỉ có sẵn" thường là tab mặc định
+         const newAddressFields = ['tinh', 'quan', 'phuong', 'new_address_detail'];
+         newAddressFields.forEach(fieldId => {
+             const field = document.getElementById(fieldId);
+             if (field) {
+                 field.removeAttribute('required');
+                 console.log(`Removed required from ${fieldId}`);
+             }
+         });
+         
+         // Chỉ enable required nếu tab địa chỉ mới đang active
+         if (newAddressContent && !newAddressContent.classList.contains('hidden')) {
+             console.log('New address tab is active, enabling required validation');
+             const newAddressFieldsWithNames = [
+                 { id: 'tinh', name: 'new_address_city_id' },
+                 { id: 'quan', name: 'new_address_district_id' },
+                 { id: 'phuong', name: 'new_address_ward_id' },
+                 { id: 'new_address_detail', name: 'new_address_detail' }
+             ];
+             newAddressFieldsWithNames.forEach(field => {
+                 const element = document.getElementById(field.id);
+                 if (element) {
+                     element.setAttribute('required', 'required');
+                     console.log(`Added required to ${field.id}`);
+                 }
+             });
+         }
+     }
+    
+    // Khôi phục dữ liệu khi trang load
+     document.addEventListener('DOMContentLoaded', function() {
+         initializeFormState();
+         restoreOldAddressData();
+     });
+     
+     // Force remove required attributes ngay lập tức để tránh lỗi validation
+     (function() {
+         const forceRemoveRequired = function() {
+             const fields = ['tinh', 'quan', 'phuong'];
+             fields.forEach(fieldId => {
+                 const field = document.getElementById(fieldId);
+                 if (field) {
+                     field.removeAttribute('required');
+                     console.log(`Force removed required from ${fieldId}`);
+                 }
+             });
+         };
+         
+         // Chạy ngay lập tức
+         forceRemoveRequired();
+         
+         // Chạy lại sau 100ms để đảm bảo
+         setTimeout(forceRemoveRequired, 100);
+     })();
+
+    // ...existing code...
 });
+
 </script>
+
+<style>
+/* Custom styling for select fields to ensure text visibility */
+select#tinh, select#quan, select#phuong {
+    line-height: 1.75 !important;
+    height: 3.5rem !important;
+    min-height: 3.5rem !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    color: #374151 !important;
+    vertical-align: middle !important;
+    display: flex !important;
+    align-items: center !important;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E") !important;
+    background-position: right 0.75rem center !important;
+    background-repeat: no-repeat !important;
+    background-size: 1.25em 1.25em !important;
+    padding: 0.875rem 2.5rem 0.875rem 1rem !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    box-sizing: border-box !important;
+}
+
+select#tinh option, select#quan option, select#phuong option {
+    padding: 0.75rem 1rem !important;
+    color: #374151 !important;
+    background-color: white !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    min-height: 2.5rem !important;
+}
+
+/* Ensure proper display for placeholder text */
+select#tinh:invalid, select#quan:invalid, select#phuong:invalid {
+    color: #9CA3AF !important;
+}
+
+select#tinh:valid, select#quan:valid, select#phuong:valid {
+    color: #374151 !important;
+}
+
+/* Fix for different browsers */
+select#tinh, select#quan, select#phuong {
+    -webkit-box-sizing: border-box !important;
+    -moz-box-sizing: border-box !important;
+    box-sizing: border-box !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+}
+
+/* Ensure text is visible on different devices */
+@media (max-width: 768px) {
+    select#tinh, select#quan, select#phuong {
+        height: 3.75rem !important;
+        min-height: 3.75rem !important;
+        font-size: 16px !important;
+        padding: 1rem 2.5rem 1rem 1rem !important;
+    }
+}
+
+/* Additional fixes for text positioning */
+select#tinh, select#quan, select#phuong {
+    text-align: left !important;
+    text-align-last: left !important;
+    direction: ltr !important;
+}
+</style>
+
 @endpush
 @endsection

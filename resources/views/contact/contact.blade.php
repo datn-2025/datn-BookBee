@@ -619,13 +619,14 @@
             <div class="form-field">
               <label for="phone" class="form-label">
                 <i class="fas fa-phone label-icon"></i>
-                Số điện thoại
+                Số điện thoại *
               </label>
               <div class="input-wrapper">
                 <input type="tel" name="phone" id="phone" 
                        class="form-input"
                        placeholder="Nhập số điện thoại" 
-                       value="{{ old('phone') }}">
+                       value="{{ old('phone') }}"
+                       required>
               </div>
             </div>
           </div>
@@ -651,20 +652,6 @@
                        class="form-input"
                        placeholder="Nhập địa chỉ email" 
                        value="{{ old('email') }}" 
-                       required>
-              </div>
-            </div>
-
-            <div class="form-field full-width">
-              <label for="subject" class="form-label">
-                <i class="fas fa-tag label-icon"></i>
-                Chủ đề *
-              </label>
-              <div class="input-wrapper">
-                <input type="text" name="subject" id="subject"
-                       class="form-input"
-                       placeholder="Nhập chủ đề tin nhắn" 
-                       value="{{ old('subject') }}" 
                        required>
               </div>
             </div>

@@ -4,6 +4,8 @@ namespace App\Http\ViewComposers;
 
 use Illuminate\View\View;
 use App\Helpers\CartHelper;
+use App\Helpers\WishlistHelper;
+use App\Models\Category;
 
 class CartComposer
 {
@@ -12,8 +14,18 @@ class CartComposer
      */
     public function compose(View $view): void
     {
-        $cartItemCount = CartHelper::getCartItemCount();
+        $cartItemCount = CartHelper::getCartDistinctItemCount();
+        $wishlistItemCount = WishlistHelper::getWishlistItemCount();
         
-        $view->with('cartItemCount', $cartItemCount);
+        // Get categories with book count for navbar (removed status filter as column doesn't exist)
+        $navCategories = Category::withCount('books')
+            ->orderBy('name')
+            ->get();
+        
+        $view->with([
+            'cartItemCount' => $cartItemCount,
+            'wishlistItemCount' => $wishlistItemCount,
+            'navCategories' => $navCategories
+        ]);
     }
 }

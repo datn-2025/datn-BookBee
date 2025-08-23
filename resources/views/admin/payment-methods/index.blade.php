@@ -82,6 +82,7 @@
                                     <tr>
                                         <th scope="col">STT</th>
                                         <th scope="col">Tên Phương Thức</th>
+                                        <th scope="col">Mô tả</th>
                                         <th scope="col">Ngày Tạo</th>
                                         <th scope="col">Trạng Thái</th>
                                         <th scope="col">Thao Tác</th>
@@ -129,7 +130,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="text-center">Không có phương thức thanh toán nào</td>
+                                            <td colspan="6" class="text-center">Không có phương thức thanh toán nào</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

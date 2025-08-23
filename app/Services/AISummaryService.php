@@ -153,6 +153,14 @@ class AISummaryService
     public function chatAboutBook(Book $book, string $userMessage)
     {
         try {
+            // Kiểm tra API key trước khi gọi
+            if (empty($this->apiKey) || $this->apiKey === 'your_gemini_api_key_here') {
+                Log::warning('Gemini API key not configured for chat, using fallback response', [
+                    'book_id' => $book->id
+                ]);
+                return $this->generateFallbackChatResponse($book, $userMessage);
+            }
+
             // Tạo context về sách để AI hiểu rõ hơn
             $bookContext = $this->buildBookContext($book);
             $prompt = $this->buildChatPrompt($book, $bookContext, $userMessage);
@@ -160,8 +168,9 @@ class AISummaryService
             // Làm sạch UTF-8 encoding trước khi gửi request
             $cleanPrompt = mb_convert_encoding($prompt, 'UTF-8', 'UTF-8');
             
-            // Gọi API Gemini
+            // Gọi API Gemini với timeout và retry
             $response = Http::timeout(30)
+                ->retry(2, 1000)
                 ->withHeaders([
                     'Content-Type' => 'application/json; charset=utf-8'
                 ])
@@ -191,7 +200,22 @@ class AISummaryService
                 $cleanContent = mb_convert_encoding(trim($content), 'UTF-8', 'UTF-8');
                 return $cleanContent;
             } else {
-                throw new Exception('API Error: ' . $response->body());
+                $errorBody = $response->body();
+                Log::error('Gemini Chat API Error', [
+                    'book_id' => $book->id,
+                    'status' => $response->status(),
+                    'error' => $errorBody
+                ]);
+
+                // Kiểm tra nếu là lỗi API key
+                if ($response->status() === 400 && str_contains($errorBody, 'API key not valid')) {
+                    Log::warning('Invalid API key detected for chat, using fallback response', [
+                        'book_id' => $book->id
+                    ]);
+                    return $this->generateFallbackChatResponse($book, $userMessage);
+                }
+                
+                throw new Exception('API Error: ' . $errorBody);
             }
 
         } catch (Exception $e) {
@@ -270,117 +294,190 @@ class AISummaryService
 
     private function generateFallbackChatResponse(Book $book, string $userMessage)
     {
-        // Làm sạch UTF-8 cho dữ liệu sách
-        $cleanBookTitle = mb_convert_encoding($book->title, 'UTF-8', 'UTF-8');
-        $cleanAuthorName = mb_convert_encoding($book->authors->count() > 0 ? $book->authors->pluck('name')->join(', ') : 'Tác giả không xác định', 'UTF-8', 'UTF-8');
-        $cleanCategoryName = mb_convert_encoding($book->category ? $book->category->name : 'Thể loại không xác định', 'UTF-8', 'UTF-8');
-        
-        // Kiểm tra xem câu hỏi có liên quan đến sách không ngay trong fallback
-        $lowerMessage = strtolower($userMessage);
-        $bookTitle = strtolower($cleanBookTitle);
-        $authorName = strtolower($cleanAuthorName);
-        
-        // Phản hồi cụ thể hơn dựa trên nội dung câu hỏi
-        if (strpos($lowerMessage, 'tóm tắt') !== false || strpos($lowerMessage, 'nội dung') !== false) {
-            return "Cuốn sách '{$cleanBookTitle}' của tác giả {$cleanAuthorName} thuộc thể loại {$cleanCategoryName}. " .
-                   "Tôi đang gặp sự cố kỹ thuật nên không thể cung cấp tóm tắt chi tiết lúc này. Vui lòng thử lại sau.";
-        }
-        
-        if (strpos($lowerMessage, 'tác giả') !== false || strpos($lowerMessage, $authorName) !== false) {
-            return "Tác giả của cuốn sách này là {$cleanAuthorName}. " .
-                   "Tôi đang gặp vấn đề kỹ thuật nên không thể cung cấp thêm thông tin về tác giả lúc này.";
-        }
-        
-        if (strpos($lowerMessage, 'thể loại') !== false || strpos($lowerMessage, 'genre') !== false) {
-            return "'{$cleanBookTitle}' thuộc thể loại {$cleanCategoryName}. " .
-                   "Tôi đang gặp sự cố nên không thể phân tích sâu hơn về thể loại này.";
-        }
-        
-        // Phản hồi chung khi API lỗi
-        $responses = [
-            "Tôi hiểu bạn muốn biết về cuốn sách '{$cleanBookTitle}'. Tuy nhiên, tôi đang gặp sự cố kỹ thuật. Vui lòng thử lại sau.",
-            "Xin lỗi, tôi đang không thể phân tích chi tiết về '{$cleanBookTitle}' lúc này. Hệ thống đang được bảo trì.",
-            "Tôi muốn giúp bạn tìm hiểu về '{$cleanBookTitle}', nhưng đang gặp vấn đề kỹ thuật. Vui lòng thử lại trong ít phút."
-        ];
+        $bookTitle = $book->title;
+        $authorName = $book->authors->first() ? $book->authors->first()->name : 'tác giả';
+        $categoryName = $book->category ? $book->category->name : 'thể loại này';
 
-        return $responses[array_rand($responses)];
+        // Tạo response dựa trên từ khóa trong câu hỏi
+        $message = strtolower($userMessage);
+        
+        if (str_contains($message, 'tóm tắt') || str_contains($message, 'nội dung')) {
+            return "Cuốn '{$bookTitle}' của {$authorName} là một tác phẩm trong thể loại {$categoryName}. " .
+                   "Sách mang đến những kiến thức bổ ích và trải nghiệm thú vị cho độc giả. " .
+                   "Để biết thêm chi tiết về nội dung, bạn có thể đọc mô tả sản phẩm hoặc xem thử một số trang đầu.";
+        }
+        
+        if (str_contains($message, 'tác giả') || str_contains($message, 'ai viết')) {
+            return "Cuốn '{$bookTitle}' được viết bởi {$authorName}. " .
+                   "Đây là một tác giả có uy tín trong lĩnh vực {$categoryName}. " .
+                   "Bạn có thể tìm hiểu thêm về tác giả trong phần thông tin chi tiết của sách.";
+        }
+        
+        if (str_contains($message, 'đánh giá') || str_contains($message, 'review')) {
+            return "Cuốn '{$bookTitle}' đã nhận được nhiều đánh giá tích cực từ độc giả. " .
+                   "Sách có nội dung chất lượng và phù hợp với những ai quan tâm đến {$categoryName}. " .
+                   "Bạn có thể xem các đánh giá của độc giả khác trong phần bình luận.";
+        }
+        
+        if (str_contains($message, 'giá') || str_contains($message, 'mua')) {
+            return "Cuốn '{$bookTitle}' có nhiều định dạng và giá cả khác nhau. " .
+                   "Bạn có thể xem thông tin giá và các khuyến mãi hiện tại ngay trên trang sản phẩm. " .
+                   "Chúng tôi thường có các chương trình ưu đãi cho sách thuộc thể loại {$categoryName}.";
+        }
+        
+        // Response mặc định
+        return "Cảm ơn bạn đã quan tâm đến cuốn '{$bookTitle}' của {$authorName}. " .
+               "Đây là một cuốn sách hay trong thể loại {$categoryName}. " .
+               "Tôi khuyên bạn nên đọc thông tin chi tiết về sản phẩm để hiểu rõ hơn về nội dung và giá trị của cuốn sách này. " .
+               "Nếu bạn có câu hỏi cụ thể về sách, vui lòng để lại bình luận hoặc liên hệ với chúng tôi.";
     }
 
     public function generateSummaryWithFallback(Book $book)
     {
         try {
-            return $this->generateSummary($book);
+            // Tạo hoặc cập nhật status thành processing
+            $summary = BookSummary::updateOrCreate(
+                ['book_id' => $book->id],
+                ['status' => 'processing', 'error_message' => null]
+            );
+
+            // Kiểm tra API key trước khi gọi
+            if (empty($this->apiKey) || $this->apiKey === 'your_gemini_api_key_here') {
+                Log::warning('Gemini API key not configured, using fallback summary', [
+                    'book_id' => $book->id
+                ]);
+                return $this->generateFallbackSummary($book, $summary);
+            }
+
+            // Tạo prompt từ thông tin sách
+            $prompt = $this->buildPrompt($book);
+
+            // Gọi API Gemini với timeout và retry
+            $response = Http::timeout(30)
+                ->retry(2, 1000)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                ])
+                ->post($this->apiUrl . '?key=' . $this->apiKey, [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                [
+                                    'text' => $prompt
+                                ]
+                            ]
+                        ]
+                    ],
+                    'generationConfig' => [
+                        'temperature' => 0.7,
+                        'topK' => 1,
+                        'topP' => 1,
+                        'maxOutputTokens' => 2048,
+                    ]
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $content = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                
+                // Clean up content để chỉ lấy JSON
+                $content = $this->extractJsonFromResponse($content);
+                
+                // Parse JSON response
+                $aiResult = json_decode($content, true);
+                
+                if (json_last_error() === JSON_ERROR_NONE && is_array($aiResult)) {
+                    // Cập nhật kết quả
+                    $summary->update([
+                        'summary' => $aiResult['summary'] ?? '',
+                        'detailed_summary' => $aiResult['detailed_summary'] ?? '',
+                        'key_points' => $aiResult['key_points'] ?? [],
+                        'themes' => $aiResult['themes'] ?? [],
+                        'status' => 'completed',
+                        'ai_model' => 'gemini-1.5-flash'
+                    ]);
+                    
+                    return $summary;
+                } else {
+                    Log::warning('Invalid JSON response from AI, using fallback', [
+                        'book_id' => $book->id,
+                        'json_error' => json_last_error_msg()
+                    ]);
+                    return $this->generateFallbackSummary($book, $summary);
+                }
+            } else {
+                $errorBody = $response->body();
+                Log::error('Gemini API Error', [
+                    'book_id' => $book->id,
+                    'status' => $response->status(),
+                    'error' => $errorBody
+                ]);
+
+                // Kiểm tra nếu là lỗi API key
+                if ($response->status() === 400 && str_contains($errorBody, 'API key not valid')) {
+                    Log::warning('Invalid API key detected, using fallback summary', [
+                        'book_id' => $book->id
+                    ]);
+                    return $this->generateFallbackSummary($book, $summary);
+                }
+                
+                throw new Exception('API Error: ' . $errorBody);
+            }
+
         } catch (Exception $e) {
-            // Fallback với demo data nếu API không khả dụng
-            Log::warning('Using fallback summar y for book: ' . $book->id);
-            
-            return $this->generateFallbackSummary($book);
+            Log::error('AI Summary Generation Failed', [
+                'book_id' => $book->id,
+                'error' => $e->getMessage()
+            ]);
+
+            // Nếu có lỗi, sử dụng fallback summary
+            if (isset($summary)) {
+                return $this->generateFallbackSummary($book, $summary);
+            }
+
+            throw $e;
         }
     }
 
-    private function generateFallbackSummary(Book $book)
+    private function generateFallbackSummary(Book $book, BookSummary $summary)
     {
-        $summary = BookSummary::updateOrCreate(
-            ['book_id' => $book->id],
-            [
-                'summary' => $this->generateDefaultSummary($book),
-                'detailed_summary' => $this->generateDefaultDetailedSummary($book),
-                'key_points' => $this->generateDefaultKeyPoints($book),
-                'themes' => $this->generateDefaultThemes($book),
-                'status' => 'completed',
-                'ai_model' => 'fallback'
-            ]
-        );
+        Log::warning('Using fallback summary for book: ' . $book->id);
 
+        $categoryName = $book->category ? $book->category->name : 'đa dạng';
+        $authorName = $book->authors->first() ? $book->authors->first()->name : 'tác giả nổi tiếng';
+        $bookTitle = $book->title;
+
+        $fallbackData = [
+            'summary' => "Đây là một cuốn sách hay và thú vị về chủ đề {$categoryName}. " .
+                        "Cuốn '{$bookTitle}' được viết bởi {$authorName}, " .
+                        "mang đến cho độc giả những kiến thức và trải nghiệm bổ ích.",
+            
+            'detailed_summary' => "Cuốn sách '{$bookTitle}' là một tác phẩm xuất sắc trong lĩnh vực " .
+                                "{$categoryName}. Với phong cách viết hấp dẫn và nội dung phong phú, " .
+                                "tác giả {$authorName} đã tạo nên một tác phẩm đáng đọc. " .
+                                "Sách cung cấp cái nhìn sâu sắc về chủ đề chính và mang lại nhiều giá trị thực tiễn cho độc giả.",
+            
+            'key_points' => [
+                'Nội dung phong phú và đa dạng',
+                'Phong cách viết hấp dẫn và dễ hiểu',
+                'Cung cấp kiến thức bổ ích và thực tiễn',
+                'Phù hợp với nhiều đối tượng độc giả'
+            ],
+            
+            'themes' => [
+                'Kiến thức và học hỏi',
+                'Phát triển bản thân',
+                'Giá trị nhân văn',
+                'Ứng dụng thực tiễn'
+            ],
+            
+            'status' => 'completed',
+            'ai_model' => 'fallback',
+            'error_message' => null
+        ];
+
+        $summary->update($fallbackData);
         return $summary;
-    }
-
-    private function generateDefaultSummary(Book $book)
-    {
-        $authorName = $book->authors->count() > 0 ? $book->authors->pluck('name')->join(', ') : 'tác giả không xác định';
-        $categoryName = $book->category ? $book->category->name : 'thể loại không xác định';
-        $pageCount = $book->page_count ?: 'số trang không xác định';
-        
-        return "Cuốn sách \"{$book->title}\" của {$authorName} là một tác phẩm thuộc thể loại {$categoryName}. " .
-               "Với {$pageCount} trang, cuốn sách mang đến cho người đọc những kiến thức và trải nghiệm độc đáo trong lĩnh vực này.";
-    }
-
-    private function generateDefaultDetailedSummary(Book $book)
-    {
-        $authorName = $book->authors->count() > 0 ? $book->authors->pluck('name')->join(', ') : 'tác giả không xác định';
-        $categoryName = $book->category ? $book->category->name : 'thể loại không xác định';
-        $pageCount = $book->page_count ?: 'số trang không xác định';
-        
-        return "Cuốn sách \"{$book->title}\" của tác giả {$authorName} là một tác phẩm xuất sắc trong thể loại {$categoryName}. " .
-               "Qua {$pageCount} trang, tác giả đã khéo léo xây dựng nội dung phong phú và hấp dẫn. " .
-               "Cuốn sách không chỉ cung cấp thông tin và kiến thức chuyên sâu mà còn mang đến những góc nhìn mới mẻ và sâu sắc. " .
-               "Với phong cách viết cuốn hút và cách trình bày logic, tác phẩm phù hợp cho nhiều đối tượng độc giả khác nhau. " .
-               "Đây là một cuốn sách đáng đọc cho những ai quan tâm đến lĩnh vực này.";
-    }
-
-    private function generateDefaultKeyPoints(Book $book)
-    {
-        $categoryName = $book->category ? $book->category->name : 'lĩnh vực này';
-        
-        return [
-            "Nội dung phong phú và đa dạng",
-            "Phong cách viết hấp dẫn và dễ hiểu",
-            "Cung cấp kiến thức chuyên sâu về {$categoryName}",
-            "Phù hợp cho nhiều đối tượng độc giả",
-            "Có giá trị học thuật và thực tiễn cao"
-        ];
-    }
-
-    private function generateDefaultThemes(Book $book)
-    {
-        $categoryBasedThemes = [
-            'Văn học' => ['Tình yêu', 'Cuộc sống', 'Con người'],
-            'Khoa học' => ['Nghiên cứu', 'Khám phá', 'Công nghệ'],
-            'Kinh tế' => ['Kinh doanh', 'Đầu tư', 'Phát triển'],
-            'Giáo dục' => ['Học tập', 'Phát triển', 'Kỹ năng'],
-        ];
-        $categoryName = $book->category ? $book->category->name : null;
-        return $categoryBasedThemes[$categoryName] ?? ['Kiến thức', 'Phát triển', 'Học hỏi'];
     }
 
     // Combo Summary Methods
@@ -564,7 +661,7 @@ class AISummaryService
             return $book->authors->pluck('name');
         })->unique()->take(3)->join(', ');
         
-        return "Combo \"{$combo->name}\" là một bộ sưu tập gồm {$bookCount} cuốn sách từ các tác giả uy tín như {$authors}. Bộ combo này được thiết kế để mang lại trải nghiệm đọc toàn diện, với những nội dung bổ ích và phong phú. Mỗi cuốn sách trong combo đều có giá trị riêng, khi kết hợp lại tạo thành một bộ sưu tập hoàn chỉnh giúp độc giả mở rộng kiến thức và phát triển bản thân.";
+        return "Combo \"{$combo->name}\" là một bộ sưu tập gồm {$bookCount} cuốn sách từ các tác giả uy tín như {$authors}. Bộ combo này được thiết kế để mang lại trải nghiệm đọc toàn diện, với những nội dung bổ ích và phong phú. Mỗi cuốn sách trong combo đều có giá trị riêng, khi kết hợp lại tạo thành một tác phẩm hoàn chỉnh giúp độc giả mở rộng kiến thức và phát triển bản thân.";
     }
 
     private function generateDefaultComboKeyPoints(Collection $combo)
@@ -602,14 +699,31 @@ class AISummaryService
     public function chatAboutCombo(Collection $combo, string $userMessage)
     {
         try {
-            $prompt = $this->buildComboChatPrompt($combo, $userMessage);
+            // Kiểm tra API key trước khi gọi
+            if (empty($this->apiKey) || $this->apiKey === 'your_gemini_api_key_here') {
+                Log::warning('Gemini API key not configured for combo chat, using fallback response', [
+                    'combo_id' => $combo->id
+                ]);
+                return $this->generateFallbackComboChatResponse($combo, $userMessage);
+            }
 
-            $response = Http::timeout(30)->post($this->apiUrl . '?key=' . $this->apiKey, [
+            $prompt = $this->buildComboChatPrompt($combo, $userMessage);
+            
+            // Làm sạch UTF-8 encoding trước khi gửi request
+            $cleanPrompt = mb_convert_encoding($prompt, 'UTF-8', 'UTF-8');
+
+            // Gọi API Gemini với timeout và retry
+            $response = Http::timeout(30)
+                ->retry(2, 1000)
+                ->withHeaders([
+                    'Content-Type' => 'application/json; charset=utf-8'
+                ])
+                ->post($this->apiUrl . '?key=' . $this->apiKey, [
                 'contents' => [
                     [
                         'parts' => [
                             [
-                                'text' => $prompt
+                                'text' => $cleanPrompt
                             ]
                         ]
                     ]
@@ -623,14 +737,30 @@ class AISummaryService
             ]);
 
             if ($response->successful()) {
-                $result = $response->json();
+                $data = $response->json();
+                $content = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
                 
-                if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
-                    return trim($result['candidates'][0]['content']['parts'][0]['text']);
-                }
-            }
+                // Làm sạch response và đảm bảo UTF-8 hợp lệ
+                $cleanContent = mb_convert_encoding(trim($content), 'UTF-8', 'UTF-8');
+                return $cleanContent;
+            } else {
+                $errorBody = $response->body();
+                Log::error('Gemini Combo Chat API Error', [
+                    'combo_id' => $combo->id,
+                    'status' => $response->status(),
+                    'error' => $errorBody
+                ]);
 
-            throw new Exception('API response không hợp lệ');
+                // Kiểm tra nếu là lỗi API key
+                if ($response->status() === 400 && str_contains($errorBody, 'API key not valid')) {
+                    Log::warning('Invalid API key detected for combo chat, using fallback response', [
+                        'combo_id' => $combo->id
+                    ]);
+                    return $this->generateFallbackComboChatResponse($combo, $userMessage);
+                }
+                
+                throw new Exception('API Error: ' . $errorBody);
+            }
 
         } catch (Exception $e) {
             Log::error('Error in combo chat:', [
@@ -639,7 +769,7 @@ class AISummaryService
                 'error' => $e->getMessage()
             ]);
 
-            return 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.';
+            return $this->generateFallbackComboChatResponse($combo, $userMessage);
         }
     }
 
@@ -668,7 +798,7 @@ class AISummaryService
         if ($combo->description) {
             $prompt .= "Mô tả: " . mb_convert_encoding($combo->description, 'UTF-8', 'UTF-8') . "\n";
         }
-        $prompt .= "Giá combo: " . number_format($combo->combo_price, 0, ',', '.') . "₫\n\n";
+        $prompt .= "Giá combo: " . number_format((float)($combo->combo_price ?? 0), 0, ',', '.') . "₫\n\n";
         
         $prompt .= "CÁC SÁCH TRONG COMBO:\n{$booksContext}\n\n";
         
@@ -676,5 +806,115 @@ class AISummaryService
         $prompt .= "HÃY TRẢ LỜI:";
 
         return $prompt;
+    }
+
+    private function generateFallbackComboChatResponse(Collection $combo, string $userMessage)
+    {
+        $comboName = $combo->name;
+        $booksCount = $combo->books->count();
+        $comboPrice = number_format((float)($combo->combo_price ?? 0), 0, ',', '.');
+
+        // Tạo response dựa trên từ khóa trong câu hỏi
+        $message = strtolower($userMessage);
+        
+        if (str_contains($message, 'bao nhiêu sách') || str_contains($message, 'mấy sách') || str_contains($message, 'số lượng')) {
+            return "Combo '{$comboName}' bao gồm {$booksCount} cuốn sách. " .
+                   "Đây là một bộ sưu tập được tuyển chọn kỹ lưỡng để mang đến trải nghiệm đọc phong phú và đa dạng cho bạn.";
+        }
+        
+        if (str_contains($message, 'những sách gì') || str_contains($message, 'sách nào') || 
+            str_contains($message, 'danh sách') || str_contains($message, 'gồm những') ||
+            str_contains($message, 'có sách') || str_contains($message, 'bao gồm')) {
+            
+            $booksList = $combo->books->map(function($book, $index) {
+                $authorName = $book->authors->count() > 0 ? 
+                    ' - Tác giả: ' . $book->authors->pluck('name')->join(', ') : '';
+                return ($index + 1) . ". {$book->title}{$authorName}";
+            })->join("\n");
+            
+            return "Combo '{$comboName}' bao gồm {$booksCount} cuốn sách sau:\n\n{$booksList}\n\n" .
+                   "Đây là bộ combo được tuyển chọn kỹ lưỡng để mang đến trải nghiệm đọc đa dạng và phong phú.";
+        }
+        
+        if (str_contains($message, 'tóm tắt') || str_contains($message, 'nội dung')) {
+            $booksWithDesc = $combo->books->map(function($book, $index) {
+                $authorName = $book->authors->count() > 0 ? 
+                    ' (Tác giả: ' . $book->authors->pluck('name')->join(', ') . ')' : '';
+                $description = $book->description ? 
+                    ' - ' . mb_substr(strip_tags($book->description), 0, 100) . '...' : 
+                    ' - Cuốn sách hay với nội dung phong phú và bổ ích.';
+                return ($index + 1) . ". {$book->title}{$authorName}{$description}";
+            })->join("\n\n");
+            
+            return "Combo '{$comboName}' gồm {$booksCount} cuốn sách với nội dung đa dạng:\n\n{$booksWithDesc}\n\n" .
+                   "Combo này được thiết kế để mang đến trải nghiệm đọc hoàn chỉnh và kiến thức phong phú.";
+        }
+        
+        if (str_contains($message, 'giá') || str_contains($message, 'mua') || str_contains($message, 'tiết kiệm') || str_contains($message, 'bao nhiêu tiền')) {
+            // Tính tổng giá lẻ để so sánh
+            $totalIndividualPrice = 0;
+            $bookPrices = $combo->books->map(function($book) use (&$totalIndividualPrice) {
+                $lowestPrice = $book->formats->min('price') ?? 0;
+                $totalIndividualPrice += $lowestPrice;
+                return "{$book->title}: " . number_format($lowestPrice, 0, ',', '.') . "₫";
+            })->join("\n");
+            
+            $savings = $totalIndividualPrice - ($combo->combo_price ?? 0);
+            $savingsText = $savings > 0 ? 
+                " Bạn tiết kiệm được " . number_format($savings, 0, ',', '.') . "₫ so với mua lẻ!" : "";
+            
+            return "Combo '{$comboName}' có giá {$comboPrice}₫ cho {$booksCount} cuốn sách:\n\n{$bookPrices}\n\n" .
+                   "Tổng giá nếu mua lẻ: " . number_format($totalIndividualPrice, 0, ',', '.') . "₫{$savingsText}";
+        }
+        
+        if (str_contains($message, 'tác giả') || str_contains($message, 'ai viết')) {
+            $authorsDetail = $combo->books->map(function($book, $index) {
+                $authorName = $book->authors->count() > 0 ? 
+                    $book->authors->pluck('name')->join(', ') : 'Tác giả không xác định';
+                return ($index + 1) . ". {$book->title} - Tác giả: {$authorName}";
+            })->join("\n");
+            
+            $uniqueAuthors = $combo->books->flatMap(function($book) {
+                return $book->authors->pluck('name');
+            })->unique();
+            
+            return "Combo '{$comboName}' bao gồm tác phẩm từ " . $uniqueAuthors->count() . " tác giả:\n\n{$authorsDetail}\n\n" .
+                   "Sự đa dạng về tác giả giúp mang đến những góc nhìn và phong cách viết phong phú.";
+        }
+        
+        if (str_contains($message, 'đánh giá') || str_contains($message, 'review')) {
+            $avgRating = $combo->reviews->avg('rating') ?? 0;
+            $reviewCount = $combo->reviews->count();
+            $ratingText = $reviewCount > 0 ? 
+                " với đánh giá trung bình {$avgRating}/5 từ {$reviewCount} khách hàng" : "";
+            
+            return "Combo '{$comboName}' đã nhận được nhiều phản hồi tích cực từ độc giả{$ratingText}. " .
+                   "Với {$booksCount} cuốn sách được tuyển chọn kỹ lưỡng, combo này mang đến giá trị đọc cao và trải nghiệm thú vị. " .
+                   "Bạn có thể xem các đánh giá chi tiết từ những độc giả đã mua combo.";
+        }
+        
+        if (str_contains($message, 'thể loại') || str_contains($message, 'category') || str_contains($message, 'genre')) {
+            $categories = $combo->books->map(function($book) {
+                return $book->category ? $book->category->name : 'Chưa phân loại';
+            })->unique()->join(', ');
+            
+            $booksWithCategories = $combo->books->map(function($book, $index) {
+                $categoryName = $book->category ? $book->category->name : 'Chưa phân loại';
+                return ($index + 1) . ". {$book->title} - Thể loại: {$categoryName}";
+            })->join("\n");
+            
+            return "Combo '{$comboName}' bao gồm sách thuộc các thể loại: {$categories}\n\n{$booksWithCategories}\n\n" .
+                   "Sự đa dạng thể loại giúp mở rộng kiến thức và trải nghiệm đọc của bạn.";
+        }
+        
+        // Response mặc định với thông tin chi tiết hơn
+        $quickBooksList = $combo->books->take(3)->map(function($book, $index) {
+            return ($index + 1) . ". {$book->title}";
+        })->join("\n");
+        
+        $moreBooks = $booksCount > 3 ? "\n... và " . ($booksCount - 3) . " cuốn sách khác" : "";
+        
+        return "Combo '{$comboName}' bao gồm {$booksCount} cuốn sách với giá ưu đãi {$comboPrice}₫:\n\n{$quickBooksList}{$moreBooks}\n\n" .
+               "Để biết thêm chi tiết về từng cuốn sách, bạn có thể hỏi cụ thể như 'combo này có những sách gì?' hoặc 'tác giả của các sách trong combo?'";
     }
 }

@@ -393,7 +393,7 @@
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][discount]" 
-                                                   value="{{ old('formats.physical.discount') }}" placeholder="0" min="0">
+                                                   id="physical_discount" value="{{ old('formats.physical.discount') }}" placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Số lượng</label>
@@ -602,9 +602,9 @@
                     </div>
                     <div class="card-body">
                         <label for="status" class="form-label fw-medium">Trạng thái sách</label>
-                        <select class="form-select @error('status') is-invalid @enderror" id="status" name="status">
+                        <select class="form-select @error('status') is-invalid @enderror"  name="status">
                             <option value="Còn Hàng" {{ old('status') == 'Còn Hàng' ? 'selected' : '' }}>Còn Hàng</option>
-                            <option value="Hết Hàng Tồn Kho" {{ old('status') == 'Hết Hàng Tồn Kho' ? 'selected' : '' }}>Hết Hàng Tồn Kho</option>
+                            {{-- <option value="Hết Hàng Tồn Kho" {{ old('status') == 'Hết Hàng Tồn Kho' ? 'selected' : '' }}>Hết Hàng Tồn Kho</option> --}}
                             <option value="Sắp Ra Mắt" {{ old('status') == 'Sắp Ra Mắt' ? 'selected' : '' }}>Sắp Ra Mắt</option>
                             <option value="Ngừng Kinh Doanh" {{ old('status') == 'Ngừng Kinh Doanh' ? 'selected' : '' }}>Ngừng Kinh Doanh</option>
                         </select>
@@ -935,24 +935,40 @@ $(document).ready(function() {
         }
     });
 
+    // Store selected files for manipulation
+    let selectedFiles = [];
+
     $('#images').on('change', function() {
-        const files = this.files;
+        const files = Array.from(this.files);
+        selectedFiles = files;
+        updateImagePreview();
+    });
+
+    function updateImagePreview() {
         const preview = $('#images_preview');
         preview.empty();
         
-        if (files.length > 0) {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
+        if (selectedFiles.length > 0) {
+            selectedFiles.forEach((file, index) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     preview.append(`
-                        <div class="col-6 col-md-4 mb-2">
-                            <img src="${e.target.result}" class="img-thumbnail" style="height: 100px; width: 100%; object-fit: cover;">
+                        <div class="col-6 col-md-4 mb-2" data-index="${index}">
+                            <div class="position-relative">
+                                <img src="${e.target.result}" class="img-thumbnail" style="height: 100px; width: 100%; object-fit: cover;">
+                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-image" 
+                                        data-index="${index}" style="transform: translate(25%, -25%); border-radius: 50%; width: 25px; height: 25px; padding: 0;">
+                                    <i class="ri-close-line" style="font-size: 12px;"></i>
+                                </button>
+                                <div class="text-center mt-1">
+                                    <small class="text-muted">${file.name}</small>
+                                </div>
+                            </div>
                         </div>
                     `);
                 };
                 reader.readAsDataURL(file);
-            }
+            });
         }
     });
 

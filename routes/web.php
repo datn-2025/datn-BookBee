@@ -3,6 +3,7 @@
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\Admin\AdminBookController;
 use App\Http\Controllers\Admin\AdminCategoryController;
+use App\Http\Controllers\Admin\AdminChatrealtimeController;
 use App\Http\Controllers\Admin\AdminDashboard;
 use App\Http\Controllers\Admin\AdminInvoiceController;
 use App\Http\Controllers\Admin\AdminPaymentMethodController;
@@ -39,8 +40,12 @@ use App\Http\Controllers\Wishlists\WishlistController;
 use App\Livewire\BalanceChart;
 use App\Livewire\RevenueReport;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\OrderChatTestController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Events\OrderCreated;
+
+
 
 // Route QR code
 Route::get('storage/private/{filename}', function ($filename) {
@@ -90,17 +95,30 @@ Route::prefix('cart')->group(function () {
     Route::post('/update', [CartController::class, 'updateCart'])->name('cart.update');
     Route::post('/remove', [CartController::class, 'removeFromCart'])->name('cart.remove');
     Route::post('/clear', [CartController::class, 'clearCart'])->name('cart.clear');
+    Route::post('/refresh-prices', [CartController::class, 'refreshCartPrices'])->name('cart.refresh-prices');
     Route::post('/add-wishlist', [CartController::class, 'addAllWishlistToCart'])->name('cart.add-wishlist');
     // Route::post('/apply-voucher', [CartController::class, 'applyVoucher'])->name('cart.apply-voucher');
     Route::post('/remove-voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
     Route::post('/update-selected', [CartController::class, 'updateSelected'])->name('cart.update-selected');
 });
 
+// Test route để kiểm tra JavaScript
+Route::get('/test-js', function () {
+    return view('test-js');
+});
+
+Route::get('/test-notification-page', function () {
+    return view('test-notification');
+});
+
 // danh sach yeu thich
 Route::get('/wishlist', [WishlistController::class, 'getWishlist'])->name('wishlist.index');
+Route::get('/wishlist/count', [WishlistController::class, 'getWishlistCount'])->name('wishlist.count');
 Route::post('/wishlist/add', [WishlistController::class, 'add'])->name('wishlist.add');
 Route::post('/wishlist/delete', [WishlistController::class, 'delete'])->name('wishlist.delete');
 Route::post('/wishlist/delete-all', [WishlistController::class, 'deleteAll'])->name('wishlist.delete-all');
+Route::post('/wishlist/check-deleted', [WishlistController::class, 'checkDeletedBooks'])->name('wishlist.check-deleted');
+Route::post('/wishlist/test-observer', [WishlistController::class, 'testBookObserver'])->name('wishlist.test-observer');
 Route::post('/wishlist/add-to-cart', [WishlistController::class, 'addToCartFromWishlist'])->name('wishlist.addToCart');
 
 // lien he
@@ -131,6 +149,11 @@ Route::post('/register', [LoginController::class, 'handleRegister'])->name('regi
 Route::middleware('auth')->group(function () {
     // Đăng xuất
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    
+    // Notifications routes
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::patch('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 
     Route::prefix('account')->name('account.')->group(function () {
         // Route::get('/', [LoginController::class, 'index'])->name('index');
@@ -147,6 +170,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/addresses', [AddressClientController::class, 'index'])->name('addresses');
         Route::post('/addresses', [AddressClientController::class, 'store'])->name('addresses.store');
         Route::get('/addresses/{id}/edit', [AddressClientController::class, 'edit'])->name('addresses.edit');
+        Route::get('/addresses/{id}/shipping', [AddressClientController::class, 'getAddressForShipping'])->name('addresses.shipping');
         Route::put('/addresses/{id}', [AddressClientController::class, 'update'])->name('addresses.update');
         Route::delete('/addresses/{id}', [AddressClientController::class, 'destroy'])->name('addresses.destroy');
         Route::post('/addresses/{id}/set-default', [AddressClientController::class, 'setDefault'])->name('addresses.setDefault');
@@ -169,7 +193,7 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('orders')->name('orders.')->group(function () {
             // Redirect old index route to unified
-            Route::get('/', function() {
+            Route::get('/', function () {
                 return redirect()->route('account.orders.unified');
             })->name('index');
             Route::get('/unified', [OrderClientController::class, 'unified'])->name('unified');
@@ -177,6 +201,7 @@ Route::middleware('auth')->group(function () {
             Route::put('/{id}', [OrderClientController::class, 'update'])->name('update');
             Route::put('/{id}/cancel', [OrderClientController::class, 'cancel'])->name('cancel');
             Route::delete('/{id}', [OrderClientController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/confirm-received', [OrderClientController::class, 'confirmReceived'])->name('confirm-received');
 
             // Refund routes
             Route::get('/{order}/refund', [RefundController::class, 'create'])->name('refund.create');
@@ -192,6 +217,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('cancel');
         Route::post('/store', [\App\Http\Controllers\OrderController::class, 'store'])->name('store');
         Route::post('/apply-voucher', [\App\Http\Controllers\OrderController::class, 'applyVoucher'])->name('apply-voucher');
+        Route::post('/check-stock', [\App\Http\Controllers\OrderController::class, 'checkStockStatus'])->name('check-stock');
     });
     
     // Preorder routes (dành cho người dùng)
@@ -249,6 +275,8 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::get('/revenue-report', RevenueReport::class)->name('revenue-report')->middleware('checkpermission:dashboard.revenue-report');
     Route::get('/balance-chart', BalanceChart::class)->name('balance-chart')->middleware('checkpermission:dashboard.balance-chart');
 
+
+
     // Contacts
     Route::prefix('contacts')->name('contacts.')->middleware('checkpermission:contact.view')->group(function () {
         Route::get('/', [AdminContactController::class, 'index'])->name('index')->middleware('checkpermission:contact.view');
@@ -270,6 +298,7 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/trash', [AdminBookController::class, 'trash'])->name('trash')->middleware('checkpermission:book.trash');
         Route::post('/restore/{id}', [AdminBookController::class, 'restore'])->name('restore')->middleware('checkpermission:book.restore');
         Route::delete('/force-delete/{id}', [AdminBookController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:book.force-delete');
+        Route::delete('/delete-image/{imageId}', [AdminBookController::class, 'deleteImage'])->name('delete-image')->middleware('checkpermission:book.edit');
     });
 
     // Payment Methods
@@ -299,8 +328,24 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/', [WalletController::class, 'index'])->name('index')->middleware('checkpermission:wallet.view');
         Route::get('/deposit-history', [WalletController::class, 'depositHistory'])->name('depositHistory')->middleware('checkpermission:wallet.deposit-history');
         Route::get('/withdraw-history', [WalletController::class, 'withdrawHistory'])->name('withdrawHistory')->middleware('checkpermission:wallet.withdraw-history');
+        Route::get('/transaction/{id}/pdf', [WalletController::class, 'generateTransactionPdf'])->name('transaction.pdf')->middleware('checkpermission:wallet.view');
         Route::post('/approve/{id}', [WalletController::class, 'approveTransaction'])->name('approveTransaction')->middleware('checkpermission:wallet.approve');
         Route::post('/reject/{id}', [WalletController::class, 'rejectTransaction'])->name('rejectTransaction')->middleware('checkpermission:wallet.reject');
+    });
+    // chat real-time
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [AdminChatrealtimeController::class, 'index'])->name('index');
+        Route::get('/{id}', [AdminChatrealtimeController::class, 'show'])->name('show');
+        Route::post('/send', [AdminChatRealTimeController::class, 'send'])->name('send');
+        Route::post('/create-conversation', [AdminChatrealtimeController::class, 'createConversation'])->name('create-conversation');
+        Route::get('/users/active', [AdminChatrealtimeController::class, 'getActiveUsers'])->name('users.active');
+    });
+
+    // Admin Notifications
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'index'])->name('index');
+        Route::patch('/{id}/read', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'markAsRead'])->name('markAsRead');
+        Route::patch('/mark-all-read', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'markAllAsRead'])->name('markAllAsRead');
     });
 
     // Categories
@@ -369,22 +414,22 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit')->middleware('checkpermission:user.edit');
         Route::put('/{id}', [UserController::class, 'update'])->name('update')->middleware('checkpermission:user.edit');
         Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy')->middleware('checkpermission:user.delete');
-    // Route::get('/{id}/roles-permissions', [UserController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:user.manage-roles');
-    // Route::put('/{id}/roles-permissions', [UserController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:user.manage-roles');
+        // Route::get('/{id}/roles-permissions', [UserController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:user.manage-roles');
+        // Route::put('/{id}/roles-permissions', [UserController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:user.manage-roles');
     });
 
-        // Staff
-        Route::prefix('staffs')->name('staff.')->middleware('checkpermission:staff.view')->group(function () {
+    // Staff
+    Route::prefix('staffs')->name('staff.')->middleware('checkpermission:staff.view')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\StaffController::class, 'index'])->name('index')->middleware('checkpermission:staff.view');
         Route::get('/create', [\App\Http\Controllers\Admin\StaffController::class, 'create'])->name('create')->middleware('checkpermission:staff.create');
         Route::post('/', [\App\Http\Controllers\Admin\StaffController::class, 'store'])->name('store')->middleware('checkpermission:staff.create');
-            Route::get('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'show'])->name('show')->middleware('checkpermission:staff.show');
-            Route::get('/{id}/edit', [\App\Http\Controllers\Admin\StaffController::class, 'edit'])->name('edit')->middleware('checkpermission:staff.edit');
-            Route::put('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'update'])->name('update')->middleware('checkpermission:staff.edit');
-            Route::delete('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'destroy'])->name('destroy')->middleware('checkpermission:staff.delete');
-            Route::get('/{id}/roles-permissions', [\App\Http\Controllers\Admin\StaffController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:staff.manage-roles');
-            Route::put('/{id}/roles-permissions', [\App\Http\Controllers\Admin\StaffController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:staff.manage-roles');
-        });
+        Route::get('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'show'])->name('show')->middleware('checkpermission:staff.show');
+        Route::get('/{id}/edit', [\App\Http\Controllers\Admin\StaffController::class, 'edit'])->name('edit')->middleware('checkpermission:staff.edit');
+        Route::put('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'update'])->name('update')->middleware('checkpermission:staff.edit');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'destroy'])->name('destroy')->middleware('checkpermission:staff.delete');
+        Route::get('/{id}/roles-permissions', [\App\Http\Controllers\Admin\StaffController::class, 'editRolesPermissions'])->name('roles-permissions.edit')->middleware('checkpermission:staff.manage-roles');
+        Route::put('/{id}/roles-permissions', [\App\Http\Controllers\Admin\StaffController::class, 'updateRolesPermissions'])->name('roles-permissions.update')->middleware('checkpermission:staff.manage-roles');
+    });
 
     // Permissions
     Route::prefix('permissions')->name('permissions.')->middleware('checkpermission:permission.view')->group(function () {
@@ -403,16 +448,16 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::prefix('collections')->name('collections.')->middleware('checkpermission:collection.view')->group(function () {
         Route::get('/', [CollectionController::class, 'index'])->name('index')->middleware('checkpermission:collection.view');
         Route::get('/create', [CollectionController::class, 'create'])->name('create')->middleware('checkpermission:collection.create');
+        Route::get('/trash', [CollectionController::class, 'trash'])->name('trash')->middleware('checkpermission:collection.trash');
+        Route::get('/export', [CollectionController::class, 'export'])->name('export')->middleware('checkpermission:collection.export');
         Route::post('/', [CollectionController::class, 'store'])->name('store')->middleware('checkpermission:collection.create');
         Route::get('/{collection}', [CollectionController::class, 'show'])->name('show')->middleware('checkpermission:collection.show');
         Route::get('/{collection}/edit', [CollectionController::class, 'edit'])->name('edit')->middleware('checkpermission:collection.edit');
         Route::put('/{collection}', [CollectionController::class, 'update'])->name('update')->middleware('checkpermission:collection.edit');
         Route::delete('/{collection}', [CollectionController::class, 'destroy'])->name('destroy')->middleware('checkpermission:collection.delete');
         Route::post('/{collection}/restore', [CollectionController::class, 'restore'])->name('restore')->middleware('checkpermission:collection.restore');
-        Route::delete('/{collection}/force', [CollectionController::class, 'forceDelete'])->name('force-delete')->middleware('checkpermission:collection.force-delete');
+        Route::delete('/{collection}/force', [CollectionController::class, 'forceDelete'])->name('forceDelete')->middleware('checkpermission:collection.force-delete');
         Route::post('/{collection}/attach-books', [CollectionController::class, 'attachBooks'])->name('attach-books')->middleware('checkpermission:collection.attach-books');
-        Route::get('/trash', [CollectionController::class, 'trash'])->name('trash')->middleware('checkpermission:collection.trash');
-        Route::get('/export', [CollectionController::class, 'export'])->name('export')->middleware('checkpermission:collection.export');
     });
     // Vouchers
     Route::prefix('vouchers')->name('vouchers.')->middleware('checkpermission:voucher.view')->group(function () {
@@ -454,10 +499,10 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     });
 
 
-        // GHN routes
-        Route::post('/{id}/ghn/create', [OrderController::class, 'createGhnOrder'])->name('orders.ghn.create');
-        Route::post('/{id}/ghn/update-tracking', [OrderController::class, 'updateGhnTracking'])->name('orders.ghn.update-tracking');
-        Route::post('/{id}/ghn/cancel', [OrderController::class, 'cancelGhnOrder'])->name('orders.ghn.cancel');
+    // GHN routes
+    Route::post('/{id}/ghn/create', [OrderController::class, 'createGhnOrder'])->name('orders.ghn.create');
+    Route::post('/{id}/ghn/update-tracking', [OrderController::class, 'updateGhnTracking'])->name('orders.ghn.update-tracking');
+    Route::post('/{id}/ghn/cancel', [OrderController::class, 'cancelGhnOrder'])->name('orders.ghn.cancel');
     // Orders
     Route::prefix('orders')->name('orders.')->middleware('checkpermission:order.view')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index')->middleware('checkpermission:order.view');
@@ -506,27 +551,27 @@ Route::middleware('auth')->prefix('wallet')->name('wallet.')->group(function () 
 });
 
 // Ebook Download routes - Secure download with authentication
-Route::prefix('ebook')->name('ebook.')->group(function() {
+Route::prefix('ebook')->name('ebook.')->group(function () {
     // Sample downloads (public access)
     Route::get('/sample/download/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'downloadSample'])->name('sample.download');
     Route::get('/sample/view/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'viewSample'])->name('sample.view');
-    
+
     // Protected downloads (require authentication and purchase)
-    Route::middleware('auth')->group(function() {
+    Route::middleware('auth')->group(function () {
         Route::get('/download/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'download'])->name('download');
         Route::get('/view/{formatId}', [App\Http\Controllers\EbookDownloadController::class, 'view'])->name('view');
     });
 });
 
 // Ebook Refund routes
-Route::prefix('ebook-refund')->name('ebook-refund.')->middleware('auth')->group(function() {
+Route::prefix('ebook-refund')->name('ebook-refund.')->middleware('auth')->group(function () {
     Route::get('/{order}', [App\Http\Controllers\EbookRefundController::class, 'show'])->name('show');
     Route::post('/{order}', [App\Http\Controllers\EbookRefundController::class, 'store'])->name('store');
     Route::get('/preview/{order}', [App\Http\Controllers\EbookRefundController::class, 'preview'])->name('preview');
 });
 
 // AI Summary routes
-Route::prefix('ai-summary')->name('ai-summary.')->group(function () {
+Route::prefix('ai-summary')->name('ai-summary.')->middleware(['web'])->group(function () {
     // Book AI Summary routes
     Route::post('/generate/{book}', [App\Http\Controllers\AISummaryController::class, 'generateSummary'])->name('generate');
     Route::get('/get/{book}', [App\Http\Controllers\AISummaryController::class, 'getSummary'])->name('get');
@@ -543,7 +588,7 @@ Route::prefix('ai-summary')->name('ai-summary.')->group(function () {
 });
 
 // GHN API routes
-Route::prefix('api/ghn')->name('ghn.')->group(function() {
+Route::prefix('api/ghn')->name('ghn.')->group(function () {
     Route::get('/provinces', [App\Http\Controllers\GhnController::class, 'getProvinces'])->name('provinces');
     Route::post('/districts', [App\Http\Controllers\GhnController::class, 'getDistricts'])->name('districts');
     Route::post('/wards', [App\Http\Controllers\GhnController::class, 'getWards'])->name('wards');
@@ -554,7 +599,3 @@ Route::prefix('api/ghn')->name('ghn.')->group(function() {
     Route::get('/tracking/{orderCode}', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('tracking');
 });
 
-// Test page for GHN API
-Route::get('/test-ghn', function() {
-    return view('test-ghn');
-});

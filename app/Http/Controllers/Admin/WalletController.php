@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\WalletDeposited;
+use App\Events\WalletWithdrawn;
 use App\Http\Controllers\Controller;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
@@ -10,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class WalletController extends Controller
 {
@@ -176,13 +179,16 @@ class WalletController extends Controller
             $transaction->save();
             
             // Nếu là nạp thì cộng tiền, nếu là rút thì trừ wallet_lock
-            if ($transaction->type === 'Nap') {
+            if ($transaction->type === 'NAP') {
                 $transaction->wallet->increment('balance', $transaction->amount);
-            } elseif ($transaction->type === 'Rut') {
+                // dd(Auth::user());
+                event(new WalletDeposited($transaction->wallet->user, $transaction->amount ,$transaction->id, 'customer'));
+            } elseif ($transaction->type === 'RUT') {
+                // dd($transaction->wallet->user);
                 $user = $transaction->wallet->user;
                 $user->wallet_lock = max(0, ($user->wallet_lock ?? 0) - $transaction->amount);
                 $user->save();
-                
+                event(new WalletWithdrawn($user, $transaction->amount ,$transaction->id, 'customer'));
                 // Tạo và gửi hóa đơn rút tiền
                 try {
                     $walletInvoiceService = new WalletInvoiceService();
@@ -227,6 +233,15 @@ class WalletController extends Controller
         });
         
         return back()->with('success', 'Từ chối giao dịch thành công!');
+    }
+
+    public function generateTransactionPdf($id)
+    {
+        $transaction = WalletTransaction::with(['wallet.user'])->findOrFail($id);
+        
+        $pdf = PDF::loadView('admin.wallets.transaction-pdf', compact('transaction'));
+        
+        return $pdf->download('wallet-transaction-' . $transaction->id . '.pdf');
     }
 
 //    public function show(Wallet $wallet)

@@ -355,10 +355,7 @@
 
                     <!-- Book Cover -->
                     <div class="aspect-[3/4] overflow-hidden bg-gray-50">
-                      @php
-                        $imagePath = public_path('images/' . $book->cover_image);
-                      @endphp
-                      <img src="{{ file_exists($imagePath) ? asset('images/' . $book->cover_image) : asset('images/product-item1.png') }}" 
+                      <img src="{{ $book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg') }}" 
                            alt="{{ $book->title }}"
                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                     </div>
@@ -530,10 +527,7 @@
                       @endif
 
                       <div class="w-32 h-40 overflow-hidden bg-gray-50">
-                        @php
-                          $imagePath = public_path('images/' . $book->cover_image);
-                        @endphp
-                        <img src="{{ file_exists($imagePath) ? asset('images/' . $book->cover_image) : asset('images/product-item1.png') }}" 
+                        <img src="{{ $book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default.jpg') }}" 
                              alt="{{ $book->title }}"
                              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                       </div>
@@ -766,7 +760,19 @@
                       placeholder="Tìm kiếm sách, tác giả, NXB..." 
                       aria-label="Search"
                       value="{{ request('search') ?? '' }}"
-                      class="w-full px-4 py-3 pr-12 border-2 border-gray-200 focus:border-black focus:outline-none transition-colors duration-300 hover:border-gray-400">
+                      id="search-input"
+                      class="w-full px-4 py-3 pr-20 border-2 border-gray-200 focus:border-black focus:outline-none transition-colors duration-300 hover:border-gray-400">
+                    
+                    @if(request('search'))
+                      <a href="{{ route('books.index') }}" 
+                         class="absolute right-12 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors duration-300"
+                         title="Xóa tìm kiếm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                      </a>
+                    @endif
+                    
                     <button type="submit" 
                             class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-black transition-colors duration-300">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

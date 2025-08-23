@@ -5,6 +5,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderStatus;
 use App\Models\Setting;
+use App\Models\BookAttributeValue;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +14,12 @@ use Illuminate\Support\Facades\Log;
 
 class OrderClientController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     // Method index đã được thay thế bằng unified()
 
     /**
@@ -20,18 +28,25 @@ class OrderClientController extends Controller
     public function show($id)
     {
         $order = Order::with([
-            'orderItems.book.images',
+            'orderItems.book.gifts',
             'orderItems.collection',
             'orderItems.bookFormat',
-            'orderItems.attributeValues',
+            'orderItems.attributeValues.attribute',
             'orderStatus',
             'paymentStatus',
             'shippingAddress',
             'billingAddress',
+            'address', // Thêm address relationship
+            'paymentMethod', // Thêm payment method relationship
             'voucher',
-            'childOrders.orderItems.book.images',
+            'parentOrder', // Thêm parent order relationship
+            'parentOrder.voucher', // Thêm voucher của parent order
+            'childOrders.orderItems.book.gifts',
             'childOrders.orderItems.collection',
             'childOrders.orderItems.bookFormat',
+            'childOrders.orderItems.attributeValues.attribute',
+            'childOrders.orderStatus',
+            'childOrders.paymentStatus',
             'refundRequests' // Thêm để load thông tin yêu cầu hoàn tiền
         ])->where('user_id', Auth::id())
           ->findOrFail($id);
@@ -71,6 +86,9 @@ class OrderClientController extends Controller
                     Log::info("+ lại tồn kho cho book_format_id {$item->bookFormat->id}, số lượng: {$item->quantity}");
                     $item->bookFormat->increment('stock', $item->quantity);
                 }
+                
+                // ✨ THÊM MỚI: Cộng lại stock thuộc tính sản phẩm
+                $this->increaseAttributeStock($item);
             });
 
             // Hoàn tiền vào ví nếu đơn hàng đã thanh toán
@@ -145,6 +163,39 @@ class OrderClientController extends Controller
     }
 
     /**
+     * Cộng lại stock thuộc tính sản phẩm khi hủy đơn hàng
+     */
+    private function increaseAttributeStock($orderItem)
+    {
+        // Lấy thuộc tính từ OrderItemAttributeValue
+        $orderItemAttributes = $orderItem->orderItemAttributeValues;
+        
+        if ($orderItemAttributes && $orderItemAttributes->count() > 0) {
+            foreach ($orderItemAttributes as $orderItemAttribute) {
+                $bookAttributeValue = BookAttributeValue::where('book_id', $orderItem->book_id)
+                    ->where('attribute_value_id', $orderItemAttribute->attribute_value_id)
+                    ->first();
+                
+                if ($bookAttributeValue) {
+                    $bookAttributeValue->increment('stock', $orderItem->quantity);
+                    
+                    Log::info('Increased attribute stock on order cancellation:', [
+                        'book_id' => $orderItem->book_id,
+                        'attribute_value_id' => $orderItemAttribute->attribute_value_id,
+                        'quantity_increased' => $orderItem->quantity,
+                        'new_stock' => $bookAttributeValue->fresh()->stock
+                    ]);
+                } else {
+                    Log::warning('BookAttributeValue not found for stock increase:', [
+                        'book_id' => $orderItem->book_id,
+                        'attribute_value_id' => $orderItemAttribute->attribute_value_id
+                    ]);
+                }
+            }
+        }
+    }
+
+    /**
      * Hiển thị trang đơn hàng gộp với thiết kế mới
      */
     public function unified(Request $request)
@@ -152,9 +203,10 @@ class OrderClientController extends Controller
         $status = $request->query('status', 'all');
         
         $query = Order::with([
-            'orderItems.book.images',
+            'orderItems.book.gifts',
             'orderItems.collection', 
             'orderItems.bookFormat',
+            'orderItems.attributeValues.attribute',
             'orderStatus', 
             'paymentStatus',
             'paymentMethod',
@@ -162,9 +214,10 @@ class OrderClientController extends Controller
             'voucher',
             'reviews',
             'refundRequests',
-            'childOrders.orderItems.book.images',
+            'childOrders.orderItems.book.gifts',
             'childOrders.orderItems.collection',
             'childOrders.orderItems.bookFormat',
+            'childOrders.orderItems.attributeValues.attribute',
             'childOrders.orderStatus',
             'childOrders.paymentStatus',
             'childOrders.refundRequests'
@@ -178,8 +231,8 @@ class OrderClientController extends Controller
                 'pending' => 'Chờ xác nhận',
                 'confirmed' => 'Đã xác nhận', 
                 'preparing' => 'Đang chuẩn bị',
-                'shipping' => 'Đang giao hàng',
-                'delivered' => ['Đã giao', 'Đã giao hàng', 'Thành công'],
+                'shipping' => ['Đang giao hàng', 'Đã giao thành công'],
+                'delivered' => ['Đã nhận hàng', 'Thành công'],
                 'cancelled' => 'Đã hủy'
             ];
             
@@ -193,10 +246,34 @@ class OrderClientController extends Controller
         
         $orders = $query->paginate(10);
         
+        // Tính số lượng đơn hàng theo từng trạng thái
+        $baseQuery = Order::where('user_id', Auth::id())->whereNull('parent_order_id');
+        
+        $orderCounts = [
+            'pending' => (clone $baseQuery)->whereHas('orderStatus', function($q) {
+                $q->where('name', 'Chờ xác nhận');
+            })->count(),
+            'confirmed' => (clone $baseQuery)->whereHas('orderStatus', function($q) {
+                $q->where('name', 'Đã xác nhận');
+            })->count(),
+            'preparing' => (clone $baseQuery)->whereHas('orderStatus', function($q) {
+                $q->where('name', 'Đang chuẩn bị');
+            })->count(),
+            'shipping' => (clone $baseQuery)->whereHas('orderStatus', function($q) {
+                $q->whereIn('name', ['Đang giao hàng', 'Đã giao thành công']);
+            })->count(),
+            'delivered' => (clone $baseQuery)->whereHas('orderStatus', function($q) {
+                $q->whereIn('name', ['Đã nhận hàng', 'Thành công']);
+            })->count(),
+            'cancelled' => (clone $baseQuery)->whereHas('orderStatus', function($q) {
+                $q->where('name', 'Đã hủy');
+            })->count(),
+        ];
+        
         // Lấy thông tin cửa hàng
         $storeSettings = Setting::first();
         
-        return view('clients.account.orders', compact('orders', 'storeSettings'));
+        return view('clients.account.orders', compact('orders', 'storeSettings', 'orderCounts'));
     }
 
     /**
@@ -229,6 +306,9 @@ class OrderClientController extends Controller
                     Log::info("Cộng lại tồn kho cho book_format_id {$item->bookFormat->id}, số lượng: {$item->quantity}");
                     $item->bookFormat->increment('stock', $item->quantity);
                 }
+                
+                // ✨ THÊM MỚI: Cộng lại stock thuộc tính sản phẩm
+                $this->increaseAttributeStock($item);
             });
 
             // Hoàn tiền vào ví nếu đơn hàng đã thanh toán
@@ -267,6 +347,13 @@ class OrderClientController extends Controller
                 $message = 'Đã hủy đơn hàng thành công';
             }
 
+            // Tạo thông báo cho admin về việc hủy đơn hàng
+            $this->notificationService->createOrderCancellationNotificationForAdmin(
+                $order,
+                $request->cancellation_reason ?? 'Khách hàng hủy đơn hàng',
+                $order->paymentStatus->name === 'Đã Thanh Toán' ? $order->total_amount : 0
+            );
+
             DB::commit();
             return redirect()->back()->with('success', $message);
             
@@ -279,6 +366,61 @@ class OrderClientController extends Controller
             ]);
             
             return redirect()->back()->with('error', 'Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại sau.');
+        }
+    }
+
+    /**
+     * Xác nhận đã nhận hàng - chuyển trạng thái từ "Đã giao thành công" thành "Thành công"
+     */
+    public function confirmReceived($id)
+    {
+        try {
+            $order = Order::findOrFail($id);
+            
+            // Kiểm tra quyền sở hữu đơn hàng
+            if ($order->user_id !== Auth::id()) {
+                return redirect()->back()->with('error', 'Bạn không có quyền thực hiện hành động này.');
+            }
+            
+            // Kiểm tra trạng thái đơn hàng phải là "Đã giao thành công"
+            if ($order->orderStatus->name !== 'Đã giao thành công') {
+                return redirect()->back()->with('error', 'Chỉ có thể xác nhận nhận hàng cho đơn hàng đã được giao thành công.');
+            }
+            
+            DB::beginTransaction();
+            
+            // Tìm trạng thái "Thành công"
+            $successStatus = OrderStatus::where('name', 'Thành công')->first();
+            if (!$successStatus) {
+                throw new \Exception('Không tìm thấy trạng thái "Thành công"');
+            }
+            
+            // Cập nhật trạng thái đơn hàng
+            $order->update([
+                'order_status_id' => $successStatus->id,
+                'delivered_at' => now() // Cập nhật thời gian hoàn thành
+            ]);
+            
+            // Ghi log
+            Log::info('Order confirmed as received by customer', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'user_id' => Auth::id()
+            ]);
+            
+            DB::commit();
+            
+            return redirect()->back()->with('success', 'Đã xác nhận nhận hàng thành công. Cảm ơn bạn đã mua sắm tại BookBee!');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error confirming order received', [
+                'order_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()->with('error', 'Có lỗi xảy ra khi xác nhận nhận hàng. Vui lòng thử lại sau.');
         }
     }
 }

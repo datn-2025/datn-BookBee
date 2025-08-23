@@ -342,6 +342,19 @@ class ComboAISummaryManager {
         
         if (!chatMessages || !input || !message.trim()) return;
 
+        // Validate message length
+        if (message.length < 3) {
+            this.addComboChatMessage('Câu hỏi quá ngắn, vui lòng nhập ít nhất 3 ký tự.', 'error');
+            this.showNotification('Tin nhắn quá ngắn', 'error');
+            return;
+        }
+
+        if (message.length > 300) {
+            this.addComboChatMessage('Câu hỏi quá dài, vui lòng nhập tối đa 300 ký tự.', 'error');
+            this.showNotification('Tin nhắn quá dài', 'error');
+            return;
+        }
+
         // Clear the empty state if it exists
         const emptyState = chatMessages.querySelector('.text-center.py-8');
         if (emptyState) {
@@ -379,6 +392,43 @@ class ComboAISummaryManager {
             console.log('Response status:', response.status);
             console.log('Response ok:', response.ok);
             
+            // Handle different HTTP status codes
+            if (response.status === 422) {
+                const result = await response.json();
+                console.log('Validation error:', result);
+                
+                let errorMessage = 'Tin nhắn không hợp lệ.';
+                if (result.errors && result.errors.message) {
+                    errorMessage = result.errors.message[0];
+                } else if (result.message) {
+                    errorMessage = result.message;
+                }
+                
+                this.addComboChatMessage(errorMessage, 'ai');
+                this.showNotification('Validation error', 'error');
+                return;
+            }
+
+            if (response.status === 429) {
+                const result = await response.json();
+                this.addComboChatMessage(result.message || 'Bạn đã gửi quá nhiều tin nhắn. Vui lòng đợi một chút.', 'ai');
+                this.showNotification('Rate limit exceeded', 'warning');
+                return;
+            }
+
+            if (response.status === 404) {
+                const result = await response.json();
+                this.addComboChatMessage(result.message || 'Không tìm thấy combo.', 'ai');
+                this.showNotification('Combo không tồn tại', 'error');
+                return;
+            }
+
+            if (response.status === 500) {
+                this.addComboChatMessage('Lỗi hệ thống. Vui lòng thử lại sau.', 'ai');
+                this.showNotification('Lỗi server', 'error');
+                return;
+            }
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
@@ -388,16 +438,30 @@ class ComboAISummaryManager {
             
             if (result.success) {
                 this.addComboChatMessage(result.response, 'ai');
+                
+                // Show remaining messages if available
+                if (result.remaining_messages !== undefined && result.remaining_messages <= 3) {
+                    this.showNotification(`Còn ${result.remaining_messages} tin nhắn trong phút này`, 'warning');
+                }
             } else {
                 this.addComboChatMessage(result.message || 'Xin lỗi, đã có lỗi xảy ra khi xử lý tin nhắn của bạn.', 'ai');
                 this.showNotification(result.message || 'Lỗi khi gửi tin nhắn', 'error');
             }
         } catch (error) {
             console.error('Error sending combo chat message:', error);
+            console.error('Error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
             
+            // Check if it's a network error
             if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
                 this.addComboChatMessage('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.', 'ai');
                 this.showNotification('Lỗi kết nối mạng', 'error');
+            } else if (error.name === 'SyntaxError') {
+                this.addComboChatMessage('Lỗi dữ liệu từ server. Vui lòng thử lại.', 'ai');
+                this.showNotification('Lỗi dữ liệu', 'error');
             } else if (error.message.includes('HTTP')) {
                 this.addComboChatMessage(`Lỗi server: ${error.message}`, 'ai');
                 this.showNotification('Lỗi server', 'error');
@@ -430,6 +494,18 @@ class ComboAISummaryManager {
                     </div>
                     <div class="w-8 h-8 bg-black text-white flex items-center justify-center ml-3">
                         <i class="fas fa-user text-xs"></i>
+                    </div>
+                </div>
+            `;
+        } else if (type === 'error') {
+            messageDiv.innerHTML = `
+                <div class="flex items-start mb-2">
+                    <div class="w-8 h-8 bg-red-600 text-white flex items-center justify-center mr-3">
+                        <i class="fas fa-exclamation-circle text-xs"></i>
+                    </div>
+                    <div class="bg-red-50 px-4 py-2 max-w-xs border-l-4 border-red-600">
+                        <div class="text-xs uppercase tracking-wider font-bold mb-1 text-red-700">LỖI</div>
+                        <div class="text-red-800">${message}</div>
                     </div>
                 </div>
             `;

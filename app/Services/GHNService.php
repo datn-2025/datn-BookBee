@@ -35,7 +35,27 @@ class GhnService
             ])->get($this->apiUrl . '/shiip/public-api/master-data/province');
 
             if ($response->successful()) {
-                return $response->json()['data'];
+                $provinces = $response->json()['data'];
+                
+                // Lọc bỏ dữ liệu test trong sandbox
+                if (strpos($this->apiUrl, 'dev-online-gateway') !== false) {
+                    $provinces = array_filter($provinces, function($province) {
+                        $testKeywords = ['test', 'Test', 'TEST', 'demo', 'Demo', 'ngoc', 'Ngoc', 'alert', 'Alert', '02'];
+                        $name = $province['ProvinceName'];
+                        
+                        foreach ($testKeywords as $keyword) {
+                            if (strpos($name, $keyword) !== false) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    });
+                    
+                    // Reset array keys
+                    $provinces = array_values($provinces);
+                }
+                
+                return $provinces;
             }
 
             Log::error('GHN API Error - Get Provinces: ' . $response->body());

@@ -66,4 +66,26 @@ class Cart extends Model
     {
         return $this->belongsTo(Collection::class);
     }
+
+    /**
+     * Get the attribute values for this cart item
+     */
+    public function getAttributeValuesAttribute()
+    {
+        if (!$this->attribute_value_ids || empty($this->attribute_value_ids)) {
+            return collect();
+        }
+        
+        return \App\Models\AttributeValue::whereIn('id', $this->attribute_value_ids)
+            ->with('attribute')
+            ->get();
+    }
+
+    /**
+     * Check if this cart item is a combo
+     */
+    public function isCombo(): bool
+    {
+        return $this->is_combo === true;
+    }
 }

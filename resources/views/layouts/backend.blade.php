@@ -9,6 +9,13 @@
     <meta content="BookBee Admin Dashboard" name="description" />
     <meta content="Your Team" name="author" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- Pusher Configuration -->
+    <meta name="pusher-key" content="{{ env('VITE_PUSHER_APP_KEY') }}">
+    <meta name="pusher-cluster" content="{{ env('VITE_PUSHER_APP_CLUSTER') }}">
+    <meta name="user-id" content="{{ auth()->id() ?? '' }}">
+    <meta name="user-role" content="{{ auth()->user()->role->name ?? '' }}">
+    
     <title>{{ get_setting()->name_website ?? 'BookBee' }} - @yield('title')</title>
 
     <!-- App favicon -->
@@ -29,8 +36,24 @@
         href= "https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
-
+    
+     <!-- Chat CSS -->
+    <link href="{{ asset('css/chat.css') }}" rel="stylesheet" />
+     @vite(['resources/js/app.js', 'resources/css/app.css'])
+     <!-- Laravel Echo / Pusher Setup -->
+    <script>
+        // Import Echo from Vite
+        window.Pusher = window.Pusher || {};
+        
+        // Setup Echo when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.Echo !== 'undefined') {
+                console.log('Laravel Echo initialized successfully');
+            } else {
+                console.warn('Laravel Echo not available');
+            }
+        });
+    </script>
     <!-- Plugin CSS -->
     <link href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" rel="stylesheet" />
@@ -84,6 +107,16 @@
             toastr.error("{{ session('error') }}");
         @endif
     </script>
+     <!-- Chat Configuration -->
+    <script>
+        window.currentUserId = {{ auth('admin')->check() ? auth('admin')->id() : (auth()->check() ? auth()->id() : 'null') }};
+        window.Laravel = {
+            user: {
+                id: {{ auth('admin')->check() ? auth('admin')->id() : (auth()->check() ? auth()->id() : 'null') }},
+                name: '{{ auth('admin')->check() ? auth('admin')->user()->name : (auth()->check() ? auth()->user()->name : '') }}'
+            }
+        };
+    </script>
 
     <!-- Custom inline styles -->
     <style>
@@ -126,6 +159,177 @@
             border: 1px solid #c3e6cb;
             font-size: 0.875rem;
             margin-top: 6px;
+        }
+
+        /* Fix cho menu dropdown */
+        .app-menu {
+            z-index: 1050 !important;
+            display: block !important;
+            visibility: visible !important;
+            position: fixed !important;
+        }
+        
+        .navbar-nav .nav-item .collapse {
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-nav .nav-item .collapse.show {
+            display: block !important;
+            visibility: visible !important;
+        }
+        
+        .menu-dropdown {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-left: 2px solid #007bff;
+            margin-left: 15px;
+        }
+        
+        .menu-dropdown .nav-link {
+            padding-left: 25px;
+            font-size: 13px;
+        }
+
+        /* Đảm bảo sidebar không bị ẩn khi click dropdown */
+        .sidebar-hidden .app-menu {
+            display: block !important;
+        }
+        
+        .vertical-overlay {
+            pointer-events: none;
+        }
+        
+        /* Fix cho Bootstrap collapse */
+        .collapse:not(.show) {
+            display: none;
+        }
+        
+        .collapse.show {
+            display: block !important;
+        }
+
+        /* Override mọi style có thể ẩn sidebar khi click dropdown */
+        body:not(.sidebar-enable) .app-menu,
+        body.twocolumn-panel .app-menu,
+        body.vertical-sidebar-enable .app-menu {
+            display: block !important;
+            transform: translateX(0) !important;
+            left: 0 !important;
+        }
+
+        /* Ngăn chặn sidebar bị ẩn */
+        .app-menu:not(.hide-forced) {
+            display: block !important;
+            visibility: visible !important;
+        }
+
+        /* Admin Notification Dropdown Styles */
+        .admin-notification-dropdown {
+            position: relative;
+        }
+        
+        .admin-notification-dropdown #admin-notification-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 1050;
+            min-width: 320px;
+            max-width: 400px;
+            border: 1px solid rgba(0,0,0,.15);
+            border-radius: 0.375rem;
+            background-color: #fff;
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+        }
+        
+        .admin-notification-dropdown .notification-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .admin-notification-dropdown .notification-item:hover {
+            background-color: #f8fafc;
+        }
+        
+        .admin-notification-dropdown .notification-item.unread {
+            background-color: #f0f9ff;
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .admin-notification-dropdown .notification-item.read {
+            opacity: 0.7;
+        }
+        
+        .admin-notification-dropdown .notification-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+        
+        .admin-notification-dropdown .notification-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .admin-notification-dropdown .notification-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+            line-height: 1.25;
+        }
+        
+        .admin-notification-dropdown .notification-message {
+            font-size: 0.8125rem;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+            line-height: 1.4;
+        }
+        
+        .admin-notification-dropdown .notification-time {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+        
+        /* Badge positioning */
+        #admin-notification-badge {
+            top: -2px;
+            right: -2px;
+        }
+        
+        /* Dark mode support */
+        [data-layout-mode="dark"] .admin-notification-dropdown #admin-notification-dropdown {
+            background-color: #1f2937;
+            border-color: rgba(255,255,255,.15);
+        }
+        
+        [data-layout-mode="dark"] .admin-notification-dropdown .notification-item {
+            border-bottom-color: #374151;
+        }
+        
+        [data-layout-mode="dark"] .admin-notification-dropdown .notification-item:hover {
+            background-color: #374151;
+        }
+        
+        [data-layout-mode="dark"] .admin-notification-dropdown .notification-item.unread {
+            background-color: #1e3a8a;
+        }
+        
+        [data-layout-mode="dark"] .admin-notification-dropdown .notification-title {
+            color: #f9fafb;
+        }
+        
+        [data-layout-mode="dark"] .admin-notification-dropdown .notification-message {
+            color: #d1d5db;
+        }
+        
+        [data-layout-mode="dark"] .admin-notification-dropdown .notification-time {
+            color: #9ca3af;
         }
     </style>
 
@@ -209,117 +413,44 @@
                             </button>
                         </div>
 
-                        <!-- Notification Dropdown -->
-                        <div class="dropdown topbar-head-dropdown ms-1 header-item" id="notificationDropdown">
+                        <!-- Admin Notification Dropdown -->
+                        <div class="dropdown topbar-head-dropdown ms-1 header-item admin-notification-dropdown" id="adminNotificationDropdown">
                             <button type="button" class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle"
-                                id="page-header-notifications-dropdown" data-bs-toggle="dropdown"
-                                data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false"
-                                title="Thông báo">
+                                onclick="toggleAdminNotificationDropdown()" title="Thông báo Admin">
                                 <i class="bx bx-bell fs-22"></i>
-                                <span
-                                    class="position-absolute topbar-badge fs-10 translate-middle badge rounded-pill bg-danger">
-                                    3 <span class="visually-hidden">unread messages</span>
+                                <span id="admin-notification-badge"
+                                    class="position-absolute topbar-badge fs-10 translate-middle badge rounded-pill bg-danger"
+                                    style="display: none;">
+                                    0
                                 </span>
                             </button>
 
-                            <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0"
-                                aria-labelledby="page-header-notifications-dropdown">
+                            <div id="admin-notification-dropdown" class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0"
+                                style="opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 0.3s ease; pointer-events: none;">
                                 <!-- Header -->
                                 <div class="dropdown-head bg-primary bg-pattern rounded-top">
                                     <div class="p-3 d-flex justify-content-between align-items-center">
-                                        <h6 class="m-0 fs-16 fw-semibold text-white">Notifications</h6>
-                                        <span class="badge bg-light-subtle text-body fs-13">4 New</span>
+                                        <h6 class="m-0 fs-16 fw-semibold text-white">Thông báo Admin</h6>
+                                        <span id="admin-notification-count" class="badge bg-light-subtle text-body fs-13">0 thông báo mới</span>
                                     </div>
-                                    <ul class="nav nav-tabs dropdown-tabs nav-tabs-custom px-2 pt-2"
-                                        id="notificationItemsTab" role="tablist">
-                                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab"
-                                                href="#all-noti-tab" role="tab">All (4)</a></li>
-                                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab"
-                                                href="#messages-tab" role="tab">Messages</a></li>
-                                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab"
-                                                href="#alerts-tab" role="tab">Alerts</a></li>
-                                    </ul>
                                 </div>
 
-                                <!-- Tab content -->
-                                <div class="tab-content position-relative" id="notificationItemsTabContent">
-                                    <!-- All Notifications -->
-                                    <div class="tab-pane fade show active py-2 ps-2" id="all-noti-tab"
-                                        role="tabpanel">
-                                        <div data-simplebar style="max-height: 300px;" class="pe-2">
-                                            @foreach (range(1, 4) as $i)
-                                                <div
-                                                    class="text-reset notification-item d-block dropdown-item position-relative">
-                                                    <div class="d-flex">
-                                                        <div class="avatar-xs me-3 flex-shrink-0">
-                                                            <span
-                                                                class="avatar-title bg-info-subtle text-info rounded-circle fs-16">
-                                                                <i class="bx bx-badge-check"></i>
-                                                            </span>
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <a href="#!" class="stretched-link">
-                                                                <h6 class="mt-0 mb-2 lh-base">Bạn có thông báo mới số
-                                                                    {{ $i }}</h6>
-                                                            </a>
-                                                            <p class="mb-0 fs-11 fw-medium text-uppercase text-muted">
-                                                                <i class="mdi mdi-clock-outline"></i>
-                                                                {{ $i * 5 }} phút trước
-                                                            </p>
-                                                        </div>
-                                                        <div class="px-2 fs-15">
-                                                            <div class="form-check notification-check">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="notification-check{{ $i }}">
-                                                                <label class="form-check-label"
-                                                                    for="notification-check{{ $i }}"></label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                            <div class="my-3 text-center view-all">
-                                                <button type="button"
-                                                    class="btn btn-soft-success waves-effect waves-light">
-                                                    Xem tất cả <i class="ri-arrow-right-line align-middle"></i>
-                                                </button>
-                                            </div>
-                                        </div>
+                                <!-- Notification List -->
+                                <div id="admin-notification-list" style="max-height: 350px; overflow-y: auto;">
+                                    <!-- Notifications will be loaded here by JavaScript -->
+                                    <div style="padding: 2rem 1rem; text-align: center; color: #6b7280;">
+                                        <svg style="height: 3rem; width: 3rem; margin: 0 auto 1rem; opacity: 0.5;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                        </svg>
+                                        <p style="margin: 0; font-size: 0.875rem;">Chưa có thông báo nào</p>
                                     </div>
+                                </div>
 
-                                    <!-- Messages -->
-                                    <div class="tab-pane fade py-2 ps-2" id="messages-tab" role="tabpanel">
-                                        <div class="pe-2" data-simplebar style="max-height: 300px;">
-                                            <div class="text-reset notification-item d-block dropdown-item">
-                                                <div class="d-flex">
-                                                    <img src="{{ asset('assets/images/users/avatar-3.jpg') }}"
-                                                        class="me-3 rounded-circle avatar-xs" alt="user-pic">
-                                                    <div class="flex-grow-1">
-                                                        <a href="#!" class="stretched-link">
-                                                            <h6 class="mt-0 mb-1 fs-13 fw-semibold">James Lemire</h6>
-                                                        </a>
-                                                        <p class="fs-13 text-muted mb-1">We talked about a project on
-                                                            LinkedIn.</p>
-                                                        <p class="mb-0 fs-11 fw-medium text-uppercase text-muted">
-                                                            <i class="mdi mdi-clock-outline"></i> 30 min ago
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <!-- thêm các tin khác nếu cần -->
-                                        </div>
-                                    </div>
-
-                                    <!-- Alerts -->
-                                    <div class="tab-pane fade p-4" id="alerts-tab" role="tabpanel"></div>
-
-                                    <!-- Footer actions -->
-                                    <div class="notification-actions d-flex text-muted justify-content-center">
-                                        Chọn <div id="select-content" class="text-body fw-semibold px-1">0</div> mục
-                                        <button type="button" class="btn btn-link link-danger p-0 ms-3"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#removeNotificationModal">Xoá</button>
-                                    </div>
+                                <!-- Footer -->
+                                <div class="p-2 border-top d-grid">
+                                    <a href="/admin/notifications" class="btn btn-sm btn-link fw-semibold text-decoration-none text-center">
+                                        Xem tất cả thông báo
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -618,6 +749,11 @@
                                 </div>
                             </li>
                         @endpermission
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="{{ route('admin.chat.index') }}">
+                                <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Chat</span>
+                            </a>
+                        </li>
                         @permission('review.view')
                             <li class="nav-item">
                                 <a class="nav-link menu-link" href="{{ route('admin.reviews.index') }}">
@@ -659,6 +795,8 @@
         <div class="main-content">
             <div class="page-content">
                 @hasSection('content')
+                 <div id="notification" class=" alert mx-3 invisible" >
+                    </div>
                     @yield('content')
                 @else
                     {{ $slot }}
@@ -1436,6 +1574,113 @@
                     }
                 }
             });
+
+            // Fix cho sidebar dropdown menu - ngăn chặn việc ẩn toàn bộ sidebar
+            document.querySelectorAll('.navbar-nav .nav-link[data-bs-toggle="collapse"]').forEach(function(trigger) {
+                trigger.addEventListener('click', function(event) {
+                    // Không preventDefault để Bootstrap collapse vẫn hoạt động
+                    const targetSelector = this.getAttribute('data-bs-target') || this.getAttribute('href');
+                    const targetElement = document.querySelector(targetSelector);
+                    
+                    if (targetElement) {
+                        // Đảm bảo sidebar không bị ẩn
+                        const sidebar = document.querySelector('.app-menu');
+                        if (sidebar) {
+                            sidebar.style.display = 'block';
+                            sidebar.style.visibility = 'visible';
+                        }
+                        
+                        // Ngăn chặn event bubbling để không trigger hamburger menu
+                        event.stopPropagation();
+                    }
+                });
+            });
+
+            // Ngăn chặn click trên dropdown menu ẩn sidebar
+            document.querySelectorAll('.menu-dropdown').forEach(function(dropdown) {
+                dropdown.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                });
+            });
+
+            // Override hamburger menu behavior để không ảnh hưởng đến dropdown
+            const hamburgerIcon = document.querySelector('#topnav-hamburger-icon');
+            if (hamburgerIcon) {
+                hamburgerIcon.addEventListener('click', function(event) {
+                    // Chỉ toggle sidebar khi không có dropdown menu nào đang mở
+                    const openDropdowns = document.querySelectorAll('.menu-dropdown.show');
+                    if (openDropdowns.length === 0) {
+                        document.body.classList.toggle('sidebar-hidden');
+                    }
+                });
+            }
+
+            // Bootstrap collapse event handlers
+            document.querySelectorAll('.collapse').forEach(function(collapseElement) {
+                collapseElement.addEventListener('show.bs.collapse', function(event) {
+                    // Đảm bảo sidebar vẫn hiển thị khi dropdown mở
+                    const sidebar = document.querySelector('.app-menu');
+                    if (sidebar) {
+                        sidebar.style.display = 'block';
+                        sidebar.style.visibility = 'visible';
+                    }
+                    event.stopPropagation();
+                });
+
+                collapseElement.addEventListener('hide.bs.collapse', function(event) {
+                    // Đảm bảo sidebar vẫn hiển thị khi dropdown đóng
+                    const sidebar = document.querySelector('.app-menu');
+                    if (sidebar) {
+                        sidebar.style.display = 'block'; 
+                        sidebar.style.visibility = 'visible';
+                    }
+                    event.stopPropagation();
+                });
+            });
+
+            // Đảm bảo sidebar không bị ẩn khi click vào dropdown
+            document.querySelectorAll('.app-menu .nav-link').forEach(function(link) {
+                if (link.hasAttribute('data-bs-toggle')) {
+                    link.addEventListener('click', function(e) {
+                        // Ngăn chặn việc ẩn sidebar
+                        e.stopPropagation();
+                    });
+                }
+            });
+
+            // MutationObserver để theo dõi và ngăn chặn sidebar bị ẩn
+            const sidebar = document.querySelector('.app-menu');
+            if (sidebar) {
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                            const currentStyle = sidebar.getAttribute('style');
+                            if (currentStyle && (currentStyle.includes('display: none') || currentStyle.includes('visibility: hidden'))) {
+                                // Reset style để hiển thị sidebar
+                                sidebar.style.display = 'block';
+                                sidebar.style.visibility = 'visible';
+                            }
+                        }
+                    });
+                });
+
+                observer.observe(sidebar, {
+                    attributes: true,
+                    attributeFilter: ['style', 'class']
+                });
+            }
+
+            // Đảm bảo sidebar luôn hiển thị
+            setInterval(function() {
+                const sidebarElement = document.querySelector('.app-menu');
+                if (sidebarElement) {
+                    const computed = window.getComputedStyle(sidebarElement);
+                    if (computed.display === 'none' || computed.visibility === 'hidden') {
+                        sidebarElement.style.display = 'block';
+                        sidebarElement.style.visibility = 'visible';
+                    }
+                }
+            }, 100);
         });
     </script>
 
@@ -1481,6 +1726,11 @@
 
     {{-- ================== LIVEWIRE & PAGE-SPECIFIC SCRIPTS ================== --}}
     @livewireScripts
+    
+    <!-- Laravel Echo & Notifications -->
+    <script src="{{ asset('js/notifications.js') }}"></script>
+    <script src="{{ asset('js/admin-notifications.js') }}"></script>
+    
     @yield('scripts')
     @stack('scripts')
 </body>

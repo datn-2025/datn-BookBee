@@ -51,6 +51,21 @@ class Address extends Model
         return $this->hasMany(Order::class);
     }
 
+    /**
+     * Get the full address as a formatted string
+     */
+    public function getFullAddressAttribute(): string
+    {
+        $parts = array_filter([
+            $this->address_detail,
+            $this->ward,
+            $this->district,
+            $this->city
+        ]);
+        
+        return implode(', ', $parts);
+    }
+
     public $incrementing = false; 
     protected $keyType = 'string';
 }
