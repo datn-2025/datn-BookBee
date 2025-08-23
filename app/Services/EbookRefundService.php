@@ -28,8 +28,9 @@ class EbookRefundService
             // Chỉ xử lý ebook
             // dd($item);
             if ($item->bookFormat && $item->bookFormat->format_name === 'Ebook') {
+                // Đếm lượt tải theo user + book_format (không phụ thuộc order_item)
                 $downloadCount = EbookDownload::where('user_id', $user->id)
-                    ->where('order_item_id', $item->id)
+                    ->where('book_format_id', $item->book_format_id)
                     ->count();
                 
                 $itemTotal = $item->total;
@@ -37,19 +38,14 @@ class EbookRefundService
                 $refundAmount = 0;
                 $canRefund = false;
                 // dd($downloadCount);
-                // Logic hoàn tiền dựa trên số lần tải
+                // Logic hoàn tiền mới: đã tải >= 1 lần -> KHÔNG được hoàn tiền
                 if ($downloadCount === 0) {
                     // Chưa tải: 100% hoàn tiền
                     $refundPercentage = 100;
                     $refundAmount = $itemTotal;
                     $canRefund = true;
-                } elseif ($downloadCount === 1) {
-                    // Tải 1 lần: 40% hoàn tiền
-                    $refundPercentage = 40;
-                    $refundAmount = ($itemTotal * 40) / 100;
-                    $canRefund = true;
                 } else {
-                    // Tải trên 1 lần: Không được hoàn tiền
+                    // Đã tải ít nhất 1 lần: Không được hoàn tiền
                     $refundPercentage = 0;
                     $refundAmount = 0;
                     $canRefund = false;
@@ -67,8 +63,9 @@ class EbookRefundService
                     'refund_amount' => $refundAmount,
                     'download_count' => $downloadCount,
                     'can_refund' => $canRefund,
-                    'refund_status' => $downloadCount === 0 ? 'Chưa tải' : 
-                                     ($downloadCount === 1 ? 'Đã tải 1 lần' : 'Đã tải ' . $downloadCount . ' lần - Không thể hoàn tiền')
+                    'refund_status' => $downloadCount === 0
+                        ? 'Chưa tải'
+                        : ('Đã tải ' . $downloadCount . ' lần - Không thể hoàn tiền')
                 ];
             }
         }
@@ -112,8 +109,8 @@ class EbookRefundService
             $refundCalculation = $this->calculateRefundAmount($order, $user);
             // dd($refundCalculation);
             if ($refundCalculation['total_refund_amount'] <= 0) {
-                toastr()->error('Không có ebook nào đủ điều kiện hoàn tiền. Ebook đã tải quá 1 lần không thể hoàn tiền.');
-                throw new \Exception('Không có ebook nào đủ điều kiện hoàn tiền. Ebook đã tải quá 1 lần không thể hoàn tiền.');
+                toastr()->error('Không có ebook nào đủ điều kiện hoàn tiền. Ebook đã tải ít nhất 1 lần không thể hoàn tiền.');
+                throw new \Exception('Không có ebook nào đủ điều kiện hoàn tiền. Ebook đã tải ít nhất 1 lần không thể hoàn tiền.');
             }
 
             // Tạo yêu cầu hoàn tiền
@@ -227,12 +224,13 @@ class EbookRefundService
         $hasRefundableEbook = false;
         foreach ($order->orderItems as $item) {
             if ($item->bookFormat && $item->bookFormat->format_name === 'Ebook') {
+                // Đếm lượt tải theo user + book_format (không phụ thuộc order_item)
                 $downloadCount = EbookDownload::where('user_id', $user->id)
-                    ->where('order_item_id', $item->id)
+                    ->where('book_format_id', $item->book_format_id)
                     ->count();
                 
-                // Chỉ cho phép hoàn tiền nếu tải tối đa 1 lần
-                if ($downloadCount <= 1) {
+                // Chỉ cho phép hoàn tiền nếu CHƯA tải lần nào
+                if ($downloadCount === 0) {
                     $hasRefundableEbook = true;
                     break;
                 }
@@ -241,7 +239,7 @@ class EbookRefundService
         // dd($order . '1');
 
         if (!$hasRefundableEbook) {
-            return ['can_refund' => false, 'reason' => 'Tất cả ebook trong đơn hàng đã được tải quá 1 lần. Không thể hoàn tiền.'];
+            return ['can_refund' => false, 'reason' => 'Tất cả ebook trong đơn hàng đã được tải ít nhất 1 lần. Không thể hoàn tiền.'];
         }
 
         return ['can_refund' => true, 'reason' => null];

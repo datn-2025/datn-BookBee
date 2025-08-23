@@ -38,23 +38,31 @@ class EbookDownloadController extends Controller
         }
 
         // Kiểm tra user đã mua ebook này chưa
-        $order = Order::where('user_id', $user->id)
-            ->whereHas('orderItems', function ($query) use ($bookFormat) {
-                $query->where(function ($q) use ($bookFormat) {
-                    $q->where('book_format_id', $bookFormat->id)
-                      ->where('is_combo', false);
-                })->orWhere(function ($q) use ($bookFormat) {
-                    $q->where('book_id', $bookFormat->book_id)
-                      ->where('is_combo', false)
-                      ->whereHas('bookFormat', function ($subQuery) {
-                          $subQuery->where('format_name', 'Ebook');
-                      });
-                });
-            })
+        // Ưu tiên ràng buộc vào đúng đơn hàng nếu có truyền order_id từ UI
+        $requestedOrderId = $request->input('order_id');
+
+        $orderQuery = Order::where('user_id', $user->id)
             ->whereHas('paymentStatus', function ($query) {
                 $query->where('name', 'Đã Thanh Toán');
             })
-            ->first();
+            ->whereHas('orderItems', function ($query) use ($bookFormat) {
+                $query->where(function ($q) use ($bookFormat) {
+                    $q->where('book_format_id', $bookFormat->id)
+                        ->where('is_combo', false);
+                })->orWhere(function ($q) use ($bookFormat) {
+                    $q->where('book_id', $bookFormat->book_id)
+                        ->where('is_combo', false)
+                        ->whereHas('bookFormat', function ($subQuery) {
+                            $subQuery->where('format_name', 'Ebook');
+                        });
+                });
+            });
+
+        if (!empty($requestedOrderId)) {
+            $orderQuery->where('id', $requestedOrderId);
+        }
+
+        $order = $orderQuery->first();
 
         if (!$order) {
             abort(403, 'Bạn chưa mua ebook này hoặc đơn hàng chưa được thanh toán.');
@@ -75,11 +83,11 @@ class EbookDownloadController extends Controller
             return redirect()->back();
         }
 
-        // Tìm order item tương ứng với ebook này
+        // Tìm order item tương ứng với ebook này trong ĐÚNG đơn hàng
         $orderItem = $order->orderItems()
             ->where(function ($query) use ($bookFormat) {
                 $query->where('book_format_id', $bookFormat->id)
-                      ->where('is_combo', false);
+                    ->where('is_combo', false);
             })
             ->first();
             
