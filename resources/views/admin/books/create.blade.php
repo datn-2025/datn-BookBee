@@ -19,7 +19,7 @@
 
     <form action="{{ route('admin.books.store') }}" method="POST" enctype="multipart/form-data" id="bookForm">
         @csrf
-        <div class="row">
+        <div class="row ">
             <!-- Main Content -->
             <div class="col-lg-8">
                 <!-- Thông tin cơ bản -->
@@ -162,6 +162,16 @@
                                         </div>
                                         
                                         <div id="preorder_section" style="display: none;">
+                                            <style>
+                                                #preorder_section .col-md-6 {
+                                                    width: 50% !important;
+                                                    flex: 0 0 auto !important;
+                                                }
+                                                #preorder_section .row {
+                                                    display: flex !important;
+                                                    flex-wrap: wrap !important;
+                                                }
+                                            </style>
                                             <div class="row g-3">
                                                 <div class="col-md-6">
                                                     <label for="release_date" class="form-label fw-medium">Ngày ra mắt <span class="text-danger">*</span></label>
@@ -1000,7 +1010,7 @@ $(document).ready(function() {
                 
                 // Hiện lại phần giá format và ẩn thông báo
                 formatPriceSections.forEach(section => {
-                    if (section) section.style.display = 'flex';
+                    if (section) section.style.display = 'block';
                 });
                 preorderPriceNotices.forEach(notice => {
                     if (notice) notice.style.display = 'none';

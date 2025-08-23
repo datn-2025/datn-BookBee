@@ -61,21 +61,28 @@
 
                         <div class="row g-3">
                             <!-- Chọn định dạng -->
-                            @if($formats->count() > 0)
+                            @php
+                                $availableFormats = $formats->filter(function($format) {
+                                    return $format->stock > 0 || strtolower($format->format_name) === 'ebook';
+                                });
+                            @endphp
+                            @if($availableFormats->count() > 0)
                                 <div class="col-12">
                                     <label class="form-label fw-medium">Định dạng sách <span class="text-danger">*</span></label>
                                     <select name="book_format_id" class="form-select" id="formatSelect" required>
                                         <option value="">-- Chọn định dạng --</option>
                                         @foreach($formats as $format)
-                                            <option value="{{ $format->id }}" data-price="{{ $format->price }}" data-is-ebook="{{ strtolower($format->format_name) === 'ebook' ? 'true' : 'false' }}">
-                                                @php
-                                                    $displayPrice = isset($preorderDiscountPercent) && $preorderDiscountPercent > 0
-                                                        ? $book->getPreorderPrice($format)
-                                                        : $format->price;
-                                                @endphp
-                                                {{ $format->format_name }} - {{ number_format($displayPrice, 0, ',', '.') }}đ
-                                            </option>
-                                        @endforeach
+                            @if($format->stock > 0 || strtolower($format->format_name) === 'ebook')
+                                <option value="{{ $format->id }}" data-price="{{ $format->price }}" data-is-ebook="{{ strtolower($format->format_name) === 'ebook' ? 'true' : 'false' }}">
+                                    @php
+                                        $displayPrice = isset($preorderDiscountPercent) && $preorderDiscountPercent > 0
+                                            ? $book->getPreorderPrice($format)
+                                            : $format->price;
+                                    @endphp
+                                    {{ $format->format_name }} - {{ number_format($displayPrice, 0, ',', '.') }}đ
+                                </option>
+                            @endif
+                        @endforeach
                                     </select>
                                 </div>
                             @endif
@@ -87,26 +94,42 @@
                             </div>
 
                             <!-- Thuộc tính sách -->
-                            @if($attributes->count() > 0)
+                            @php
+                                $hasAnyAvailableAttributes = false;
+                                foreach($attributes->groupBy('attributeValue.attribute.name') as $attrValues) {
+                                    if($attrValues->where('stock', '>', 0)->count() > 0) {
+                                        $hasAnyAvailableAttributes = true;
+                                        break;
+                                    }
+                                }
+                            @endphp
+                            @if($hasAnyAvailableAttributes)
                                 <div class="col-12" id="attributesSection">
                                     <label class="form-label fw-medium">Thuộc tính</label>
                                     <div class="row g-2">
                                         @foreach($attributes->groupBy('attributeValue.attribute.name') as $attributeName => $attrValues)
-                                            <div class="col-md-6">
-                                                <label class="form-label small">{{ $attributeName }}</label>
-                                                <select name="selected_attributes[{{ $attributeName }}]" class="form-select form-select-sm">
-                                                    <option value="">-- Chọn {{ $attributeName }} --</option>
-                                                    @foreach($attrValues as $attrValue)
-                                                        <option value="{{ $attrValue->attributeValue->value }}" 
-                                                                data-extra-price="{{ $attrValue->extra_price }}">
-                                                            {{ $attrValue->attributeValue->value }}
-                                                            @if($attrValue->extra_price > 0)
-                                                                (+{{ number_format($attrValue->extra_price, 0, ',', '.') }}đ)
+                                            @php
+                                                $hasAvailableValues = $attrValues->where('stock', '>', 0)->count() > 0;
+                                            @endphp
+                                            @if($hasAvailableValues)
+                                                <div class="col-md-6">
+                                                    <label class="form-label small">{{ $attributeName }}</label>
+                                                    <select name="selected_attributes[{{ $attributeName }}]" class="form-select form-select-sm">
+                                                        <option value="">-- Chọn {{ $attributeName }} --</option>
+                                                        @foreach($attrValues as $attrValue)
+                                                            @if($attrValue->stock > 0)
+                                                                <option value="{{ $attrValue->attributeValue->value }}" 
+                                                                        data-extra-price="{{ $attrValue->extra_price }}">
+                                                                    {{ $attrValue->attributeValue->value }}
+                                                                    @if($attrValue->extra_price > 0)
+                                                                        (+{{ number_format($attrValue->extra_price, 0, ',', '.') }}đ)
+                                                                    @endif
+                                                                </option>
                                                             @endif
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            @endif
                                         @endforeach
                                     </div>
                                 </div>

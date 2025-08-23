@@ -223,6 +223,9 @@ class PreorderController extends Controller
             $preorder = Preorder::create($preorderData);
             // dd($preorder);
 
+            // Trừ số lượng tồn kho khi tạo preorder
+            $this->decreaseStockForPreorder($book, $bookFormat, $validated);
+
             // Xử lý thanh toán ví điện tử
             // Lưu ý: Đây là luồng "thu tiền ngay" cho preorder. Sau bước này
             // `preorder.payment_status` sẽ là 'paid'. Điều này rất quan trọng cho bước convertToOrder phía Admin.
@@ -354,9 +357,20 @@ class PreorderController extends Controller
         
         // Trừ stock của các thuộc tính được chọn
         if (!empty($validated['selected_attributes'])) {
-            foreach ($validated['selected_attributes'] as $attributeValueId) {
-                $bookAttributeValue = \App\Models\BookAttributeValue::where('book_id', $book->id)
-                    ->where('attribute_value_id', $attributeValueId)
+            foreach ($validated['selected_attributes'] as $attributeName => $attributeValue) {
+                // Bỏ qua giá trị rỗng
+                if ($attributeValue === null || $attributeValue === '') {
+                    continue;
+                }
+                
+                // Tìm BookAttributeValue tương ứng
+                $bookAttributeValue = $book->bookAttributeValues()
+                    ->whereHas('attributeValue', function($query) use ($attributeValue) {
+                        $query->where('value', $attributeValue);
+                    })
+                    ->whereHas('attributeValue.attribute', function($query) use ($attributeName) {
+                        $query->where('name', $attributeName);
+                    })
                     ->first();
                     
                 if ($bookAttributeValue && $bookAttributeValue->stock > 0) {
