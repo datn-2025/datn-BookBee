@@ -333,14 +333,7 @@ class AdminBookController extends Controller
             'preorder_count' => 'nullable|integer|min:0',
             'preorder_description' => 'nullable|string|max:1000',
             
-            // Gift validation
-            'gift_book_id' => 'nullable|uuid|exists:books,id',
-            'gift_name' => 'nullable|string|max:255',
-            'gift_description' => 'nullable|string',
-            'gift_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'quantity' => 'nullable|integer|min:0',
-            'gift_start_date' => 'nullable|date',
-            'gift_end_date' => 'nullable|date|after_or_equal:gift_start_date',
+            // Gift validation - Removed to skip gift validation
         ];
 
         // Different rules for create vs update
@@ -412,7 +405,7 @@ class AdminBookController extends Controller
             'attribute_values.*.stock.min' => 'Tồn kho không được âm',
             'publication_date.required' => 'Vui lòng nhập ngày xuất bản',
             'publication_date.date' => 'Ngày xuất bản không hợp lệ',
-            'end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu',
+            // Gift validation messages removed
         ];
     }
 
