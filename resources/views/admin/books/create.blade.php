@@ -17,7 +17,7 @@
         </a>
     </div>
 
-    <form action="{{ route('admin.books.store') }}" method="POST" enctype="multipart/form-data" id="bookForm">
+    <form action="{{ route('admin.books.store') }}" method="POST" enctype="multipart/form-data" id="bookForm" novalidate>
         @csrf
         <div class="row">
             <!-- Main Content -->
@@ -196,7 +196,7 @@
                                         <label class="form-label fw-medium">Chọn sách nhận quà tặng</label>
                                         <select class="form-select @error('gift_book_id') is-invalid @enderror" 
                                                 name="gift_book_id">
-                                            <option value="" selected>Sách hiện tại (đang tạo)</option>
+                                            <option value="" {{ old('gift_book_id') == '' ? 'selected' : '' }}>Sách hiện tại (đang tạo)</option>
                                             @foreach($books ?? [] as $book)
                                                 <option value="{{ $book->id }}" 
                                                     {{ old('gift_book_id') == $book->id ? 'selected' : '' }}>
@@ -223,8 +223,8 @@
                                     <div class="col-md-6">
                                         <label class="form-label fw-medium">Số lượng quà tặng</label>
                                         <input type="number" class="form-control @error('quantity') is-invalid @enderror" 
-                                               name="quantity" value="{{ old('quantity', 1) }}" 
-                                               placeholder="1" min="1">
+                                               name="quantity" value="{{ old('quantity') }}" 
+                                               placeholder="0" min="1" step="1">
                                         @error('quantity')
                                             <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
@@ -289,7 +289,7 @@
                     </div>
                     <div class="card-body">
                         @error('format_required')
-                            <div class="alert alert-danger mb-3">
+                            <div class="text-danger small mt-1">
                                 <i class="ri-error-warning-line me-2"></i>{{ $message }}
                             </div>
                         @enderror
