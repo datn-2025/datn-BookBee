@@ -13,23 +13,34 @@
                                     </div>
                                     <div class="flex-grow-1 overflow-hidden">
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ $selectedConversation->customer->avatar ? asset('storage/avatars' . $selectedConversation->customer->avatar) : asset('images/default-user.png') }}"
-                                                alt="Avatar" class="rounded-circle avatar-xs me-2">
+                                            @php $cav = isset($selectedConversation->customer->avatar) ? str_replace('\\','/',$selectedConversation->customer->avatar) : null; @endphp
+                                            <img src="{{ $cav
+                                                ? (\Illuminate\Support\Str::startsWith($cav, ['http://', 'https://', '/storage/'])
+                                                    ? $cav
+                                                    : (\Illuminate\Support\Str::startsWith($cav, ['public/'])
+                                                        ? asset(str_replace('public/', 'storage/', $cav))
+                                                        : (\Illuminate\Support\Str::startsWith($cav, ['storage/', 'avatars/'])
+                                                            ? asset('storage/' . ltrim($cav, '/'))
+                                                            : asset('storage/avatars/' . ltrim($cav, '/')))))
+                                                : asset('images/avtchatbot.jpg') }}"
+                                                alt="Avatar" class="rounded-circle avatar-xs me-2"
+                                                onerror="this.onerror=null; this.src='{{ asset('images/avtchatbot.jpg') }}'">
                                             <div class="flex-grow-1 overflow-hidden">
                                                 <h5 class="text-truncate mb-0 fs-16">
                                                     {{ $selectedConversation->customer->name }}
                                                 </h5>
                                                 <p class="text-truncate text-muted fs-14 mb-0">
                                                     <small>
-                                                        @if ($selectedConversation->customer->status === 'online')
-                                                            <span class="badge bg-success">Online</span>
-                                                        @elseif ($selectedConversation->customer->last_seen)
-                                                            <span class="badge bg-warning">
-                                                                Hoạt động
-                                                                {{ \Carbon\Carbon::parse($selectedConversation->customer->last_seen)->setTimezone('Asia/Ho_Chi_Minh')->diffForHumans() }}
-                                                            </span>
+                                                        @php
+                                                            $lastSeen = $selectedConversation->customer->last_seen ?? null;
+                                                            $minutes = $lastSeen ? \Carbon\Carbon::parse($lastSeen)->diffInMinutes(now()) : null;
+                                                        @endphp
+                                                        @if (!is_null($minutes) && $minutes <= 5)
+                                                            <span class="badge bg-success">Trực tuyến</span>
+                                                        @elseif (!is_null($minutes) && $minutes <= 30)
+                                                            <span class="badge bg-warning">Vừa hoạt động</span>
                                                         @else
-                                                            <span class="badge bg-secondary">Offline</span>
+                                                            <span class="badge bg-secondary">Ngoại tuyến</span>
                                                         @endif
                                                     </small>
                                                 </p>
@@ -107,7 +118,7 @@
                     </div>
                     
                     <div class="user-avatar">
-                        <img src="{{ $selectedConversation->customer->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($selectedConversation->customer->name) . '&background=random&color=fff&size=200' }}" 
+                        <img src="{{ $selectedConversation->customer->avatar ? asset('storage/avatars/' . $selectedConversation->customer->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($selectedConversation->customer->name) . '&background=random&color=fff&size=200' }}" 
                              alt="{{ $selectedConversation->customer->name }}" 
                              class="rounded-circle w-100 h-100 object-fit-cover">
                     </div>
@@ -195,8 +206,18 @@
                                     <div class="conversation-list">
                                         @if (!$isMine)
                                             <div class="chat-avatar">
-                                                <img src="{{ $message->sender->avatar ? asset('storage/avatars/' . $message->sender->avatar) : asset('images/default-user.png') }}"
-                                                    alt="User" class="avatar-xs rounded-circle">
+                                                @php $sav = ($message->sender && $message->sender->avatar) ? str_replace('\\','/',$message->sender->avatar) : null; @endphp
+                                                <img src="{{ $sav
+                                                    ? (\Illuminate\Support\Str::startsWith($sav, ['http://', 'https://', '/storage/'])
+                                                        ? $sav
+                                                        : (\Illuminate\Support\Str::startsWith($sav, ['public/'])
+                                                            ? asset(str_replace('public/', 'storage/', $sav))
+                                                            : (\Illuminate\Support\Str::startsWith($sav, ['storage/', 'avatars/'])
+                                                                ? asset('storage/' . ltrim($sav, '/'))
+                                                                : asset('storage/avatars/' . ltrim($sav, '/')))))
+                                                    : asset('images/avtchatbot.jpg') }}"
+                                                    alt="User" class="avatar-xs rounded-circle"
+                                                    onerror="this.onerror=null; this.src='{{ asset('images/avtchatbot.jpg') }}'">
                                             </div>
                                         @endif
 
@@ -237,9 +258,15 @@
                                                                     <i class="bx bx-expand-alt text-white" style="font-size: 12px;"></i>
                                                                 </div>
                                                             </div>
-                                                        @endif
-                                                        @if ($message->content)
-                                                            <p class="mb-0 ctext-content">{{ $message->content }}</p>
+                                                            @php
+                                                                $caption = trim($message->content ?? '');
+                                                                $fileBase = basename($message->file_path);
+                                                                $isFilenameLike = $caption !== '' && preg_match('/^.+\.(jpe?g|png|gif|webp|bmp|svg)$/i', $caption);
+                                                                $shouldShowCaption = $caption !== '' && strcasecmp($caption, $fileBase) !== 0 && !$isFilenameLike;
+                                                            @endphp
+                                                            @if ($shouldShowCaption)
+                                                                <p class="mb-0 ctext-content">{{ $message->content }}</p>
+                                                            @endif
                                                         @endif
                                                     @elseif($message->type === 'file')
                                                         {{-- Hiển thị file --}}
@@ -382,8 +409,18 @@
                         <div id="typing-indicator" class="typing-indicator-container px-3" style="display: none;">
                             <div class="d-flex align-items-center">
                                 <div class="avatar-xs me-2">
-                                    <img src="{{ $selectedConversation->customer->avatar ? asset('storage/avatars/' . $selectedConversation->customer->avatar) : asset('images/default-user.png') }}" 
-                                         alt="Avatar" class="rounded-circle">
+                                    @php $cav3 = isset($selectedConversation->customer->avatar) ? str_replace('\\','/',$selectedConversation->customer->avatar) : null; @endphp
+                                    <img src="{{ $cav3
+                                        ? (\Illuminate\Support\Str::startsWith($cav3, ['http://', 'https://', '/storage/'])
+                                            ? $cav3
+                                            : (\Illuminate\Support\Str::startsWith($cav3, ['public/'])
+                                                ? asset(str_replace('public/', 'storage/', $cav3))
+                                                : (\Illuminate\Support\Str::startsWith($cav3, ['storage/', 'avatars/'])
+                                                    ? asset('storage/' . ltrim($cav3, '/'))
+                                                    : asset('storage/avatars/' . ltrim($cav3, '/')))))
+                                        : asset('images/avtchatbot.jpg') }}" 
+                                         alt="Avatar" class="rounded-circle"
+                                         onerror="this.onerror=null; this.src='{{ asset('images/avtchatbot.jpg') }}'">
                                 </div>
                                 <div class="typing-animation">
                                     <span class="typing-dot"></span>
@@ -519,9 +556,20 @@
                 <div class="text-center"
                     style="position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 50%);">
                     <div class="position-relative d-inline-block">
-                        <img src="{{ $selectedConversation->customer->avatar ?? asset('images/default-user.png') }}"
-                            alt="Avatar" class="avatar-lg img-thumbnail rounded-circle mx-auto profile-img"`
-                            style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">
+                        @php $cav4 = isset($selectedConversation->customer->avatar) ? str_replace('\\','/',$selectedConversation->customer->avatar) : null; @endphp
+                        <img src="{{ $cav4
+                            ? (\Illuminate\Support\Str::startsWith($cav4, ['http://', 'https://', '/storage/'])
+                                ? $cav4
+                                : (\Illuminate\Support\Str::startsWith($cav4, ['public/'])
+                                    ? asset(str_replace('public/', 'storage/', $cav4))
+                                    : (\Illuminate\Support\Str::startsWith($cav4, ['storage/', 'avatars/'])
+                                        ? asset('storage/' . ltrim($cav4, '/'))
+                                        : asset('storage/avatars/' . ltrim($cav4, '/')))))
+                            : asset('images/avtchatbot.jpg') }}"
+                            alt="Avatar" class="avatar-lg img-thumbnail rounded-circle mx-auto profile-img"
+                            style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;"
+                            onerror="this.onerror=null; this.src='{{ asset('images/avtchatbot.jpg') }}'">
+                        <script>/* no-op */</script>
                     </div>
                 </div>
             </div>
@@ -533,31 +581,32 @@
                     <h4 class="mb-1">{{ $selectedConversation->customer->name }}</h4>
                     <p class="text-success mb-0">
                         <small>
-                            @if ($selectedConversation->customer->status === 'online')
-                                <span class="badge bg-success">Online</span>
-                            @elseif ($selectedConversation->customer->last_seen)
-                                <span class="badge bg-warning">
-                                    Hoạt động
-                                    {{ \Carbon\Carbon::parse($selectedConversation->customer->last_seen)->setTimezone('Asia/Ho_Chi_Minh')->diffForHumans() }}
-                                </span>
+                            @php
+                                $lastSeenOff = $selectedConversation->customer->last_seen ?? null;
+                                $minutesOff = $lastSeenOff ? \Carbon\Carbon::parse($lastSeenOff)->diffInMinutes(now()) : null;
+                            @endphp
+                            @if (!is_null($minutesOff) && $minutesOff <= 5)
+                                <span class="badge bg-success">Trực tuyến</span>
+                            @elseif (!is_null($minutesOff) && $minutesOff <= 30)
+                                <span class="badge bg-warning">Vừa hoạt động</span>
                             @else
-                                <span class="badge bg-secondary">Offline</span>
+                                <span class="badge bg-secondary">Ngoại tuyến</span>
                             @endif
                         </small>
                     </p>
-                        <!-- Contact Information -->
-                        <div class="px-4">
-                            <div class="card bg-light border-0 mb-3">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="flex-shrink-0">
-                                            <i class="ri-phone-line fs-4 text-primary"></i>
-                                        </div>
-                                        <div class="flex-grow-1 ms-3">
-                                            <p class="text-muted mb-0">Phone Number</p>
-                                            <h6 class="mb-0">{{ $selectedConversation->customer->phone }}</h6>
-                                        </div>
+                    <!-- Contact Information -->
+                    <div class="px-4">
+                        <div class="card bg-light border-0 mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0">
+                                        <i class="ri-phone-line fs-4 text-primary"></i>
                                     </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <p class="text-muted mb-0">Phone Number</p>
+                                        <h6 class="mb-0">{{ $selectedConversation->customer->phone }}</h6>
+                                    </div>
+                                </div>
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="flex-shrink-0">
                                             <i class="ri-mail-line fs-4 text-primary"></i>
@@ -583,9 +632,6 @@
                             <div class="d-flex gap-2 mb-4">
                                 <button class="btn btn-primary flex-grow-1">
                                     <i class="ri-message-3-line me-1"></i> Message
-                                </button>
-                                <button class="btn btn-light flex-grow-1">
-                                    <i class="ri-user-follow-line me-1"></i> Follow
                                 </button>
                             </div>
                         </div>

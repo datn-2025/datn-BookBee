@@ -56,8 +56,17 @@ class WalletController extends Controller
         // Thống kê tổng quan
         $totalWallets = Wallet::count();
         $totalTransactions = WalletTransaction::count();
-        $totalDeposits = WalletTransaction::where('type', 'deposit')->sum('amount');
-        $totalWithdrawals = abs(WalletTransaction::whereIn('type', ['withdrawal', 'payment'])->sum('amount'));
+        // Tổng nạp: chỉ tính các giao dịch nạp đã duyệt ("Nap"), hỗ trợ phân biệt hoa thường
+        $totalDeposits = WalletTransaction::whereIn('type', ['Nap', 'NAP'])
+            ->where('status', 'success')
+            ->sum('amount');
+        // Tổng chi tiêu: thanh toán đơn hàng (payment) + rút tiền (Rut) đã duyệt
+        $totalWithdrawals = WalletTransaction::where(function ($q) {
+                $q->whereIn('type', ['payment', 'PAYMENT'])
+                  ->orWhereIn('type', ['Rut', 'RUT']);
+            })
+            ->where('status', 'success')
+            ->sum('amount');
 
         // Phân trang các giao dịch
         $transactions = $query->where('status' , '!=', 'pending')->latest()->paginate(10)->appends($request->all());

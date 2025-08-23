@@ -290,7 +290,7 @@
                                                  style="cursor: pointer;">
                                                 <div class="flex-shrink-0 me-3">
                                                     <div class="position-relative">
-                                                        <img src="{{ $user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random&color=fff&size=200' }}" 
+                                                        <img src="{{ $user->avatar ? asset('storage/avatars/' . $user->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random&color=fff&size=200' }}" 
                                                              alt="{{ $user->name }}" 
                                                              class="rounded-circle avatar-xs">
                                                         @if($user->last_seen && $user->last_seen->diffInMinutes(now()) <= 5)
@@ -316,11 +316,7 @@
                                                         @endif
                                                     </p>
                                                 </div>
-                                                <div class="flex-shrink-0">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary start-conversation-btn">
-                                                        <i class="bx bx-message-square-add"></i>
-                                                    </button>
-                                                </div>
+                                                
                                             </div>
                                         @endforeach
                                     @else
@@ -422,81 +418,48 @@
                     });
                 }
 
-                // Handle start conversation button click
-                document.addEventListener('click', function(e) {
-                    if (e.target.closest('.start-conversation-btn')) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        
-                        const contactItem = e.target.closest('.contact-item');
-                        const userId = contactItem.dataset.userId;
-                        const userName = contactItem.dataset.userName;
-                        const userEmail = contactItem.dataset.userEmail;
-                        
-                        if (!userId) {
-                            console.error('User ID not found');
-                            return;
-                        }
-                        
-                        // Disable button to prevent double click
-                        const btn = e.target.closest('.start-conversation-btn');
-                        btn.disabled = true;
-                        btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i>';
-                        
-                        // Create conversation
-                        // Add timeout handling using AbortController
-                        const controller = new AbortController();
-                        const timeout = setTimeout(() => {
-                            controller.abort();
-                        }, 10000); // 10 seconds timeout
-                        fetch('{{ route("admin.chat.create-conversation") }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: JSON.stringify({
-                                customer_id: userId
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                // Show success message
-                                if (typeof toastr !== 'undefined') {
-                                    toastr.success(data.message);
-                                }
-                                
-                                // Redirect to conversation
-                                setTimeout(() => {
-                                    window.location.href = data.redirect_url;
-                                }, 500);
-                            } else {
-                                throw new Error(data.message || 'Có lỗi xảy ra');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            if (typeof toastr !== 'undefined') {
-                                toastr.error(error.message || 'Có lỗi xảy ra khi tạo cuộc trò chuyện');
-                            }
-                            
-                            // Re-enable button
-                            btn.disabled = false;
-                            btn.innerHTML = '<i class="bx bx-message-square-add"></i>';
-                        });
-                    }
-                });
-                
-                // Handle contact item click (not just the button)
+                // Start conversation when clicking a contact item
                 document.addEventListener('click', function(e) {
                     const contactItem = e.target.closest('.contact-item');
-                    if (contactItem && !e.target.closest('.start-conversation-btn')) {
-                        // Show user info tooltip or modal if needed
-                        const userName = contactItem.dataset.userName;
-                        const userEmail = contactItem.dataset.userEmail;
-                        console.log('Clicked on user:', userName, userEmail);
+                    if (!contactItem) return;
+
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const userId = contactItem.dataset.userId;
+                    if (!userId) {
+                        console.error('User ID not found');
+                        return;
                     }
+
+                    // Visual loading state on the item
+                    contactItem.style.opacity = '0.6';
+                    contactItem.style.pointerEvents = 'none';
+
+                    // Create conversation
+                    fetch('{{ route("admin.chat.create-conversation") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({ customer_id: userId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (typeof toastr !== 'undefined') toastr.success(data.message);
+                            setTimeout(() => { window.location.href = data.redirect_url; }, 300);
+                        } else {
+                            throw new Error(data.message || 'Có lỗi xảy ra');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        if (typeof toastr !== 'undefined') toastr.error(error.message || 'Có lỗi xảy ra khi tạo cuộc trò chuyện');
+                        contactItem.style.opacity = '';
+                        contactItem.style.pointerEvents = '';
+                    });
                 });
             });
         </script>
