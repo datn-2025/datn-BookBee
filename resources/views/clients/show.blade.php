@@ -1137,11 +1137,12 @@
 
                                     <!-- Comment -->
                                     <div class="relative">
-                                        <div
+                                        {{-- <div
                                             class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-400 to-black">
-                                        </div>
+                                        </div> --}}
                                         <div class="pl-6">
-                                            <p class="text-gray-800 leading-relaxed font-medium review-comment">{{ $review->comment }}
+                                            <p class="text-gray-800 leading-relaxed font-medium">
+                                                <i class="fas fa-share text-gray-500"></i>{{ $review->comment }}
                                             </p>
                                         </div>
                                     </div>
@@ -2235,7 +2236,7 @@
                                     <!-- Header Bar -->
                                     <div class="bg-amber-600 text-white px-6 py-3 flex items-center justify-between">
                                         <div class="flex items-center space-x-3">
-                                            <div class="w-8 h-8 bg-white bg-opacity-20 flex items-center justify-center">
+                                            <div class="w-8 h-8 bg-opacity-20 flex items-center justify-center">
                                                 <i class="fas fa-user text-xs"></i>
                                             </div>
                                             <div>
@@ -2278,11 +2279,12 @@
 
                                         <!-- Comment -->
                                         <div class="relative">
-                                            <div
+                                            {{-- <div
                                                 class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-black via-gray-400 to-black">
-                                            </div>
+                                            </div> --}}
                                             <div class="pl-6">
-                                                <p class="text-gray-800 leading-relaxed font-medium review-comment">
+                                                <p class="text-gray-800 leading-relaxed font-medium">
+                                                    <i class="fas fa-share text-gray-500"></i>
                                                     {{ $review->comment }}
                                                 </p>
                                             </div>
