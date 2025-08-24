@@ -1,75 +1,108 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 mx-auto">
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h4 class="mb-0">
-                        <i class="ri-check-line me-2"></i>Đặt Trước Thành Công
-                    </h4>
-                </div>
-                
-                <div class="card-body">
-                    <div class="alert alert-success mb-4">
-                        <i class="ri-check-double-line me-2"></i>
-                        <strong>Cảm ơn bạn đã đặt trước!</strong> 
-                        Chúng tôi đã nhận được yêu cầu của bạn và sẽ liên hệ sớm nhất.
-                    </div>
+<div class="container-fluid py-4" style="background-color: #f8f9fa;">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <!-- Breadcrumb (outside header) -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ route('home') }}" class="text-decoration-none">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('preorders.index') }}" class="text-decoration-none">Đơn đặt trước</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Chi tiết đơn hàng</li>
+                </ol>
+            </nav>
 
-                    <!-- Thông tin đơn đặt trước -->
-                    <div class="row mb-4">
-                        <div class="col-md-4">
-                            <img src="{{ $preorder->book->cover_image ? asset('storage/' . $preorder->book->cover_image) : asset('images/default-book.svg') }}" 
-                                 alt="{{ $preorder->book->title }}" 
-                                 class="img-fluid rounded shadow-sm">
+            <!-- Header với style màu đen như create -->
+            <div class="mb-4" style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border-radius: 0px;">
+                <div class="p-4 text-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 order-md-2 d-flex justify-content-md-end">
+                            <div class="p-0" style="background: transparent; border-radius: 0px;">
+                                <img src="{{ $preorder->book->cover_image ? asset('storage/' . $preorder->book->cover_image) : asset('images/default-book.svg') }}" 
+                                     alt="{{ $preorder->book->title }}" 
+                                     class="img-fluid shadow-sm" style="max-height: 260px; object-fit: cover; border-radius: 0px; width: 100%;">
+                            </div>
                         </div>
-                        <div class="col-md-8">
-                            <h5 class="fw-bold text-primary">{{ $preorder->book->title }}</h5>
-                            <div class="row g-2 mt-2">
-                                <div class="col-sm-6">
-                                    <small class="text-muted">Mã đơn:</small><br>
-                                    <span class="fw-medium">#{{ substr($preorder->id, 0, 8) }}</span>
+                        <div class="col-md-8 order-md-1 pe-md-4">
+                            <h1 class="h2 mb-3 text-white">
+                                <i class="ri-check-line me-2"></i>ĐẶT TRƯỚC THÀNH CÔNG
+                            </h1>
+                            <p class="text-light mb-4">CẢM ƠN BẠN ĐÃ ĐẶT TRƯỚC! CHÚNG TÔI ĐÃ NHẬN ĐƯỢC YÊU CẦU CỦA BẠN VÀ SẼ LIÊN HỆ SỚM NHẤT.</p>
+                            
+                            <div class="row text-light">
+                                <div class="col-md-6 order-md-1">
+                                    <p class="mb-2"><strong>{{ $preorder->book->title }}</strong></p>
+                                    <p class="mb-2">Mã đơn: <span class="badge bg-warning text-dark">#{{ substr($preorder->id, 0, 8) }}</span></p>
                                 </div>
-                                <div class="col-sm-6">
-                                    <small class="text-muted">Trạng thái đơn hàng:</small><br>
-                                    <span class="badge bg-warning">{{ $preorder->status_text }}</span>
+                                <div class="col-md-6 order-md-2 text-md-end">
+                                    <p class="mb-2"><strong>Trạng thái:</strong> <span class="badge bg-success">{{ $preorder->status_text }}</span></p>
+                                    <p class="mb-2"><strong>Tổng tiền:</strong> <span class="text-warning fw-bold fs-5">{{ number_format($preorder->total_amount, 0, ',', '.') }}đ</span></p>
                                 </div>
-                                <div class="col-sm-6">
-                                    <small class="text-muted">Định dạng:</small><br>
-                                    <span class="fw-medium">{{ $preorder->bookFormat ? $preorder->bookFormat->format_name : 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Cards -->
+            <div class="row g-4">
+                <!-- Chi tiết đơn hàng -->
+                <div class="col-lg-8">
+                    <div style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 0px; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);">
+                        <div class="p-4" style="background: linear-gradient(135deg, #343a40 0%, #495057 100%); border-radius: 0px;">
+                            <h5 class="text-white fw-bold mb-0">
+                                <i class="ri-file-list-3-line me-2"></i>CHI TIẾT ĐƠN HÀNG
+                            </h5>
+                        </div>
+                        <div class="p-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid #dee2e6;">
+                                        <span class="text-muted" style="font-size: 14px;">Định dạng:</span>
+                                        <span class="fw-bold">{{ $preorder->bookFormat ? $preorder->bookFormat->format_name : 'N/A' }}</span>
+                                    </div>
                                 </div>
-                                <div class="col-sm-6">
-                                    <small class="text-muted">Số lượng:</small><br>
-                                    <span class="fw-medium">{{ $preorder->quantity }}</span>
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid #dee2e6;">
+                                        <span class="text-muted" style="font-size: 14px;">Số lượng:</span>
+                                        <span class="fw-bold">{{ $preorder->quantity }}</span>
+                                    </div>
                                 </div>
-                                <div class="col-sm-6">
-                                    <small class="text-muted">Ngày ra mắt:</small><br>
-                                    <span class="fw-medium text-info">{{ $preorder->expected_delivery_date->format('d/m/Y') }}</span>
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid #dee2e6;">
+                                        <span class="text-muted" style="font-size: 14px;">Ngày ra mắt:</span>
+                                        <span class="fw-bold text-info">{{ $preorder->expected_delivery_date->format('d/m/Y') }}</span>
+                                    </div>
                                 </div>
-                                <div class="col-sm-6">
-                                    <small class="text-muted">Phương thức thanh toán:</small><br>
-                                    <span class="fw-medium">{{ $preorder->paymentMethod ? $preorder->paymentMethod->name : 'Chưa xác định' }}</span>
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid #dee2e6;">
+                                        <span class="text-muted" style="font-size: 14px;">Phương thức thanh toán:</span>
+                                        <span class="fw-bold">{{ $preorder->paymentMethod ? $preorder->paymentMethod->name : 'Chưa xác định' }}</span>
+                                    </div>
                                 </div>
-                                <div class="col-sm-6">
-                                    <small class="text-muted">Trạng thái thanh toán:</small><br>
-                                    @php
-                                        $paymentStatusClass = match($preorder->payment_status) {
-                                            'paid' => 'bg-success',
-                                            'failed' => 'bg-danger',
-                                            default => 'bg-warning'
-                                        };
-                                        $paymentStatusText = match($preorder->payment_status) {
-                                            'paid' => 'Đã thanh toán',
-                                            'failed' => 'Thanh toán thất bại',
-                                            default => 'Chờ thanh toán'
-                                        };
-                                    @endphp
-                                    <span class="badge {{ $paymentStatusClass }}">{{ $paymentStatusText }}</span>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid #dee2e6;">
+                                        <span class="text-muted" style="font-size: 14px;">Trạng thái thanh toán:</span>
+                                        @php
+                                            $paymentStatusClass = match($preorder->payment_status) {
+                                                'paid' => 'bg-success',
+                                                'failed' => 'bg-danger',
+                                                default => 'bg-warning'
+                                            };
+                                            $paymentStatusText = match($preorder->payment_status) {
+                                                'paid' => 'Đã thanh toán',
+                                                'failed' => 'Thanh toán thất bại',
+                                                default => 'Chờ thanh toán'
+                                            };
+                                        @endphp
+                                        <span class="badge {{ $paymentStatusClass }}" style="border-radius: 0px;">{{ $paymentStatusText }}</span>
+                                    </div>
                                 </div>
-                                <div class="col-sm-6">
-                                    <small class="text-muted">Chi tiết giá:</small><br>
+                                
+                                <!-- Chi tiết giá -->
+                                <div class="col-12">
+                                    <h6 class="fw-bold mt-3 mb-3">Chi tiết giá:</h6>
                                     @php
                                         // Tính lại phí thuộc tính từ selected_attributes để khớp với lúc lưu
                                         $attributeExtra = 0;
@@ -91,29 +124,36 @@
                                         // Suy ra giá cơ bản từ đơn giá đã lưu
                                         $basePrice = max(0, (float)$preorder->unit_price - $attributeExtra);
                                     @endphp
-                                    <div class="mb-1">
-                                        <small>Giá cơ bản: <span class="fw-medium">{{ number_format($basePrice, 0, ',', '.') }}đ</span></small>
+                                    <div class="d-flex justify-content-between py-2" style="border-bottom: 1px solid #eee;">
+                                        <span class="text-muted">Giá cơ bản:</span>
+                                        <span class="fw-bold">{{ number_format($basePrice, 0, ',', '.') }}đ</span>
                                     </div>
                                     @if($attributeExtra > 0)
-                                        <div class="mb-1">
-                                            <small>Phí thuộc tính: <span class="fw-medium text-info">+{{ number_format($attributeExtra, 0, ',', '.') }}đ</span></small>
+                                        <div class="d-flex justify-content-between py-2" style="border-bottom: 1px solid #eee;">
+                                            <span class="text-muted">Phí thuộc tính:</span>
+                                            <span class="fw-bold text-info">+{{ number_format($attributeExtra, 0, ',', '.') }}đ</span>
                                         </div>
                                     @endif
-                                    <div class="mb-1">
-                                        <small>Đơn giá: <span class="fw-medium">{{ number_format($preorder->unit_price, 0, ',', '.') }}đ</span></small>
+                                    <div class="d-flex justify-content-between py-2" style="border-bottom: 1px solid #eee;">
+                                        <span class="text-muted">Đơn giá:</span>
+                                        <span class="fw-bold">{{ number_format($preorder->unit_price, 0, ',', '.') }}đ</span>
                                     </div>
-                                    <div class="mb-1">
-                                        <small>Số lượng: <span class="fw-medium">{{ $preorder->quantity }}</span></small>
+                                    <div class="d-flex justify-content-between py-2" style="border-bottom: 1px solid #eee;">
+                                        <span class="text-muted">Số lượng:</span>
+                                        <span class="fw-bold">{{ $preorder->quantity }}</span>
                                     </div>
                                     @if(!$preorder->isEbook() && $preorder->shipping_fee > 0)
-                                        <div class="mb-1">
-                                            <small>Phí vận chuyển: <span class="fw-medium text-info">{{ number_format($preorder->shipping_fee, 0, ',', '.') }}đ</span></small>
+                                        <div class="d-flex justify-content-between py-2" style="border-bottom: 1px solid #eee;">
+                                            <span class="text-muted">Phí vận chuyển:</span>
+                                            <span class="fw-bold text-info">{{ number_format($preorder->shipping_fee, 0, ',', '.') }}đ</span>
                                         </div>
                                     @endif
-                                    <hr class="my-2">
-                                    <span class="fw-bold text-success fs-5">Tổng: {{ number_format($preorder->total_amount, 0, ',', '.') }}đ</span>
+                                    <div class="d-flex justify-content-between py-3 mt-3" style="background: #f8f9fa; margin: 0 -1rem; padding: 1rem !important;">
+                                        <span class="fw-bold fs-5">Tổng cộng:</span>
+                                        <span class="fw-bold text-success fs-4">{{ number_format($preorder->total_amount, 0, ',', '.') }}đ</span>
+                                    </div>
                                     @if($preorder->isEbook() || $preorder->shipping_fee == 0)
-                                        <div class="mt-1">
+                                        <div class="mt-2 text-center">
                                             <small class="text-success"><i class="ri-truck-line me-1"></i>Miễn phí vận chuyển</small>
                                         </div>
                                     @endif
@@ -121,40 +161,39 @@
                             </div>
                         </div>
                     </div>
+                </div>
 
+                <!-- Sidebar thông tin -->
+                <div class="col-lg-4">
                     <!-- Thông tin khách hàng -->
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h6 class="mb-0"><i class="ri-user-line me-1"></i>Thông tin khách hàng</h6>
+                    <div class="mb-4" style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 0px; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);">
+                        <div class="p-3" style="background: linear-gradient(135deg, #343a40 0%, #495057 100%); border-radius: 0px;">
+                            <h6 class="text-white fw-bold mb-0"><i class="ri-user-line me-2"></i>THÔNG TIN KHÁCH HÀNG</h6>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <small class="text-muted">Họ và tên:</small><br>
-                                    <span class="fw-medium">{{ $preorder->customer_name }}</span>
-                                </div>
-                                <div class="col-md-4">
-                                    <small class="text-muted">Email:</small><br>
-                                    <span class="fw-medium">{{ $preorder->email }}</span>
-                                </div>
-                                <div class="col-md-4">
-                                    <small class="text-muted">Điện thoại:</small><br>
-                                    <span class="fw-medium">{{ $preorder->phone }}</span>
-                                </div>
+                        <div class="p-3">
+                            <div class="mb-3">
+                                <small class="text-muted d-block">Họ và tên:</small>
+                                <span class="fw-bold">{{ $preorder->customer_name }}</span>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted d-block">Email:</small>
+                                <span class="fw-bold">{{ $preorder->email }}</span>
+                            </div>
+                            <div class="mb-0">
+                                <small class="text-muted d-block">Điện thoại:</small>
+                                <span class="fw-bold">{{ $preorder->phone }}</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Địa chỉ giao hàng (nếu không phải ebook) -->
+                    <!-- Địa chỉ giao hàng -->
                     @if(!$preorder->isEbook())
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h6 class="mb-0"><i class="ri-map-pin-line me-1"></i>Địa chỉ giao hàng</h6>
+                        <div class="mb-4" style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 0px; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);">
+                            <div class="p-3" style="background: linear-gradient(135deg, #343a40 0%, #495057 100%); border-radius: 0px;">
+                                <h6 class="text-white fw-bold mb-0"><i class="ri-map-pin-line me-2"></i>ĐỊA CHỈ GIAO HÀNG</h6>
                             </div>
-                            <div class="card-body">
-                                <address class="mb-0">
-                                    {{ $preorder->full_address }}
-                                </address>
+                            <div class="p-3">
+                                <address class="mb-0">{{ $preorder->full_address }}</address>
                             </div>
                         </div>
                     @endif
@@ -169,65 +208,65 @@
                         }
                     @endphp
                     @if(!empty($selectedAttrs))
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h6 class="mb-0"><i class="ri-price-tag-line me-1"></i>Thuộc tính đã chọn</h6>
+                        <div class="mb-4" style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 0px; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);">
+                            <div class="p-3" style="background: linear-gradient(135deg, #343a40 0%, #495057 100%); border-radius: 0px;">
+                                <h6 class="text-white fw-bold mb-0"><i class="ri-price-tag-line me-2"></i>THUỘC TÍNH ĐÃ CHỌN</h6>
                             </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    @foreach($selectedAttrs as $attr => $value)
-                                        <div class="col-md-6 mb-2">
-                                            <small class="text-muted">{{ $attr }}:</small><br>
-                                            <span class="fw-medium">{{ $value }}</span>
-                                        </div>
-                                    @endforeach
-                                </div>
+                            <div class="p-3">
+                                @foreach($selectedAttrs as $attr => $value)
+                                    <div class="mb-2">
+                                        <small class="text-muted d-block">{{ $attr }}:</small>
+                                        <span class="fw-bold">{{ $value }}</span>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
                     @endif
 
                     <!-- Ghi chú -->
                     @if($preorder->notes)
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h6 class="mb-0"><i class="ri-chat-3-line me-1"></i>Ghi chú của khách hàng</h6>
+                        <div class="mb-4" style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 0px; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);">
+                            <div class="p-3" style="background: linear-gradient(135deg, #343a40 0%, #495057 100%); border-radius: 0px;">
+                                <h6 class="text-white fw-bold mb-0"><i class="ri-chat-3-line me-2"></i>GHI CHÚ</h6>
                             </div>
-                            <div class="card-body">
+                            <div class="p-3">
                                 {{ $preorder->notes }}
                             </div>
                         </div>
                     @endif
 
-                    <!-- Thông tin bổ sung -->
-                    <div class="alert alert-info">
-                        <h6 class="alert-heading"><i class="ri-information-line me-1"></i>Lưu ý quan trọng:</h6>
-                        <ul class="mb-0">
-                            <li>Bạn sẽ nhận được email xác nhận đơn đặt trước.</li>
-                            <li>Chúng tôi sẽ liên hệ với bạn khi sách được phát hành.</li>
-                            @if($preorder->isEbook())
-                                <li>Link tải sách sẽ được gửi qua email khi sách ra mắt.</li>
-                            @else
-                                <li>Sách sẽ được giao đến địa chỉ bạn đã cung cấp.</li>
-                            @endif
-                            <li>Bạn có thể hủy đơn hàng trước khi sách được phát hành.</li>
-                        </ul>
+                    <!-- Lưu ý quan trọng -->
+                    <div class="mb-4" style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 0px;">
+                        <div class="p-3">
+                            <h6 class="fw-bold mb-3"><i class="ri-information-line me-2 text-primary"></i>Lưu ý quan trọng</h6>
+                            <ul class="mb-0 small">
+                                <li class="mb-1">Bạn sẽ nhận được email xác nhận đơn đặt trước.</li>
+                                <li class="mb-1">Chúng tôi sẽ liên hệ với bạn khi sách được phát hành.</li>
+                                @if($preorder->isEbook())
+                                    <li class="mb-1">Link tải sách sẽ được gửi qua email khi sách ra mắt.</li>
+                                @else
+                                    <li class="mb-1">Sách sẽ được giao đến địa chỉ bạn đã cung cấp.</li>
+                                @endif
+                                <li>Bạn có thể hủy đơn hàng trước khi sách được phát hành.</li>
+                            </ul>
+                        </div>
                     </div>
 
                     <!-- Actions -->
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                        <a href="{{ route('preorders.index') }}" class="btn btn-outline-primary me-md-2">
-                            <i class="ri-list-check me-1"></i>Xem đơn đặt trước của tôi
+                    <div class="d-grid gap-2">
+                        <a href="{{ route('preorders.index') }}" class="btn btn-outline-dark" style="border-radius: 0px; font-weight: 600;">
+                            <i class="ri-list-check me-2"></i>XEM ĐƠN ĐẶT TRƯỚC CỦA TÔI
                         </a>
-                        <a href="{{ route('home') }}" class="btn btn-primary">
-                            <i class="ri-home-line me-1"></i>Về trang chủ
+                        <a href="{{ route('home') }}" class="btn btn-dark" style="border-radius: 0px; font-weight: 600;">
+                            <i class="ri-home-line me-2"></i>VỀ TRANG CHỦ
                         </a>
                         @if($preorder->canBeCancelled())
-                            <form action="{{ route('preorders.cancel', $preorder) }}" method="POST" class="d-inline">
+                            <form action="{{ route('preorders.cancel', $preorder) }}" method="POST">
                                 @csrf
                                 @method('PATCH')
-                                <button type="submit" class="btn btn-outline-danger" 
+                                <button type="submit" class="btn btn-outline-danger w-100" style="border-radius: 0px; font-weight: 600;"
                                         onclick="return confirm('Bạn có chắc chắn muốn hủy đơn đặt trước này?')">
-                                    <i class="ri-close-line me-1"></i>Hủy đơn
+                                    <i class="ri-close-line me-2"></i>HỦY ĐƠN
                                 </button>
                             </form>
                         @endif
