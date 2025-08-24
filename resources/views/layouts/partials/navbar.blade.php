@@ -1,16 +1,16 @@
-<nav style="background-color: white; border-bottom: 1px solid #f3f4f6; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; transition: all 0.3s ease-in-out;" id="main-navbar">
+<nav style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%); border-bottom: 2px solid #f59e0b; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; transition: all 0.3s ease-in-out; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);" id="main-navbar">
     <div class="nav-container" style="max-width: 1280px; margin: 0 auto; padding: 0 1rem;">
         <div class="nav-content" style="display: flex; justify-content: space-between; align-items: center; height: 4rem;">
             {{-- Logo --}}
             <div class="nav-logo" style="flex-shrink: 0;">
                 <a href="{{ route('home') }}" style="display: block; text-decoration: none;">
-                    <h2 style="font-size: 1.5rem; font-weight: 900; color: black; text-transform: uppercase; letter-spacing: -0.025em; margin: 0;">BOOK<span style="color: black;">BEE</span></h2>
+                    <h2 style="font-size: 1.5rem; font-weight: 900; color: #f59e0b; text-transform: uppercase; letter-spacing: -0.025em; margin: 0; text-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);">BOOK<span style="color: #1f2937;">BEE</span></h2>
                 </a>
             </div>
 
             {{-- Mobile menu button --}}
             <div style="display: block;" class="md-hidden">
-                <button type="button" id="mobile-menu-btn" class="mobile-menu-btn" style="display: block; padding: 0.5rem; color: #6b7280; background: none; border: none; cursor: pointer;">
+                <button type="button" id="mobile-menu-btn" class="mobile-menu-btn" style="display: block; padding: 0.5rem; color: #f59e0b; background: none; border: none; cursor: pointer; transition: color 0.2s ease;" onmouseover="this.style.color='#d97706'" onmouseout="this.style.color='#f59e0b'">
                     <svg style="height: 1.5rem; width: 1.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>
@@ -23,18 +23,18 @@
                 <nav class="nav-menu" style="display: flex; gap: 2rem;">
                     <a href="{{ route('home') }}" 
                        class="nav-link" 
-                       style="color: {{ request()->routeIs('home') ? 'black' : '#374151' }}; font-weight: {{ request()->routeIs('home') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease;">
+                       style="color: {{ request()->routeIs('home') ? '#f59e0b' : '#374151' }}; font-weight: {{ request()->routeIs('home') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease;">
                         Trang chủ
                     </a>
                     <a href="{{ route('about') }}" 
                        class="nav-link"
-                       style="color: {{ request()->routeIs('about') ? 'black' : '#374151' }}; font-weight: {{ request()->routeIs('about') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease;">
+                       style="color: {{ request()->routeIs('about') ? '#f59e0b' : '#374151' }}; font-weight: {{ request()->routeIs('about') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease;">
                         Giới thiệu
                     </a>
                     <!-- Dropdown Cửa hàng -->
                     <div class="shop-dropdown">
                         <button class="nav-link" 
-                                style="color: {{ request()->routeIs('books.*') || request()->routeIs('combos.*') ? 'black' : '#374151' }}; font-weight: {{ request()->routeIs('books.*') || request()->routeIs('combos.*') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease; display: flex; align-items: center; gap: 0.25rem; background: none; border: none; cursor: pointer;"
+                                style="color: {{ request()->routeIs('books.*') || request()->routeIs('combos.*') ? '#f59e0b' : '#374151' }}; font-weight: {{ request()->routeIs('books.*') || request()->routeIs('combos.*') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease; display: flex; align-items: center; gap: 0.25rem; background: none; border: none; cursor: pointer;"
                                 aria-expanded="false"
                                 aria-haspopup="true">
                             Cửa hàng
@@ -44,17 +44,17 @@
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div class="dropdown-menu" style="position: absolute; left: 0; top: 100%; margin-top: 0.5rem; width: 12rem; background-color: white; border: 2px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 0.2s ease; pointer-events: none; z-index: 50;">
+                        <div class="dropdown-menu" style="position: absolute; left: 0; top: 100%; margin-top: 0.5rem; width: 12rem; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 2px solid #f59e0b; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 0.2s ease; pointer-events: none; z-index: 50; border-radius: 8px;">
                             <!-- Books with submenu -->
                             <div class="books-dropdown-item" style="position: relative;">
                                 <a href="{{ route('books.index') }}" 
                                    class="books-main-link"
-                                   style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: background-color 0.2s ease; {{ request()->routeIs('books.*') ? 'background-color: #f9fafb; color: black; font-weight: 600;' : '' }}"
-                                   onmouseover="this.style.backgroundColor='#f9fafb'; this.style.color='black'"
-                                   onmouseout="this.style.backgroundColor='{{ request()->routeIs('books.*') ? '#f9fafb' : 'white' }}'; this.style.color='{{ request()->routeIs('books.*') ? 'black' : '#374151' }}'">
+                                   style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: all 0.2s ease; {{ request()->routeIs('books.*') ? 'background: linear-gradient(135deg, #f59e0b, #d97706); color: white; font-weight: 600;' : '' }}"
+                                   onmouseover="if(!this.style.background.includes('gradient')) { this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='white'; }"
+                                   onmouseout="if(!'{{ request()->routeIs('books.*') }}') { this.style.background='transparent'; this.style.color='#374151'; }">
                                     <div style="display: flex; align-items: center; gap: 0.75rem; justify-content: space-between;">
                                         <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                            <div style="width: 0.25rem; height: 1rem; background-color: black;"></div>
+                                            <div style="width: 0.25rem; height: 1rem; background-color: #f59e0b;"></div>
                                             <span style="text-transform: uppercase; letter-spacing: 0.05em;">Sách</span>
                                         </div>
                                         <svg style="width: 0.75rem; height: 0.75rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,13 +64,13 @@
                                 </a>
                                 
                                 <!-- Books Categories Submenu -->
-                                <div class="books-submenu" style="position: absolute; left: 100%; top: 0; width: 14rem; background-color: white; border: 2px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; visibility: hidden; transform: translateX(-8px); transition: all 0.2s ease; pointer-events: none; z-index: 60; max-height: 20rem; overflow-y: auto;">
+                                <div class="books-submenu" style="position: absolute; left: 100%; top: 0; width: 14rem; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 2px solid #f59e0b; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); opacity: 0; visibility: hidden; transform: translateX(-8px); transition: all 0.2s ease; pointer-events: none; z-index: 60; max-height: 20rem; overflow-y: auto; border-radius: 8px;">
                                     @if(isset($navCategories) && $navCategories->count() > 0)
                                         @foreach($navCategories as $navCategory)
                                         <a href="{{ route('books.index', $navCategory->slug) }}" 
-                                           style="display: block; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 400; color: #6b7280; text-decoration: none; transition: background-color 0.2s ease;"
-                                           onmouseover="this.style.backgroundColor='#f9fafb'; this.style.color='black'"
-                                           onmouseout="this.style.backgroundColor='white'; this.style.color='#6b7280'">
+                                           style="display: block; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 400; color: #6b7280; text-decoration: none; transition: all 0.2s ease;"
+                                           onmouseover="this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='white'"
+                                           onmouseout="this.style.background='transparent'; this.style.color='#6b7280'">
                                             <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: space-between;">
                                                 <span>{{ $navCategory->name }}</span>
                                                 <span style="font-size: 0.7rem; color: #9ca3af;">({{ $navCategory->books_count }})</span>
@@ -86,11 +86,11 @@
                             </div>
                             
                             <a href="{{ route('combos.index') }}" 
-                               style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: background-color 0.2s ease; {{ request()->routeIs('combos.*') ? 'background-color: #f9fafb; color: black; font-weight: 600;' : '' }}"
-                               onmouseover="this.style.backgroundColor='#f9fafb'; this.style.color='black'"
-                               onmouseout="this.style.backgroundColor='{{ request()->routeIs('combos.*') ? '#f9fafb' : 'white' }}'; this.style.color='{{ request()->routeIs('combos.*') ? 'black' : '#374151' }}'">
+                               style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: all 0.2s ease; {{ request()->routeIs('combos.*') ? 'background: linear-gradient(135deg, #f59e0b, #d97706); color: white; font-weight: 600;' : '' }}"
+                               onmouseover="if(!this.style.background.includes('gradient')) { this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='white'; }"
+                               onmouseout="if(!'{{ request()->routeIs('combos.*') }}') { this.style.background='transparent'; this.style.color='#374151'; }">
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <div style="width: 0.25rem; height: 1rem; background-color: black;"></div>
+                                    <div style="width: 0.25rem; height: 1rem; background-color: #f59e0b;"></div>
                                     <span style="text-transform: uppercase; letter-spacing: 0.05em;">Combo sách</span>
                                 </div>
                             </a>
@@ -98,12 +98,12 @@
                     </div>
                     <a href="{{ route('news.index') }}" 
                        class="nav-link"
-                       style="color: {{ request()->routeIs('news.*') ? 'black' : '#374151' }}; font-weight: {{ request()->routeIs('news.*') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease;">
+                       style="color: {{ request()->routeIs('news.*') ? '#f59e0b' : '#374151' }}; font-weight: {{ request()->routeIs('news.*') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease;">
                         Tin tức
                     </a>
                     <a href="{{ route('contact.form') }}" 
                        class="nav-link"
-                       style="color: {{ request()->routeIs('contact.*') ? 'black' : '#374151' }}; font-weight: {{ request()->routeIs('contact.*') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease;">
+                       style="color: {{ request()->routeIs('contact.*') ? '#f59e0b' : '#374151' }}; font-weight: {{ request()->routeIs('contact.*') ? '600' : '500' }}; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: color 0.2s ease;">
                         Liên hệ
                     </a>
                 </nav>
@@ -116,13 +116,13 @@
                                name="search"
                                placeholder="Tìm kiếm..."
                                value="{{ request('search') }}"
-                               style="width: 16rem; padding-left: 1rem; padding-right: 2.5rem; padding-top: 0.5rem; padding-bottom: 0.5rem; font-size: 0.875rem; border: 1px solid #d1d5db; border-radius: 0; outline: none; transition: border-color 0.2s ease;"
+                               style="width: 16rem; padding-left: 1rem; padding-right: 2.5rem; padding-top: 0.5rem; padding-bottom: 0.5rem; font-size: 0.875rem; border: 2px solid #f59e0b; border-radius: 25px; outline: none; transition: all 0.2s ease; background: rgba(248, 250, 252, 0.8); color: #374151; backdrop-filter: blur(10px);"
                                autocomplete="off"
-                               onfocus="this.style.borderColor='black'"
-                               onblur="this.style.borderColor='#d1d5db'">
-                        <button type="submit" style="position: absolute; top: 0; right: 0; bottom: 0; display: flex; align-items: center; padding-right: 0.75rem; color: #6b7280; background: none; border: none; cursor: pointer; transition: color 0.2s ease;"
-                                onmouseover="this.style.color='black'"
-                                onmouseout="this.style.color='#6b7280'">
+                               onfocus="this.style.borderColor='#d97706'; this.style.background='rgba(255, 255, 255, 0.9)';"
+                               onblur="this.style.borderColor='#f59e0b'; this.style.background='rgba(248, 250, 252, 0.8)';">
+                        <button type="submit" style="position: absolute; top: 0; right: 0; bottom: 0; display: flex; align-items: center; padding-right: 0.75rem; color: #f59e0b; background: none; border: none; cursor: pointer; transition: color 0.2s ease;"
+                                onmouseover="this.style.color='#d97706'"
+                                onmouseout="this.style.color='#f59e0b'">
                             <svg style="height: 1rem; width: 1rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
@@ -131,9 +131,9 @@
 
                     {{-- User Account --}}
                     <div class="user-dropdown" style="position: relative;">
-                        <button class="user-btn" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; color: #6b7280; background: none; border: none; cursor: pointer; transition: color 0.2s ease;"
-                                onmouseover="this.style.color='black'"
-                                onmouseout="this.style.color='#6b7280'">
+                        <button class="user-btn" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; color: #374151; background: none; border: none; cursor: pointer; transition: color 0.2s ease;"
+                                onmouseover="this.style.color='#f59e0b'"
+                                onmouseout="this.style.color='#374151'">
                             <svg style="height: 1.25rem; width: 1.25rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
@@ -144,36 +144,36 @@
                         
                         <div class="dropdown-menu user-dropdown-menu">
                             @auth
-                                <a href="{{ route('account.profile') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: background-color 0.2s ease;"
-                                   onmouseover="this.style.backgroundColor='#f9fafb'"
-                                   onmouseout="this.style.backgroundColor='white'">
+                                <a href="{{ route('account.profile') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: all 0.2s ease;"
+                                   onmouseover="this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='white'"
+                                   onmouseout="this.style.background='transparent'; this.style.color='#374151'">
                                     <svg style="display: inline; height: 1rem; width: 1rem; margin-right: 0.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                     </svg>
                                     Tài khoản
                                 </a>
-                                <a href="{{ route('orders.index') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: background-color 0.2s ease;"
-                                   onmouseover="this.style.backgroundColor='#f9fafb'"
-                                   onmouseout="this.style.backgroundColor='white'">
+                                <a href="{{ route('orders.index') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: all 0.2s ease;"
+                                   onmouseover="this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='white'"
+                                   onmouseout="this.style.background='transparent'; this.style.color='#374151'">
                                     <svg style="display: inline; height: 1rem; width: 1rem; margin-right: 0.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
                                     </svg>
                                     Đơn hàng
                                 </a>
-                                <a href="{{ route('wallet.index') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: background-color 0.2s ease;"
-                                   onmouseover="this.style.backgroundColor='#f9fafb'"
-                                   onmouseout="this.style.backgroundColor='white'">
+                                <a href="{{ route('wallet.index') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: all 0.2s ease;"
+                                   onmouseover="this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='white'"
+                                   onmouseout="this.style.background='transparent'; this.style.color='#374151'">
                                     <svg style="display: inline; height: 1rem; width: 1rem; margin-right: 0.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                                     </svg>
                                     Ví của tôi
                                 </a>
-                                <div style="border-top: 1px solid #f3f4f6;">
+                                <div style="border-top: 1px solid #e5e7eb;">
                                     <form method="POST" action="{{ route('logout') }}">
                                         @csrf
-                                        <button type="submit" style="width: 100%; text-align: left; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; background: none; border: none; cursor: pointer; transition: background-color 0.2s ease;"
-                                                onmouseover="this.style.backgroundColor='#f9fafb'"
-                                                onmouseout="this.style.backgroundColor='white'">
+                                        <button type="submit" style="width: 100%; text-align: left; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; background: none; border: none; cursor: pointer; transition: all 0.2s ease;"
+                                                onmouseover="this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='white'"
+                                                onmouseout="this.style.background='transparent'; this.style.color='#374151'">
                                             <svg style="display: inline; height: 1rem; width: 1rem; margin-right: 0.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                                             </svg>
@@ -182,17 +182,17 @@
                                     </form>
                                 </div>
                             @else
-                                <a href="{{ route('login') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: background-color 0.2s ease;"
-                                   onmouseover="this.style.backgroundColor='#f9fafb'"
-                                   onmouseout="this.style.backgroundColor='white'">
+                                <a href="{{ route('login') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: all 0.2s ease;"
+                                   onmouseover="this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='white'"
+                                   onmouseout="this.style.background='transparent'; this.style.color='#374151'">
                                     <svg style="display: inline; height: 1rem; width: 1rem; margin-right: 0.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
                                     </svg>
                                     Đăng nhập
                                 </a>
-                                <a href="{{ route('register') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: background-color 0.2s ease;"
-                                   onmouseover="this.style.backgroundColor='#f9fafb'"
-                                   onmouseout="this.style.backgroundColor='white'">
+                                <a href="{{ route('register') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: all 0.2s ease;"
+                                   onmouseover="this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='white'"
+                                   onmouseout="this.style.background='transparent'; this.style.color='#374151'">
                                     <svg style="display: inline; height: 1rem; width: 1rem; margin-right: 0.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
                                     </svg>
@@ -205,9 +205,9 @@
                     {{-- Notifications --}}
                     @auth
                     <div class="notification-dropdown" style="position: relative;">
-                        <button type="button" class="notification-btn" style="position: relative; padding: 0.5rem; color: #6b7280; background: none; border: none; cursor: pointer; transition: color 0.2s ease;"
-                                onmouseover="this.style.color='black'"
-                                onmouseout="this.style.color='#6b7280'"
+                        <button type="button" class="notification-btn" style="position: relative; padding: 0.5rem; color: #374151; background: none; border: none; cursor: pointer; transition: color 0.2s ease;"
+                                onmouseover="this.style.color='#f59e0b'"
+                                onmouseout="this.style.color='#374151'"
                                 onclick="toggleNotificationDropdown()">
                             <svg style="height: 1.25rem; width: 1.25rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
@@ -215,11 +215,11 @@
                             <span id="notification-badge" class="notification-badge" style="position: absolute; top: -0.25rem; right: -0.25rem; height: 1rem; width: 1rem; background-color: #ef4444; color: white; font-size: 0.75rem; border-radius: 50%; display: none; align-items: center; justify-content: center;">0</span>
                         </button>
                         
-                        <div id="notification-dropdown" class="notification-dropdown-menu" style="position: absolute; right: 0; top: 100%; margin-top: 0.5rem; width: 20rem; background-color: white; border: 1px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 0.2s ease; pointer-events: none; z-index: 9999; border-radius: 0.5rem;">
+                        <div id="notification-dropdown" class="notification-dropdown-menu" style="position: absolute; right: 0; top: 100%; margin-top: 0.5rem; width: 20rem; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 2px solid #f59e0b; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: all 0.2s ease; pointer-events: none; z-index: 9999; border-radius: 8px;">
                             <!-- Header -->
-                            <div style="padding: 1rem; border-bottom: 1px solid #f3f4f6; background-color: #f9fafb;">
-                                <h6 style="margin: 0; font-size: 1rem; font-weight: 600; color: #111827;">Thông báo</h6>
-                                <span id="notification-count" style="font-size: 0.875rem; color: #6b7280;">0 thông báo mới</span>
+                            <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                <h6 style="margin: 0; font-size: 1rem; font-weight: 600; color: white;">Thông báo</h6>
+                                <span id="notification-count" style="font-size: 0.875rem; color: rgba(255, 255, 255, 0.8);">0 thông báo mới</span>
                             </div>
                             
                             <!-- Notification List -->
@@ -233,19 +233,19 @@
                             </div>
                             
                             <!-- View All Link -->
-                            <div style="border-top: 1px solid #f3f4f6; padding: 0.75rem;">
-                                <a href="{{ route('notifications.index') }}" style="display: block; text-align: center; color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 500; padding: 0.5rem; border-radius: 0.375rem; transition: background-color 0.2s ease;"
-                                   onmouseover="this.style.backgroundColor='#f3f4f6'"
-                                   onmouseout="this.style.backgroundColor=''">Xem tất cả thông báo</a>
+                            <div style="border-top: 1px solid #e5e7eb; padding: 0.75rem;">
+                                <a href="{{ route('notifications.index') }}" style="display: block; text-align: center; color: #f59e0b; text-decoration: none; font-size: 0.875rem; font-weight: 500; padding: 0.5rem; border-radius: 0.375rem; transition: all 0.2s ease;"
+                                   onmouseover="this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='white'"
+                                   onmouseout="this.style.background='transparent'; this.style.color='#f59e0b'">Xem tất cả thông báo</a>
                             </div>
                         </div>
                     </div>
                     @endauth
 
                     {{-- Wishlist --}}
-                    <a href="{{ route('wishlist.index') }}" style="position: relative; padding: 0.5rem; color: #6b7280; text-decoration: none; transition: color 0.2s ease;"
-                       onmouseover="this.style.color='black'"
-                       onmouseout="this.style.color='#6b7280'">
+                    <a href="{{ route('wishlist.index') }}" style="position: relative; padding: 0.5rem; color: #374151; text-decoration: none; transition: color 0.2s ease;"
+                       onmouseover="this.style.color='#f59e0b'"
+                       onmouseout="this.style.color='#374151'">
                         <svg style="height: 1.25rem; width: 1.25rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                         </svg>
@@ -257,14 +257,14 @@
                     </a>
 
                     {{-- Cart --}}
-                    <a href="{{ route('cart.index') }}" style="position: relative; padding: 0.5rem; color: #6b7280; text-decoration: none; transition: color 0.2s ease;"
-                       onmouseover="this.style.color='black'"
-                       onmouseout="this.style.color='#6b7280'">
+                    <a href="{{ route('cart.index') }}" style="position: relative; padding: 0.5rem; color: #374151; text-decoration: none; transition: color 0.2s ease;"
+                       onmouseover="this.style.color='#f59e0b'"
+                       onmouseout="this.style.color='#374151'">
                         <svg style="height: 1.25rem; width: 1.25rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
                         </svg>
                         @if(isset($cartItemCount) && $cartItemCount > 0)
-                            <span style="position: absolute; top: -0.25rem; right: -0.25rem; height: 1rem; width: 1rem; background-color: black; color: white; font-size: 0.75rem; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <span style="position: absolute; top: -0.25rem; right: -0.25rem; height: 1rem; width: 1rem; background-color: #f59e0b; color: black; font-size: 0.75rem; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                                 {{ $cartItemCount > 99 ? '99+' : $cartItemCount }}
                             </span>
                         @endif
@@ -274,42 +274,42 @@
         </div>
 
         {{-- Mobile menu --}}
-        <div id="mobile-menu" style="display: none; border-top: 1px solid #f3f4f6;">
+        <div id="mobile-menu" style="display: none; border-top: 2px solid #f59e0b; background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);">
             <div style="padding: 1rem 0.5rem;">
                 <a href="{{ route('home') }}" 
-                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: #111827; text-decoration: none; {{ request()->routeIs('home') ? 'background-color: #f9fafb; color: black;' : '' }} transition: background-color 0.2s ease;"
-                   onmouseover="if(!this.style.backgroundColor) this.style.backgroundColor='#f9fafb'"
-                   onmouseout="if(!'{{ request()->routeIs('home') }}') this.style.backgroundColor=''">
+                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: white; text-decoration: none; {{ request()->routeIs('home') ? 'background: linear-gradient(135deg, #f59e0b, #d97706); color: black;' : '' }} transition: all 0.2s ease; border-radius: 6px; margin-bottom: 0.25rem;"
+                   onmouseover="if(!this.style.background.includes('gradient')) { this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='black'; }"
+                   onmouseout="if(!'{{ request()->routeIs('home') }}') { this.style.background='transparent'; this.style.color='white'; }">
                     Trang chủ
                 </a>
                 <a href="{{ route('about') }}" 
-                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: #111827; text-decoration: none; {{ request()->routeIs('about') ? 'background-color: #f9fafb; color: black;' : '' }} transition: background-color 0.2s ease;"
-                   onmouseover="if(!this.style.backgroundColor) this.style.backgroundColor='#f9fafb'"
-                   onmouseout="if(!'{{ request()->routeIs('about') }}') this.style.backgroundColor=''">
+                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: white; text-decoration: none; {{ request()->routeIs('about') ? 'background: linear-gradient(135deg, #f59e0b, #d97706); color: black;' : '' }} transition: all 0.2s ease; border-radius: 6px; margin-bottom: 0.25rem;"
+                   onmouseover="if(!this.style.background.includes('gradient')) { this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='black'; }"
+                   onmouseout="if(!'{{ request()->routeIs('about') }}') { this.style.background='transparent'; this.style.color='white'; }">
                     Giới thiệu
                 </a>
                 <a href="{{ route('books.index') }}" 
-                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: #111827; text-decoration: none; {{ request()->routeIs('books.*') ? 'background-color: #f9fafb; color: black;' : '' }} transition: background-color 0.2s ease;"
-                   onmouseover="if(!this.style.backgroundColor) this.style.backgroundColor='#f9fafb'"
-                   onmouseout="if(!'{{ request()->routeIs('books.*') }}') this.style.backgroundColor=''">
+                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: white; text-decoration: none; {{ request()->routeIs('books.*') ? 'background: linear-gradient(135deg, #f59e0b, #d97706); color: black;' : '' }} transition: all 0.2s ease; border-radius: 6px; margin-bottom: 0.25rem;"
+                   onmouseover="if(!this.style.background.includes('gradient')) { this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='black'; }"
+                   onmouseout="if(!'{{ request()->routeIs('books.*') }}') { this.style.background='transparent'; this.style.color='white'; }">
                     Cửa hàng
                 </a>
                 <a href="{{ route('combos.index') }}" 
-                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: #111827; text-decoration: none; {{ request()->routeIs('combos.*') ? 'background-color: #f9fafb; color: black;' : '' }} transition: background-color 0.2s ease;"
-                   onmouseover="if(!this.style.backgroundColor) this.style.backgroundColor='#f9fafb'"
-                   onmouseout="if(!'{{ request()->routeIs('combos.*') }}') this.style.backgroundColor=''">
+                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: white; text-decoration: none; {{ request()->routeIs('combos.*') ? 'background: linear-gradient(135deg, #f59e0b, #d97706); color: black;' : '' }} transition: all 0.2s ease; border-radius: 6px; margin-bottom: 0.25rem;"
+                   onmouseover="if(!this.style.background.includes('gradient')) { this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='black'; }"
+                   onmouseout="if(!'{{ request()->routeIs('combos.*') }}') { this.style.background='transparent'; this.style.color='white'; }">
                     Combo sách
                 </a>
                 <a href="{{ route('news.index') }}" 
-                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: #111827; text-decoration: none; {{ request()->routeIs('news.*') ? 'background-color: #f9fafb; color: black;' : '' }} transition: background-color 0.2s ease;"
-                   onmouseover="if(!this.style.backgroundColor) this.style.backgroundColor='#f9fafb'"
-                   onmouseout="if(!'{{ request()->routeIs('news.*') }}') this.style.backgroundColor=''">
+                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: white; text-decoration: none; {{ request()->routeIs('news.*') ? 'background: linear-gradient(135deg, #f59e0b, #d97706); color: black;' : '' }} transition: all 0.2s ease; border-radius: 6px; margin-bottom: 0.25rem;"
+                   onmouseover="if(!this.style.background.includes('gradient')) { this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='black'; }"
+                   onmouseout="if(!'{{ request()->routeIs('news.*') }}') { this.style.background='transparent'; this.style.color='white'; }">
                     Tin tức
                 </a>
                 <a href="{{ route('contact.form') }}" 
-                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: #111827; text-decoration: none; {{ request()->routeIs('contact.*') ? 'background-color: #f9fafb; color: black;' : '' }} transition: background-color 0.2s ease;"
-                   onmouseover="if(!this.style.backgroundColor) this.style.backgroundColor='#f9fafb'"
-                   onmouseout="if(!'{{ request()->routeIs('contact.*') }}') this.style.backgroundColor=''">
+                   style="display: block; padding: 0.75rem; font-size: 1rem; font-weight: 500; color: white; text-decoration: none; {{ request()->routeIs('contact.*') ? 'background: linear-gradient(135deg, #f59e0b, #d97706); color: black;' : '' }} transition: all 0.2s ease; border-radius: 6px; margin-bottom: 0.25rem;"
+                   onmouseover="if(!this.style.background.includes('gradient')) { this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='black'; }"
+                   onmouseout="if(!'{{ request()->routeIs('contact.*') }}') { this.style.background='transparent'; this.style.color='white'; }">
                     Liên hệ
                 </a>
                 
@@ -320,11 +320,11 @@
                                name="search"
                                placeholder="Tìm kiếm..."
                                value="{{ request('search') }}"
-                               style="width: 100%; padding-left: 1rem; padding-right: 2.5rem; padding-top: 0.5rem; padding-bottom: 0.5rem; font-size: 0.875rem; border: 1px solid #d1d5db; border-radius: 0; outline: none; transition: border-color 0.2s ease;"
+                               style="width: 100%; padding-left: 1rem; padding-right: 2.5rem; padding-top: 0.5rem; padding-bottom: 0.5rem; font-size: 0.875rem; border: 2px solid #f59e0b; border-radius: 25px; outline: none; transition: all 0.2s ease; background: rgba(248, 250, 252, 0.8); color: #374151; backdrop-filter: blur(10px);"
                                autocomplete="off"
-                               onfocus="this.style.borderColor='black'"
-                               onblur="this.style.borderColor='#d1d5db'">
-                        <button type="submit" style="position: absolute; top: 0; right: 0; bottom: 0; display: flex; align-items: center; padding-right: 0.75rem; color: #6b7280; background: none; border: none; cursor: pointer;">
+                               onfocus="this.style.borderColor='#d97706'; this.style.background='rgba(255, 255, 255, 0.9)';"
+                               onblur="this.style.borderColor='#f59e0b'; this.style.background='rgba(248, 250, 252, 0.8)';">
+                        <button type="submit" style="position: absolute; top: 0; right: 0; bottom: 0; display: flex; align-items: center; padding-right: 0.75rem; color: #f59e0b; background: none; border: none; cursor: pointer; transition: color 0.2s ease;" onmouseover="this.style.color='#d97706'" onmouseout="this.style.color='#f59e0b'">
                             <svg style="height: 1rem; width: 1rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
@@ -344,8 +344,8 @@
     }
 
     #main-navbar.scrolled {
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        background-color: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 50%, rgba(255, 255, 255, 0.98) 100%);
     }
 
     /* Padding top cho body để tránh bị che bởi fixed navbar */
@@ -371,7 +371,7 @@
         left: 0;
         width: 0;
         height: 2px;
-        background-color: #000;
+        background-color: #f59e0b;
         transition: width 0.2s ease;
     }
 
@@ -390,15 +390,16 @@
         top: 100%;
         margin-top: 0.5rem;
         width: 12rem;
-        background-color: white;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 2px solid #f59e0b;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         opacity: 0;
         visibility: hidden;
         transform: translateY(-8px);
         transition: all 0.2s ease;
         pointer-events: none;
         z-index: 9999;
+        border-radius: 8px;
     }
 
     .user-dropdown .dropdown-menu.show,
@@ -420,15 +421,16 @@
         top: 100%;
         margin-top: 0.5rem;
         width: 12rem;
-        background-color: white;
-        border: 2px solid #e5e7eb;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 2px solid #f59e0b;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         opacity: 0;
         visibility: hidden;
         transform: translateY(-8px);
         transition: all 0.2s ease;
         pointer-events: none;
         z-index: 50;
+        border-radius: 8px;
     }
 
     .shop-dropdown:hover .dropdown-menu,
@@ -518,7 +520,7 @@
     /* Hover effects cho desktop */
     @media (min-width: 768px) {
         .nav-link:hover {
-            color: black !important;
+            color: #f59e0b !important;
         }
 
         .shop-dropdown:hover button svg {
@@ -561,7 +563,7 @@
     button:focus,
     input:focus,
     a:focus {
-        outline: 2px solid #000;
+        outline: 2px solid #f59e0b;
         outline-offset: 2px;
     }
     

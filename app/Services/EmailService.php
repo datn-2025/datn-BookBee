@@ -31,7 +31,7 @@ class EmailService
         $storeSettings = \App\Models\Setting::first();
 
         Mail::to($order->user->email)
-            ->send(new OrderConfirmation($order, $storeSettings));
+            ->queue(new OrderConfirmation($order, $storeSettings));
     }
 
     public function sendOrderInvoice(Order $order)
@@ -52,7 +52,7 @@ class EmailService
         $storeSettings = \App\Models\Setting::first();
 
         Mail::to($order->user->email)
-            ->send(new OrderInvoice($order, $storeSettings));
+            ->queue(new OrderInvoice($order, $storeSettings));
     }
 
     public function sendRefundInvoice(Invoice $invoice, RefundRequest $refundRequest)
@@ -97,8 +97,7 @@ class EmailService
 
         try {
             Mail::to($order->user->email)
-                ->send(new EbookPurchaseConfirmation($order))
-                ->subject('Xác nhận mua ebook thành công');
+                ->queue(new EbookPurchaseConfirmation($order));
             Log::info('Ebook purchase confirmation email sent', ['order_id' => $order->id]);
         } catch (\Exception $e) {
             Log::error('Failed to send ebook purchase confirmation email', [
@@ -138,7 +137,7 @@ class EmailService
 
         try {
             Mail::to($order->user->email)
-                ->send(new EbookPurchaseConfirmation($order));
+                ->queue(new EbookPurchaseConfirmation($order));
             Log::info('Ebook download email sent for child order', ['order_id' => $order->id]);
         } catch (\Exception $e) {
             Log::error('Failed to send ebook download email for child order', [

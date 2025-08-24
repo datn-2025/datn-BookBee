@@ -26,6 +26,6 @@ class SendOrderStatusUpdatedMail implements ShouldQueue
 
     public function handle()
     {
-        Mail::to($this->order->user->email)->send(new OrderStatusUpdatedMail($this->order, $this->newStatus));
+        Mail::to($this->order->user->email)->queue(new OrderStatusUpdatedMail($this->order, $this->newStatus));
     }
 }

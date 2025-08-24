@@ -18,14 +18,24 @@ class EbookPurchaseConfirmation extends Mailable
         protected Order $order,
     ) {}
     
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: 'Xác nhận mua ebook thành công',
+        );
+    }
+
+    /**
+     * Xác định view và data
+     */
     public function content(): Content
     {
-        // dd(1);
         return new Content(
             view: 'emails.orders.ebook-purchase-confirmation',
             with: [
                 'order' => $this->order,
-            ]
+            ],
         );
     }
+
 }

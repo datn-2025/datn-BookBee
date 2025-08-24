@@ -411,11 +411,17 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             
             if (msg.type === 'image' && msg.file_path) {
-                // Hiển thị ảnh với preview
+                // Hiển thị ảnh với preview; chỉ hiển thị caption nếu KHÔNG phải là tên file
                 const imageUrl = msg.file_path.startsWith('http') ? msg.file_path : `/storage/${msg.file_path}`;
                 messageContent = `<img src="${imageUrl}" alt="Hình ảnh" class="max-w-[200px] max-h-[200px] rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onclick="openImagePreview('${imageUrl}')" style="object-fit: cover;">`;
+                // Nếu content tồn tại và không giống tên file ảnh, hiển thị nó như chú thích
                 if (msg.content) {
-                    messageContent += `<p class="text-sm text-gray-600 mt-1">${msg.content}</p>`;
+                    const contentTrimmed = String(msg.content).trim();
+                    const isProbablyFilename = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|heic|heif)$/i.test(contentTrimmed);
+                    if (!isProbablyFilename) {
+                        const formattedCaption = contentTrimmed.replace(/\n/g, '<br>');
+                        messageContent += `<p class="text-sm text-gray-600 mt-1">${formattedCaption}</p>`;
+                    }
                 }
             } else if (msg.type === 'system_order_info') {
                 // Hiển thị tin nhắn thông tin đơn hàng với HTML formatting
@@ -423,10 +429,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 // Xử lý HTML formatting
                 formattedContent = formattedContent
-                    .replace(/<strong>(.*?)<\/strong>/g, '<span class="font-bold text-gray-800">$1</span>')
-                    .replace(/<span class="status-badge">(.*?)<\/span>/g, '<span class="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">$1</span>')
-                    .replace(/<span class="price-highlight">(.*?)<\/span>/g, '<span class="font-bold text-green-600">$1</span>')
-                    .replace(/• /g, '<span class="text-blue-500">•</span> ');
+                    .replace(/<strong>(.*?)<\/strong>/g, '<span class="font-bold text-gray-800">$1<\/span>')
+                    .replace(/<span class="status-badge">(.*?)<\/span>/g, '<span class="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">$1<\/span>')
+                    .replace(/<span class="price-highlight">(.*?)<\/span>/g, '<span class="font-bold text-green-600">$1<\/span>')
+                    .replace(/• /g, '<span class="text-blue-500">•<\/span> ');
                 
                 messageContent = `<div class="order-info-message">${formattedContent}</div>`;
             } else {

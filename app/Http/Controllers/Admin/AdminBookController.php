@@ -119,6 +119,26 @@ class AdminBookController extends Controller
 
     public function store(Request $request)
     {
+        // Clear gift data nếu has_gift không được check - TRƯỚC KHI VALIDATE
+        if (!$request->boolean('has_gift')) {
+            $request->merge([
+                'gift_book_id' => null,
+                'gift_name' => null,
+                'gift_description' => null,
+                'quantity' => null,
+                'gift_date_range' => null,
+                'gift_start_date' => null,
+                'gift_end_date' => null
+            ]);
+            $request->files->remove('gift_image');
+            
+            // Xóa old input để tránh validation hiển thị lại
+            $request->session()->forget([
+                'gift_name', 'gift_date_range', 'quantity', 
+                'gift_description', 'gift_start_date', 'gift_end_date'
+            ]);
+        }
+        
         // Kiểm tra slug trùng lặp trước khi validate
         $title = $request->input('title');
         if ($title) {
@@ -130,9 +150,23 @@ class AdminBookController extends Controller
         }
 
         // Validation với rules chung
+        $validationRules = $this->getBookValidationRules(false);
+        
+        // Nếu has_gift = false, xóa hoàn toàn gift validation rules
+        if (!$request->boolean('has_gift')) {
+            unset($validationRules['gift_name']);
+            unset($validationRules['gift_date_range']);
+            unset($validationRules['quantity']);
+            unset($validationRules['gift_start_date']);
+            unset($validationRules['gift_end_date']);
+            unset($validationRules['gift_description']);
+            unset($validationRules['gift_image']);
+            unset($validationRules['gift_book_id']);
+        }
+        
         $validator = Validator::make(
             $request->all(),
-            $this->getBookValidationRules(false),
+            $validationRules,
             $this->getValidationMessages()
         );
 
@@ -283,13 +317,15 @@ class AdminBookController extends Controller
             'publication_date' => 'required|date',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             // Gift validation
+            'has_gift' => 'boolean',
             'gift_book_id' => 'nullable|uuid|exists:books,id',
-            'gift_name' => 'nullable|string|max:255',
+            'gift_name' => 'required_if:has_gift,true|string|max:255',
             'gift_description' => 'nullable|string',
             'gift_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'quantity' => 'nullable|integer|min:0',
-            'gift_start_date' => 'nullable|date',
-            'gift_end_date' => 'nullable|date|after_or_equal:gift_start_date',
+            'quantity' => 'required_if:has_gift,true|integer|min:1',
+            'gift_date_range' => 'required_if:has_gift,true|string',
+            'gift_start_date' => 'required_if:has_gift,true|date',
+            'gift_end_date' => 'required_if:has_gift,true|date|after_or_equal:gift_start_date',
         ];
 
         // Different rules for create vs update
@@ -362,6 +398,26 @@ class AdminBookController extends Controller
             'publication_date.required' => 'Vui lòng nhập ngày xuất bản',
             'publication_date.date' => 'Ngày xuất bản không hợp lệ',
             'end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu',
+            // Gift validation messages
+            'gift_book_id.uuid' => 'Sách nhận quà tặng không hợp lệ',
+            'gift_book_id.exists' => 'Sách nhận quà tặng không tồn tại',
+            'gift_name.required_if' => 'Vui lòng nhập tên quà tặng',
+            'gift_name.string' => 'Tên quà tặng phải là chuỗi ký tự',
+            'gift_name.max' => 'Tên quà tặng không được vượt quá 255 ký tự',
+            'gift_description.string' => 'Mô tả quà tặng phải là chuỗi ký tự',
+            'gift_image.image' => 'File quà tặng phải là hình ảnh',
+            'gift_image.mimes' => 'File quà tặng phải có định dạng JPG, PNG, GIF hoặc WebP',
+            'gift_image.max' => 'Kích thước file quà tặng không được vượt quá 2MB',
+            'quantity.required_if' => 'Vui lòng nhập số lượng quà tặng',
+            'quantity.integer' => 'Số lượng quà tặng phải là số nguyên',
+            'quantity.min' => 'Số lượng quà tặng phải lớn hơn 0',
+            'gift_date_range.required_if' => 'Vui lòng chọn thời gian khuyến mãi quà tặng',
+            'gift_date_range.string' => 'Thời gian khuyến mãi quà tặng không hợp lệ',
+            'gift_start_date.required_if' => 'Vui lòng chọn ngày bắt đầu khuyến mãi',
+            'gift_start_date.date' => 'Ngày bắt đầu khuyến mãi không hợp lệ',
+            'gift_end_date.required_if' => 'Vui lòng chọn ngày kết thúc khuyến mãi',
+            'gift_end_date.date' => 'Ngày kết thúc khuyến mãi không hợp lệ',
+            'gift_end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu',
         ];
     }
 
@@ -515,6 +571,20 @@ class AdminBookController extends Controller
     {
         $book = Book::findOrFail($id);
 
+        // Clear gift data nếu has_gift không được check
+        if (!$request->boolean('has_gift')) {
+            $request->merge([
+                'gift_name' => null,
+                'gift_description' => null,
+                'gift_book_id' => null,
+                'quantity' => null,
+                'gift_date_range' => null,
+                'gift_start_date' => null,
+                'gift_end_date' => null,
+            ]);
+            $request->files->remove('gift_image');
+        }
+
         // Kiểm tra slug trùng lặp trước khi validate
         $title = $request->input('title');
         if ($title) {
@@ -526,9 +596,23 @@ class AdminBookController extends Controller
         }
 
         // Validation với rules chung
+        $validationRules = $this->getBookValidationRules(true);
+        
+        // Nếu has_gift = false, xóa hoàn toàn gift validation rules
+        if (!$request->boolean('has_gift')) {
+            unset($validationRules['gift_name']);
+            unset($validationRules['gift_date_range']);
+            unset($validationRules['quantity']);
+            unset($validationRules['gift_start_date']);
+            unset($validationRules['gift_end_date']);
+            unset($validationRules['gift_description']);
+            unset($validationRules['gift_image']);
+            unset($validationRules['gift_book_id']);
+        }
+        
         $validator = Validator::make(
             $request->all(),
-            $this->getBookValidationRules(true),
+            $validationRules,
             $this->getValidationMessages()
         );
 

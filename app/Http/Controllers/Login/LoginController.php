@@ -182,7 +182,7 @@ class LoginController extends Controller
 
 
         try {
-            Mail::to($user->email)->send(new ActivationMail($activationUrl, $user->name));
+            Mail::to($user->email)->queue(new ActivationMail($activationUrl, $user->name));
             session()->flash('success', 'Đăng ký tài khoản thành công! Vui lòng kiểm tra email để kích hoạt tài khoản.');
         } catch (\Exception $e) {
             $user->delete();
@@ -256,7 +256,7 @@ class LoginController extends Controller
 
 
         try {
-            Mail::to($user->email)->send(new ResetPasswordMail($resetLink));
+            Mail::to($user->email)->queue(new ResetPasswordMail($resetLink));
             session()->flash('success', 'Chúng tôi đã gửi email chứa liên kết đặt lại mật khẩu của bạn!');
             return back();
         } catch (\Exception $e) {

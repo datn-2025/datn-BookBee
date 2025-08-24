@@ -207,7 +207,7 @@ class AdminPaymentMethodController extends Controller
                     ->exists();
 
                 if ($hasEbook) {
-                    Mail::to($order->user->email)->send(new EbookPurchaseConfirmation($order));
+                    Mail::to($order->user->email)->queue(new EbookPurchaseConfirmation($order));
                 }
 
                 // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
