@@ -7,8 +7,10 @@ use App\Models\OrderStatus;
 use App\Models\PaymentStatus;
 use App\Models\Review;
 use Brian2694\Toastr\Facades\Toastr;
+use Brian2694\Toastr\Toastr as ToastrToastr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -191,6 +193,18 @@ class ReviewClientController extends Controller
 
         $review = $user->reviews()->findOrFail($reviewId);
 
+        // Kiểm tra xem đánh giá đã được chỉnh sửa chưa
+        if ($review->is_edited) {
+            Toastr::error('Đánh giá này đã được chỉnh sửa trước đó, không thể chỉnh sửa lại', 'Lỗi');
+            return redirect()->back();
+        }
+
+        // Kiểm tra thời gian
+        if (now()->gt($review->created_at->addHours(24))) {
+            Toastr::error('Không thể chỉnh sửa đánh giá sau 24 giờ', 'Lỗi');
+            return redirect()->back();
+        }
+
         $order = $user->orders()
             ->with(['orderItems.book', 'orderItems.collection', 'orderStatus', 'address', 'paymentMethod'])
             ->findOrFail($review->order_id);
@@ -226,8 +240,14 @@ class ReviewClientController extends Controller
                 return redirect()->back();
             }
 
+            // Kiểm tra xem đánh giá đã được chỉnh sửa chưa
+            if ($review->is_edited) {
+                Toastr::error('Đánh giá này đã được chỉnh sửa trước đó, không thể chỉnh sửa lại', 'Lỗi');
+                return redirect()->back();
+            }
+
             if (now()->gt($review->created_at->addHours(24))) {
-                Toastr::error('Chỉ có thể cập nhật đánh giá trong vòng 24 giờ');
+                Toastr::error('Chỉ có thể cập nhật đánh giá trong vòng 24 giờ', 'Lỗi');
                 return redirect()->back();
             }
 
@@ -279,6 +299,8 @@ class ReviewClientController extends Controller
                 'rating' => $validated['rating'],
                 'comment' => $validated['comment'] ?? '',
                 'images' => !empty($imagePaths) ? $imagePaths : null,
+                'is_edited' => true,
+                'edited_at' => now(),
             ]);
 
             $successMessage = 'Cập nhật đánh giá thành công';
@@ -293,7 +315,7 @@ class ReviewClientController extends Controller
             return back();
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
-            
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
@@ -306,59 +328,52 @@ class ReviewClientController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        try {
-            $review = Review::findOrFail($id);
+        // Lấy review và kiểm tra tồn tại
+        $review = Review::with(['order.orderStatus'])->findOrFail($id);
 
-            // Kiểm tra quyền sở hữu
-            if ($review->user_id !== Auth::id()) {
-                throw new \Exception('Bạn không có quyền xóa đánh giá này', 403);
-            }
-
-            // Kiểm tra thời gian (7 ngày)
-            $timeLimit = $review->created_at->addDays(7);
-            if (now()->gt($timeLimit)) {
-                throw new \Exception('Chỉ có thể xóa đánh giá trong vòng 7 ngày', 403);
-            }
-
-            // Kiểm tra trạng thái đơn hàng
-            $order = $review->order;
-            if (!$order || $order->orderStatus->name !== 'Thành công') {
-                throw new \Exception('Không thể xóa đánh giá của đơn hàng chưa hoàn thành', 403);
-            }
-
-            // Xóa hình ảnh
-            if (!empty($review->images)) {
-                foreach ($review->images as $imagePath) {
-                    $fullPath = storage_path('app/public/' . $imagePath);
-                    if (file_exists($fullPath)) {
-                        unlink($fullPath);
-                    }
-                }
-            }
-
-            $review->delete();
-
-            $successMessage = 'Xóa đánh giá thành công';
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => $successMessage
-                ]);
-            }
-
-            Toastr::success($successMessage, 'Thành công');
-            return redirect()->back();
-        } catch (\Exception $e) {
-            $errorMessage = $e->getMessage();
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $errorMessage
-                ], $e->getCode() === 403 ? 403 : 400);
-            }
-
-            Toastr::error($errorMessage, 'Lỗi');
+        // Kiểm tra quyền sở hữu và các điều kiện
+        if ($review->user_id !== Auth::id()) {
+            Toastr::error('Bạn không có quyền xóa đánh giá này', 'Lỗi');
             return redirect()->back();
         }
+
+        // Kiểm tra trạng thái đơn hàng trước
+        if (!$review->order || $review->order->orderStatus->name !== 'Thành công') {
+            Toastr::error('Chỉ có thể xóa đánh giá của đơn hàng đã hoàn thành');
+            return redirect()->back();
+        }
+
+        // Kiểm tra thời gian (7 ngày kể từ ngày đánh giá đầu tiên)
+        $timeLimit = $review->created_at->addDays(7);
+        if (now()->gt($timeLimit)) {
+            Toastr::error('Chỉ có thể xóa đánh giá trong vòng 7 ngày kể từ ngày đánh giá', 'Lỗi');
+            return redirect()->back();
+        }
+        // Xóa hình ảnh nếu có
+        if (!empty($review->images)) {
+            foreach ($review->images as $imagePath) {
+                $fullPath = storage_path('app/public/' . $imagePath);
+                if (file_exists($fullPath)) {
+                    unlink($fullPath);
+                }
+            }
+        }
+
+        // Soft delete review
+        $review->delete();
+
+        DB::commit();
+
+        $successMessage = 'Xóa đánh giá thành công';
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $successMessage
+            ]);
+        }
+
+        Toastr::success($successMessage);
+        return redirect()->back();
     }
 }
