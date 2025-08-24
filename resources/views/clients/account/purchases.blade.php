@@ -514,18 +514,20 @@
                                                                                 Sửa đánh giá
                                                                             </a>
                                                                         @endif
-                                                                        <form
-                                                                            action="{{ route('account.reviews.destroy', $review->id) }}"
-                                                                            method="POST"
-                                                                            onsubmit="return confirm('Bạn có chắc chắn muốn xóa đánh giá này?');"
-                                                                            class="inline">
-                                                                            @csrf
-                                                                            @method('DELETE')
-                                                                            <button type="submit"
-                                                                                class="px-3 py-1 bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition-colors duration-150">
-                                                                                Xóa
-                                                                            </button>
-                                                                        </form>
+                                                                        @if (!$review->created_at->addDays(7)->isPast())
+                                                                            <form
+                                                                                action="{{ route('account.reviews.destroy', $review->id) }}"
+                                                                                method="POST"
+                                                                                onsubmit="return confirm('Bạn có chắc chắn muốn xóa đánh giá này?');"
+                                                                                class="inline">
+                                                                                @csrf
+                                                                                @method('DELETE')
+                                                                                <button type="submit"
+                                                                                    class="px-3 py-1 bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition-colors duration-150">
+                                                                                    Xóa
+                                                                                </button>
+                                                                            </form>
+                                                                        @endif
                                                                     @endif
                                                                 </div>
                                                             </div>
