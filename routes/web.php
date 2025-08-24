@@ -174,7 +174,6 @@ Route::middleware('auth')->group(function () {
 
         Route::prefix('reviews')->name('reviews.')->group(function () {
             Route::post('/', [ReviewClientController::class, 'storeReview'])->name('store');
-
             Route::get('/{id}/edit', [ReviewClientController::class, 'editForm'])->name('edit');
             Route::put('/{id}', [ReviewClientController::class, 'update'])->name('update');
             Route::delete('/{id}', [ReviewClientController::class, 'destroy'])->name('destroy');
