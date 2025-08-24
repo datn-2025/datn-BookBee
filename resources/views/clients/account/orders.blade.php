@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.account.layout')
 @section('title', 'Quản lý đơn hàng')
 
 @push('styles')

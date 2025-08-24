@@ -39,7 +39,6 @@
 
 ### 3. Hạn chế
 
-- Phân quyền còn đơn giản, chỉ có Admin/User.
 - Chưa có quản lý quyền chi tiết (permission).
 - Chưa có giao diện quản lý quyền.
 - Chưa có log hoạt động người dùng.
