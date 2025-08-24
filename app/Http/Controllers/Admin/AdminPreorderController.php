@@ -26,12 +26,12 @@ class AdminPreorderController extends Controller
     public function index(Request $request)
     {
         // Eager-load để giảm N+1 query trên danh sách
-        $query = Preorder::with(['user', 'book', 'bookFormat']);
+        $query = Preorder::with(['user', 'book', 'bookFormat']); 
 
         // Filter theo status
         // Lọc theo trạng thái nếu có
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        if ($request->filled('status')) { //
+            $query->where('status', $request->status); //
         }
 
         // Filter theo sách
@@ -481,41 +481,63 @@ class AdminPreorderController extends Controller
             Log::info('Starting database transaction for conversion', ['preorder_id' => $preorder->id]);
             DB::beginTransaction();
 
-            // B2: Tạo địa chỉ giao hàng đơn giản dựa theo thông tin trong preorder
-            Log::info('Creating shipping address', ['preorder_id' => $preorder->id]);
-            $addressId = \Illuminate\Support\Str::uuid();
-            DB::table('addresses')->insert([
-                'id' => $addressId,
-                'user_id' => $preorder->user_id,
-                'recipient_name' => $preorder->customer_name,
-                'phone' => $preorder->phone,
-                'address_detail' => $preorder->address ?? 'Địa chỉ từ đơn đặt trước',
-                'city' => $preorder->province_name,
-                'district' => $preorder->district_name,
-                'ward' => $preorder->ward_name,
-                'province_id' => $preorder->province_code,
-                'district_id' => $preorder->district_code,
-                'ward_code' => $preorder->ward_code,
-                'is_default' => false,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+            // B2: Kiểm tra xem có phải ebook không và tạo địa chỉ giao hàng nếu cần
+            $bookFormat = $preorder->bookFormat;
+            $isEbook = !empty($bookFormat->file_url); // Ebook có file_url
+            $addressId = null;
             
-            Log::info('Address created successfully', ['preorder_id' => $preorder->id, 'address_id' => $addressId]);
+            if (!$isEbook && ($preorder->province_name || $preorder->address)) {
+                // Chỉ tạo địa chỉ cho sách vật lý và có thông tin địa chỉ
+                Log::info('Creating shipping address for physical book', ['preorder_id' => $preorder->id]);
+                $addressId = \Illuminate\Support\Str::uuid();
+                DB::table('addresses')->insert([
+                    'id' => $addressId,
+                    'user_id' => $preorder->user_id,
+                    'recipient_name' => $preorder->customer_name,
+                    'phone' => $preorder->phone,
+                    'address_detail' => $preorder->address ?? 'Địa chỉ từ đơn đặt trước',
+                    'city' => $preorder->province_name ?? 'Không xác định',
+                    'district' => $preorder->district_name ?? 'Không xác định',
+                    'ward' => $preorder->ward_name ?? 'Không xác định',
+                    'province_id' => $preorder->province_code,
+                    'district_id' => $preorder->district_code,
+                    'ward_code' => $preorder->ward_code,
+                    'is_default' => false,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+                Log::info('Address created successfully', ['preorder_id' => $preorder->id, 'address_id' => $addressId]);
+            } else {
+                Log::info('Skipping address creation for ebook or missing address info', [
+                    'preorder_id' => $preorder->id, 
+                    'is_ebook' => $isEbook,
+                    'has_address' => !empty($preorder->province_name) || !empty($preorder->address)
+                ]);
+            }
             
-            // B3: Lấy/khởi tạo trạng thái đơn hàng mặc định "Chờ xác nhận"
-            // B3: Đảm bảo có trạng thái đơn hàng mặc định "Chờ xác nhận"
-            Log::info('Getting or creating order status', ['preorder_id' => $preorder->id]);
-            $orderStatusId = DB::table('order_statuses')->where('name', 'Chờ xác nhận')->value('id');
+            // B3: Xác định trạng thái đơn hàng dựa trên loại sản phẩm
+            Log::info('Determining order status', ['preorder_id' => $preorder->id, 'is_ebook' => $isEbook]);
+            
+            if ($isEbook) {
+                // Ebook: trạng thái "Đã giao thành công" ngay lập tức
+                $orderStatusName = 'Đã giao thành công';
+            } else {
+                // Sách vật lý: trạng thái "Chờ xác nhận"
+                $orderStatusName = 'Chờ xác nhận';
+            }
+            
+            $orderStatusId = DB::table('order_statuses')->where('name', $orderStatusName)->value('id');
             if (!$orderStatusId) {
                 $orderStatusId = \Illuminate\Support\Str::uuid();
                 DB::table('order_statuses')->insert([
                     'id' => $orderStatusId,
-                    'name' => 'Chờ xác nhận',
+                    'name' => $orderStatusName,
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
             }
+            
+            Log::info('Order status determined', ['preorder_id' => $preorder->id, 'status' => $orderStatusName]);
             
             // B4: Đảm bảo có trạng thái thanh toán Paid/Unpaid cho bảng orders
             $paidStatusId = DB::table('payment_statuses')->where('name', 'Đã Thanh Toán')->value('id');
@@ -560,14 +582,14 @@ class AdminPreorderController extends Controller
                 'user_id' => $preorder->user_id,
                 'order_code' => $orderCode,
                 'total_amount' => $preorder->total_amount,
-                'shipping_fee' => $preorder->shipping_fee ?? 0,
+                'shipping_fee' => $isEbook ? 0 : ($preorder->shipping_fee ?? 0),
                 'recipient_name' => $preorder->customer_name,
                 'recipient_email' => $preorder->email,
-                'address_id' => $addressId,
+                'address_id' => $addressId, // Null cho ebook
                 'order_status_id' => $orderStatusId,
                 'payment_status_id' => $preorder->payment_status === 'paid' ? $paidStatusId : $unpaidStatusId,
                 'payment_method_id' => $paymentMethodId,
-                'note' => 'Chuyển đổi từ đơn đặt trước #' . $preorder->id,
+                'note' => 'Chuyển đổi từ đơn đặt trước #' . $preorder->id . ($isEbook ? ' (Ebook)' : ''),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -667,8 +689,8 @@ class AdminPreorderController extends Controller
             }
             
             // Sau đó chuyển sang 'Đã chuyển thành đơn hàng'
-            Log::info('Transitioning to converted status', ['preorder_id' => $preorder->id]);
-            $preorder->transitionTo(Preorder::STATUS_DA_CHUYEN_THANH_DON_HANG, [
+            Log::info('Transitioning to converted status', ['preorder_id' => $preorder->id]); // Bắt đầu chuyển trạng thái
+            $preorder->transitionTo(Preorder::STATUS_DA_CHUYEN_THANH_DON_HANG, [  // 
                 'converted_order_id' => $order->id
             ]);
             Log::info('Preorder status updated to converted', ['preorder_id' => $preorder->id, 'final_status' => $preorder->status]);
@@ -676,6 +698,42 @@ class AdminPreorderController extends Controller
             Log::info('Committing transaction', ['preorder_id' => $preorder->id, 'order_id' => $order->id]);
             DB::commit();
             Log::info('Transaction committed successfully', ['preorder_id' => $preorder->id, 'order_id' => $order->id]);
+
+            // B10: Gửi email ebook nếu là ebook và đã giao thành công
+            if ($isEbook && $orderStatusName === 'Đã giao thành công') {
+                try {
+                    Log::info('Sending ebook delivery email', ['preorder_id' => $preorder->id, 'order_id' => $order->id]);
+                    
+                    // Sử dụng email từ preorder (ebook_delivery_email hoặc email thường)
+                    $deliveryEmail = $preorder->ebook_delivery_email ?: $preorder->email;
+                    
+                    // Gửi email với file ebook đến địa chỉ email tùy chỉnh
+                    $order->load([
+                        'user', 
+                        'orderItems.book.authors', 
+                        'orderItems.book.formats',
+                        'orderItems.bookFormat',
+                        'orderItems.collection'
+                    ]);
+                    
+                    Mail::to($deliveryEmail)->send(new \App\Mail\EbookPurchaseConfirmation($order));
+                    
+                    Log::info('Ebook delivery email sent successfully', [
+                        'preorder_id' => $preorder->id, 
+                        'order_id' => $order->id,
+                        'delivery_email' => $deliveryEmail
+                    ]);
+                    
+                    toastr()->success('Đã gửi email file ebook đến: ' . $deliveryEmail);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send ebook delivery email', [
+                        'preorder_id' => $preorder->id,
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    toastr()->warning('Đơn hàng đã tạo thành công nhưng không thể gửi email ebook: ' . $e->getMessage());
+                }
+            }
 
             // Điều hướng sang trang chi tiết đơn hàng vừa tạo
             Log::info('Conversion completed successfully', ['preorder_id' => $preorder->id, 'order_id' => $order->id]);
