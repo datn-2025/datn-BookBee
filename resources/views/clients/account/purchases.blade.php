@@ -115,8 +115,8 @@
                                                     class="inline-block w-3 h-3 ml-1 transition-transform"
                                                     fill="currentColor" viewBox="0 0 20 20">
                                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0
-                                                                      111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1
-                                                                      0 010-1.414z" clip-rule="evenodd"></path>
+                                                                          111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1
+                                                                          0 010-1.414z" clip-rule="evenodd"></path>
                                                 </svg>
                                             </button>
                                         @endif
@@ -453,8 +453,17 @@
                                                                 ->whereIn('status', ['pending', 'processing'])
                                                                 ->exists();
                                                         @endphp
+                                                        @php
+                                                            $canReview =
+                                                                !$hasRefundRequest &&
+                                                                !$item->review &&
+                                                                $order->updated_at->addMonth()->gt(now());
+                                                            $hasReview = $review && !$review->trashed();
+                                                            $isExpired = !$canReview && !$hasReview;
+                                                        @endphp
 
-                                                        @if ($review && !$review->trashed())
+                                                        @if ($hasReview)
+                                                            <!-- Hiển thị đánh giá đã tồn tại -->
                                                             <div class="bg-gray-50 border-2 border-gray-200 p-4">
                                                                 <div class="flex items-center gap-2 mb-2">
                                                                     <div class="w-1 h-4 bg-green-500"></div>
@@ -506,6 +515,7 @@
                                                                             {{ $review->admin_response }}</p>
                                                                     </div>
                                                                 @endif
+                                                                <!-- Nút Sửa và Xóa -->
                                                                 <div class="flex gap-2 mt-3">
                                                                     @if ($review->user_id === auth()->id())
                                                                         @if ($review->created_at->addHours(24)->isFuture())
@@ -531,7 +541,8 @@
                                                                     @endif
                                                                 </div>
                                                             </div>
-                                                        @elseif(!$hasRefundRequest)
+                                                        @elseif($canReview)
+                                                            <!-- Form thêm đánh giá mới -->
                                                             <form action="{{ route('account.reviews.store') }}"
                                                                 method="POST" enctype="multipart/form-data"
                                                                 class="space-y-4 review-form bg-gray-50 border-2 border-gray-200 p-4 quick-review-form">
@@ -629,6 +640,20 @@
                                                                     @endif
                                                                 </div>
                                                             </form>
+                                                        @else
+                                                            {{-- <!-- Thông báo hết hạn đánh giá -->
+                                                            <div class="bg-gray-50 border-2 border-gray-200 p-4">
+                                                                <div class="flex items-center gap-2 mb-2">
+                                                                    <div class="w-1 h-4 bg-gray-400"></div>
+                                                                    <h6
+                                                                        class="font-bold text-sm uppercase tracking-wide text-gray-600">
+                                                                        ĐÁNH GIÁ ĐÃ HẾT HẠN</h6>
+                                                                </div>
+                                                                <p class="text-sm text-gray-500">
+                                                                    Đã quá thời hạn đánh giá sản phẩm này. Bạn chỉ có thể
+                                                                    đánh giá trong vòng 1 tháng sau khi đơn hàng hoàn thành.
+                                                                </p>
+                                                            </div> --}}
                                                         @endif
                                                     </div>
                                                 @endif
