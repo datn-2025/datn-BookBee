@@ -160,6 +160,14 @@
                                     </svg>
                                     Đơn hàng
                                 </a>
+                                <a href="{{ route('preorders.index') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: all 0.2s ease;"
+                                   onmouseover="this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='white'"
+                                   onmouseout="this.style.background='transparent'; this.style.color='#374151'">
+                                    <svg style="display: inline; height: 1rem; width: 1rem; margin-right: 0.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                                    </svg>
+                                    Đơn đặt trước
+                                </a>
                                 <a href="{{ route('wallet.index') }}" style="display: block; padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; text-decoration: none; transition: all 0.2s ease;"
                                    onmouseover="this.style.background='linear-gradient(135deg, #f59e0b, #d97706)'; this.style.color='white'"
                                    onmouseout="this.style.background='transparent'; this.style.color='#374151'">
