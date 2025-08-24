@@ -425,7 +425,7 @@ class PreorderController extends Controller
     /**
      * Xử lý thanh toán VNPay cho preorder
      * - Tạo tham số, ký hash và redirect sang cổng VNPay
-     * - Trước khi redirect, cập nhật `preorders.vnpay_transaction_id` = mã tham chiếu và `payment_status = 'processing'`
+     * - Trước khi redirect, cập nhật `preorders.vnpay_transaction_id` = mã tham chiếu và `payment_status = 'pending'`
      * - Khi VNPay redirect về, `vnpayReturn()` sẽ xác nhận thành công/thất bại
      */
     public function vnpay_payment($data)
@@ -475,7 +475,8 @@ class PreorderController extends Controller
         if ($preorder) {
             $preorder->update([
                 'vnpay_transaction_id' => $data['order_code'],
-                'payment_status' => 'processing'
+                // Sử dụng giá trị hợp lệ theo enum: pending | paid | failed
+                'payment_status' => 'pending'
             ]);
         }
 
