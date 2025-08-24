@@ -19,7 +19,7 @@
 
     <form action="{{ route('admin.books.store') }}" method="POST" enctype="multipart/form-data" id="bookForm">
         @csrf
-        <div class="row">
+        <div class="row ">
             <!-- Main Content -->
             <div class="col-lg-8">
                 <!-- Thông tin cơ bản -->
@@ -37,7 +37,7 @@
                                        id="title" name="title" value="{{ old('title') }}" 
                                        placeholder="Nhập tên sách...">
                                 @error('title')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             
@@ -53,7 +53,7 @@
                                     @endforeach
                                 </select>
                                 @error('category_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             
@@ -69,7 +69,7 @@
                                     @endforeach
                                 </select>
                                 @error('brand_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             
@@ -79,7 +79,7 @@
                                           id="description" name="description" rows="4"
                                           placeholder="Nhập mô tả sách...">{{ old('description') }}</textarea>
                                 @error('description')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
@@ -101,7 +101,7 @@
                                        id="isbn" name="isbn" value="{{ old('isbn') }}" 
                                        placeholder="Mã ISBN...">
                                 @error('isbn')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             
@@ -111,7 +111,7 @@
                                        id="page_count" name="page_count" value="{{ old('page_count') }}" 
                                        placeholder="Số trang..." min="1">
                                 @error('page_count')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             
@@ -120,7 +120,7 @@
                                 <input type="date" class="form-control @error('publication_date') is-invalid @enderror" 
                                        id="publication_date" name="publication_date" value="{{ old('publication_date') }}">
                                 @error('publication_date')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             
@@ -136,8 +136,91 @@
                                     <option value="Tiếng Hàn" {{ old('language') == 'Tiếng Hàn' ? 'selected' : '' }}>Tiếng Hàn</option>
                                 </select>
                                 @error('language')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
+                                @error('language')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            
+                            <!-- Preorder Section -->
+                            <div class="col-12">
+                                <div class="card bg-light border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">
+                                            <i class="ri-bookmark-line me-2"></i>Cấu hình đặt trước sách
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Allow Preorder -->
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="pre_order" 
+                                                   name="pre_order" value="1" {{ old('pre_order') ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-medium" for="pre_order">
+                                                Cho phép đặt trước sách
+                                            </label>
+                                            <div class="form-text">
+                                                Kích hoạt để khách hàng có thể đặt trước sách này trước ngày ra mắt
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="preorder_section" style="display: none;">
+                                            <style>
+                                                #preorder_section .col-md-6 {
+                                                    width: 50% !important;
+                                                    flex: 0 0 auto !important;
+                                                }
+                                                #preorder_section .row {
+                                                    display: flex !important;
+                                                    flex-wrap: wrap !important;
+                                                }
+                                            </style>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="release_date" class="form-label fw-medium">Ngày ra mắt <span class="text-danger">*</span></label>
+                                                    <input type="date" class="form-control @error('release_date') is-invalid @enderror" 
+                                                           id="release_date" name="release_date" value="{{ old('release_date') }}">
+                                                    @error('release_date')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="stock_preorder_limit" class="form-label fw-medium">Số lượng cho phép đặt trước <span class="text-danger">*</span></label>
+                                                    <input type="number" class="form-control @error('stock_preorder_limit') is-invalid @enderror" 
+                                                           id="stock_preorder_limit" name="stock_preorder_limit" value="{{ old('stock_preorder_limit') }}" 
+                                                           placeholder="Ví dụ: 100" min="1" step="1">
+                                                    @error('stock_preorder_limit')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="pre_order_price" class="form-label fw-medium">Giá ưu đãi đặt trước</label>
+                                                    <input type="number" class="form-control @error('pre_order_price') is-invalid @enderror" 
+                                                           id="pre_order_price" name="pre_order_price" value="{{ old('pre_order_price') }}" 
+                                                           min="0" step="1000" placeholder="Ví dụ: 150000">
+                                                    @error('pre_order_price')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="preorder_count" class="form-label fw-medium">Số lượng đã đặt trước</label>
+                                                    <input type="number" class="form-control" 
+                                                           id="preorder_count" name="preorder_count" value="0" 
+                                                           placeholder="0" readonly>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label for="preorder_description" class="form-label fw-medium">Mô tả ưu đãi đặt trước</label>
+                                                    <textarea class="form-control @error('preorder_description') is-invalid @enderror" 
+                                                              id="preorder_description" name="preorder_description" rows="3" 
+                                                              placeholder="Mô tả về ưu đãi hoặc thông tin đặc biệt cho khách đặt trước (ví dụ: Tặng kèm bookmark, giảm 20%, giao hàng miễn phí...)">{{ old('preorder_description') }}</textarea>
+                                                    @error('preorder_description')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -162,7 +245,10 @@
                             @endforeach
                         </select>
                         @error('author_ids')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
+                        @error('author_ids.*')
+                            <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
@@ -199,7 +285,7 @@
                                             @endforeach
                                         </select>
                                         @error('gift_book_id')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
                                         <div class="form-text">Để trống để tạo quà tặng cho sách hiện tại</div>
                                     </div>
@@ -210,7 +296,7 @@
                                                name="gift_name" value="{{ old('gift_name') }}" 
                                                placeholder="Ví dụ: Bookmark đặc biệt, Postcard...">
                                         @error('gift_name')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
                                     </div>
                                     
@@ -220,7 +306,7 @@
                                                name="quantity" value="{{ old('quantity', 1) }}" 
                                                placeholder="1" min="1">
                                         @error('quantity')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
                                     </div>
                                     
@@ -230,12 +316,12 @@
                                                   name="gift_description" rows="3" 
                                                   placeholder="Mô tả chi tiết về quà tặng...">{{ old('gift_description') }}</textarea>
                                         @error('gift_description')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
                                     </div>
                                     <div class="col-12">
                                         <label class="form-label fw-medium">Thời gian khuyến mãi quà tặng</label>
-                                        <input type="text" class="form-control @error('gift_date_range') is-invalid @enderror" 
+                                        <input type="text" class="form-control @error('gift_date_range') is-invalid @enderror @error('gift_start_date') is-invalid @enderror @error('gift_end_date') is-invalid @enderror" 
                                                id="gift_date_range" name="gift_date_range" 
                                                placeholder="Chọn khoảng thời gian khuyến mãi..." 
                                                value="{{ old('gift_date_range') }}">
@@ -245,13 +331,11 @@
                                         <input type="hidden" id="gift_end_date" name="gift_end_date" value="{{ old('gift_end_date') }}">
                                         
                                         @error('gift_date_range')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                        @error('gift_start_date')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                        @error('gift_end_date')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
+                                        @elseif($errors->has('gift_start_date'))
+                                            <div class="text-danger small mt-1">{{ $errors->first('gift_start_date') }}</div>
+                                        @elseif($errors->has('gift_end_date'))
+                                            <div class="text-danger small mt-1">{{ $errors->first('gift_end_date') }}</div>
                                         @enderror
                                         
                                         <div class="form-text">
@@ -265,7 +349,7 @@
                                         <input type="file" class="form-control @error('gift_image') is-invalid @enderror" 
                                                name="gift_image" accept="image/*">
                                         @error('gift_image')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
                                         <div class="form-text">Chấp nhận file ảnh JPG, PNG, GIF. Tối đa 2MB</div>
                                         <div id="gift_image_preview" class="mt-2"></div>
@@ -303,22 +387,34 @@
                             <div id="physical_format" style="display: none;">
                                 <div class="border rounded p-3 bg-light">
                                     <!-- Thông tin cơ bản sách vật lý -->
-                                    <div class="row g-3 mb-4">
+                                    <div class="row g-3 mb-4" id="physical_price_section">
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
-                                            <input type="number" class="form-control" name="formats[physical][price]" 
-                                                   id="physical_price" value="{{ old('formats.physical.price') }}" placeholder="0" min="0">
+                                            <input type="number" class="form-control format-price" name="formats[physical][price]" 
+                                                   value="{{ old('formats.physical.price') }}" placeholder="0" min="0">
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][discount]" 
                                                    id="physical_discount" value="{{ old('formats.physical.discount') }}" placeholder="0" min="0">
+                                            @error('formats.physical.discount')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Số lượng</label>
                                             <input type="number" class="form-control" name="formats[physical][stock]" 
                                                    value="{{ old('formats.physical.stock') }}" placeholder="0" min="0">
+                                            @error('formats.physical.stock')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                         </div>
+                                    </div>
+                                    
+                                    <!-- Thông báo khi bật preorder -->
+                                    <div class="alert alert-info preorder-price-notice" style="display: none;">
+                                        <i class="ri-information-line me-2"></i>
+                                        <strong>Chế độ đặt trước:</strong> Khi bật chế độ đặt trước, giá bán sẽ được sử dụng từ "Giá ưu đãi đặt trước" đã cấu hình ở phần trên thay vì giá định dạng này.
                                     </div>
                                     
                                     <!-- Thuộc tính sách vật lý -->
@@ -413,21 +509,33 @@
                             
                             <div id="ebook_format" style="display: none;">
                                 <div class="border rounded p-3 bg-light">
-                                    <div class="row g-3">
+                                    <div class="row g-3" id="ebook_price_section">
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
-                                            <input type="number" class="form-control" name="formats[ebook][price]" 
-                                                   id="ebook_price" value="{{ old('formats.ebook.price') }}" placeholder="0" min="0">
+                                            <input type="number" class="form-control format-price" name="formats[ebook][price]" 
+                                                   value="{{ old('formats.ebook.price') }}" placeholder="0" min="0">
+
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][discount]" 
-                                                   id="ebook_discount" value="{{ old('formats.ebook.discount') }}" placeholder="0" min="0">
+                                                   value="{{ old('formats.ebook.discount') }}" placeholder="0" min="0">
+
                                         </div>
+                                    </div>
+                                    
+                                    <!-- Thông báo khi bật preorder -->
+                                    <div class="alert alert-info preorder-price-notice" style="display: none;">
+                                        <i class="ri-information-line me-2"></i>
+                                        <strong>Chế độ đặt trước:</strong> Khi bật chế độ đặt trước, giá bán sẽ được sử dụng từ "Giá ưu đãi đặt trước" đã cấu hình ở phần trên thay vì giá định dạng này.
+                                    </div>
                                         <div class="col-12">
                                             <label class="form-label fw-medium">File Ebook</label>
                                             <input type="file" class="form-control" name="formats[ebook][file]" 
                                                    accept=".pdf,.epub">
+                                            @error('formats.ebook.file')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                             <div class="form-text">Chấp nhận file PDF hoặc EPUB, tối đa 50MB</div>
                                         </div>
                                         
@@ -435,6 +543,9 @@
                                             <label class="form-label fw-medium">File đọc thử</label>
                                             <input type="file" class="form-control" name="formats[ebook][sample_file]" 
                                                    accept=".pdf,.epub">
+                                            @error('formats.ebook.sample_file')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                             <div class="form-text">File đọc thử cho khách hàng. Chấp nhận file PDF hoặc EPUB, tối đa 10MB.</div>
                                         </div>
                                         
@@ -481,7 +592,7 @@
                             <input type="file" class="form-control @error('cover_image') is-invalid @enderror" 
                                    id="cover_image" name="cover_image" accept="image/*">
                             @error('cover_image')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
                             <div id="cover_preview" class="mt-3"></div>
                         </div>
@@ -492,7 +603,10 @@
                             <input type="file" class="form-control @error('images') is-invalid @enderror" 
                                    id="images" name="images[]" accept="image/*" multiple>
                             @error('images')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
+                            @error('images.*')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
                             <div id="images_preview" class="row mt-3"></div>
                         </div>
@@ -515,7 +629,7 @@
                             <option value="Ngừng Kinh Doanh" {{ old('status') == 'Ngừng Kinh Doanh' ? 'selected' : '' }}>Ngừng Kinh Doanh</option>
                         </select>
                         @error('status')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
@@ -601,6 +715,9 @@ function toggleFormatSections() {
     if (ebookCheckbox && ebookForm) {
         ebookForm.style.display = ebookCheckbox.checked ? 'block' : 'none';
     }
+    
+    // Call preorder toggle to update price sections
+    togglePreorderSection();
 }
 
 // Toggle gift section
@@ -613,12 +730,97 @@ function toggleGiftSection() {
     }
 }
 
+// Preorder section toggle
+function togglePreorderSection() {
+    const preOrderCheckbox = document.getElementById('pre_order');
+    const preorderSection = document.getElementById('preorder_section');
+    const releaseDateInput = document.getElementById('release_date');
+    const stockPreorderLimitInput = document.getElementById('stock_preorder_limit');
+    const physicalPriceSection = document.getElementById('physical_price_section');
+    const ebookPriceSection = document.getElementById('ebook_price_section');
+    const preorderPriceNotices = document.querySelectorAll('.preorder-price-notice');
+    const physicalCheckbox = document.getElementById('has_physical');
+    const ebookCheckbox = document.getElementById('has_ebook');
+    
+    if (!preOrderCheckbox || !preorderSection) {
+        return;
+    }
+    
+    if (preOrderCheckbox.checked) {
+        preorderSection.style.display = 'block';
+        
+        // Make required fields required
+        if (releaseDateInput) releaseDateInput.required = true;
+        if (stockPreorderLimitInput) stockPreorderLimitInput.required = true;
+        
+        // Set minimum date to today
+        if (releaseDateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            releaseDateInput.min = today;
+        }
+        
+        // Hide price sections and show notices only for enabled formats
+        if (physicalPriceSection && physicalCheckbox && physicalCheckbox.checked) {
+            physicalPriceSection.style.display = 'none';
+        }
+        if (ebookPriceSection && ebookCheckbox && ebookCheckbox.checked) {
+            ebookPriceSection.style.display = 'none';
+        }
+        
+        // Show preorder notices for enabled formats
+        preorderPriceNotices.forEach(notice => {
+            const parentCard = notice.closest('.border');
+            if (parentCard) {
+                // Check if this is physical format notice
+                if (parentCard.closest('#physical_format') && physicalCheckbox && physicalCheckbox.checked) {
+                    notice.style.display = 'block';
+                }
+                // Check if this is ebook format notice
+                else if (parentCard.closest('#ebook_format') && ebookCheckbox && ebookCheckbox.checked) {
+                    notice.style.display = 'block';
+                }
+            }
+        });
+        
+        // Set default stock limit if empty
+        if (stockPreorderLimitInput && !stockPreorderLimitInput.value) {
+            stockPreorderLimitInput.value = 100;
+        }
+    } else {
+        preorderSection.style.display = 'none';
+        
+        // Remove required from fields
+        if (releaseDateInput) {
+            releaseDateInput.required = false;
+            releaseDateInput.value = '';
+        }
+        if (stockPreorderLimitInput) {
+            stockPreorderLimitInput.required = false;
+            stockPreorderLimitInput.value = '';
+        }
+        
+        // Show price sections and hide notices for enabled formats
+        if (physicalPriceSection && physicalCheckbox && physicalCheckbox.checked) {
+            physicalPriceSection.style.display = 'block';
+        }
+        if (ebookPriceSection && ebookCheckbox && ebookCheckbox.checked) {
+            ebookPriceSection.style.display = 'block';
+        }
+        
+        preorderPriceNotices.forEach(notice => {
+            notice.style.display = 'none';
+        });
+    }
+}
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
     const physicalCheckbox = document.getElementById('has_physical');
     const ebookCheckbox = document.getElementById('has_ebook');
     const giftCheckbox = document.getElementById('has_gift');
+    const preOrderCheckbox = document.getElementById('pre_order');
     
+    // Add event listeners
     if (physicalCheckbox) {
         physicalCheckbox.addEventListener('change', toggleFormatSections);
     }
@@ -631,9 +833,14 @@ document.addEventListener('DOMContentLoaded', function() {
         giftCheckbox.addEventListener('change', toggleGiftSection);
     }
     
+    if (preOrderCheckbox) {
+        preOrderCheckbox.addEventListener('change', togglePreorderSection);
+    }
+    
     // Initial toggle
     toggleFormatSections();
     toggleGiftSection();
+    togglePreorderSection();
     
     // Preview images
     const coverInput = document.getElementById('cover_image');
@@ -779,10 +986,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     // Initialize gift date range picker
     const giftDateRangePicker = document.getElementById('gift_date_range');
-    if (giftDateRangePicker) {
+    if (giftDateRangePicker && typeof flatpickr !== 'undefined') {
         flatpickr(giftDateRangePicker, {
             mode: 'range',
             dateFormat: 'Y-m-d',
@@ -814,7 +1021,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Initialize Select2
+// Initialize Select2 and other jQuery-dependent code
 $(document).ready(function() {
     // Initialize Select2
     if (typeof $.fn.select2 !== 'undefined') {
@@ -877,70 +1084,8 @@ $(document).ready(function() {
             });
         }
     }
-
-    // Handle image removal
-    $(document).on('click', '.remove-image', function() {
-        const index = parseInt($(this).data('index'));
-        selectedFiles.splice(index, 1);
-        
-        // Update the file input
-        const dt = new DataTransfer();
-        selectedFiles.forEach(file => dt.items.add(file));
-        document.getElementById('images').files = dt.files;
-        
-        updateImagePreview();
-    });
-
-    // Price discount validation
-    function validateDiscountPrice() {
-        // Physical format validation
-        const physicalPriceInput = document.getElementById('physical_price');
-        const physicalDiscountInput = document.getElementById('physical_discount');
-        
-        if (physicalPriceInput && physicalDiscountInput) {
-            function validatePhysicalDiscount() {
-                const price = parseFloat(physicalPriceInput.value) || 0;
-                const discount = parseFloat(physicalDiscountInput.value) || 0;
-                
-                if (discount > price) {
-                    physicalDiscountInput.setCustomValidity('Giá giảm không được lớn hơn giá bán');
-                    physicalDiscountInput.classList.add('is-invalid');
-                } else {
-                    physicalDiscountInput.setCustomValidity('');
-                    physicalDiscountInput.classList.remove('is-invalid');
-                }
-            }
-            
-            physicalPriceInput.addEventListener('input', validatePhysicalDiscount);
-            physicalDiscountInput.addEventListener('input', validatePhysicalDiscount);
-        }
-        
-        // Ebook format validation
-        const ebookPriceInput = document.getElementById('ebook_price');
-        const ebookDiscountInput = document.getElementById('ebook_discount');
-        
-        if (ebookPriceInput && ebookDiscountInput) {
-            function validateEbookDiscount() {
-                const price = parseFloat(ebookPriceInput.value) || 0;
-                const discount = parseFloat(ebookDiscountInput.value) || 0;
-                
-                if (discount > price) {
-                    ebookDiscountInput.setCustomValidity('Giá giảm không được lớn hơn giá bán');
-                    ebookDiscountInput.classList.add('is-invalid');
-                } else {
-                    ebookDiscountInput.setCustomValidity('');
-                    ebookDiscountInput.classList.remove('is-invalid');
-                }
-            }
-            
-            ebookPriceInput.addEventListener('input', validateEbookDiscount);
-            ebookDiscountInput.addEventListener('input', validateEbookDiscount);
-        }
-    }
-    
-    // Initialize price validation
-    validateDiscountPrice();
 });
+
 </script>
 @endpush
 @endsection

@@ -283,11 +283,14 @@ class ChatRealtime extends Component
             $type = 'image';
         }
 
+        // Determine caption: prefer admin-typed text/emojis, fallback to filename
+        $caption = trim($this->message_content ?? '');
+
         // Create message data
         $messageData = [
             'conversation_id' => $this->selectedConversation->id,
             'sender_id' => $currentUserId,
-            'content' => $fileName,
+            'content' => ($caption !== '' ? $caption : $fileName),
             'type' => $type,
             'file_path' => $path
         ];

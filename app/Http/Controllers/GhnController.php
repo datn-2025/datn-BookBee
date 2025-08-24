@@ -118,6 +118,7 @@ class GhnController extends Controller
             
             return response()->json([
                 'success' => true,
+                'fee' => $shippingFee,
                 'data' => [
                     'total' => $shippingFee,
                     'shipping_fee' => $shippingFee,

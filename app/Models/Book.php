@@ -19,18 +19,31 @@ class Book extends Model
         'title',
         'slug',
         'description',
-        'brand_id',
-        'category_id',
-        'status',
         'cover_image',
+        'category_id',
+        'brand_id',
+        'status',
         'isbn',
         'publication_date',
-        'page_count'
+        'page_count',
+        'release_date',
+        'pre_order',
+        'pre_order_price',
+        'preorder_discount_percent',
+        'stock_preorder_limit',
+        'preorder_count',
+        'preorder_description'
     ];
 
     protected $casts = [
         'publication_date' => 'date',
-        'page_count' => 'integer'
+        'release_date' => 'date',
+        'page_count' => 'integer',
+        'pre_order' => 'boolean',
+        'preorder_discount_percent' => 'decimal:2',
+        'pre_order_price' => 'decimal:2',
+        'stock_preorder_limit' => 'integer',
+        'preorder_count' => 'integer'
     ];
 
     protected static function boot()
@@ -160,6 +173,138 @@ class Book extends Model
     public function gifts(): HasMany
     {
         return $this->hasMany(BookGift::class);
+    }
+
+    /**
+     * Quan hệ với Preorders
+     */
+    public function preorders(): HasMany
+    {
+        return $this->hasMany(Preorder::class);
+    }
+
+    /**
+     * Kiểm tra sách có thể đặt trước không
+     */
+    public function canPreorder(): bool
+    {
+        return $this->pre_order && 
+               $this->release_date && 
+               $this->release_date->isFuture() &&
+               $this->hasPreorderSlotsAvailable();
+    }
+
+    /**
+     * Kiểm tra còn slot đặt trước không
+     */
+    public function hasPreorderSlotsAvailable(): bool
+    {
+        if (!$this->stock_preorder_limit) {
+            return true; // Không giới hạn
+        }
+        
+        return $this->getPreorderedQuantity() < $this->stock_preorder_limit;
+    }
+
+    /**
+     * Lấy số slot đặt trước còn lại
+     */
+    public function getRemainingPreorderSlots(): int
+    {
+        if (!$this->stock_preorder_limit) {
+            return 999999; // Không giới hạn
+        }
+        
+        return max(0, $this->stock_preorder_limit - $this->getPreorderedQuantity());
+    }
+
+    /**
+     * Kiểm tra sách có đang trong trạng thái đặt trước không
+     */
+    public function isPreOrder(): bool
+    {
+        return $this->pre_order && 
+               $this->release_date && 
+               $this->release_date->isFuture();
+    }
+
+    /**
+     * Kiểm tra sách đã được phát hành chưa
+     */
+    public function isReleased(): bool
+    {
+        return $this->release_date && $this->release_date->isPast();
+    }
+
+    /**
+     * Lấy giá hiển thị (ưu tiên preorder nếu có)
+     */
+    public function getDisplayPrice(): float
+    {
+        if ($this->isPreOrder()) {
+            return $this->getPreorderPrice();
+        }
+        
+        // Lấy giá từ format đầu tiên
+        $format = $this->formats->first();
+        return $format ? $format->price : 0;
+    }
+
+    /**
+     * Lấy giá preorder (áp dụng phần trăm giảm giá nếu có)
+     */
+    public function getPreorderPrice($format = null): float
+    {
+        // Lấy giá gốc từ format
+        $originalPrice = 0;
+        if ($format && $format->price) {
+            $originalPrice = $format->price;
+        } else {
+            // Fallback: lấy giá từ format đầu tiên
+            $firstFormat = $this->formats->first();
+            $originalPrice = $firstFormat ? $firstFormat->price : 0;
+        }
+
+        // Ưu tiên áp dụng phần trăm giảm giá nếu có
+        if ($this->preorder_discount_percent && $this->preorder_discount_percent > 0) {
+            $discountAmount = ($originalPrice * $this->preorder_discount_percent) / 100;
+            return max(0, $originalPrice - $discountAmount);
+        }
+
+        // Nếu không có phần trăm giảm, dùng giá cố định preorder (legacy) nếu được cấu hình
+        if ($this->pre_order_price) {
+            return $this->pre_order_price;
+        }
+
+        return $originalPrice;
+    }
+
+    /**
+     * Lấy số lượng đã đặt trước
+     */
+    public function getPreorderedQuantity(): int
+    {
+        return $this->preorders()
+            ->whereIn('status', ['pending', 'confirmed', 'processing'])
+            ->sum('quantity');
+    }
+
+    /**
+     * Scope: Lấy các sách có thể đặt trước
+     */
+    public function scopePreorderable($query)
+    {
+        return $query->where('pre_order', true)
+                     ->where('release_date', '>', now());
+    }
+
+    /**
+     * Scope: Lấy các sách sắp phát hành
+     */
+    public function scopeUpcomingRelease($query)
+    {
+        return $query->where('release_date', '>', now())
+                     ->orderBy('release_date', 'asc');
     }
     
 }

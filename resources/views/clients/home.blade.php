@@ -813,6 +813,146 @@
     </section>
     @endif
 
+    <!-- SÁCH ĐẶT TRƯỚC - PREORDER BOOKS SECTION -->
+    @if(isset($preorderBooks) && $preorderBooks->count())
+    <section class="bg-gradient-to-r from-blue-50 to-indigo-50 py-20" data-aos="fade-up">
+        <div class="max-w-7xl mx-auto px-4">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-12">
+                <div class="flex items-center gap-4">
+                    <div class="w-1 h-12 bg-blue-600"></div>
+                    <div>
+                        <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-blue-900">
+                            🔖 ĐẶT TRƯỚC SÁCH MỚI
+                        </h2>
+                        <p class="text-blue-600 text-sm font-medium mt-2">Đặt trước ngay - Nhận ưu đãi đặc biệt</p>
+                        <div class="w-16 h-0.5 bg-blue-600 mt-2"></div>
+                    </div>
+                </div>
+                
+                <div class="hidden md:flex items-center gap-2 text-blue-600">
+                    <i class="ri-calendar-line text-lg"></i>
+                    <span class="text-sm font-medium">Sắp ra mắt</span>
+                </div>
+            </div>
+            
+            <!-- Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                @foreach($preorderBooks as $book)
+                    <div class="group bg-white border-2 border-blue-100 hover:border-blue-500 transition-all duration-300 shadow-sm hover:shadow-lg cursor-pointer relative overflow-hidden flex flex-col h-full">
+                        @php
+                            $originalPrice = $book->formats->first()->price ?? 0;
+                            $preorderPrice = $book->getPreorderPrice();
+                            $discountPercent = ($preorderPrice && $originalPrice > 0 && $preorderPrice < $originalPrice)
+                                ? round((($originalPrice - $preorderPrice) / $originalPrice) * 100)
+                                : 0;
+                        @endphp
+                        
+                        <!-- Preorder Badge -->
+                        <div class="absolute top-3 left-3 bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase tracking-wide z-10 shadow-lg
+">
+                            ĐẶT TRƯỚC
+                        </div>
+
+                        <!-- Release Date Badge -->
+                        <div class="absolute top-3 right-3 bg-yellow-400 text-black px-2 py-1 text-xs font-bold uppercase z-10">
+                            {{ $book->release_date ? $book->release_date->format('d/m/Y') : 'TBD' }}
+                        </div>
+                        @if($discountPercent > 0)
+                            <!-- Discount Percent Badge -->
+                            <div class="absolute top-12 left-3 bg-red-600 text-white px-2 py-1 text-xs font-bold uppercase z-10 shadow">
+                                -{{ $discountPercent }}%
+                            </div>
+                        @endif
+                        
+                        <!-- Image -->
+                        <div class="aspect-[3/4] bg-white overflow-hidden relative">
+                            @php
+                                $cardImage = null;
+                                if ($book->images && $book->images->isNotEmpty()) {
+                                    $cardImage = asset('storage/' . $book->images->first()->image_url);
+                                } elseif (!empty($book->cover_image)) {
+                                    $cardImage = asset('storage/' . $book->cover_image);
+                                } else {
+                                    $cardImage = asset('images/default.jpg');
+                                }
+                            @endphp
+                            <img src="{{ $cardImage }}"
+                                 alt="{{ $book->title }}"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="p-4 space-y-3 flex flex-col h-full">
+                            <h3 class="font-bold text-gray-900 text-sm leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
+                                {{ $book->title }}
+                            </h3>
+                            
+                            <div class="space-y-2">
+                                @if($book->authors && $book->authors->isNotEmpty())
+                                    <p class="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                                        {{ $book->authors->first()->name }}
+                                    </p>
+                                @endif
+                                
+                                <!-- Price -->
+                                <div class="flex items-center justify-between">
+                                    @php
+                                        $preorderPrice = $book->getPreorderPrice();
+                                        $originalPrice = $book->formats->first()->price ?? 0;
+                                        $savePercent = ($preorderPrice && $originalPrice > 0 && $preorderPrice < $originalPrice)
+                                            ? round((($originalPrice - $preorderPrice) / $originalPrice) * 100)
+                                            : 0;
+                                    @endphp
+                                    
+                                    <div class="space-y-1">
+                                        @if($preorderPrice && $preorderPrice < $originalPrice)
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-lg font-bold text-blue-600">
+                                                    {{ number_format($preorderPrice, 0, ',', '.') }}₫
+                                                </span>
+                                                <span class="text-sm text-gray-400 line-through">
+                                                    {{ number_format($originalPrice, 0, ',', '.') }}₫
+                                                </span>
+                                            </div>
+                                            <div class="bg-red-100 text-red-600 px-2 py-1 text-xs font-bold rounded inline-block">
+                                                TIẾT KIỆM {{ number_format($originalPrice - $preorderPrice, 0, ',', '.') }}₫
+                                            </div>
+                                        @else
+                                            <span class="text-lg font-bold text-gray-900">
+                                                {{ number_format($preorderPrice ?: $originalPrice, 0, ',', '.') }}₫
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Action Button -->
+                            <div class="mt-auto mb-0">
+                                <button onclick="window.location.href='{{ route('books.show', $book->slug) }}'"
+                                        class="w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center">
+                                    <i class="ri-bookmark-line mr-2 text-sm"></i>
+                                    <span>ĐẶT TRƯỚC NGAY</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- View More Button -->
+            @if($preorderBooks->count() >= 8)
+            <div class="text-center mt-12">
+                <a href="{{ route('books.index', ['filter' => 'preorder']) }}" 
+                   class="inline-flex items-center gap-3 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-8 py-4 font-bold text-sm uppercase tracking-wide transition-all duration-300 group">
+                    <span>XEM TẤT CẢ SÁCH ĐẶT TRƯỚC</span>
+                    <div class="w-4 h-0.5 bg-current group-hover:w-8 transition-all duration-300"></div>
+                </a>
+            </div>
+            @endif
+        </div>
+    </section>
+    @endif
+
     <!-- TIN TỨC - ADIDAS STYLE -->
     <section class="bg-gray-50 py-20">
         <div class="max-w-7xl mx-auto px-4">
@@ -899,159 +1039,194 @@
 @endsection
 
 @push('scripts')
-    <style>
-        /* Cố định chiều cao cho các thẻ tính năng */
-        .feature-card {
-            min-height: 320px;
-            display: flex;
-            flex-direction: column;
-        }
-        .feature-card > div:last-child {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            padding-bottom: 40px; /* Thêm khoảng trống cho thanh tiến trình */
-        }
-        /* Cố định vị trí thanh tiến trình ở dưới cùng */
-        .feature-card [class*="absolute bottom-0 left-0 h-1"] {
-            bottom: 0;
-            left: 0;
-            right: 0;
-            margin: 0 auto;
-            width: 0;
-            transition: width 0.7s ease;
-        }
-        .feature-card:hover [class*="absolute bottom-0 left-0 h-1"] {
-            width: 100%;
-        }
-        /* BookBee Home Page - Font Styling */
-        .bookbee-home-page {
-            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
-        }
-
-        .bookbee-home-page h1,
-        .bookbee-home-page h2,
-        .bookbee-home-page h3,
-        .bookbee-home-page h4,
-        .bookbee-home-page h5,
-        .bookbee-home-page h6 {
-            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
-            font-weight: 700;
-        }
-
-        .bookbee-home-page .hero-title {
-            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .bookbee-home-page .section-title {
-            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-        }
-
-        .bookbee-home-page .book-title {
-            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
-            font-weight: 600;
-            line-height: 1.3;
-        }
-
-        .bookbee-home-page .feature-title {
-            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-        }
-
-        .bookbee-home-page .button-text {
-            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
-            font-weight: 600;
-            letter-spacing: 0.15em;
-        }
-
-        .bookbee-home-page .body-text {
-            font-family: 'TitilliumWeb', sans-serif;
-            font-weight: 400;
-            line-height: 1.6;
-        }
-
-        .bookbee-home-page .subtitle-text {
-            font-family: 'TitilliumWeb', sans-serif;
-            font-weight: 300;
-            letter-spacing: 0.05em;
-        }
-
-        /* Enhanced tab styling for better interaction */
-        .tab-button {
-            position: relative;
-            border: none;
-            outline: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            will-change: transform, box-shadow;
-            font-family: 'AdihausDIN', 'TitilliumWeb', sans-serif;
-            font-weight: 600;
-        }
-        
-        .tab-button:active {
-            transform: translateY(1px);
-        }
-        
-        .tab-button:focus {
-            outline: 2px solid rgba(0, 0, 0, 0.1);
-            outline-offset: 2px;
-        }
-        
-        .tab-content {
-            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-        }
-        
-        .tab-content.hidden {
-            display: none !important;
-        }
-        
-        .tab-content.block {
-            display: block !important;
-        }
-        
-        /* Prevent text selection on buttons */
-        .tab-button {
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
+    <script>
+        // XEM THÊM / THU GỌN functionality for books
+        document.addEventListener('DOMContentLoaded', function() {
+            const showMoreBtn = document.getElementById('showMoreBooks');
+            const showLessBtn = document.getElementById('showLessBooks');
+            const bookItems = document.querySelectorAll('.book-item');
             
-        /* Ripple effect animation */
-        @keyframes ripple {
-            to {
-                transform: scale(4);
-                opacity: 0;
+            // Sale books expand/collapse functionality
+            const showMoreSaleBtn = document.getElementById('showMoreSaleBooks');
+            const showLessSaleBtn = document.getElementById('showLessSaleBooks');
+            const saleBookItems = document.querySelectorAll('.sale-book-item');
+            
+            if (showMoreBtn) {
+                showMoreBtn.addEventListener('click', function() {
+                    // Show all hidden books
+                    bookItems.forEach(function(item, index) {
+                        if (index >= 8) {
+                            item.classList.remove('hidden');
+                        }
+                    });
+                    
+                    // Toggle buttons
+                    showMoreBtn.classList.add('hidden');
+                    showLessBtn.classList.remove('hidden');
+                    
+                    // Smooth scroll to show the newly revealed books
+                    setTimeout(function() {
+                        if (bookItems[8]) {
+                            bookItems[8].scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'nearest' 
+                            });
+                        }
+                    }, 100);
+                });
             }
+            
+            if (showLessBtn) {
+                showLessBtn.addEventListener('click', function() {
+                    // Hide books after index 7 (keep first 8 books)
+                    bookItems.forEach(function(item, index) {
+                        if (index >= 8) {
+                            item.classList.add('hidden');
+                        }
+                    });
+                    
+                    // Toggle buttons
+                    showLessBtn.classList.add('hidden');
+                    showMoreBtn.classList.remove('hidden');
+                    
+                    // Smooth scroll back to the section
+                    document.getElementById('allBooksGrid').scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                });
+            }
+            
+            // Sale books expand functionality
+            if (showMoreSaleBtn) {
+                showMoreSaleBtn.addEventListener('click', function() {
+                    // Show all hidden sale books
+                    saleBookItems.forEach(function(item, index) {
+                        if (index >= 8) {
+                            item.classList.remove('hidden');
+                        }
+                    });
+                    
+                    // Toggle buttons
+                    showMoreSaleBtn.classList.add('hidden');
+                    showLessSaleBtn.classList.remove('hidden');
+                    
+                    // Smooth scroll to show the newly revealed books
+                    setTimeout(function() {
+                        if (saleBookItems[8]) {
+                            saleBookItems[8].scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'nearest' 
+                            });
+                        }
+                    }, 100);
+                });
+            }
+            
+            // Sale books collapse functionality
+            if (showLessSaleBtn) {
+                showLessSaleBtn.addEventListener('click', function() {
+                    // Hide books after index 7 (keep first 8 books)
+                    saleBookItems.forEach(function(item, index) {
+                        if (index >= 8) {
+                            item.classList.add('hidden');
+                        }
+                    });
+                    
+                    // Toggle buttons
+                    showLessSaleBtn.classList.add('hidden');
+                    showMoreSaleBtn.classList.remove('hidden');
+                    
+                    // Smooth scroll back to the section
+                    document.getElementById('saleBooksGrid').scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                });
+            }
+        });
+
+        // ===== PREORDER MODAL FUNCTIONALITY =====
+        function openPreorderModal(bookId) {
+            @auth
+                // If user is logged in, redirect to preorder form
+                window.location.href = `/preorders/create/${bookId}`;
+            @else
+                // If not logged in, redirect to login with intended URL
+                window.location.href = `/login?intended=/preorders/create/${bookId}`;
+            @endauth
+        }
+    </script>
+
+    <!-- Preorder Modal (for quick view/info) -->
+    <div id="preorderModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;">
+        <div class="bg-white max-w-md w-full rounded-lg shadow-2xl transform transition-all duration-300 scale-95" id="preorderModalContent">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="ri-bookmark-line text-blue-600"></i>
+                    Đặt Trước Sách
+                </h3>
+                <button onclick="closePreorderModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="ri-close-line text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 space-y-6">
+                <!-- Book Info Placeholder -->
+                <div id="bookInfo" class="space-y-4">
+                    <div class="animate-pulse space-y-3">
+                        <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                        <div class="h-8 bg-gray-200 rounded w-full"></div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    @auth
+                        <button id="proceedToPreorder" 
+                                class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-6 font-bold text-sm uppercase tracking-wide transition-all duration-300 flex items-center justify-center gap-2">
+                            <i class="ri-bookmark-line"></i>
+                            Tiến Hành Đặt Trước
+                        </button>
+                    @else
+                        <button onclick="window.location.href='/login'" 
+                                class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-6 font-bold text-sm uppercase tracking-wide transition-all duration-300 flex items-center justify-center gap-2">
+                            <i class="ri-login-circle-line"></i>
+                            Đăng Nhập Để Đặt Trước
+                        </button>
+                    @endauth
+                    
+                    <button onclick="closePreorderModal()" 
+                            class="px-6 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-sm uppercase tracking-wide transition-colors">
+                        Hủy
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function closePreorderModal() {
+            const modal = document.getElementById('preorderModal');
+            const modalContent = document.getElementById('preorderModalContent');
+            
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                modalContent.classList.remove('scale-95');
+            }, 150);
         }
 
-        /* News Article Card Enhancement */
-        .bookbee-home-page article {
-            cursor: pointer;
-        }
-        
-        .bookbee-home-page article a {
-            text-decoration: none;
-            color: inherit;
-        }
-        
-        .bookbee-home-page article:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-        
-        .bookbee-home-page article:active {
-            transform: translateY(0);
-        }
-    </style>
+        // Close modal when clicking outside
+        document.getElementById('preorderModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePreorderModal();
+            }
+        });
+    </script>
 
     <script src="{{ asset('js/home.js') }}"></script>
 @endpush

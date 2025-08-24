@@ -143,6 +143,31 @@ class AdminBookController extends Controller
         if (!$request->boolean('has_physical') && !$request->boolean('has_ebook')) {
             return back()->withInput()->withErrors(['format_required' => 'Vui lòng chọn ít nhất một định dạng sách (Sách vật lý hoặc Ebook).']);
         }
+        
+        // Custom validation cho preorder books
+        $errors = [];
+        $isPreorder = $request->boolean('pre_order');
+        
+        // Nếu không phải preorder, cần validate giá và stock cho formats
+        if (!$isPreorder) {
+            if ($request->boolean('has_physical')) {
+                if (!$request->filled('formats.physical.price')) {
+                    $errors['formats.physical.price'] = 'Giá sách vật lý là bắt buộc khi không phải preorder.';
+                }
+                if (!$request->filled('formats.physical.stock')) {
+                    $errors['formats.physical.stock'] = 'Số lượng sách vật lý là bắt buộc khi không phải preorder.';
+                }
+            }
+            if ($request->boolean('has_ebook')) {
+                if (!$request->filled('formats.ebook.price')) {
+                    $errors['formats.ebook.price'] = 'Giá ebook là bắt buộc khi không phải preorder.';
+                }
+            }
+        }
+        
+        if (!empty($errors)) {
+            return back()->withInput()->withErrors($errors);
+        }
 
         $data = $request->only([
             'title',
@@ -152,7 +177,14 @@ class AdminBookController extends Controller
             'status',
             'isbn',
             'publication_date',
-            'page_count'
+            'page_count',
+            'release_date',
+            'pre_order',
+            'pre_order_price',
+            'preorder_discount_percent',
+            'stock_preorder_limit',
+            'preorder_count',
+            'preorder_description'
         ]);
 
         $slug = Str::slug($data['title']);
@@ -177,9 +209,14 @@ class AdminBookController extends Controller
 
         // Lưu định dạng sách vật lý
         if ($request->boolean('has_physical')) {
+            // Nếu bật preorder, sử dụng giá preorder, ngược lại sử dụng giá format
+            $physicalPrice = $request->boolean('pre_order') && $request->filled('pre_order_price') 
+                ? $request->input('pre_order_price') 
+                : $request->input('formats.physical.price');
+                
             $book->formats()->create([
                 'format_name' => 'Sách Vật Lý',
-                'price' => $request->input('formats.physical.price'),
+                'price' => $physicalPrice,
                 'discount' => $request->input('formats.physical.discount'),
                 'stock' => $request->input('formats.physical.stock'),
             ]);
@@ -187,9 +224,14 @@ class AdminBookController extends Controller
 
         // Lưu định dạng ebook
         if ($request->boolean('has_ebook')) {
+            // Nếu bật preorder, sử dụng giá preorder, ngược lại sử dụng giá format
+            $ebookPrice = $request->boolean('pre_order') && $request->filled('pre_order_price') 
+                ? $request->input('pre_order_price') 
+                : $request->input('formats.ebook.price');
+                
             $ebookFormat = [
                 'format_name' => 'Ebook',
-                'price' => $request->input('formats.ebook.price'),
+                'price' => $ebookPrice,
                 'discount' => $request->input('formats.ebook.discount'),
                 'allow_sample_read' => $request->boolean('formats.ebook.allow_sample_read'),
             ];
@@ -267,12 +309,12 @@ class AdminBookController extends Controller
             'attribute_values.*.extra_price' => 'nullable|numeric|min:0',
             'attribute_values.*.stock' => 'nullable|integer|min:0',
             'has_physical' => 'boolean',
-            'formats.physical.price' => 'required_if:has_physical,true|nullable|numeric|min:0',
-            'formats.physical.discount' => 'nullable|numeric|min:0|lte:formats.physical.price',
-            'formats.physical.stock' => 'required_if:has_physical,true|nullable|integer|min:0',
+            'formats.physical.price' => 'nullable|numeric|min:0',
+            'formats.physical.discount' => 'nullable|numeric|min:0',
+            'formats.physical.stock' => 'nullable|integer|min:0',
             'has_ebook' => 'boolean',
-            'formats.ebook.price' => 'required_if:has_ebook,true|nullable|numeric|min:0',
-            'formats.ebook.discount' => 'nullable|numeric|min:0|lte:formats.ebook.price',
+            'formats.ebook.price' => 'nullable|numeric|min:0',
+            'formats.ebook.discount' => 'nullable|numeric|min:0',
             'formats.ebook.allow_sample_read' => 'boolean',
             'status' => 'required|string|max:50',
             'category_id' => 'required|uuid|exists:categories,id',
@@ -281,14 +323,17 @@ class AdminBookController extends Controller
             'brand_id' => 'required|uuid|exists:brands,id',
             'publication_date' => 'required|date',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            // Gift validation
-            'gift_book_id' => 'nullable|uuid|exists:books,id',
-            'gift_name' => 'nullable|string|max:255',
-            'gift_description' => 'nullable|string',
-            'gift_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'quantity' => 'nullable|integer|min:0',
-            'gift_start_date' => 'nullable|date',
-            'gift_end_date' => 'nullable|date|after_or_equal:gift_start_date',
+            
+            // Preorder validation
+            'pre_order' => 'boolean',
+            'release_date' => 'required_if:pre_order,true|nullable|date|after:today',
+            'pre_order_price' => 'nullable|numeric|min:0',
+            'preorder_discount_percent' => 'nullable|numeric|min:0|max:100',
+            'stock_preorder_limit' => 'required_if:pre_order,true|nullable|integer|min:1',
+            'preorder_count' => 'nullable|integer|min:0',
+            'preorder_description' => 'nullable|string|max:1000',
+            
+            // Gift validation - Removed to skip gift validation
         ];
 
         // Different rules for create vs update
@@ -360,7 +405,7 @@ class AdminBookController extends Controller
             'attribute_values.*.stock.min' => 'Tồn kho không được âm',
             'publication_date.required' => 'Vui lòng nhập ngày xuất bản',
             'publication_date.date' => 'Ngày xuất bản không hợp lệ',
-            'end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu',
+            // Gift validation messages removed
         ];
     }
 
@@ -539,6 +584,31 @@ class AdminBookController extends Controller
         if (!$request->boolean('has_physical') && !$request->boolean('has_ebook')) {
             return back()->withInput()->withErrors(['format_required' => 'Vui lòng chọn ít nhất một định dạng sách (Sách vật lý hoặc Ebook).']);
         }
+        
+        // Custom validation cho preorder books
+        $errors = [];
+        $isPreorder = $request->boolean('pre_order');
+        
+        // Nếu không phải preorder, cần validate giá và stock cho formats
+        if (!$isPreorder) {
+            if ($request->boolean('has_physical')) {
+                if (!$request->filled('formats.physical.price')) {
+                    $errors['formats.physical.price'] = 'Giá sách vật lý là bắt buộc khi không phải preorder.';
+                }
+                if (!$request->filled('formats.physical.stock')) {
+                    $errors['formats.physical.stock'] = 'Số lượng sách vật lý là bắt buộc khi không phải preorder.';
+                }
+            }
+            if ($request->boolean('has_ebook')) {
+                if (!$request->filled('formats.ebook.price')) {
+                    $errors['formats.ebook.price'] = 'Giá ebook là bắt buộc khi không phải preorder.';
+                }
+            }
+        }
+        
+        if (!empty($errors)) {
+            return back()->withInput()->withErrors($errors);
+        }
 
         $data = $request->only([
             'title',
@@ -596,9 +666,14 @@ class AdminBookController extends Controller
         if ($request->boolean('has_physical')) {
             $physicalFormat = $book->formats()->where('format_name', 'Sách Vật Lý')->first();
 
+            // Nếu bật preorder, sử dụng giá preorder, ngược lại sử dụng giá format
+            $physicalPrice = $request->boolean('pre_order') && $request->filled('pre_order_price') 
+                ? $request->input('pre_order_price') 
+                : $request->input('formats.physical.price');
+
             $physicalData = [
                 'format_name' => 'Sách Vật Lý',
-                'price' => $request->input('formats.physical.price'),
+                'price' => $physicalPrice,
                 'discount' => $request->input('formats.physical.discount'),
                 'stock' => $request->input('formats.physical.stock'),
             ];
@@ -617,9 +692,14 @@ class AdminBookController extends Controller
         if ($request->boolean('has_ebook')) {
             $ebookFormat = $book->formats()->where('format_name', 'Ebook')->first();
 
+            // Nếu bật preorder, sử dụng giá preorder, ngược lại sử dụng giá format
+            $ebookPrice = $request->boolean('pre_order') && $request->filled('pre_order_price') 
+                ? $request->input('pre_order_price') 
+                : $request->input('formats.ebook.price');
+
             $ebookData = [
                 'format_name' => 'Ebook',
-                'price' => $request->input('formats.ebook.price'),
+                'price' => $ebookPrice,
                 'discount' => $request->input('formats.ebook.discount'),
                 'allow_sample_read' => $request->boolean('formats.ebook.allow_sample_read'),
             ];
