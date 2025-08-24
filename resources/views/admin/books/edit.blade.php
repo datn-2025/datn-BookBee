@@ -233,7 +233,7 @@
                                         <label class="form-label fw-medium">Số lượng quà tặng</label>
                                         <input type="number" class="form-control @error('quantity') is-invalid @enderror" 
                                                name="quantity" value="{{ old('quantity', $currentGift->quantity ?? 1) }}" 
-                                               placeholder="1" min="1">
+                                               placeholder="1">
                                         @error('quantity')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror

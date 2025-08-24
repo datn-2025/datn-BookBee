@@ -310,6 +310,20 @@ class AdminBookController extends Controller
             $rules['attribute_values.*.id'] .= '|distinct';
         }
 
+        // Khi cập nhật (edit), bỏ validate liên quan đến quà tặng
+        if ($isUpdate) {
+            unset(
+                $rules['gift_book_id'],
+                $rules['gift_name'],
+                $rules['gift_description'],
+                $rules['gift_image'],
+                $rules['quantity'],
+                $rules['gift_date_range'],
+                $rules['gift_start_date'],
+                $rules['gift_end_date']
+            );
+        }
+
         return $rules;
     }
 
