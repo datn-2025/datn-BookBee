@@ -1,65 +1,120 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 mx-auto">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="ri-bookmark-line me-2"></i>Đặt Trước Sách
-                    </h4>
+<div class="container-fluid py-4" style="background-color: #f8f9fa;">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <!-- Alert messages -->
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="ri-check-line me-2"></i>{{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-                
-                <div class="card-body">
-                    <!-- Thông tin sách -->
-                    <div class="row mb-4">
-                        <div class="col-md-3">
-                            <img src="{{ $book->cover_image ? asset('storage/' . $book->cover_image) : asset('images/default-book.svg') }}" 
-                                 alt="{{ $book->title }}" 
-                                 class="img-fluid rounded shadow-sm">
+            @endif
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="ri-error-warning-line me-2"></i>{{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+            <!-- Breadcrumb (moved outside the dark header) -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ route('home') }}" class="text-decoration-none">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('books.show', $book) }}" class="text-decoration-none">{{ $book->title }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Đặt trước</li>
+                </ol>
+            </nav>
+
+            <!-- Header với style màu đen như orders -->
+            <div class="mb-4" style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border-radius: 0px;">
+                <div class="p-4 text-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 order-md-2 d-flex justify-content-md-end">
+                            <div class="p-0" style="background: transparent; border-radius: 0px;">
+                                @if($book->cover_image)
+                                    <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" 
+                                         class="img-fluid shadow-sm" style="max-height: 260px; object-fit: cover; border-radius: 0px; width: 100%;"
+                                         onerror="this.src='https://via.placeholder.com/200x250/cccccc/666666?text=No+Image'">
+                                @elseif($book->image)
+                                    <img src="{{ asset('storage/' . $book->image) }}" alt="{{ $book->title }}" 
+                                         class="img-fluid shadow-sm" style="max-height: 260px; object-fit: cover; border-radius: 0px; width: 100%;"
+                                         onerror="this.src='https://via.placeholder.com/200x250/cccccc/666666?text=No+Image'">
+                                @elseif(isset($book->image_url) && $book->image_url)
+                                    <img src="{{ $book->image_url }}" alt="{{ $book->title }}" 
+                                         class="img-fluid shadow-sm" style="max-height: 260px; object-fit: cover; border-radius: 0px; width: 100%;"
+                                         onerror="this.src='https://via.placeholder.com/200x250/cccccc/666666?text=No+Image'">
+                                @else
+                                    <div class="d-flex align-items-center justify-content-center bg-light" style="height: 260px; border-radius: 0px;">
+                                        <i class="ri-image-line" style="font-size: 3rem; color: #ccc;"></i>
+                                    </div>
+                                @endif
+                                
+                            </div>
                         </div>
-                        <div class="col-md-9">
-                            <h5 class="fw-bold text-primary">{{ $book->title }}</h5>
-                            <p class="text-muted mb-2">
-                                <strong>Tác giả:</strong> 
-                                @foreach($book->authors as $author)
-                                    {{ $author->name }}@if(!$loop->last), @endif
-                                @endforeach
-                            </p>
-                            <p class="text-muted mb-2">
-                                <strong>Thể loại:</strong> {{ $book->category->name }}
-                            </p>
-                            <p class="text-muted mb-2">
-                                <strong>Ngày ra mắt:</strong> 
-                                <span class="badge bg-info">{{ $book->release_date->format('d/m/Y') }}</span>
-                            </p>
+                        <div class="col-md-8 order-md-1 pe-md-4">
+                            <h1 class="h2 mb-3 text-white">
+                                <i class="ri-book-2-line me-2"></i>ĐẶT TRƯỚC SÁCH
+                            </h1>
+                            <p class="text-light mb-4">THEO DÕI VÀ QUẢN LÝ TẤT CẢ ĐƠN ĐẶT TRƯỚC CỦA BẠN</p>
+                            
+                            <div class="text-light">
+                                <div class="text-md-start">
+                                    <p class="mb-2">
+                                        <strong class="me-2">Ngày ra mắt:</strong>
+                                        <span class="badge bg-warning text-dark">{{ $book->release_date ? \Carbon\Carbon::parse($book->release_date)->format('d/m/Y') : '29/08/2025' }}</span>
+                                    </p>
+                                </div>
+                                <div class="pt-2">
+                                    <p class="mb-2"><strong>{{ $book->title }}</strong></p>
+                                    <p class="mb-2">Tác giả: 
+                                        @if($book->authors && $book->authors->count() > 0)
+                                            {{ $book->authors->pluck('name')->join(', ') }}
+                                        @else
+                                            Paulo Coelho, Nguyễn Nhật Ánh, Dale Carnegie
+                                        @endif
+                                    </p>
+                                    <p class="mb-2">Thể loại: {{ $book->category ? $book->category->name : 'Sách Văn Học' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                             @if(($preorderDiscountPercent ?? 0) > 0)
-                                <div class="mb-2 p-2 border border-success rounded bg-light">
-                                    <span class="me-2"><i class="ri-price-tag-3-line text-success"></i></span>
-                                    <span class="text-success fw-bold fs-5">Ưu đãi đặt trước: {{ $preorderDiscountPercent }}%</span>
+                                <div class="mt-3 p-3" style="background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; border-radius: 0px;">
+                                    <span class="me-2"><i class="ri-price-tag-3-line text-warning"></i></span>
+                                    <span class="text-warning fw-bold fs-5">Ưu đãi đặt trước: {{ $preorderDiscountPercent }}%</span>
                                     <div class="mt-1" id="headerPriceInfo" style="display: none;">
-                                        <span class="me-2 text-muted">Giá gốc: <span id="headerOriginalPrice" class="text-decoration-line-through fw-semibold"></span></span>
-                                        <span class="text-muted">Giá sau giảm: <span id="headerDiscountedPrice" class="text-success fw-bold fs-6"></span></span>
-                                        <span class="mx-2 text-muted">/ 1 bản</span>
+                                        <span class="me-2 text-light opacity-75">Giá gốc: <span id="headerOriginalPrice" class="text-decoration-line-through fw-semibold"></span></span>
+                                        <span class="text-light">Giá sau giảm: <span id="headerDiscountedPrice" class="text-warning fw-bold fs-6"></span></span>
+                                        <span class="mx-2 text-light opacity-75">/ 1 bản</span>
                                     </div>
                                 </div>
                             @endif
                             @if($book->preorder_description)
-                                <div class="alert alert-info">
-                                    <i class="ri-information-line me-1"></i>
-                                    {{ $book->preorder_description }}
+                                <div class="mt-3 p-3" style="background: rgba(13, 202, 240, 0.1); border: 1px solid #0dcaf0; border-radius: 0px;">
+                                    <i class="ri-information-line me-1 text-info"></i>
+                                    <span class="text-light">{{ $book->preorder_description }}</span>
                                 </div>
                             @endif
                         </div>
                     </div>
 
-                    <!-- Form đặt trước -->
-                    <form action="{{ route('preorders.store') }}" method="POST" id="preorderForm">
-                        @csrf
-                        <input type="hidden" name="book_id" value="{{ $book->id }}">
+                    <!-- Bố cục 2 cột: Trái (Form) - Phải (Summary) -->
+                    <div class="row g-4">
+                        <div class="col-lg-8">
+                            <!-- Form đặt trước với style màu đen -->
+                            <div style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 0px; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);">
+                                <div class="p-4" style="background: linear-gradient(135deg, #343a40 0%, #495057 100%); border-radius: 0px;">
+                                    <h5 class="text-white fw-bold mb-0">
+                                        <i class="ri-shopping-cart-line me-2"></i>THÔNG TIN ĐẶT TRƯỚC
+                                    </h5>
+                                </div>
+                                <div class="p-4">
+                                    <form action="{{ route('preorders.store') }}" method="POST" id="preorderForm">
+                                        @csrf
+                                        <input type="hidden" name="book_id" value="{{ $book->id }}">
 
-                        <div class="row g-3">
+                                        <div class="row g-3">
                             <!-- Chọn định dạng -->
                            @php
     $availableFormats = $formats->filter(function($format) use ($book) {
@@ -117,7 +172,16 @@
                             <!-- Số lượng (xuống dưới định dạng) -->
                             <div class="col-12" id="quantitySection">
                                 <label class="form-label fw-medium">Số lượng <span class="text-danger">*</span></label>
-                                <input type="number" name="quantity" class="form-control" value="1" min="1" max="10" required>
+                                <div class="d-flex align-items-center" style="max-width: 200px; border: 1px solid #dee2e6; border-radius: 0px;">
+                                    <button type="button" class="btn btn-link p-3 text-dark border-0" id="decreaseQuantity" style="border-radius: 0px; min-width: 50px;">
+                                        <strong>−</strong>
+                                    </button>
+                                    <input type="number" name="quantity" id="quantityInput" class="form-control text-center border-0" 
+                                           value="1" min="1" max="10" required style="border-radius: 0px; box-shadow: none;">
+                                    <button type="button" class="btn btn-link p-3 text-dark border-0" id="increaseQuantity" style="border-radius: 0px; min-width: 50px;">
+                                        <strong>+</strong>
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Thuộc tính sách -->
@@ -188,6 +252,31 @@
                             </div>
                         </div>
 
+                        <!-- Email nhận ebook (chỉ hiển thị khi chọn ebook) -->
+                        <div id="ebookEmailSection" class="mt-4" style="display: none;">
+                            <hr class="my-4">
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="w-1 h-6 bg-black"></div>
+                                <h6 class="text-lg font-black uppercase tracking-wide text-black mb-0">
+                                    <i class="ri-mail-line me-2"></i>EMAIL NHẬN EBOOK
+                                </h6>
+                            </div>
+                            
+                            <div class="mb-4 group">
+                                <label for="ebook_delivery_email" class="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">
+                                    EMAIL NHẬN FILE EBOOK <span class="text-danger">*</span>
+                                </label>
+                                <input type="email" name="ebook_delivery_email" id="ebook_delivery_email"
+                                    class="w-full border-2 border-gray-300 px-4 py-4 focus:border-black focus:ring-0 transition-all duration-300 hover:border-gray-400 bg-white group-hover:shadow-lg form-control"
+                                    placeholder="Nhập email để nhận thông báo và file ebook" 
+                                    value="{{ Auth::user()->email }}">
+                                <small class="text-muted mt-2 d-block">
+                                    <i class="ri-information-line me-1"></i>
+                                    File ebook sẽ được gửi đến email này sau khi đơn hàng được xử lý. Có thể khác với email đăng ký tài khoản.
+                                </small>
+                            </div>
+                        </div>
+
                         <!-- Địa chỉ giao hàng (chỉ hiển thị cho sách vật lý) -->
                         <div id="addressSection">
                             <hr class="my-4">
@@ -239,9 +328,13 @@
 
                         <!-- Ghi chú -->
                         <div class="mt-4">
-                            <label class="form-label fw-medium">Ghi chú</label>
-                            <textarea name="notes" class="form-control" rows="3" 
-                                      placeholder="Ghi chú thêm cho đơn hàng (tùy chọn)"></textarea>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <label class="form-label fw-medium">Ghi chú</label>
+                                    <textarea name="notes" class="form-control" rows="3" 
+                                              placeholder="Ghi chú thêm cho đơn hàng (tùy chọn)"></textarea>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Phương thức thanh toán -->
@@ -283,66 +376,204 @@
                                 </div>
                             @endforeach
                         </div>
-                        <!-- Tổng tiền -->
-                        <div class="mt-4 p-3 bg-light rounded">
-                            <div class="row g-2">
-                                @if($preorderDiscountPercent > 0)
-                                <div class="col-12">
-                                    <div class="d-flex justify-content-between">
-                                        <span>Giá gốc:</span>
-                                        <span class="text-decoration-line-through text-muted" id="originalPrice">0đ</span>
-                                    </div>
+                        <!-- Tổng tiền được chuyển sang cột phải -->
+                                    </form>
                                 </div>
-                                <div class="col-12">
-                                    <div class="d-flex justify-content-between">
-                                        <span>Giảm giá ({{ $preorderDiscountPercent }}%):</span>
-                                        <span class="text-success" id="discountAmount">-0đ</span>
-                                    </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 0px; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); position: sticky; top: 90px;">
+                                <div class="p-4" style="background: linear-gradient(135deg, #343a40 0%, #495057 100%); border-radius: 0px;">
+                                    <h5 class="text-white fw-bold mb-0">
+                                        <i class="ri-receipt-line me-2"></i>TÓM TẮT ĐỚN HÀNG
+                                    </h5>
                                 </div>
-                                @endif
-                                <div class="col-12">
-                                    <div class="d-flex justify-content-between">
-                                        <span>{{ $preorderDiscountPercent > 0 ? 'Giá sau giảm:' : 'Giá sách:' }}</span>
-                                        <span id="bookPrice" class="{{ $preorderDiscountPercent > 0 ? 'text-success fw-bold' : '' }}">0đ</span>
+                                <div class="p-4">
+                                    <h6 class="fw-bold mb-3">Tóm tắt đơn</h6>
+                                    <div class="mb-3 p-3 bg-light rounded">
+                                        <div class="row g-2">
+                                            @if($preorderDiscountPercent > 0)
+                                            <div class="col-12">
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Giá gốc:</span>
+                                                    <span class="text-decoration-line-through text-muted" id="originalPrice">0đ</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Giảm giá ({{ $preorderDiscountPercent }}%):</span>
+                                                    <span class="text-success" id="discountAmount">-0đ</span>
+                                                </div>
+                                            </div>
+                                            @endif
+                                            <div class="col-12">
+                                                <div class="d-flex justify-content-between">
+                                                    <span>{{ $preorderDiscountPercent > 0 ? 'Giá sau giảm:' : 'Giá sách:' }}</span>
+                                                    <span id="bookPrice" class="{{ $preorderDiscountPercent > 0 ? 'text-success fw-bold' : '' }}">0đ</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-12" id="attributePriceRow" style="display: none;">
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Phí thuộc tính:</span>
+                                                    <span id="attributePrice">0đ</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-12" id="shippingPriceRow" style="display: none;">
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Phí vận chuyển:</span>
+                                                    <span id="shippingPrice">0đ</span>
+                                                </div>
+                                            </div>
+                                            <hr class="my-2">
+                                            <div class="col-12">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="fw-bold fs-6">Tổng tiền:</span>
+                                                    <span class="fw-bold fs-4 text-primary" id="totalAmount">0đ</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="ri-information-line me-1"></i>
+                                            Bạn sẽ thanh toán khi sách được phát hành. Phí vận chuyển được tính theo khu vực giao hàng.
+                                        </small>
                                     </div>
-                                </div>
-                                <div class="col-12" id="attributePriceRow" style="display: none;">
-                                    <div class="d-flex justify-content-between">
-                                        <span>Phí thuộc tính:</span>
-                                        <span id="attributePrice">0đ</span>
-                                    </div>
-                                </div>
-                                <div class="col-12" id="shippingPriceRow" style="display: none;">
-                                    <div class="d-flex justify-content-between">
-                                        <span>Phí vận chuyển:</span>
-                                        <span id="shippingPrice">0đ</span>
-                                    </div>
-                                </div>
-                                <hr class="my-2">
-                                <div class="col-12">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="fw-bold fs-5">Tổng tiền:</span>
-                                        <span class="fw-bold fs-4 text-primary" id="totalAmount">0đ</span>
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" form="preorderForm" class="btn btn-dark" id="submitBtn">
+                                            <i class="ri-bookmark-line me-1"></i>Đặt trước ngay
+                                        </button>
+                                        {{-- <a href="{{ route('books.show', $book) }}" class="btn btn-outline-secondary">
+                                            <i class="ri-arrow-left-line me-1"></i>Quay lại
+                                        </a> --}}
                                     </div>
                                 </div>
                             </div>
-                            <small class="text-muted">
-                <i class="ri-information-line me-1"></i>
-                Bạn sẽ thanh toán khi sách được phát hành. Phí vận chuyển được tính theo khu vực giao hàng.
-            </small>
                         </div>
-
-                        <!-- Nút submit -->
-                        <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{{ route('books.show', $book) }}" class="btn btn-outline-secondary me-md-2">
-                                <i class="ri-arrow-left-line me-1"></i>Quay lại
-                            </a>
-                            <button type="submit" class="btn btn-primary px-4" id="submitBtn">
-                                <i class="ri-bookmark-line me-1"></i>Đặt trước ngay
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 0px; border: 3px solid #dc2626;">
+            <!-- Header với style màu đen như trong hình -->
+            <div class="modal-header text-white p-4" style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border-radius: 0px; border-bottom: none;">
+                <div class="container-fluid">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <!-- Laravel Logo như trong hình -->
+                            <div class="p-3" style="background: white; border-radius: 0px;">
+                                <svg width="100" height="100" viewBox="0 0 50 52" xmlns="http://www.w3.org/2000/svg">
+                                    <title>Laravel</title>
+                                    <path d="m49.626 11.564a.809.809 0 0 1 .028.209v10.972a.8.8 0 0 1-.402.694l-9.209 5.302v10.509c0 .286-.152.55-.4.694l-19.223 11.066c-.044.025-.092.041-.14.058-.018.006-.035.017-.054.022a.805.805 0 0 1-.41 0c-.022-.006-.042-.018-.063-.026-.044-.016-.09-.03-.132-.054l-19.219-11.066a.801.801 0 0 1-.402-.694v-32.916c0-.072.01-.142.028-.21.006-.023.02-.044.028-.067.015-.042.029-.085.051-.124.015-.026.037-.047.055-.071.023-.032.044-.065.071-.093.023-.023.053-.04.079-.06.029-.024.055-.050.088-.069h.001l9.61-5.533a.802.802 0 0 1 .8 0l9.61 5.533h.002c.032.02.059.045.088.068.026.02.055.038.078.06.028.029.048.062.072.094.017.024.04.045.054.071.023.04.036.082.052.124.008.023.022.044.028.068a.809.809 0 0 1 .028.209v20.559l8.008-4.611v-10.51c0-.07.01-.141.028-.208.007-.024.02-.045.028-.068.016-.042.03-.085.052-.124.015-.026.037-.047.054-.071.024-.032.044-.065.072-.093.023-.023.052-.04.078-.06.03-.024.056-.050.088-.069h.001l9.611-5.533a.801.801 0 0 1 .8 0l9.61 5.533c.034.02.06.045.09.068.025.02.054.038.077.06.028.029.048.062.072.094.018.024.04.045.054.071.023.039.036.082.052.124.009.023.022.044.028.068zm-1.574 10.718v-9.124l-3.363 1.936-4.646 2.675v9.124l8.01-4.611zm-9.61 16.505v-9.13l-4.57 2.61-13.05 7.448v9.216zm-36.84-31.068v31.068l17.618 10.143v-9.214l-9.204-5.209-.003-.002-.004-.002c-.031-.018-.057-.044-.086-.066-.025-.02-.054-.036-.076-.058l-.002-.003c-.026-.025-.044-.056-.066-.084-.02-.027-.044-.05-.06-.078l-.001-.003c-.018-.030-.029-.066-.042-.1-.013-.03-.03-.058-.038-.09v-.001c-.01-.038-.012-.078-.016-.117-.004-.03-.012-.06-.012-.09v-21.483l-4.645-2.676-3.363-1.934zm8.81-5.994-8.007 4.609 8.005 4.609 8.006-4.61-8.006-4.608zm4.164 28.764 4.645-2.674v-20.096l-3.363 1.936-4.646 2.675v20.096zm24.667-23.325-8.006 4.609 8.006 4.609 8.005-4.61zm-.801 10.605-4.646-2.675-3.363-1.936v9.124l4.645 2.674 3.364 1.937zm-18.422 20.561 11.743-6.704 5.87-3.35-8-4.606-9.211 5.303-8.395 4.833z" fill="#FF2D20"/>
+                                </svg>
+                                
+                                <!-- Ảnh phụ nhỏ bên dưới -->
+                                <div class="row g-1 mt-2">
+                                    <div class="col-4">
+                                        <img src="{{ asset('images/avtchatbot.jpg') }}" alt="Flag" class="img-fluid" style="height: 30px; object-fit: cover; border-radius: 0px; width: 100%; opacity: 0.8;">
+                                    </div>
+                                    <div class="col-4">
+                                        <img src="{{ asset('images/banner-image-bg.jpg') }}" alt="Books" class="img-fluid" style="height: 30px; object-fit: cover; border-radius: 0px; width: 100%; opacity: 0.6;">
+                                    </div>
+                                    <div class="col-4">
+                                        <img src="{{ asset('images/banner-image-bg-1.jpg') }}" alt="More" class="img-fluid" style="height: 30px; object-fit: cover; border-radius: 0px; width: 100%; opacity: 0.4;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="mb-2">
+                                <small class="text-warning">/ Đặt trước</small>
+                            </div>
+                            <h2 class="text-white fw-bold mb-3">ĐẶT TRƯỚC SÁCH</h2>
+                            <p class="text-light mb-3">THEO DÕI VÀ QUẢN LÝ TẤT CẢ ĐƠN ĐẶT TRƯỚC CỦA BẠN</p>
+                            
+                            <div class="row text-light">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong id="modalBookTitle">{{ $book->title }}</strong></p>
+                                    <p class="mb-1">Tác giả: <span id="modalBookAuthor">
+                                        @if($book->authors && $book->authors->count() > 0)
+                                            {{ $book->authors->pluck('name')->join(', ') }}
+                                        @else
+                                            Paulo Coelho, Nguyễn Nhật Ánh, Dale Carnegie
+                                        @endif
+                                    </span></p>
+                                    <p class="mb-1">Thể loại: <span id="modalBookCategory">{{ $book->category ? $book->category->name : 'Sách Văn Học' }}</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Ngày ra mắt:</strong> <span class="badge bg-warning text-dark" id="modalReleaseDate">{{ $book->release_date ? \Carbon\Carbon::parse($book->release_date)->format('d/m/Y') : '20/08/2025' }}</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Body -->
+            <div class="modal-body p-4" style="background: #f8f9fa;">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card h-100" style="border-radius: 0px; border: 1px solid #dee2e6;">
+                            <div class="card-header" style="background: linear-gradient(135deg, #343a40 0%, #495057 100%); border-radius: 0px;">
+                                <h6 class="text-white fw-bold mb-0">
+                                    <i class="ri-file-list-3-line me-2"></i>THÔNG TIN ĐẶT TRƯỚC
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <small class="text-muted">Định dạng sách:</small><br>
+                                    <span class="fw-bold" id="modalFormat">-</span>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">Số lượng:</small><br>
+                                    <span class="fw-bold" id="modalQuantity">-</span>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">Tổng tiền:</small><br>
+                                    <span class="fw-bold text-success fs-5" id="modalTotalAmount">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100" style="border-radius: 0px; border: 1px solid #dee2e6;">
+                            <div class="card-header" style="background: linear-gradient(135deg, #343a40 0%, #495057 100%); border-radius: 0px;">
+                                <h6 class="text-white fw-bold mb-0">
+                                    <i class="ri-receipt-line me-2"></i>TÓM TẮT ĐƠN HÀNG
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-success" style="border-radius: 0px;">
+                                    <h6 class="alert-heading fw-bold">
+                                        <i class="ri-check-line me-2"></i>Đặt trước thành công!
+                                    </h6>
+                                    <p class="mb-2">Cảm ơn bạn đã đặt trước! Chúng tôi đã nhận được yêu cầu của bạn và sẽ liên hệ sớm nhất.</p>
+                                    <hr>
+                                    <p class="mb-0">
+                                        <small>
+                                            <i class="ri-information-line me-1"></i>
+                                            Bạn sẽ nhận được email xác nhận đơn đặt trước trong vài phút tới.
+                                        </small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="modal-footer" style="background: #ffffff; border-top: 1px solid #dee2e6; border-radius: 0px;">
+                <button type="button" class="btn btn-dark px-4" style="border-radius: 0px; font-weight: 600;" onclick="redirectToPreorderList()">
+                    <i class="ri-list-check me-2"></i>XEM ĐƠN ĐẶT TRƯỚC
+                </button>
+                <button type="button" class="btn btn-outline-dark px-4" style="border-radius: 0px; font-weight: 600;" onclick="redirectToHome()">
+                    <i class="ri-home-line me-2"></i>VỀ TRANG CHỦ
+                </button>
             </div>
         </div>
     </div>
@@ -397,6 +628,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Gọi khởi tạo ngay khi DOM load
     initializeFormState();
 
+    // Quantity +/- buttons functionality
+    document.getElementById('decreaseQuantity').addEventListener('click', function() {
+        const quantityInput = document.getElementById('quantityInput');
+        let currentValue = parseInt(quantityInput.value);
+        if (currentValue > 1) {
+            quantityInput.value = currentValue - 1;
+            updateTotalAmount();
+        }
+    });
+
+    document.getElementById('increaseQuantity').addEventListener('click', function() {
+        const quantityInput = document.getElementById('quantityInput');
+        let currentValue = parseInt(quantityInput.value);
+        const maxValue = parseInt(quantityInput.getAttribute('max'));
+        if (currentValue < maxValue) {
+            quantityInput.value = currentValue + 1;
+            updateTotalAmount();
+        }
+    });
+
+    // Also allow manual input change to trigger total update
+    document.getElementById('quantityInput').addEventListener('input', function() {
+        updateTotalAmount();
+    });
+
     // Xử lý thay đổi định dạng
     if (formatSelect) {
     formatSelect.addEventListener('change', function() {
@@ -421,6 +677,8 @@ document.addEventListener('DOMContentLoaded', function() {
             shippingPriceRow.style.display = 'none';
             shippingFee = 0;
             extraPrice = 0;
+            // Hiển thị form email nhận ebook
+            document.getElementById('ebookEmailSection').style.display = 'block';
             // Ẩn và bỏ required số lượng cho ebook, đặt về 1
             if (quantitySection) quantitySection.style.display = 'none';
             if (quantityInput) {
@@ -440,6 +698,8 @@ document.addEventListener('DOMContentLoaded', function() {
             addressSection.style.display = 'block';
             attributesSection.style.display = 'block';
             shippingPriceRow.style.display = 'block';
+            // Ẩn form email nhận ebook
+            document.getElementById('ebookEmailSection').style.display = 'none';
             // Hiện và yêu cầu số lượng với sách vật lý
             if (quantitySection) quantitySection.style.display = 'block';
             if (quantityInput) {
@@ -789,7 +1049,23 @@ function updateTotalAmount() {
         const selectedOption = formatSelect.options[formatSelect.selectedIndex];
         const isEbook = selectedOption.dataset.isEbook === 'true';
         
-        if (!isEbook) {
+        if (isEbook) {
+            // Validate ebook delivery email
+            const ebookEmail = document.querySelector('[name="ebook_delivery_email"]');
+            if (!ebookEmail.value.trim()) {
+                e.preventDefault();
+                alert('Vui lòng nhập email để nhận file ebook');
+                return;
+            }
+            
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(ebookEmail.value)) {
+                e.preventDefault();
+                alert('Vui lòng nhập email hợp lệ để nhận file ebook');
+                return;
+            }
+        } else {
             const requiredFields = ['province_code', 'district_code', 'ward_code'];
             for (let field of requiredFields) {
                 if (!document.querySelector(`[name="${field}"]`).value) {
@@ -806,6 +1082,52 @@ function updateTotalAmount() {
             }
         }
     });
+
+    // Handle form submission success
+    const preorderForm = document.getElementById('preorderForm');
+    if (preorderForm) {
+        preorderForm.addEventListener('submit', function(e) {
+            // Show loading state
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="ri-loader-4-line me-2" style="animation: spin 1s linear infinite;"></i>Đang xử lý...';
+            
+            // Let the form submit normally, but prepare modal data
+            setTimeout(() => {
+                // Get form data for modal
+                const formatSelect = document.getElementById('formatSelect');
+                const quantityInput = document.getElementById('quantityInput');
+                const totalAmount = document.getElementById('totalAmount');
+                
+                if (formatSelect && quantityInput && totalAmount) {
+                    const selectedFormat = formatSelect.options[formatSelect.selectedIndex];
+                    
+                    // Update modal content
+                    document.getElementById('modalFormat').textContent = selectedFormat ? selectedFormat.text : '-';
+                    document.getElementById('modalQuantity').textContent = quantityInput.value || '-';
+                    document.getElementById('modalTotalAmount').textContent = totalAmount.textContent || '-';
+                }
+            }, 100);
+        });
+    }
+
+    // Check for success session and show modal
+    @if(session('success'))
+        setTimeout(() => {
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            successModal.show();
+        }, 500);
+    @endif
 });
+
+// Modal redirect functions
+function redirectToPreorderList() {
+    window.location.href = "{{ route('preorders.index') }}";
+}
+
+function redirectToHome() {
+    window.location.href = "{{ route('home') }}";
+}
 </script>
 @endsection
