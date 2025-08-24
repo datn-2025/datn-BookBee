@@ -46,6 +46,7 @@ class Preorder extends Model
         'book_format_id',
         'customer_name',
         'email',
+        'ebook_delivery_email',
         'phone',
         'address',
         'province_code',
