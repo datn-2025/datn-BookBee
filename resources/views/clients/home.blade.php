@@ -927,10 +927,10 @@
                                 </div>
                             </div>
                             <!-- Action Button -->
-                            <div class="pt-2 mt-auto">
-                                <button onclick="window.location.href='{{ route('preorders.create', $book) }}'"
-                                        class="adidas-btn-enhanced w-full h-12 bg-black text-white font-bold text-sm uppercase tracking-wider transition-all duration-300 flex items-center justify-center">
-                                    <i class="ri-bookmark-line mr-2 text-base"></i>
+                            <div class="mt-auto mb-0">
+                                <button onclick="window.location.href='{{ route('books.show', $book->slug) }}'"
+                                        class="w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center">
+                                    <i class="ri-bookmark-line mr-2 text-sm"></i>
                                     <span>ĐẶT TRƯỚC NGAY</span>
                                 </button>
                             </div>
