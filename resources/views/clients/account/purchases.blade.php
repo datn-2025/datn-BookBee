@@ -115,8 +115,8 @@
                                                     class="inline-block w-3 h-3 ml-1 transition-transform"
                                                     fill="currentColor" viewBox="0 0 20 20">
                                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0
-                                                  111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1
-                                                  0 010-1.414z" clip-rule="evenodd"></path>
+                                                                      111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1
+                                                                      0 010-1.414z" clip-rule="evenodd"></path>
                                                 </svg>
                                             </button>
                                         @endif
@@ -508,10 +508,12 @@
                                                                 @endif
                                                                 <div class="flex gap-2 mt-3">
                                                                     @if ($review->user_id === auth()->id())
-                                                                        <a href="{{ route('account.reviews.edit', $review->id) }}"
-                                                                            class="px-3 py-1 bg-black text-white text-xs font-medium hover:bg-gray-900 transition-colors duration-150">
-                                                                            Sửa đánh giá
-                                                                        </a>
+                                                                        @if ($review->created_at->addHours(24)->isFuture())
+                                                                            <a href="{{ route('account.reviews.edit', $review->id) }}"
+                                                                                class="px-3 py-1 bg-black text-white text-xs font-medium hover:bg-gray-900 transition-colors duration-150">
+                                                                                Sửa đánh giá
+                                                                            </a>
+                                                                        @endif
                                                                         <form
                                                                             action="{{ route('account.reviews.destroy', $review->id) }}"
                                                                             method="POST"
@@ -712,6 +714,18 @@
                 @endif
             </div>
         </div>
+        <!-- Image Modal -->
+        <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+            <div class="relative max-w-4xl max-h-full">
+                <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 z-10">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <img id="modalImage" src="" alt="Review Image" class="max-w-full max-h-full object-contain">
+            </div>
+        </div>
+        </div>
     @endsection
 
     @push('scripts')
@@ -880,16 +894,4 @@
                 });
             })();
         </script>
-
-        <!-- Image Modal -->
-        <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
-            <div class="relative max-w-4xl max-h-full">
-                <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 z-10">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-                <img id="modalImage" src="" alt="Review Image" class="max-w-full max-h-full object-contain">
-            </div>
-        </div>
     @endpush
