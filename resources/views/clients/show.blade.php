@@ -1094,7 +1094,7 @@
                                 <!-- Header Bar -->
                                 <div class="bg-amber-600 text-white px-6 py-3 flex items-center justify-between">
                                     <div class="flex items-center space-x-3">
-                                        <div class="w-8 h-8 bg-white bg-opacity-20 flex items-center justify-center">
+                                        <div class="w-8 h-8 bg-opacity-20 flex items-center justify-center">
                                             <i class="fas fa-user text-xs"></i>
                                         </div>
                                         <div>
@@ -1142,33 +1142,37 @@
                                         </div> --}}
                                         <div class="pl-6">
                                             <p class="text-gray-800 leading-relaxed font-medium">
-                                                <i class="fas fa-share text-gray-500"></i>{{ $review->comment }}
+                                                <i class="fas fa-share text-gray-500"></i>
+                                                {{ $review->comment }}
                                             </p>
                                         </div>
                                     </div>
 
                                     <!-- Review Images -->
-                                    @if($review->images && count($review->images) > 0)
-                                        <div class="mt-4">
-                                            <div class="text-xs text-gray-600 mb-2 uppercase tracking-wider font-semibold">
-                                                ẢNH ĐÁNH GIÁ
-                                            </div>
-                                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                                                @foreach($review->images as $imagePath)
-                                                    <div class="relative group cursor-pointer review-image"
-                                                        onclick="showReviewImageModal('{{ asset('storage/' . $imagePath) }}')">
-                                                        <img src="{{ asset('storage/' . $imagePath) }}" alt="Review Image"
-                                                            class="w-full h-20 object-cover border border-gray-300 group-hover:border-black transition-colors duration-200">
-                                                        <div
-                                                            class="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-90 transition-all duration-200 flex items-center justify-center">
-                                                            <i
-                                                                class="fas fa-expand-alt text-black opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-lg"></i>
+                                        @if($review->images && count($review->images) > 0)
+                                            <div class="mt-5">
+                                                <div class="text-sm text-gray-700 mb-3 uppercase tracking-wider font-bold flex items-center">
+                                                    <i class="fas fa-camera mr-2 text-amber-600"></i>
+                                                    ẢNH ĐÁNH GIÁ ({{ count($review->images) }})
+                                                </div>
+                                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 max-w-2xl">
+                                                    @foreach($review->images as $imagePath)
+                                                        <div class="relative group cursor-pointer review-image rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
+                                                            onclick="showReviewImageModal('{{ asset('storage/' . $imagePath) }}')">
+                                                            <img src="{{ asset('storage/' . $imagePath) }}" alt="Review Image"
+                                                                class="w-full h-32 sm:h-36 md:h-40 object-cover group-hover:scale-110 transition-transform duration-300">
+                                                            <div
+                                                                class="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 flex items-center justify-center">
+                                                                <div class="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
+                                                                    <i class="fas fa-search-plus text-2xl mb-1"></i>
+                                                                    <div class="text-xs font-medium">Xem lớn</div>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                @endforeach
+                                                    @endforeach
+                                                </div>
                                             </div>
-                                        </div>
-                                    @endif
+                                        @endif
 
                                     <!-- Admin Response -->
                                     @if($review->admin_response)
@@ -1256,7 +1260,7 @@
                                 <!-- Header Bar -->
                                 <div class="bg-amber-600 text-white px-6 py-3 flex items-center justify-between">
                                     <div class="flex items-center space-x-3">
-                                        <div class="w-8 h-8 bg-white bg-opacity-20 flex items-center justify-center">
+                                        <div class="w-8 h-8 bg-opacity-20 flex items-center justify-center">
                                             <i class="fas fa-comments text-xs"></i>
                                         </div>
                                         <span class="font-bold uppercase tracking-wider text-sm adidas-font">CHƯA CÓ ĐÁNH GIÁ</span>
@@ -2120,7 +2124,7 @@
                             <!-- Header Bar -->
                             <div class="bg-amber-600 text-white px-6 py-4 flex items-center justify-between">
                                 <div class="flex items-center space-x-3">
-                                    <div class="w-8 h-8 bg-white bg-opacity-20 flex items-center justify-center">
+                                    <div class="w-8 h-8 bg-opacity-20 flex items-center justify-center">
                                         <i class="fas fa-align-left text-sm"></i>
                                     </div>
                                     <h2 class="font-bold uppercase tracking-wider text-lg adidas-font">MÔ TẢ SÁCH</h2>
