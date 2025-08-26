@@ -20,6 +20,11 @@ class RevenueReport extends Component
     public $lastAppliedFrom;
     public $lastAppliedTo;
 
+    // KPI bổ sung
+    public $refundRateEbook = 0.0;        // % = (Doanh thu ebook trong các đơn có yêu cầu hoàn tiền) / (Tổng doanh thu ebook)
+    public $refundRatePhysical = 0.0;     // % = (Doanh thu vật lý trong các đơn có yêu cầu hoàn tiền) / (Tổng doanh thu vật lý)
+    public $ebookOrderShare = 0.0;        // % = (Số đơn có ebook) / (Tổng số đơn)
+
 
     public function mount()
     {
@@ -65,7 +70,6 @@ class RevenueReport extends Component
             ->whereDate('created_at', '<=', now())
             ->whereHas('orderStatus', fn($q) => $q->where('name', 'Thành công'))
             ->whereHas('paymentStatus', fn($q) => $q->where('name', 'Đã Thanh Toán'));
-
         if ($this->timeRange === 'all' && $this->fromDate && $this->toDate) {
             // Custom range: group by date
             $orders = (clone $orderBaseQuery)
@@ -100,6 +104,11 @@ class RevenueReport extends Component
                 $this->chartDataPhysical[] = $row ? (float) $row->physical_revenue : 0;
             }
 
+            // KPIs cho custom range (không lọc trạng thái, chỉ theo thời gian)
+            $this->computeKpis(
+                baseOrderQuery: Order::query()->whereBetween('created_at', [$this->fromDate, $this->toDate])
+            );
+
             $this->dispatch('refreshChart', chartLabels: $this->chartLabels, chartDataPhysical: $this->chartDataPhysical, chartDataEbook: $this->chartDataEbook);
             return;
         }
@@ -130,6 +139,10 @@ class RevenueReport extends Component
                     $this->chartDataEbook[] = $row ? (float) $row->ebook_revenue : 0;
                     $this->chartDataPhysical[] = $row ? (float) $row->physical_revenue : 0;
                 }
+                // KPIs cho ngày hiện tại (không lọc trạng thái)
+                $this->computeKpis(
+                    baseOrderQuery: Order::query()->whereDate('created_at', now())
+                );
                 break;
 
             case 'week':
@@ -158,6 +171,10 @@ class RevenueReport extends Component
                     $this->chartDataEbook[] = $row ? (float) $row->ebook_revenue : 0;
                     $this->chartDataPhysical[] = $row ? (float) $row->physical_revenue : 0;
                 }
+                // KPIs cho tuần hiện tại (không lọc trạng thái)
+                $this->computeKpis(
+                    baseOrderQuery: Order::query()->whereBetween('created_at', [$start, $end])
+                );
                 break;
 
             case 'month':
@@ -186,6 +203,10 @@ class RevenueReport extends Component
                     $this->chartDataEbook[] = $row ? (float) $row->ebook_revenue : 0;
                     $this->chartDataPhysical[] = $row ? (float) $row->physical_revenue : 0;
                 }
+                // KPIs cho tháng hiện tại (không lọc trạng thái)
+                $this->computeKpis(
+                    baseOrderQuery: Order::query()->whereBetween('created_at', [$start, $end])
+                );
                 break;
 
             case 'quarter':
@@ -217,6 +238,10 @@ class RevenueReport extends Component
                     $this->chartDataEbook[] = $row ? (float) $row->ebook_revenue : 0;
                     $this->chartDataPhysical[] = $row ? (float) $row->physical_revenue : 0;
                 }
+                // KPIs cho quý hiện tại (không lọc trạng thái)
+                $this->computeKpis(
+                    baseOrderQuery: Order::query()->whereBetween('created_at', [$start, $end])
+                );
                 break;
 
             case 'all':
@@ -244,6 +269,12 @@ class RevenueReport extends Component
                     $this->chartDataEbook[] = $row ? (float) $row->ebook_revenue : 0;
                     $this->chartDataPhysical[] = $row ? (float) $row->physical_revenue : 0;
                 }
+                // KPIs cho năm đến tháng hiện tại (không lọc trạng thái)
+                $startYear = now()->startOfYear();
+                $endNow = now();
+                $this->computeKpis(
+                    baseOrderQuery: Order::query()->whereBetween('created_at', [$startYear, $endNow])
+                );
                 break;
         }
 
@@ -255,6 +286,105 @@ class RevenueReport extends Component
         $sumPhysical = !empty($this->chartDataPhysical) ? array_sum($this->chartDataPhysical) : 0;
         $sumEbook = !empty($this->chartDataEbook) ? array_sum($this->chartDataEbook) : 0;
         $hasData = ($sumPhysical + $sumEbook) > 0;
-        return view('livewire.revenue-report', compact('hasData'));
+        return view('livewire.revenue-report', compact('hasData', 'sumPhysical', 'sumEbook'));
+    }
+
+    /**
+     * Tính các KPI: refundRateEbook, refundRatePhysical, ebookOrderShare
+     * baseOrderQuery: query đã lọc theo khoảng thời gian tương ứng
+     */
+    protected function computeKpis($baseOrderQuery): void
+    {
+        // Lấy danh sách order IDs trong khoảng (chuẩn hoá về string để intersect chính xác)
+        $orderIds = (clone $baseOrderQuery)
+            ->pluck('id')
+            ->map(fn($v) => (string) $v)
+            ->values();
+
+        if ($orderIds->isEmpty()) {
+            $this->refundRateEbook = 0.0;
+            $this->refundRatePhysical = 0.0;
+            $this->ebookOrderShare = 0.0;
+            return;
+        }
+
+        // Đơn có ebook và đơn có sách vật lý (nhận diện theo format)
+        $orderIdsWithEbook = DB::table('order_items as oi')
+            ->leftJoin('book_formats as bf', 'oi.book_format_id', '=', 'bf.id')
+            ->whereIn('oi.order_id', $orderIds)
+            ->where(function ($q) {
+                $q->whereNotNull('bf.file_url')
+                  ->orWhereRaw("LOWER(bf.format_name) LIKE '%ebook%'");
+            })
+            ->distinct()
+            ->pluck('oi.order_id')
+            ->map(fn($v) => (string) $v)
+            ->values();
+
+        $orderIdsWithPhysical = DB::table('order_items as oi')
+            ->leftJoin('book_formats as bf', 'oi.book_format_id', '=', 'bf.id')
+            ->whereIn('oi.order_id', $orderIds)
+            ->where(function ($q) {
+                $q->whereNull('bf.file_url')
+                  ->where(function ($q2) {
+                      $q2->whereNull('bf.format_name')
+                         ->orWhereRaw("LOWER(bf.format_name) NOT LIKE '%ebook%'");
+                  });
+            })
+            ->distinct()
+            ->pluck('oi.order_id')
+            ->map(fn($v) => (string) $v)
+            ->values();
+
+        $totalOrders = $orderIds->count();
+        $ebookOrders = $orderIdsWithEbook->count();
+        $this->ebookOrderShare = $totalOrders > 0 ? round($ebookOrders * 100.0 / $totalOrders, 2) : 0.0;
+
+        // Đơn có yêu cầu hoàn tiền (bất kỳ trạng thái) trong cùng tập orders
+        $refundOrderIds = DB::table('refund_requests')
+            ->whereIn('order_id', $orderIds)
+            ->distinct()
+            ->pluck('order_id')
+            ->map(fn($v) => (string) $v)
+            ->values();
+
+        // Nếu không có đơn refund, cả 2 tỉ lệ = 0
+        if ($refundOrderIds->isEmpty()) {
+            $this->refundRateEbook = 0.0;
+            $this->refundRatePhysical = 0.0;
+            return;
+        }
+
+        // Theo hướng A: tỉ lệ theo số đơn trong từng nhóm (đếm trực tiếp bằng SQL)
+        $ebookRefundCount = DB::table('order_items as oi')
+            ->whereIn('oi.order_id', $refundOrderIds)
+            ->whereIn('oi.order_id', $orderIds)
+            ->leftJoin('book_formats as bf', 'oi.book_format_id', '=', 'bf.id')
+            ->where(function ($q) {
+                $q->whereNotNull('bf.file_url')
+                  ->orWhereRaw("LOWER(bf.format_name) LIKE '%ebook%'");
+            })
+            ->distinct('oi.order_id')
+            ->count('oi.order_id');
+
+        $physicalRefundCount = DB::table('order_items as oi')
+            ->whereIn('oi.order_id', $refundOrderIds)
+            ->whereIn('oi.order_id', $orderIds)
+            ->leftJoin('book_formats as bf', 'oi.book_format_id', '=', 'bf.id')
+            ->where(function ($q) {
+                $q->whereNull('bf.file_url')
+                  ->where(function ($q2) {
+                      $q2->whereNull('bf.format_name')
+                         ->orWhereRaw("LOWER(bf.format_name) NOT LIKE '%ebook%'");
+                  });
+            })
+            ->distinct('oi.order_id')
+            ->count('oi.order_id');
+
+        $ebookDenom = max(1, $orderIdsWithEbook->count());
+        $physicalDenom = max(1, $orderIdsWithPhysical->count());
+
+        $this->refundRateEbook = round(min(100, ($ebookRefundCount * 100.0 / $ebookDenom)), 2);
+        $this->refundRatePhysical = round(min(100, ($physicalRefundCount * 100.0 / $physicalDenom)), 2);
     }
 }
