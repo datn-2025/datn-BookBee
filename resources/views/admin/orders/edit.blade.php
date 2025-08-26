@@ -25,7 +25,7 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="d-flex align-items-center">
-                            <h5 class="card-title mb-0 flex-grow-1">Cập nhật trạng thái đơn hàng #{{ substr($order->id,
+                            <h5 class="card-title mb-0 flex-grow-1">Cập nhật trạng thái đơn hàng #{{ substr($order->order_code,
                                 0, 8) }}</h5>
                             <div class="flex-shrink-0">
                                 <a href="{{ route('admin.orders.show', $order->id) }}"
@@ -48,8 +48,7 @@
                                             id="order_status_id" name="order_status_id">
                                             <option value=""><strong>{{ $order->orderStatus->name }}</strong></option>
                                             @foreach($orderStatuses as $status)
-                                            <option value="{{ $status->id }}" {{ old('order_status_id', $order->
-                                                order_status_id) == $status->id ? 'selected' : '' }}>
+                                            <option value="{{ $status->id }}" {{ old('order_status_id', $order->order_status_id) == $status->id ? 'selected' : '' }}>
                                                 {{ $status->name }}
                                             </option>
                                             @endforeach
@@ -69,8 +68,7 @@
                                             id="payment_status_id" name="payment_status_id">
                                             <option value="">Chọn trạng thái</option>
                                             @foreach($paymentStatuses as $status)
-                                            <option value="{{ $status->id }}" {{ old('payment_status_id', $order->
-                                                payment_status_id) == $status->id ? 'selected' : '' }}>
+                                            <option value="{{ $status->id }}" {{ old('payment_status_id', $order->payment_status_id) == $status->id ? 'selected' : '' }}>
                                                 {{ $status->name }}
                                             </option>
                                             @endforeach
@@ -202,7 +200,7 @@
                                 <tbody>
                                     <tr>
                                         <td>Mã đơn hàng:</td>
-                                        <td class="fw-medium">{{ substr($order->id, 0, 8) }}</td>
+                                        <td class="fw-medium">{{ $order->order_code }}</td>
                                     </tr>
                                     <tr>
                                         <td>Khách hàng:</td>

@@ -49,6 +49,19 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">
+                                    <label for="discount_type">Loại giảm giá <span class="text-danger">*</span></label>
+                                    <select class="form-control @error('discount_type') is-invalid @enderror" id="discount_type" name="discount_type">
+                                        @php($currentType = old('discount_type', $voucher->discount_type ?? 'percent'))
+                                        <option value="percent" {{ $currentType == 'percent' ? 'selected' : '' }}>Phần trăm (%)</option>
+                                        <option value="fixed" {{ $currentType == 'fixed' ? 'selected' : '' }}>Số tiền cố định</option>
+                                    </select>
+                                    @error('discount_type')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-4" id="percent_group">
+                                <div class="form-group">
                                     <label for="discount_percent">Phần trăm giảm (%) <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control @error('discount_percent') is-invalid @enderror"
                                            id="discount_percent" name="discount_percent"
@@ -59,15 +72,27 @@
                                     @enderror
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4" id="fixed_group" style="display:none;">
                                 <div class="form-group">
-                                    <label for="max_discount">Giảm tối đa (VNĐ) <span class="text-danger">*</span></label>
+                                    <label for="fixed_discount">Số tiền giảm (VNĐ) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control @error('fixed_discount') is-invalid @enderror"
+                                           id="fixed_discount" name="fixed_discount"
+                                           value="{{ old('fixed_discount', $voucher->fixed_discount) }}" min="0" step="0.01" >
+                                    @error('fixed_discount')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-4" id="max_group">
+                                <div class="form-group">
+                                    <label for="max_discount">Giảm tối đa (VNĐ)</label>
                                     <input type="number" class="form-control @error('max_discount') is-invalid @enderror"
                                            id="max_discount" name="max_discount"
                                            value="{{ old('max_discount', $voucher->max_discount) }}" min="0" step="0.01" >
                                     @error('max_discount')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
+                                    <small class="form-text text-muted">Áp dụng cho loại giảm theo phần trăm. Để trống nếu không giới hạn.</small>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -190,6 +215,20 @@
 
 <script>
     $(document).ready(function() {
+        function toggleDiscountFields() {
+            const type = $('#discount_type').val();
+            if (type === 'fixed') {
+                $('#percent_group').hide();
+                $('#max_group').hide();
+                $('#fixed_group').show();
+            } else {
+                $('#fixed_group').hide();
+                $('#percent_group').show();
+                $('#max_group').show();
+            }
+        }
+        $('#discount_type').on('change', toggleDiscountFields);
+        toggleDiscountFields();
         // Helper function to get label
         function getLabelForType(type) {
             switch(type) {

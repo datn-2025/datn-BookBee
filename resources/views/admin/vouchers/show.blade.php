@@ -29,12 +29,17 @@
                                     <td style="color: #000;">{{ $voucher->description }}</td>
                                 </tr>
                                 <tr>
-                                    <th style="color: #000;">Phần trăm giảm</th>
-                                    <td style="color: #000;">{{ $voucher->discount_percent }}%</td>
-                                </tr>
-                                <tr>
-                                    <th style="color: #000;">Giảm tối đa</th>
-                                    <td style="color: #000;">{{ number_format($voucher->max_discount) }} VNĐ</td>
+                                    <th style="color: #000;">Hình thức giảm</th>
+                                    <td style="color: #000;">
+                                        @if($voucher->discount_type === 'fixed')
+                                            Cố định: {{ number_format($voucher->fixed_discount) }} VNĐ
+                                        @else
+                                            Theo phần trăm: {{ rtrim(rtrim(number_format($voucher->discount_percent, 2), '0'), '.') }}%
+                                            @if(!is_null($voucher->max_discount))
+                                                <br><small>Tối đa: {{ number_format($voucher->max_discount) }} VNĐ</small>
+                                            @endif
+                                        @endif
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th style="color: #000;">Đơn tối thiểu</th>

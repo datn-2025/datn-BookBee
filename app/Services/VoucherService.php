@@ -59,10 +59,25 @@ class VoucherService
             ];
         }
 
-        $discount = $subtotal * ($voucher->discount_percent / 100);
-        if ($voucher->max_discount && $discount > $voucher->max_discount) {
-            $discount = $voucher->max_discount;
-        }       
+        // Hỗ trợ 2 loại giảm giá: cố định (fixed) và phần trăm (percent)
+        $discount = 0;
+
+        if (isset($voucher->discount_type) && $voucher->discount_type === 'fixed') {
+            // Giảm giá số tiền cố định, không vượt quá subtotal
+            $fixed = (float) ($voucher->fixed_discount ?? 0);
+            if ($fixed < 0) { $fixed = 0; }
+            $discount = min($fixed, (float) $subtotal);
+        } else {
+            // Mặc định: phần trăm
+            $percent = (float) ($voucher->discount_percent ?? 0);
+            if ($percent < 0) { $percent = 0; }
+            $discount = ((float) $subtotal) * ($percent / 100);
+            $max = $voucher->max_discount ?? null;
+            if ($max !== null && $max !== '' && $discount > (float) $max) {
+                $discount = (float) $max;
+            }
+        }
+
         return ['discount' => $discount];
     }
 

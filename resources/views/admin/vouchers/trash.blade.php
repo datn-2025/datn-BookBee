@@ -50,10 +50,15 @@
                                             <td>{{ $voucher->code }}</td>
                                             <td>{{ Str::limit($voucher->description, 40) }}</td>
                                             <td>
-                                                {{ $voucher->discount_percent }}%
-                                                @if ($voucher->max_discount)
-                                                    <br>
-                                                    <small>Tối đa: {{ number_format($voucher->max_discount) }}đ</small>
+                                                @if($voucher->discount_type === 'fixed')
+                                                    <span class="badge badge-primary">Cố định</span>
+                                                    <div>{{ number_format($voucher->fixed_discount) }}đ</div>
+                                                @else
+                                                    <span class="badge badge-info">%</span>
+                                                    <div>{{ rtrim(rtrim(number_format($voucher->discount_percent, 2), '0'), '.') }}%</div>
+                                                    @if(!is_null($voucher->max_discount))
+                                                        <small>Tối đa: {{ number_format($voucher->max_discount) }}đ</small>
+                                                    @endif
                                                 @endif
                                             </td>
                                             <td>

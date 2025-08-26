@@ -168,7 +168,19 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $refund->reason)) }}</span>
+                                        @php
+                                            // Bản đồ lý do sang tiếng Việt
+                                            $reasonLabels = [
+                                                'wrong_item' => 'Sản phẩm không đúng mô tả',
+                                                'quality_issue' => 'Vấn đề về chất lượng',
+                                                'shipping_delay' => 'Giao hàng quá chậm',
+                                                'wrong_qty' => 'Số lượng không đúng',
+                                                'damaged' => 'Sản phẩm hư hỏng',
+                                                'other' => 'Lý do khác',
+                                            ];
+                                            $reasonVN = $reasonLabels[$refund->reason] ?? $refund->reason;
+                                        @endphp
+                                        <span class="badge bg-secondary">{{ $reasonVN }}</span>
                                     </td>
                                     <td class="fw-medium">{{ number_format($refund->amount) }}đ</td>
                                     <td>
