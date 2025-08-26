@@ -60,12 +60,16 @@
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        Livewire.on('refreshChart', ({ chartLabels = [], chartData = [] }) => {
+        // Lắng nghe dữ liệu mới và vẽ 2 dataset: Sách vật lý vs Ebook
+        Livewire.on('refreshChart', ({ chartLabels = [], chartDataPhysical = [], chartDataEbook = [] }) => {
             const ctx = document.getElementById('revenueChart');
             const existingChart = Chart.getChart(ctx);
             if (existingChart) existingChart.destroy();
 
-            const hasData = chartData && chartData.length > 0 && chartData.some(val => val > 0);
+            const hasData = (
+                (chartDataPhysical && chartDataPhysical.some(v => v > 0)) ||
+                (chartDataEbook && chartDataEbook.some(v => v > 0))
+            );
 
             // Custom plugin để vẽ text khi không có dữ liệu
             const noDataPlugin = {
@@ -92,17 +96,29 @@
                 type: 'bar',
                 data: {
                     labels: chartLabels,
-                    datasets: [{
-                        label: 'Doanh thu',
-                        data: chartData,
-                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1,
-                        maxBarThickness: 40
-                    }]
+                    datasets: [
+                        {
+                            label: 'Sách vật lý',
+                            data: chartDataPhysical,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1,
+                            maxBarThickness: 40
+                        },
+                        {
+                            label: 'Ebook',
+                            data: chartDataEbook,
+                            backgroundColor: 'rgba(255, 159, 64, 0.5)',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 1,
+                            maxBarThickness: 40
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { position: 'top' } },
                     scales: {
                         y: { beginAtZero: true },
                         x: {
