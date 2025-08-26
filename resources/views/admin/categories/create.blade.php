@@ -78,7 +78,6 @@
         </div>
     </div>
 </div>
-{!! Toastr::message() !!}
 @endsection
 
 @push('scripts')

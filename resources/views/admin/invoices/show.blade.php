@@ -209,7 +209,7 @@
                             @foreach ($invoice->items as $item)
                                 <tr>
                                     <td class="ps-4">
-                                        @if($item->book)
+                                        @if ($item->book)
                                             <div class="d-flex align-items-center">
                                                 <img src="{{ $item->book->cover_image ? asset('storage/' . $item->book->cover_image) : asset('images/default-book.svg') }}"
                                                     alt="{{ $item->book->title }}" class="me-3"
@@ -223,7 +223,7 @@
                                             </div>
                                         @elseif($item->collection_id)
                                             @php $collection = $item->collection; @endphp
-                                            @if($collection)
+                                            @if ($collection)
                                                 <div class="d-flex align-items-center">
                                                     <img src="{{ $collection->image ? asset('storage/' . $collection->image) : 'https://via.placeholder.com/60x80' }}"
                                                         alt="{{ $collection->name }}" class="me-3"
@@ -237,18 +237,20 @@
                                                 </div>
                                             @else
                                                 <div class="d-flex align-items-center">
-                                                    <img src="https://via.placeholder.com/60x80" alt="Combo không tồn tại" class="me-3"
+                                                    <img src="https://via.placeholder.com/60x80" alt="Combo không tồn tại"
+                                                        class="me-3"
                                                         style="width: 60px; height: 80px; object-fit: cover;">
                                                     <div>
                                                         <h6 class="mb-1">Combo không tồn tại</h6>
-                                                        <p class="text-muted small mb-0">ID: {{ $item->collection_id }}</p>
+                                                        <p class="text-muted small mb-0">ID: {{ $item->collection_id }}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             @endif
                                         @else
                                             <div class="d-flex align-items-center">
-                                                <img src="https://via.placeholder.com/60x80" alt="Sản phẩm không tồn tại" class="me-3"
-                                                    style="width: 60px; height: 80px; object-fit: cover;">
+                                                <img src="https://via.placeholder.com/60x80" alt="Sản phẩm không tồn tại"
+                                                    class="me-3" style="width: 60px; height: 80px; object-fit: cover;">
                                                 <div>
                                                     <h6 class="mb-1">Sản phẩm không tồn tại</h6>
                                                     <p class="text-muted small mb-0">Book ID: {{ $item->book_id }}</p>
