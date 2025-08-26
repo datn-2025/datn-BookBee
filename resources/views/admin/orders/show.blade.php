@@ -59,11 +59,13 @@
                                             <i class="ri-refund-2-line align-middle me-1"></i> Hoàn tiền
                                         </a>
                                     @endif -->
+                                    @if ($order->invoice)
                                     <a href="{{ route('admin.invoices.generate-pdf', $order->invoice->id) }}">
                                     <button type="button" class="btn btn-primary btn-sm">
                                         <i class="ri-printer-fill align-middle me-1"></i> In hóa đơn
                                     </button>
                                     </a>
+                                    @endif
                                 </div>
                             </div>
                         </div>
