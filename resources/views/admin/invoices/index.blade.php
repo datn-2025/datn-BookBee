@@ -163,7 +163,7 @@
                                         @foreach ($invoices as $key => $invoice)
                                             <tr>
                                                 <td>{{ $invoices->firstItem() + $key }}</td>
-                                                <td class="fw-medium text-primary">#{{ $invoice->order->order_code }}</td>
+                                                <td class="fw-medium text-primary"><a href="{{ route('admin.orders.show', $invoice->order->id) }}">#{{ $invoice->order->order_code }}</a></td>
                                                 <td>
                                                     @if ($invoice->type == 'refund')
                                                         <span class="badge bg-danger">Hoàn tiền</span>
