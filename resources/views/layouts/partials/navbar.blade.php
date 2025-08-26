@@ -1,10 +1,32 @@
 <nav style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%); border-bottom: 2px solid #f59e0b; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; transition: all 0.3s ease-in-out; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);" id="main-navbar">
-    <div class="nav-container" style="max-width: 1280px; margin: 0 auto; padding: 0 1rem;">
+    <style>
+        /* Kích thước logo điều chỉnh theo chiều cao navbar, hiển thị sắc nét */
+        .nav-logo-img {
+            height: 100px; /* mobile */
+            max-height: 100px;
+            width: auto;
+            display: block;
+            object-fit: contain;
+        }
+        @media (min-width: 768px) {
+            .nav-logo-img {
+                height: 100px; /* desktop */
+                max-height: 100px;
+            }
+        }
+    </style>
+    <div class="nav-container" style="max-width: 1280px; margin: 0 auto; padding: 0 .75rem 0 0;">
         <div class="nav-content" style="display: flex; justify-content: space-between; align-items: center; height: 4rem;">
             {{-- Logo --}}
             <div class="nav-logo" style="flex-shrink: 0;">
-                <a href="{{ route('home') }}" style="display: block; text-decoration: none;">
-                    <h2 style="font-size: 1.5rem; font-weight: 900; color: #f59e0b; text-transform: uppercase; letter-spacing: -0.025em; margin: 0; text-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);">BOOK<span style="color: #1f2937;">BEE</span></h2>
+                <a href="{{ route('home') }}" aria-label="Về trang chủ BookBee" style="display: flex; align-items: center; text-decoration: none; height: 100%;">
+                    <!-- Logo ảnh responsive, tự co theo chiều cao navbar -->
+                    <img 
+                        src="{{ asset('storage/' . (optional(get_setting())->logo ?? 'default_logo.png')) }}" 
+                        alt="BookBee - Trang chủ" 
+                        class="nav-logo-img" 
+                        loading="lazy" 
+                        decoding="async">
                 </a>
             </div>
 
