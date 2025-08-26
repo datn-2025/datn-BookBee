@@ -104,7 +104,7 @@
                     <div class="card-header border-0">
                         <div class="d-flex align-items-center">
                             <h5 class="card-title mb-0 flex-grow-1">Danh sách đơn hàng</h5>
-                            <div class="flex-shrink-0">
+                            <!-- <div class="flex-shrink-0">
                                 <div class="d-flex gap-2 flex-wrap">
                                     <button type="button" disabled class="btn btn-soft-primary btn-sm">
                                         <i class="ri-file-list-3-line align-middle"></i> Xuất Excel
@@ -113,7 +113,7 @@
                                         <i class="ri-file-pdf-line align-middle"></i> Xuất PDF
                                     </button>
                                 </div>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                     <div class="card-body border border-dashed border-end-0 border-start-0">
@@ -271,47 +271,70 @@
                                         </td>
                                         <td class="text-center">
                                             @php
-                                                $paymentClass = match($order->paymentStatus->name) {
-                                                    'Đã Thanh Toán' => 'status-delivered',
-                                                    'Chưa Thanh Toán' => 'status-pending',
-                                                    'Đã Hoàn Tiền' => 'status-refunded',
+                                                $paymentName = trim($order->paymentStatus->name ?? '');
+                                                $orderName = trim($order->orderStatus->name ?? '');
+
+                                                // Thanh toán: mở rộng các biến thể tên trạng thái
+                                                $paymentClass = match($paymentName) {
+                                                    'Đã Thanh Toán', 'Thanh toán thành công' => 'status-delivered',
+                                                    'Chưa Thanh Toán', 'Chờ thanh toán', 'Chờ Xử Lý' => 'status-pending',
+                                                    'Đã Hoàn Tiền', 'Hoàn tiền', 'Đang Hoàn Tiền' => 'status-refunded',
                                                     'Thất Bại' => 'status-cancelled',
                                                     default => 'status-pending'
                                                 };
-                                                $paymentIcon = match($order->paymentStatus->name) {
-                                                    'Đã Thanh Toán' => 'ri-money-dollar-circle-line',
-                                                    'Chưa Thanh Toán' => 'ri-time-line',
-                                                    'Đã Hoàn Tiền' => 'ri-refund-2-line',
+                                                $paymentIcon = match($paymentName) {
+                                                    'Đã Thanh Toán', 'Thanh toán thành công' => 'ri-money-dollar-circle-line',
+                                                    'Chưa Thanh Toán', 'Chờ thanh toán', 'Chờ Xử Lý' => 'ri-time-line',
+                                                    'Đã Hoàn Tiền', 'Hoàn tiền', 'Đang Hoàn Tiền' => 'ri-refund-2-line',
                                                     'Thất Bại' => 'ri-close-circle-line',
                                                     default => 'ri-question-line'
                                                 };
-                                                $statusClass = match($order->orderStatus->name) {
+                                                // Màu nền badge Bootstrap cho trạng thái thanh toán
+                                                $paymentBg = match($paymentName) {
+                                                    'Đã Thanh Toán', 'Thanh toán thành công' => 'bg-success',
+                                                    'Chưa Thanh Toán', 'Chờ thanh toán', 'Chờ Xử Lý' => 'bg-secondary',
+                                                    'Đã Hoàn Tiền', 'Hoàn tiền', 'Đang Hoàn Tiền' => 'bg-info',
+                                                    'Thất Bại' => 'bg-danger',
+                                                    default => 'bg-secondary'
+                                                };
+
+                                                // Đơn hàng: mở rộng các biến thể tên trạng thái (kể cả trạng thái có tính chất thanh toán như Hoàn Tiền/Thành công)
+                                                $statusClass = match($orderName) {
                                                     'Chờ xác nhận' => 'status-pending',
-                                                    'Đã Xác Nhận' => 'status-confirmed',
-                                                    'Đang xử lý' => 'status-confirmed',
-                                                    'Đang giao hàng' => 'status-shipping',
-                                                    'Đã giao thành công' => 'status-delivered',
-                                                    'Đã Hủy' => 'status-cancelled',
-                                                    'Giao thất bại' => 'status-cancelled',
+                                                    'Đã Xác Nhận', 'Đang xử lý', 'Đang chuẩn bị' => 'status-confirmed',
+                                                    'Đang giao hàng', 'Đang giao' => 'status-shipping',
+                                                    'Đã giao thành công', 'Thành công', 'Đã nhận hàng' => 'status-delivered',
+                                                    'Đang Hoàn Tiền', 'Đã Hoàn Tiền' => 'status-refunded',
+                                                    'Đã Hủy', 'Giao thất bại' => 'status-cancelled',
                                                     default => 'status-pending'
                                                 };
-                                                $statusIcon = match($order->orderStatus->name) {
+                                                $statusIcon = match($orderName) {
                                                     'Chờ xác nhận' => 'ri-time-line',
-                                                    'Đã Xác Nhận' => 'ri-check-line',
-                                                    'Đang xử lý' => 'ri-settings-3-line',
-                                                    'Đang giao hàng' => 'ri-truck-line',
-                                                    'Đã giao thành công' => 'ri-check-double-line',
+                                                    'Đã Xác Nhận', 'Đang xử lý', 'Đang chuẩn bị' => 'ri-settings-3-line',
+                                                    'Đang giao hàng', 'Đang giao' => 'ri-truck-line',
+                                                    'Đã giao thành công', 'Thành công', 'Đã nhận hàng' => 'ri-check-double-line',
+                                                    'Đang Hoàn Tiền', 'Đã Hoàn Tiền' => 'ri-refund-2-line',
                                                     'Đã Hủy' => 'ri-close-line',
                                                     'Giao thất bại' => 'ri-error-warning-line',
                                                     default => 'ri-question-line'
                                                 };
+                                                // Màu nền badge Bootstrap cho trạng thái đơn hàng
+                                                $statusBg = match($orderName) {
+                                                    'Chờ xác nhận' => 'bg-warning text-dark',
+                                                    'Đã Xác Nhận', 'Đang xử lý', 'Đang chuẩn bị' => 'bg-primary',
+                                                    'Đang giao hàng', 'Đang giao' => 'bg-info text-dark',
+                                                    'Đã giao thành công', 'Thành công', 'Đã nhận hàng' => 'bg-success',
+                                                    'Đang Hoàn Tiền', 'Đã Hoàn Tiền' => 'bg-info text-dark',
+                                                    'Đã Hủy', 'Giao thất bại' => 'bg-danger',
+                                                    default => 'bg-secondary'
+                                                };
                                             @endphp
-                                            <span class="order-status-badge {{ $paymentClass }}">
+                                            <span class="badge rounded-pill {{ $paymentBg }} order-status-badge {{ $paymentClass }}">
                                                 <i class="{{ $paymentIcon }} me-1"></i>
                                                 {{ $order->paymentStatus->name ?? 'N/A' }}
                                             </span>
                                             <br>
-                                            <span class="order-status-badge {{ $statusClass }}">
+                                            <span class="badge rounded-pill {{ $statusBg }} order-status-badge {{ $statusClass }}">
                                                 <i class="{{ $statusIcon }} me-1"></i>
                                                 {{ $order->orderStatus->name ?? 'N/A' }}
                                             </span>
