@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class ChatbotController extends Controller
 {
@@ -410,30 +411,31 @@ EOT;
             ];
         }
         
-        // Sách theo danh mục cụ thể
-        $categories = ['văn học', 'kinh tế', 'kỹ năng sống', 'thiếu nhi', 'khoa học', 'lịch sử', 'tâm lý', 'công nghệ'];
-        foreach ($categories as $categoryName) {
-            if (preg_match('/sách\s+' . preg_quote($categoryName, '/') . '/i', $prompt) || 
-                preg_match('/' . preg_quote($categoryName, '/') . '/i', $prompt)) {
-                
-                $category = Category::where('name', 'like', '%' . $categoryName . '%')->first();
-                if ($category) {
-                    $books = Book::where('category_id', $category->id)
-                                ->with(['authors', 'formats', 'reviews'])
-                                ->take(6)
-                                ->get();
-                    
-                    $products = [];
-                    foreach ($books as $book) {
-                        $products[] = $this->formatBookCard($book);
-                    }
-                    
-                    return [
-                        'type' => 'product_list',
-                        'content' => "📖 Sách {$categoryName} tại BookBee.vn:",
-                        'products' => $products
-                    ];
+        // Sách theo danh mục cụ thể (dò động từ DB để khớp cả quick-action như "Tiểu thuyết")
+        $allCategories = Category::select(['id', 'name'])->get();
+        foreach ($allCategories as $cat) {
+            $catName = trim($cat->name);
+            $catLower = mb_strtolower($catName, 'UTF-8');
+            // Khớp nếu prompt chứa tên danh mục hoặc có tiền tố "sách <danh mục>"
+            if (
+                Str::contains($prompt, $catLower) ||
+                Str::contains($prompt, 'sách ' . $catLower)
+            ) {
+                $books = Book::where('category_id', $cat->id)
+                            ->with(['authors', 'formats', 'reviews'])
+                            ->take(6)
+                            ->get();
+
+                $products = [];
+                foreach ($books as $book) {
+                    $products[] = $this->formatBookCard($book);
                 }
+
+                return [
+                    'type' => 'product_list',
+                    'content' => "📖 Sách {$catName} tại BookBee.vn:",
+                    'products' => $products
+                ];
             }
         }
         
