@@ -713,6 +713,10 @@
                                 <span class="text-gray-600 uppercase tracking-wide">Phí vận chuyển</span>
                                 <span class="font-bold text-black">{{ number_format($order->shipping_fee) }}đ</span>
                             </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 uppercase tracking-wide">Giảm giá</span>
+                                <span class="font-bold text-black">-{{ number_format($order->discount_amount) }}đ</span>
+                            </div>
                             <div class="border-t-2 border-black pt-4 flex justify-between">
                                 <span class="text-lg font-black text-black uppercase tracking-wide">Tổng cộng</span>
                                 <span class="text-2xl font-black text-black">{{ number_format($order->total_amount) }}đ</span>
