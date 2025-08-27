@@ -131,7 +131,7 @@
                     </div>
                     <div class="col-md-2">
                         <label for="status" class="form-label">Trạng thái</label>
-                        <select class="form-control" id="status" name="status">
+                        <select class="form-control"  name="status">
                             <option value="">Tất cả</option>
                             <option value="{{ \App\Models\Preorder::STATUS_CHO_DUYET }}" {{ request('status') == \App\Models\Preorder::STATUS_CHO_DUYET ? 'selected' : '' }}>Chờ duyệt</option>
                     <option value="{{ \App\Models\Preorder::STATUS_DA_DUYET }}" {{ request('status') == \App\Models\Preorder::STATUS_DA_DUYET ? 'selected' : '' }}>Đã duyệt</option>

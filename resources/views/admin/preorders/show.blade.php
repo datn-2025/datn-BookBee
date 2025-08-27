@@ -22,24 +22,12 @@
             @if($preorder->isPending())
                 <form action="{{ route('admin.preorders.approve', $preorder) }}" method="POST" class="d-inline">
                     @csrf
-                    {{-- <button type="submit" class="btn btn-warning" 
-                            onclick="return confirm('Duyệt đơn hàng này?')">
+                    <button type="submit" class="btn btn-warning" 
+                            onclick="return confirm('Duyệt đơn đặt trước này?')">
                         <i class="fas fa-check"></i>
                         Duyệt đơn hàng
-                    </button> --}}
+                    </button>
                 </form>
-            @elseif($preorder->isApproved() && $preorder->book->isReleased())
-                <button type="button" class="btn btn-success" 
-                        onclick="showConvertModal('{{ $preorder->id }}', '{{ $preorder->book->title }}', true, '{{ $preorder->book->release_date->format('d/m/Y') }}')">
-                    <i class="fas fa-exchange-alt"></i>
-                    Chuyển thành đơn hàng
-                </button>
-            @elseif($preorder->isApproved() && !$preorder->book->isReleased())
-                <button type="button" class="btn btn-warning" 
-                        onclick="showConvertModal('{{ $preorder->id }}', '{{ $preorder->book->title }}', false, '{{ $preorder->book->release_date->format('d/m/Y') }}')">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Chuyển thành đơn hàng (Sớm)
-                </button>
             @elseif($preorder->isReadyToConvert())
                 <button type="button" class="btn btn-info" 
                         onclick="showConvertModal('{{ $preorder->id }}', '{{ $preorder->book->title }}', true, '{{ $preorder->book->release_date->format('d/m/Y') }}')">
@@ -316,7 +304,38 @@
             @endif
 
             <!-- Cập nhật trạng thái -->
-
+            @if($preorder->isPending() || $preorder->isApproved())
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Cập Nhật Trạng Thái</h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="statusUpdateForm" method="POST" action="/admin/preorders/{{ $preorder->id }}/status">
+                            @csrf
+                            @method('PATCH')
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Trạng thái mới</label>
+                                <select class="form-control" name="status" required>
+                                    @if($preorder->isPending())
+                                        <option value="{{ \App\Models\Preorder::STATUS_DA_DUYET }}">Đã duyệt</option>
+                                    @elseif($preorder->isApproved())
+                                        <option value="{{ \App\Models\Preorder::STATUS_SAN_SANG_CHUYEN_DOI }}">Sẵn sàng chuyển đổi</option>
+                                    @endif
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Ghi chú</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Ghi chú về việc cập nhật trạng thái..."></textarea>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Cập nhật
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @endif
 
             <!-- Timeline trạng thái -->
             <div class="card shadow mb-4">
