@@ -18,6 +18,8 @@ class Cart extends Model
         'book_format_id',
         'collection_id',
         'is_combo',
+        'is_preorder',
+        'attribute_value_id',
         'quantity',
         'attribute_value_ids',
         'price'
@@ -27,7 +29,8 @@ class Cart extends Model
         'quantity' => 'integer',
         'price' => 'decimal:2',
         'attribute_value_ids' => 'array',
-        'is_combo' => 'boolean'
+        'is_combo' => 'boolean',
+        'is_preorder' => 'boolean'
     ];
 
     public $incrementing = false;

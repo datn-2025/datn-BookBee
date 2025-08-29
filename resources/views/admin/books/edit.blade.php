@@ -335,8 +335,14 @@
                             
                             <div id="physical_format" style="display: {{ $physicalFormat ? 'block' : 'none' }};">
                                 <div class="border rounded p-3 bg-light">
+                                    <!-- Thông báo khi bật preorder -->
+                                    <div class="alert alert-info preorder-price-notice" style="display: none;">
+                                        <i class="ri-information-line me-2"></i>
+                                        <strong>Chế độ đặt trước:</strong> Giá sách sẽ sử dụng "Giá ưu đãi đặt trước" đã cấu hình ở phần trên.
+                                    </div>
+                                    
                                     <!-- Thông tin cơ bản sách vật lý -->
-                                    <div class="row g-3 mb-4">
+                                    <div id="physical_price_section" class="row g-3 mb-4">
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][price]" 
@@ -498,7 +504,13 @@
                             
                             <div id="ebook_format" style="display: {{ $ebookFormat ? 'block' : 'none' }};">
                                 <div class="border rounded p-3 bg-light">
-                                    <div class="row g-3">
+                                    <!-- Thông báo khi bật preorder -->
+                                    <div class="alert alert-info preorder-price-notice" style="display: none;">
+                                        <i class="ri-information-line me-2"></i>
+                                        <strong>Chế độ đặt trước:</strong> Giá sách sẽ sử dụng "Giá ưu đãi đặt trước" đã cấu hình ở phần trên.
+                                    </div>
+                                    
+                                    <div id="ebook_price_section" class="row g-3">
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][price]" 
@@ -635,6 +647,81 @@
                             @enderror
                             <div class="form-text">Có thể chọn nhiều ảnh. Ảnh mới sẽ thay thế ảnh cũ.</div>
                             <div id="images_preview" class="row mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preorder Section -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 text-dark fw-semibold">
+                            <i class="ri-bookmark-line me-2"></i>Cấu hình đặt trước sách
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Allow Preorder -->
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="pre_order" name="pre_order" 
+                                   value="1" {{ old('pre_order', $book->pre_order) ? 'checked' : '' }}>
+                            <label class="form-check-label fw-medium" for="pre_order">
+                                Cho phép đặt trước sách
+                            </label>
+                            <div class="form-text">Kích hoạt để khách hàng có thể đặt trước sách này trước ngày ra mắt</div>
+                        </div>
+                        
+                        <div id="preorder_section" style="display: {{ old('pre_order', $book->pre_order) ? 'block' : 'none' }};">
+                            <div class="p-3 bg-light rounded border">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="release_date" class="form-label fw-medium">Ngày ra mắt <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control @error('release_date') is-invalid @enderror"
+                                               id="release_date" name="release_date" 
+                                               value="{{ old('release_date', $book->release_date ? $book->release_date->format('Y-m-d') : '') }}">
+                                        @error('release_date')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="stock_preorder_limit" class="form-label fw-medium">Số lượng cho phép đặt trước <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control @error('stock_preorder_limit') is-invalid @enderror"
+                                               id="stock_preorder_limit" name="stock_preorder_limit" 
+                                               value="{{ old('stock_preorder_limit', $book->stock_preorder_limit) }}"
+                                               min="1" placeholder="Ví dụ: 100">
+                                        @error('stock_preorder_limit')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="pre_order_price" class="form-label fw-medium">Giá ưu đãi đặt trước</label>
+                                        <input type="number" class="form-control @error('pre_order_price') is-invalid @enderror"
+                                               id="pre_order_price" name="pre_order_price" 
+                                               value="{{ old('pre_order_price', $book->pre_order_price) }}"
+                                               min="0" step="1000" placeholder="Ví dụ: 150000">
+                                        @error('pre_order_price')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="preorder_count" class="form-label fw-medium">Số lượng đã đặt trước</label>
+                                        <input type="number" class="form-control @error('preorder_count') is-invalid @enderror"
+                                               id="preorder_count" name="preorder_count" 
+                                               value="{{ old('preorder_count', $book->preorder_count ?? 0) }}"
+                                               min="0" readonly>
+                                        @error('preorder_count')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="preorder_description" class="form-label fw-medium">Mô tả ưu đãi đặt trước</label>
+                                        <textarea class="form-control @error('preorder_description') is-invalid @enderror"
+                                                  id="preorder_description" name="preorder_description" rows="3"
+                                                  placeholder="Mô tả về ưu đãi hoặc thông tin đặc biệt cho khách đặt trước (ví dụ: Tặng kèm bookmark, giảm 20%, giao hàng miễn phí...)">{{ old('preorder_description', $book->preorder_description) }}</textarea>
+                                        @error('preorder_description')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1031,200 +1118,67 @@ $(document).ready(function() {
             }
         });
     }
-
-    // Image preview functionality
-    $('#cover_image').on('change', function() {
-        const file = this.files[0];
-        const preview = $('#cover_preview');
-        preview.empty();
-        
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.html(`<img src="${e.target.result}" class="img-thumbnail mt-2" style="max-height: 200px;">`);
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // Store selected files for manipulation
-    let selectedFiles = [];
-
-    $('#images').on('change', function() {
-        const files = Array.from(this.files);
-        selectedFiles = files;
-        updateImagePreview();
-    });
-
-    function updateImagePreview() {
-        const preview = $('#images_preview');
-        preview.empty();
-        
-        if (selectedFiles.length > 0) {
-            selectedFiles.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.append(`
-                        <div class="col-6 col-md-4 mb-2" data-index="${index}">
-                            <div class="position-relative">
-                                <img src="${e.target.result}" class="img-thumbnail" style="height: 100px; width: 100%; object-fit: cover;">
-                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-image" 
-                                        data-index="${index}" style="transform: translate(25%, -25%); border-radius: 50%; width: 25px; height: 25px; padding: 0;">
-                                    <i class="ri-close-line" style="font-size: 12px;"></i>
-                                </button>
-                                <div class="text-center mt-1">
-                                    <small class="text-muted">${file.name}</small>
-                                </div>
-                            </div>
-                        </div>
-                    `);
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-    }
-
-    // Handle image removal
-    $(document).on('click', '.remove-image', function() {
-        const index = parseInt($(this).data('index'));
-        selectedFiles.splice(index, 1);
-        
-        // Update the file input
-        const dt = new DataTransfer();
-        selectedFiles.forEach(file => dt.items.add(file));
-        document.getElementById('images').files = dt.files;
-        
-        updateImagePreview();
-    });
-
-    // New enhanced image deletion logic
-    $(document).on('click', '.delete-image-btn', function() {
-        const button = $(this);
-        const imageId = button.data('image-id');
-        const imageItem = $(`#image-item-${imageId}`);
-        
-        // Show confirmation with SweetAlert2 style (if available) or default confirm
-        const confirmMessage = 'Bạn có chắc chắn muốn xóa ảnh này?\nHành động này không thể hoàn tác!';
-        
-        if (confirm(confirmMessage)) {
-            // Disable button and show loading
-            button.prop('disabled', true);
-            button.html('<i class="ri-loader-4-line" style="animation: spin 1s linear infinite;"></i>');
-            
-            // Add loading overlay to image item
-            imageItem.css('opacity', '0.6');
-            
-            // Make AJAX request
-            $.ajax({
-                url: `/admin/books/delete-image/${imageId}`,
-                type: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Success animation
-                        imageItem.addClass('border-success');
-                        imageItem.fadeOut(400, function() {
-                            $(this).remove();
-                            
-                            // Show success notification
-                            if (typeof toastr !== 'undefined') {
-                                toastr.success(response.message || 'Ảnh đã được xóa thành công!');
-                            }
-                            
-                            // Check if no images left
-                            if ($('#existing-images .col-6').length === 0) {
-                                $('#existing-images').parent().append(
-                                    '<div class="text-center text-muted py-3"><i class="ri-image-line me-2"></i>Không có ảnh phụ nào</div>'
-                                );
-                            }
-                        });
-                    } else {
-                        // Handle error
-                        handleDeleteError(button, imageItem, response.message || 'Có lỗi xảy ra khi xóa ảnh');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('AJAX Error:', error);
-                    handleDeleteError(button, imageItem, 'Không thể kết nối đến server. Vui lòng thử lại!');
-                }
-            });
-        }
-    });
     
-    // Helper function to handle delete errors
-    function handleDeleteError(button, imageItem, message) {
-        // Restore button state
-        button.prop('disabled', false);
-        button.html('<i class="ri-delete-bin-line"></i>');
-        
-        // Restore image opacity
-        imageItem.css('opacity', '1');
-        imageItem.addClass('border-danger');
-        
-        // Show error message
-        if (typeof toastr !== 'undefined') {
-            toastr.error(message);
-        } else {
-            alert('Lỗi: ' + message);
-        }
-        
-        // Remove error border after 3 seconds
-        setTimeout(() => {
-            imageItem.removeClass('border-danger');
-        }, 3000);
-    }
-
-    // Price discount validation
-    function validateDiscountPrice() {
-        // Physical format validation
-        const physicalPriceInput = document.getElementById('physical_price');
-        const physicalDiscountInput = document.getElementById('physical_discount');
-        
-        if (physicalPriceInput && physicalDiscountInput) {
-            function validatePhysicalDiscount() {
-                const price = parseFloat(physicalPriceInput.value) || 0;
-                const discount = parseFloat(physicalDiscountInput.value) || 0;
-                
-                if (discount > price) {
-                    physicalDiscountInput.setCustomValidity('Giá giảm không được lớn hơn giá bán');
-                    physicalDiscountInput.classList.add('is-invalid');
-                } else {
-                    physicalDiscountInput.setCustomValidity('');
-                    physicalDiscountInput.classList.remove('is-invalid');
-                }
-            }
-            
-            physicalPriceInput.addEventListener('input', validatePhysicalDiscount);
-            physicalDiscountInput.addEventListener('input', validatePhysicalDiscount);
-        }
-        
-        // Ebook format validation
-        const ebookPriceInput = document.getElementById('ebook_price');
-        const ebookDiscountInput = document.getElementById('ebook_discount');
-        
-        if (ebookPriceInput && ebookDiscountInput) {
-            function validateEbookDiscount() {
-                const price = parseFloat(ebookPriceInput.value) || 0;
-                const discount = parseFloat(ebookDiscountInput.value) || 0;
-                
-                if (discount > price) {
-                    ebookDiscountInput.setCustomValidity('Giá giảm không được lớn hơn giá bán');
-                    ebookDiscountInput.classList.add('is-invalid');
-                } else {
-                    ebookDiscountInput.setCustomValidity('');
-                    ebookDiscountInput.classList.remove('is-invalid');
-                }
-            }
-            
-            ebookPriceInput.addEventListener('input', validateEbookDiscount);
-            ebookDiscountInput.addEventListener('input', validateEbookDiscount);
-        }
-    }
+    // Preorder section toggle
+    const preOrderCheckbox = document.getElementById('pre_order');
+    const preorderSection = document.getElementById('preorder_section');
+    const releaseDateInput = document.getElementById('release_date');
+    const stockPreorderLimitInput = document.getElementById('stock_preorder_limit');
+    const physicalPriceSection = document.getElementById('physical_price_section');
+    const ebookPriceSection = document.getElementById('ebook_price_section');
+    const preorderPriceNotices = document.querySelectorAll('.preorder-price-notice');
     
-    // Initialize price validation
-    validateDiscountPrice();
+    if (preOrderCheckbox && preorderSection) {
+        // Set initial state
+        togglePreorderSection();
+        
+        preOrderCheckbox.addEventListener('change', togglePreorderSection);
+        
+        function togglePreorderSection() {
+            if (preOrderCheckbox.checked) {
+                preorderSection.style.display = 'block';
+                // Make required fields required
+                if (releaseDateInput) releaseDateInput.required = true;
+                if (stockPreorderLimitInput) stockPreorderLimitInput.required = true;
+                
+                // Set minimum date to today
+                if (releaseDateInput) {
+                    const today = new Date().toISOString().split('T')[0];
+                    releaseDateInput.min = today;
+                }
+                
+                // Hide price sections and show notices
+                if (physicalPriceSection) physicalPriceSection.style.display = 'none';
+                if (ebookPriceSection) ebookPriceSection.style.display = 'none';
+                preorderPriceNotices.forEach(notice => {
+                    notice.style.display = 'block';
+                });
+                
+                // Set default stock limit if empty
+                if (stockPreorderLimitInput && !stockPreorderLimitInput.value) {
+                    stockPreorderLimitInput.value = 100;
+                }
+            } else {
+                preorderSection.style.display = 'none';
+                // Remove required from fields
+                if (releaseDateInput) {
+                    releaseDateInput.required = false;
+                    releaseDateInput.value = '';
+                }
+                if (stockPreorderLimitInput) {
+                    stockPreorderLimitInput.required = false;
+                    stockPreorderLimitInput.value = '';
+                }
+                
+                // Show price sections and hide notices
+                if (physicalPriceSection) physicalPriceSection.style.display = 'block';
+                if (ebookPriceSection) ebookPriceSection.style.display = 'block';
+                preorderPriceNotices.forEach(notice => {
+                    notice.style.display = 'none';
+                });
+            }
+        }
+    }
 });
 </script>
 @endpush
