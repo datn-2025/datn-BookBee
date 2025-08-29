@@ -43,7 +43,7 @@ Route::middleware('auth:admin')->prefix('admin')->group(function () {
 
 // GHN API Routes
 Route::prefix('ghn')->group(function () {
-    Route::post('/provinces', [GhnController::class, 'getProvinces']);
+    Route::get('/provinces', [GhnController::class, 'getProvinces']);
     Route::post('/districts', [GhnController::class, 'getDistricts']);
     Route::post('/wards', [GhnController::class, 'getWards']);
     Route::post('/shipping-fee', [GhnController::class, 'calculateShippingFee']);

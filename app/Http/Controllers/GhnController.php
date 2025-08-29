@@ -103,16 +103,16 @@ class GhnController extends Controller
         ]);
 
         try {
-            $weight = $request->weight ?? 500; // Mặc định 500g
+            $weight = $request->weight ?? 350; // Mặc định 500g
             $serviceTypeId = $request->service_type_id ?? 2; // Mặc định giao hàng tiêu chuẩn
             
             $shippingFee = $this->ghnService->calculateShippingFee(
                 $request->to_district_id,
                 $request->to_ward_code,
-                $weight,
-                20, // length
-                20, // width
-                10, // height
+                $weight * $request->quantity, // weight in grams
+                30 * $request->quantity, // length
+                21 * $request->quantity, // width
+                3 * $request->quantity, // height
                 $serviceTypeId
             );
             

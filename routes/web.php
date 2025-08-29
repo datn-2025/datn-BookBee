@@ -545,14 +545,14 @@ Route::prefix('ai-summary')->name('ai-summary.')->middleware(['web'])->group(fun
 });
 
 // GHN API routes
-Route::prefix('api/ghn')->name('ghn.')->group(function () {
-    Route::get('/provinces', [App\Http\Controllers\GhnController::class, 'getProvinces'])->name('provinces');
-    Route::post('/districts', [App\Http\Controllers\GhnController::class, 'getDistricts'])->name('districts');
-    Route::post('/wards', [App\Http\Controllers\GhnController::class, 'getWards'])->name('wards');
-    Route::post('/shipping-fee', [App\Http\Controllers\GhnController::class, 'calculateShippingFee'])->name('shipping-fee');
-    Route::post('/lead-time', [App\Http\Controllers\GhnController::class, 'getLeadTime'])->name('lead-time');
-    Route::post('/services', [App\Http\Controllers\GhnController::class, 'getServices'])->name('services');
-    Route::post('/track-order', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('track-order');
-    Route::get('/tracking/{orderCode}', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('tracking');
-});
+// Route::prefix('api/ghn')->name('ghn.')->group(function () {
+//     Route::get('/provinces', [App\Http\Controllers\GhnController::class, 'getProvinces'])->name('provinces');
+//     Route::post('/districts', [App\Http\Controllers\GhnController::class, 'getDistricts'])->name('districts');
+//     Route::post('/wards', [App\Http\Controllers\GhnController::class, 'getWards'])->name('wards');
+//     Route::post('/shipping-fee', [App\Http\Controllers\GhnController::class, 'calculateShippingFee'])->name('shipping-fee');
+//     Route::post('/lead-time', [App\Http\Controllers\GhnController::class, 'getLeadTime'])->name('lead-time');
+//     Route::post('/services', [App\Http\Controllers\GhnController::class, 'getServices'])->name('services');
+//     Route::post('/track-order', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('track-order');
+//     Route::get('/tracking/{orderCode}', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('tracking');
+// });
 
