@@ -479,8 +479,10 @@ class PreorderController extends Controller
                 'payment_status' => 'paid'       
             ]);
         }
-
+        
+        
         return redirect($vnp_Url);
+        
     }
     
     /**
