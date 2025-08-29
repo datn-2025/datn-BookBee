@@ -232,7 +232,7 @@ class WalletController extends Controller
             $transaction->status = 'failed';
             $transaction->save();
             
-            if ($transaction->type === 'Rut') {
+            if ($transaction->type === 'RUT') {
                 $user = $transaction->wallet->user;
                 $user->wallet_lock = max(0, ($user->wallet_lock ?? 0) - $transaction->amount);
                 $user->save();
