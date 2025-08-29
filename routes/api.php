@@ -46,7 +46,8 @@ Route::prefix('ghn')->group(function () {
     Route::get('/provinces', [GhnController::class, 'getProvinces']);
     Route::post('/districts', [GhnController::class, 'getDistricts']);
     Route::post('/wards', [GhnController::class, 'getWards']);
-    Route::post('/shipping-fee', [GhnController::class, 'calculateShippingFee']);
+    Route::post('/calculate-fee', [GhnController::class, 'calculateShippingFee']);
+    Route::post('/shipping-fee', [GhnController::class, 'calculateShippingFee']); // Alias for backward compatibility
     Route::post('/services', [GhnController::class, 'getServices']);
     Route::post('/lead-time', [GhnController::class, 'getLeadTime']);
     Route::get('/tracking/{orderCode}', [GhnController::class, 'trackOrder'])->name('api.ghn.tracking');

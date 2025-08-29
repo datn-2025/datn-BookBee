@@ -1596,6 +1596,7 @@
                                 <div class="flex items-end space-x-4">
                                     <span id="bookPrice" data-base-price="{{ $defaultPrice }}"
                                         data-book-status="{{ $book->status }}"
+                                        data-preorder-percent="{{ (float) ($book->preorder_discount_percent ?? 0) }}"
                                         class="text-4xl font-bold text-black adidas-font">{{ number_format($finalPrice, 0, ',', '.') }}₫</span>
                                     @if ($discount > 0)
                                         <span id="originalPrice"
@@ -2065,11 +2066,50 @@
                                 </div>
                                 <!-- Enhanced Add to Cart Button -->
                                 <div class="space-y-4">
-                                    <button id="addToCartBtn"
-                                        class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
-                                        <i class="fas fa-shopping-bag mr-3"></i>
-                                        <span>THÊM VÀO GIỎ HÀNG</span>
-                                    </button>
+                                    @if(isset($book) && $book->canPreorder())
+                                        <!-- Preorder Button -->
+                                        <div class="preorder-section bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 p-4 rounded-lg mb-4">
+                                            <div class="flex items-center gap-3 mb-3">
+                                                <div class="bg-blue-600 text-white px-2 py-1 text-xs font-bold uppercase rounded">
+                                                    ĐẶT TRƯỚC
+                                                </div>
+                                                <span class="text-blue-900 font-bold text-sm">
+                                                    Ra mắt: {{ $book->release_date ? $book->release_date->format('d/m/Y') : 'TBD' }}
+                                                </span>
+                                            </div>
+                                            @php
+                                                $preorderPrice = $book->getPreorderPrice();
+                                                $originalPrice = $book->formats->first()->price ?? 0;
+                                            @endphp
+                                            @if($preorderPrice && $preorderPrice < $originalPrice)
+                                                <div class="mb-3">
+                                                    <div class="flex items-center gap-2 mb-1">
+                                                        <span class="text-xl font-bold text-blue-600">
+                                                            {{ number_format($preorderPrice, 0, ',', '.') }}₫
+                                                        </span>
+                                                        <span class="text-sm text-gray-500 line-through">
+                                                            {{ number_format($originalPrice, 0, ',', '.') }}₫
+                                                        </span>
+                                                    </div>
+                                                    <div class="bg-red-100 text-red-600 px-2 py-1 text-xs font-bold rounded inline-block">
+                                                        TIẾT KIỆM {{ number_format($originalPrice - $preorderPrice, 0, ',', '.') }}₫
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            <button onclick="window.location.href='{{ route('preorders.create', $book) }}'"
+                                                    class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
+                                                <i class="ri-bookmark-line mr-3 text-xl"></i>
+                                                <span>ĐẶT TRƯỚC NGAY</span>
+                                            </button>
+                                        </div>
+                                    @else
+                                        <!-- Regular Add to Cart Button -->
+                                        <button id="addToCartBtn"
+                                            class="adidas-btn-enhanced w-full h-16 bg-black text-white font-bold text-lg uppercase tracking-wider transition-all duration-300 flex items-center justify-center adidas-font">
+                                            <i class="fas fa-shopping-bag mr-3"></i>
+                                            <span>THÊM VÀO GIỎ HÀNG</span>
+                                        </button>
+                                    @endif
 
                                     <!-- Wishlist Button -->
                                     <button id="wishlistBtn" data-book-id="{{ $book->id }}"
@@ -3279,6 +3319,7 @@
                 }
 
                 const basePrice = parseFloat(bookPriceElement.dataset.basePrice) || 0;
+                const preorderPercent = parseFloat(bookPriceElement.dataset.preorderPercent) || 0; // % đặt trước
                 let finalPrice = basePrice;
                 let stock = 0;
                 let discount = 0;
@@ -3286,12 +3327,11 @@
                 let variantStock = 0;
                 let selectedVariantInfo = [];
 
-                // Get format data
                 if (formatSelect && formatSelect.selectedOptions[0]) {
                     const selectedOption = formatSelect.selectedOptions[0];
-                    finalPrice = parseFloat(selectedOption.dataset.price) || basePrice;
+                    finalPrice = parseFloat(selectedOption.dataset.price) || basePrice; // Giá theo định dạng
                     stock = parseInt(selectedOption.dataset.stock) || 0;
-                    discount = parseFloat(selectedOption.dataset.discount) || 0;
+                    discount = parseFloat(selectedOption.dataset.discount) || 0; // Giảm theo định dạng (VND, cố định)
                     const selectedText = selectedOption.textContent.trim().toLowerCase();
                     isEbook = selectedText.includes('ebook');
                 }

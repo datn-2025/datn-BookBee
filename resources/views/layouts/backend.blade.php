@@ -639,6 +639,8 @@
                                             <li><a href="{{ route('admin.refunds.index') }}" class="nav-link">Yêu cầu hoàn
                                                     tiền</a></li>
                                         @endpermission
+                                        <li><a href="{{ route('admin.preorders.index') }}" class="nav-link">Danh sách đơn
+                                                đặt trước</a></li>
                                     </ul>
                                 </div>
                             </li>
