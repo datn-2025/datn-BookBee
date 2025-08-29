@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\GiftController;
 use App\Models\BookGift;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Models\BookVariant;
 
 class AdminBookController extends Controller
 {
@@ -248,16 +249,43 @@ class AdminBookController extends Controller
             $book->formats()->create($ebookFormat);
         }
 
-        // Lưu thuộc tính, giá thêm và số lượng tồn kho theo biến thể
-        if ($request->filled('attribute_values')) {
-            foreach ($request->attribute_values as $valueId => $data) {
-                BookAttributeValue::create([
-                    'book_id' => $book->id,
-                    'attribute_value_id' => $data['id'],
-                    'extra_price' => $data['extra_price'] ?? 0,
-                    'stock' => $data['stock'] ?? 0,
-                    'sku' => $this->generateVariantSku($book, $data['id'])
-                ]);
+        // Lưu biến thể mới (book_variants) nếu có gửi từ UI
+        if ($request->filled('variants')) {
+            $variants = $request->input('variants', []);
+
+            DB::transaction(function () use ($variants, $book) {
+                foreach ($variants as $variant) {
+                    $bookVariant = BookVariant::create([
+                        'book_id' => $book->id,
+                        'sku' => $variant['sku'] ?? null,
+                        'extra_price' => $variant['extra_price'] ?? 0,
+                        'stock' => $variant['stock'] ?? 0,
+                    ]);
+
+                    $attributeValueIds = $variant['attribute_value_ids'] ?? [];
+                    foreach ($attributeValueIds as $attributeValueId) {
+                        DB::table('book_variant_attribute_values')->insert([
+                            'id' => (string) Str::uuid(),
+                            'book_variant_id' => $bookVariant->id,
+                            'attribute_value_id' => $attributeValueId,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+            });
+        } else {
+            // Lưu thuộc tính theo cấu trúc cũ nếu chưa dùng biến thể mới
+            if ($request->filled('attribute_values')) {
+                foreach ($request->attribute_values as $valueId => $data) {
+                    BookAttributeValue::create([
+                        'book_id' => $book->id,
+                        'attribute_value_id' => $data['id'],
+                        'extra_price' => $data['extra_price'] ?? 0,
+                        'stock' => $data['stock'] ?? 0,
+                        'sku' => $this->generateVariantSku($book, $data['id'])
+                    ]);
+                }
             }
         }
 
@@ -301,6 +329,13 @@ class AdminBookController extends Controller
             'attribute_values.*.id' => 'required|exists:attribute_values,id',
             'attribute_values.*.extra_price' => 'nullable|numeric|min:0',
             'attribute_values.*.stock' => 'nullable|integer|min:0',
+            // Biến thể mới
+            'variants' => 'nullable|array',
+            'variants.*.attribute_value_ids' => 'required|array|min:1',
+            'variants.*.attribute_value_ids.*' => 'required|uuid|exists:attribute_values,id',
+            'variants.*.sku' => 'nullable|string|max:100',
+            'variants.*.extra_price' => 'nullable|numeric|min:0',
+            'variants.*.stock' => 'nullable|integer|min:0',
             'has_physical' => 'boolean',
             'formats.physical.price' => 'required_if:has_physical,true|nullable|numeric|min:0',
             'formats.physical.discount' => 'nullable|numeric|min:0|lte:formats.physical.price',
@@ -533,9 +568,10 @@ class AdminBookController extends Controller
             'images',
             'bookAttributeValues.attributeValue.attribute', // Sử dụng bookAttributeValues thay vì attributeValues
             'authors',
-            'gifts'
+            'gifts',
+            'variants.attributeValues.attribute', // Eager load biến thể mới và thuộc tính
         ])->findOrFail($id);
-
+// dd($book->variants->toArray());
         $categories = Category::whereNull('deleted_at')->get();
         $brands = Brand::whereNull('deleted_at')->get();
         $authors = Author::whereNull('deleted_at')->get();
@@ -759,44 +795,155 @@ class AdminBookController extends Controller
             $book->formats()->where('format_name', 'Ebook')->delete();
         }
 
-        // Cập nhật thuộc tính, giá thêm và số lượng tồn kho theo biến thể
-        // Xử lý thuộc tính hiện có - đơn giản hóa logic
-        if ($request->filled('existing_attributes')) {
-            foreach ($request->existing_attributes as $bookAttributeValueId => $data) {
-                $bookAttributeValue = BookAttributeValue::find($bookAttributeValueId);
+        // --- Đồng bộ biến thể (book_variants) ---
+        // Nếu UI gửi mảng variants (luồng mới), tiến hành upsert + xóa những biến thể đã bị loại bỏ
+        if ($request->filled('variants')) {
+            $incomingVariants = $request->input('variants', []);
 
-                if ($bookAttributeValue && $bookAttributeValue->book_id == $book->id) {
-                    if (isset($data['keep']) && $data['keep'] == '1') {
-                        // Cập nhật thuộc tính hiện có
-                        $bookAttributeValue->update([
-                            'extra_price' => $data['extra_price'] ?? 0,
-                            'stock' => $data['stock'] ?? 0,
-                        ]);
+            // Tạo key tổ hợp để ngăn trùng (sort attribute_value_ids rồi join)
+            $seenKeys = [];
+            foreach ($incomingVariants as $v) {
+                $ids = $v['attribute_value_ids'] ?? [];
+                sort($ids);
+                $key = implode('-', $ids);
+                if ($key === '') {
+                    return back()->withInput()->withErrors(['variants' => 'Mỗi biến thể phải có ít nhất 1 giá trị thuộc tính.']);
+                }
+                if (isset($seenKeys[$key])) {
+                    return back()->withInput()->withErrors(['variants' => 'Phát hiện trùng lặp tổ hợp biến thể. Vui lòng kiểm tra lại.']);
+                }
+                $seenKeys[$key] = true;
+            }
+
+            DB::transaction(function () use ($book, $incomingVariants) {
+                // Tải các biến thể hiện có cùng các attribute values của chúng
+                $existing = $book->variants()->with('attributeValues')->get();
+
+                // Map key => model hiện có
+                $existingMap = [];
+                foreach ($existing as $ev) {
+                    $ids = $ev->attributeValues->pluck('id')->toArray();
+                    sort($ids);
+                    $key = implode('-', $ids);
+                    if ($key !== '') {
+                        $existingMap[$key] = $ev;
+                    }
+                }
+
+                $incomingKeys = [];
+                $totalVariantStock = 0;
+
+                foreach ($incomingVariants as $v) {
+                    $attrIds = $v['attribute_value_ids'] ?? [];
+                    sort($attrIds);
+                    $key = implode('-', $attrIds);
+                    $incomingKeys[] = $key;
+
+                    $payload = [
+                        'sku' => $v['sku'] ?? null,
+                        'extra_price' => $v['extra_price'] ?? 0,
+                        'stock' => $v['stock'] ?? 0,
+                    ];
+
+                    $totalVariantStock += (int) ($v['stock'] ?? 0);
+
+                    if (isset($existingMap[$key])) {
+                        // Update biến thể hiện có
+                        $variantModel = $existingMap[$key];
+                        $variantModel->update($payload);
+
+                        // Đồng bộ lại attribute values (tránh sync() vì pivot cần cột 'id')
+                        $currentIds = $variantModel->attributeValues()->pluck('attribute_values.id')->toArray();
+                        $toAttach = array_values(array_diff($attrIds, $currentIds));
+                        $toDetach = array_values(array_diff($currentIds, $attrIds));
+
+                        if (!empty($toAttach)) {
+                            $attachData = [];
+                            foreach ($toAttach as $aid) {
+                                $attachData[$aid] = [
+                                    'id' => (string) Str::uuid(),
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ];
+                            }
+                            $variantModel->attributeValues()->attach($attachData);
+                        }
+                        if (!empty($toDetach)) {
+                            $variantModel->attributeValues()->detach($toDetach);
+                        }
                     } else {
-                        // Xóa thuộc tính nếu không keep
-                        $bookAttributeValue->delete();
+                        // Tạo biến thể mới
+                        $variantModel = BookVariant::create(array_merge($payload, [
+                            'book_id' => $book->id,
+                        ]));
+                        // Gắn các attribute values
+                        $attachData = [];
+                        foreach ($attrIds as $aid) {
+                            $attachData[$aid] = [
+                                'id' => (string) Str::uuid(),
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+                        }
+                        $variantModel->attributeValues()->attach($attachData);
+                    }
+                }
+
+                // Xóa các biến thể đã bị loại bỏ
+                foreach ($existingMap as $key => $ev) {
+                    if (!in_array($key, $incomingKeys, true)) {
+                        // Detach trước khi xóa để đảm bảo clean pivot
+                        $ev->attributeValues()->detach();
+                        $ev->delete();
+                    }
+                }
+
+                // Cập nhật tồn kho của định dạng Sách Vật Lý = tổng tồn kho biến thể
+                $physicalFormat = $book->formats()->where('format_name', 'Sách Vật Lý')->first();
+                if ($physicalFormat) {
+                    $physicalFormat->update(['stock' => $totalVariantStock]);
+                }
+            });
+        } else {
+            // Giữ logic cũ khi chưa sử dụng tính năng biến thể mới
+            // Cập nhật thuộc tính hiện có - đơn giản hóa logic
+            if ($request->filled('existing_attributes')) {
+                foreach ($request->existing_attributes as $bookAttributeValueId => $data) {
+                    $bookAttributeValue = BookAttributeValue::find($bookAttributeValueId);
+
+                    if ($bookAttributeValue && $bookAttributeValue->book_id == $book->id) {
+                        if (isset($data['keep']) && $data['keep'] == '1') {
+                            // Cập nhật thuộc tính hiện có
+                            $bookAttributeValue->update([
+                                'extra_price' => $data['extra_price'] ?? 0,
+                                'stock' => $data['stock'] ?? 0,
+                            ]);
+                        } else {
+                            // Xóa thuộc tính nếu không keep
+                            $bookAttributeValue->delete();
+                        }
                     }
                 }
             }
-        }
 
-        // Thêm các thuộc tính mới - cải thiện logic
-        if ($request->filled('attribute_values')) {
-            foreach ($request->attribute_values as $valueId => $data) {
-                // Kiểm tra xem thuộc tính đã tồn tại chưa để tránh trùng lặp
-                $existingBookAttributeValue = BookAttributeValue::where('book_id', $book->id)
-                    ->where('attribute_value_id', $data['id'])
-                    ->first();
+            // Thêm các thuộc tính mới - cải thiện logic
+            if ($request->filled('attribute_values')) {
+                foreach ($request->attribute_values as $valueId => $data) {
+                    // Kiểm tra xem thuộc tính đã tồn tại chưa để tránh trùng lặp
+                    $existingBookAttributeValue = BookAttributeValue::where('book_id', $book->id)
+                        ->where('attribute_value_id', $data['id'])
+                        ->first();
 
-                if (!$existingBookAttributeValue) {
-                    BookAttributeValue::create([
-                        'id' => (string) Str::uuid(),
-                        'book_id' => $book->id,
-                        'attribute_value_id' => $data['id'],
-                        'extra_price' => $data['extra_price'] ?? 0,
-                        'stock' => $data['stock'] ?? 0,
-                        'sku' => $this->generateVariantSku($book, $data['id']),
-                    ]);
+                    if (!$existingBookAttributeValue) {
+                        BookAttributeValue::create([
+                            'id' => (string) Str::uuid(),
+                            'book_id' => $book->id,
+                            'attribute_value_id' => $data['id'],
+                            'extra_price' => $data['extra_price'] ?? 0,
+                            'stock' => $data['stock'] ?? 0,
+                            'sku' => $this->generateVariantSku($book, $data['id']),
+                        ]);
+                    }
                 }
             }
         }

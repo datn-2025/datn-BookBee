@@ -152,7 +152,7 @@
                                     <th class="text-center fw-semibold">Danh Mục</th>
                                     <th class="text-center fw-semibold">Số trang</th>
                                     <th class="text-center fw-semibold" style="min-width: 200px;">Giá các phiên bản</th>
-                                    <th class="text-center fw-semibold" style="min-width: 150px;">Biến thể</th>
+                                    {{-- <th class="text-center fw-semibold" style="min-width: 150px;">Biến thể</th> --}}
                                     <th class="text-center fw-semibold">Trạng thái</th>
                                     <th class="text-center fw-semibold" style="width: 100px;">Tùy chọn</th>
                                 </tr>
@@ -249,7 +249,7 @@
                                                 @endforeach
                                             @endif
                                         </td>
-                                        <td class="text-center">
+                                        {{-- <td class="text-center">
                                             @if($book->attributeValues->count() > 0)
                                                 <div class="d-flex flex-column gap-1">
                                                     @foreach($book->attributeValues->take(3) as $variant)
@@ -269,7 +269,7 @@
                                             @else
                                                 <span class="text-muted">Không có</span>
                                             @endif
-                                        </td>
+                                        </td> --}}
                                         <td class="text-center"><span class="{{ $statusClass }}">{{ $statusText }}</span></td>
 
                                         <td class="text-center">

@@ -135,6 +135,14 @@ class Book extends Model
             ->get();
     }
 
+    /**
+     * Danh sách biến thể (kiểu mới) của sách
+     */
+    public function variants(): HasMany
+    {
+        return $this->hasMany(BookVariant::class);
+    }
+
     public function invoiceItems(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);

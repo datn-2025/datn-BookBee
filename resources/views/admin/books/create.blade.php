@@ -314,12 +314,13 @@
                                             @enderror
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label fw-medium">Số lượng</label>
-                                            <input type="number" class="form-control" name="formats[physical][stock]" 
-                                                   value="{{ old('formats.physical.stock') }}" placeholder="0" min="0">
-                                            @error('formats.physical.stock')
-                                                <div class="text-danger small mt-1">{{ $message }}</div>
-                                            @enderror
+                                            <label class="form-label fw-medium">Số lượng (tự động)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="ri-archive-line"></i></span>
+                                                <input type="text" class="form-control" id="total_variant_stock_display" value="0" readonly>
+                                            </div>
+                                            <div class="form-text">Tổng số lượng = tổng tồn kho của tất cả biến thể</div>
+                                            <input type="hidden" name="formats[physical][stock]" id="total_variant_stock_hidden" value="0">
                                         </div>
                                     </div>
                                     
@@ -329,30 +330,29 @@
                                             <i class="ri-price-tag-3-line me-2"></i>Thuộc tính sách vật lý
                                         </h6>
                                         
-                                        <div class="mb-3">
-                                            <div class="alert alert-info border-0" style="background-color: #e3f2fd; border-left: 4px solid #2196f3 !important;">
+                                        <div class="mb-2">
+                                            <div class="alert alert-info py-2 mb-2 border-0" style="background-color: #e9f5ff; border-left: 3px solid #2196f3 !important;">
                                                 <div class="d-flex align-items-start">
-                                                    <i class="ri-information-line me-2 mt-1" style="color: #1976d2; font-size: 18px;"></i>
-                                                    <div>
-                                                        <h6 class="mb-1" style="color: #1976d2; font-weight: 600;">Thuộc tính biến thể</h6>
-                                                        <p class="mb-0" style="color: #1976d2; font-size: 13px;">
-                                                            Các thuộc tính như màu sắc, kích thước, loại bìa sẽ tạo ra các biến thể khác nhau với giá và tồn kho riêng biệt.
-                                                        </p>
+                                                    <i class="ri-information-line me-2 mt-1" style="color: #1976d2; font-size: 16px;"></i>
+                                                    <div class="small" style="color: #1976d2;">
+                                                        <div class="fw-semibold">Thuộc tính biến thể</div>
+                                                        <div>Các thuộc tính như màu sắc, kích thước, loại bìa sẽ tạo ra biến thể với giá và tồn kho riêng.</div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                         
                                         @if($attributes->count() > 0)
+                                        <div class="row g-3 mb-4">
                                             @foreach($attributes as $attribute)
-                                                <div class="attribute-group mb-4 p-3 border rounded bg-white">
+                                                <div class="attribute-group mb-4 p-3 border col-md-4 rounde">
                                                     <h6 class="fw-bold text-primary mb-3">
                                                         <i class="ri-bookmark-line me-1"></i>{{ $attribute->name }}
                                                     </h6>
                                                     
-                                                    <div class="row g-3 mb-3">
-                                                        <div class="col-md-4">
-                                                            <label class="form-label fw-medium">Chọn giá trị</label>
+                                                    <div class="row g-2 mb-2">
+                                                        <div class="col-md-10">
+                                                            {{-- <label class="form-label fw-medium">Chọn giá trị</label> --}}
                                                             <select class="form-select attribute-select" 
                                                                     data-attribute-id="{{ $attribute->id }}" 
                                                                     data-attribute-name="{{ $attribute->name }}">
@@ -365,32 +365,21 @@
                                                             </select>
                                                         </div>
                                                         
-                                                        <div class="col-md-3">
-                                                            <label class="form-label fw-medium">Giá thêm (VNĐ)</label>
-                                                            <input type="number" class="form-control attribute-extra-price" 
-                                                                   placeholder="0" min="0">
-                                                        </div>
-                                                        
-                                                        <div class="col-md-3">
-                                                            <label class="form-label fw-medium">Số lượng</label>
-                                                            <input type="number" class="form-control attribute-stock" 
-                                                                   placeholder="0" min="0">
-                                                        </div>
-                                                        
                                                         <div class="col-md-2">
-                                                            <label class="form-label fw-medium">&nbsp;</label>
-                                                            <button type="button" class="btn btn-primary d-block add-attribute-btn">
-                                                                <i class="ri-add-line"></i> Thêm
+                                                            {{-- <label class="form-label fw-medium">&nbsp;</label> --}}
+                                                            <button type="button" class="btn btn-primary d-block add-attribute-btn btn-sm">
+                                                                <i class="ri-add-line"></i>
                                                             </button>
                                                         </div>
                                                     </div>
                                                     
                                                     <!-- Container hiển thị các thuộc tính đã chọn -->
-                                                    <div class="selected-variants-container" data-attribute-id="{{ $attribute->id }}">
+                                                    <div class="selected-variants-container d-flex flex-wrap gap-2" data-attribute-id="{{ $attribute->id }}">
                                                         <!-- Các thuộc tính đã chọn sẽ hiển thị ở đây -->
                                                     </div>
                                                 </div>
                                             @endforeach
+                                            </div>
                                         @else
                                             <div class="text-center py-4">
                                                 <i class="ri-price-tag-3-line text-muted" style="font-size: 48px;"></i>
@@ -398,6 +387,35 @@
                                                 <small class="text-muted">Vui lòng tạo thuộc tính trong phần quản lý thuộc tính trước.</small>
                                             </div>
                                         @endif
+                                        <!-- Biến thể (tổ hợp thuộc tính) -->
+                                        <div class="border-top pt-4 mt-3">
+                                            <h6 class="fw-bold text-purple mb-2">
+                                                <i class="ri-shape-line me-2"></i>Biến thể (tổ hợp thuộc tính)
+                                            </h6>
+                                            <p class="text-muted small mb-3">
+                                                Dựa trên các giá trị thuộc tính đã chọn ở trên, nhấn
+                                                <span class="fw-semibold">"Tạo tổ hợp biến thể"</span> để sinh các biến thể với SKU, giá thêm và tồn kho riêng.
+                                            </p>
+                                            <button type="button" class="btn btn-outline-primary" id="generate_variants_btn">
+                                                <i class="ri-magic-line me-1"></i>Tạo tổ hợp biến thể
+                                            </button>
+                                            <div class="table-responsive mt-3" id="variants_section" style="display: none;">
+                                                <table class="table table-bordered align-middle" id="variants_table">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th style="width: 45%">Thuộc tính</th>
+                                                            <th style="width: 20%">SKU</th>
+                                                            <th style="width: 15%">Giá+</th>
+                                                            <th style="width: 15%">SL</th>
+                                                            <th style="width: 5%"></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="variants_tbody">
+                                                        <!-- Hàng biến thể sẽ được thêm bằng JS -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -766,11 +784,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const select = attributeGroup.querySelector('.attribute-select');
-            const extraPriceInput = attributeGroup.querySelector('.attribute-extra-price');
-            const stockInput = attributeGroup.querySelector('.attribute-stock');
             const selectedValuesContainer = attributeGroup.querySelector('.selected-variants-container');
             
-            if (!select || !extraPriceInput || !stockInput || !selectedValuesContainer) {
+            if (!select || !selectedValuesContainer) {
                 console.error('Không tìm thấy các element cần thiết');
                 return;
             }
@@ -785,8 +801,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const attributeName = select.getAttribute('data-attribute-name');
             const valueId = selectedOption.value;
             const valueName = selectedOption.getAttribute('data-value-name');
-            const extraPrice = parseFloat(extraPriceInput.value) || 0;
-            const stock = parseInt(stockInput.value) || 0;
             
             // Kiểm tra xem thuộc tính này đã được thêm chưa
             const existingValue = attributeGroup.querySelector(`input[name="attribute_values[${valueId}][id]"]`);
@@ -798,6 +812,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Tạo element hiển thị thuộc tính đã chọn
             const selectedDiv = document.createElement('div');
             selectedDiv.className = 'selected-attribute-value mb-2 p-3 border rounded bg-white shadow-sm';
+            // Lưu dữ liệu để sinh tổ hợp biến thể
+            selectedDiv.dataset.attributeId = attributeId;
+            selectedDiv.dataset.valueId = valueId;
+            selectedDiv.dataset.valueName = valueName;
+            // Không còn lưu giá thêm & số lượng ở cấp giá trị đơn lẻ
             selectedDiv.innerHTML = `
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="flex-grow-1">
@@ -805,12 +824,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="ri-bookmark-line me-1 text-primary"></i>${valueName}
                         </div>
                         <div class="small text-muted">
-                            <span class="badge bg-success-subtle text-success me-2">
-                                <i class="ri-money-dollar-circle-line me-1"></i>+${extraPrice.toLocaleString('vi-VN')}đ
-                            </span>
-                            <span class="badge bg-info-subtle text-info me-2">
-                                <i class="ri-archive-line me-1"></i>${stock} sp
-                            </span>
                             <span class="badge bg-secondary-subtle text-secondary">
                                 <i class="ri-barcode-line me-1"></i>SKU: Tự động tạo
                             </span>
@@ -821,16 +834,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>
                 </div>
                 <input type="hidden" name="attribute_values[${valueId}][id]" value="${valueId}">
-                <input type="hidden" name="attribute_values[${valueId}][extra_price]" value="${extraPrice}">
-                <input type="hidden" name="attribute_values[${valueId}][stock]" value="${stock}">
             `;
             
             selectedValuesContainer.appendChild(selectedDiv);
             
             // Reset form
             select.selectedIndex = 0;
-            extraPriceInput.value = '0';
-            stockInput.value = '0';
         }
         
         // Handle attribute value removal
@@ -841,7 +850,124 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectedDiv.remove();
             }
         }
+
+        // Xóa một hàng biến thể
+        if (e.target.closest('.remove-variant-row')) {
+            const btn = e.target.closest('.remove-variant-row');
+            const tr = btn.closest('tr');
+            if (tr) tr.remove();
+            updateTotalVariantStock();
+        }
     });
+    
+    // Sự kiện tạo tổ hợp biến thể
+    const generateBtn = document.getElementById('generate_variants_btn');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', generateVariantsFromSelected);
+    }
+    
+    // Sinh tổ hợp biến thể từ các thuộc tính đã chọn
+    function generateVariantsFromSelected() {
+        const attributeGroups = Array.from(document.querySelectorAll('.attribute-group'));
+        const attributeSets = [];
+        const attributeLabels = []; // Lưu tên thuộc tính để hiển thị
+        
+        attributeGroups.forEach(group => {
+            const attributeId = group.querySelector('.attribute-select')?.getAttribute('data-attribute-id');
+            const attributeName = group.querySelector('.attribute-select')?.getAttribute('data-attribute-name');
+            const selected = Array.from(group.querySelectorAll('.selected-attribute-value'));
+            if (selected.length > 0 && attributeId) {
+                attributeLabels.push(attributeName || 'Thuộc tính');
+                attributeSets.push(selected.map(el => ({
+                    attributeId: el.dataset.attributeId,
+                    valueId: el.dataset.valueId,
+                    valueName: el.dataset.valueName,
+                })));
+            }
+        });
+        
+        if (attributeSets.length === 0) {
+            alert('Vui lòng chọn ít nhất 1 giá trị thuộc tính trước khi tạo tổ hợp biến thể.');
+            return;
+        }
+        
+        const combos = cartesian(attributeSets);
+        const tbody = document.getElementById('variants_tbody');
+        const section = document.getElementById('variants_section');
+        if (!tbody || !section) return;
+        
+        // Xóa bảng cũ và hiển thị bảng
+        tbody.innerHTML = '';
+        section.style.display = '';
+        
+        combos.forEach((combo, idx) => {
+            // Nhãn hiển thị: "Thuộc tính: Giá trị | ..."
+            const label = combo.map((v, i) => `${attributeLabels[i]}: ${v.valueName}`).join(' | ');
+            const sumExtra = 0; // Không dùng giá thêm ở cấp giá trị đơn lẻ
+            const stockDefault = 0; // Không dùng tồn kho ở cấp giá trị đơn lẻ
+            const skuSuffix = combo.map(v => slugifyForSku(v.valueName)).join('-').toUpperCase();
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div class="fw-medium">${label}</div>
+                    ${combo.map(v => `<input type=\"hidden\" name=\"variants[${idx}][attribute_value_ids][]\" value=\"${v.valueId}\">`).join('')}
+                </td>
+                <td>
+                    <input type="text" class="form-control" name="variants[${idx}][sku]" placeholder="SKU tùy chọn" value="${skuSuffix}">
+                </td>
+                <td>
+                    <input type="number" class="form-control" name="variants[${idx}][extra_price]" min="0" value="${sumExtra}">
+                </td>
+                <td>
+                    <input type="number" class="form-control" name="variants[${idx}][stock]" min="0" value="${stockDefault}">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-variant-row"><i class="ri-delete-bin-line"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        // Cập nhật tổng tồn kho sau khi sinh bảng biến thể
+        updateTotalVariantStock();
+    }
+    
+    // Lắng nghe thay đổi số lượng của từng biến thể để cập nhật tổng
+    document.addEventListener('input', function(e) {
+        const target = e.target;
+        if (target.matches('input[name^="variants"][name$="[stock]"]')) {
+            updateTotalVariantStock();
+        }
+    });
+    
+    // Helper: Cartesian product
+    function cartesian(arr) {
+        return arr.reduce((a, b) => a.flatMap(d => b.map(e => [].concat(d, e))));
+    }
+    
+    // Helper: Cập nhật tổng tồn kho từ các biến thể
+    function updateTotalVariantStock() {
+        const stockInputs = document.querySelectorAll('input[name^="variants"][name$="[stock]"]');
+        let total = 0;
+        stockInputs.forEach(inp => {
+            const v = parseInt(inp.value, 10);
+            if (!isNaN(v)) total += v;
+        });
+        const totalDisplay = document.getElementById('total_variant_stock_display');
+        if (totalDisplay) totalDisplay.value = total;
+        const totalHidden = document.getElementById('total_variant_stock_hidden');
+        if (totalHidden) totalHidden.value = total;
+    }
+    
+    // Sinh suffix SKU từ value name (đơn giản hoá)
+    function slugifyForSku(str) {
+        return (str || '')
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // bỏ dấu tiếng Việt
+            .replace(/[^a-zA-Z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 20);
+    }
     
     // Initialize gift date range picker
     const giftDateRangePicker = document.getElementById('gift_date_range');
