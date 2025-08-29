@@ -85,7 +85,7 @@ class AdminPreorderController extends Controller
     {
         // Lấy danh sách sách đang mở preorder kèm các định dạng
         $preorderBooks = Book::where('pre_order', true)
-            ->with('bookFormats')
+            ->with('formats')
             ->get(['id', 'title', 'cover_image', 'pre_order_price']);
             
         $users = User::select('id', 'name', 'email', 'phone')

@@ -883,7 +883,7 @@
                         </div>
                         
                         <!-- Content -->
-                        <div class="p-4 space-y-3 flex flex-col h-full">
+                        <div class="p-4 space-y-3 flex flex-col">
                             <h3 class="font-bold text-gray-900 text-sm leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
                                 {{ $book->title }}
                             </h3>
@@ -927,7 +927,7 @@
                                 </div>
                             </div>
                             <!-- Action Button -->
-                            <div class="mt-auto mb-0">
+                            <div class=" mb-0">
                                 <button onclick="window.location.href='{{ route('books.show', $book->slug) }}'"
                                         class="w-full h-10 bg-black text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center">
                                     <i class="ri-bookmark-line mr-2 text-sm"></i>
