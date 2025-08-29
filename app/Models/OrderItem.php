@@ -12,7 +12,7 @@ class OrderItem extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'id', 'order_id', 'book_id', 'book_format_id', 'collection_id', 'is_combo', 'item_type', 'quantity', 'price', 'total',
+        'id', 'order_id', 'book_id', 'book_format_id', 'book_gift_id', 'collection_id', 'is_combo', 'item_type', 'quantity', 'price', 'total',
     ];
 
     protected static function boot()
@@ -33,7 +33,7 @@ class OrderItem extends Model
 
     public function book()
     {
-        return $this->belongsTo(Book::class);
+        return $this->belongsTo(Book::class)->withTrashed();
     }
 
     public function bookFormat()
@@ -54,6 +54,14 @@ class OrderItem extends Model
     public function collection()
     {
         return $this->belongsTo(Collection::class);
+    }
+
+    /**
+     * Quan hệ tới quà tặng đi kèm sách
+     */
+    public function bookGift()
+    {
+        return $this->belongsTo(BookGift::class, 'book_gift_id');
     }
 
     protected $casts = [

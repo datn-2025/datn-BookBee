@@ -163,9 +163,9 @@
                                         @foreach ($invoices as $key => $invoice)
                                             <tr>
                                                 <td>{{ $invoices->firstItem() + $key }}</td>
-                                                <td class="fw-medium text-primary">#{{ $invoice->order->order_code }}</td>
+                                                <td class="fw-medium text-primary"><a href="{{ route('admin.orders.show', $invoice->order->id) }}">#{{ $invoice->order->order_code }}</a></td>
                                                 <td>
-                                                    @if($invoice->type == 'refund')
+                                                    @if ($invoice->type == 'refund')
                                                         <span class="badge bg-danger">Hoàn tiền</span>
                                                     @else
                                                         <span class="badge bg-success">Thanh toán</span>
@@ -177,15 +177,22 @@
                                                             class="fas fa-envelope-open me-1"></i>{{ $invoice->order->user->email }}</small>
                                                 </td>
                                                 <td>
-                                                    @if($invoice->order->delivery_method === 'pickup')
-                                                        <span class="badge bg-info"><i class="ri-store-2-line me-1"></i>Nhận tại cửa hàng</span>
+                                                    @if ($invoice->order->delivery_method === 'pickup')
+                                                        <span class="badge bg-info"><i
+                                                                class="ri-store-2-line me-1"></i>Nhận tại cửa hàng</span>
                                                     @elseif($invoice->order->delivery_method === 'ebook')
-                                                        <span class="badge bg-primary"><i class="ri-smartphone-line me-1"></i>Ebook</span>
+                                                        <span class="badge bg-primary"><i
+                                                                class="ri-smartphone-line me-1"></i>Ebook</span>
                                                     @elseif($invoice->order->address)
-                                                        <div class="text-truncate" style="max-width: 200px;" title="{{ $invoice->order->address->address_detail }}, {{ $invoice->order->address->ward }}, {{ $invoice->order->address->district }}, {{ $invoice->order->address->city }}">
-                                                            <i class="ri-map-pin-line me-1"></i>{{ $invoice->order->address->address_detail }}, {{ $invoice->order->address->ward }}
+                                                        <div class="text-truncate" style="max-width: 200px;"
+                                                            title="{{ $invoice->order->address->address_detail }}, {{ $invoice->order->address->ward }}, {{ $invoice->order->address->district }}, {{ $invoice->order->address->city }}">
+                                                            <i
+                                                                class="ri-map-pin-line me-1"></i>{{ $invoice->order->address->address_detail }},
+                                                            {{ $invoice->order->address->ward }}
                                                         </div>
-                                                        <small class="text-muted">{{ $invoice->order->address->district }}, {{ $invoice->order->address->city }}</small>
+                                                        <small
+                                                            class="text-muted">{{ $invoice->order->address->district }},
+                                                            {{ $invoice->order->address->city }}</small>
                                                     @else
                                                         <span class="text-muted">Không có địa chỉ</span>
                                                     @endif
@@ -196,17 +203,17 @@
                                                 <td class="text-center">
                                                     <div class="btn-group">
                                                         @permission('invoice.show')
-                                                        <a href="{{ route('admin.invoices.show', $invoice->id) }}"
-                                                            class="btn btn-sm btn-info" title="Xem chi tiết">
-                                                            <i class="ri-eye-line"></i>
-                                                        </a>
+                                                            <a href="{{ route('admin.invoices.show', $invoice->id) }}"
+                                                                class="btn btn-sm btn-info" title="Xem chi tiết">
+                                                                <i class="ri-eye-line"></i>
+                                                            </a>
                                                         @endpermission
                                                         @permission('invoice.generate-pdf')
-                                                        <a href="{{ route('admin.invoices.generate-pdf', $invoice->id) }}"
-                                                            target="_blank" class="btn btn-sm btn-primary"
-                                                            title="Tải PDF">
-                                                            <i class="ri-file-pdf-line"></i>
-                                                        </a>
+                                                            <a href="{{ route('admin.invoices.generate-pdf', $invoice->id) }}"
+                                                                target="_blank" class="btn btn-sm btn-primary"
+                                                                title="Tải PDF">
+                                                                <i class="ri-file-pdf-line"></i>
+                                                            </a>
                                                         @endpermission
                                                     </div>
                                                 </td>

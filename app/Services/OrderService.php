@@ -525,11 +525,15 @@ class OrderService
             throw new \Exception('Dữ liệu sách trong giỏ hàng không hợp lệ.');
         }
 
+        // Xác định quà tặng áp dụng (nếu có) để lưu vào order_items
+        $giftId = $this->getAvailableGiftIdForBook($cartItem);
+
         $orderItem = OrderItem::create([
             'id' => (string) Str::uuid(),
             'order_id' => $order->id,
             'book_id' => $cartItem->book_id,
             'book_format_id' => $cartItem->book_format_id,
+            'book_gift_id' => $giftId,
             'collection_id' => null, // Sách lẻ không có collection_id
             'is_combo' => false,
             'item_type' => 'book',
@@ -715,6 +719,40 @@ class OrderService
 
         // Mark this book as processed to avoid double processing
         $this->processedGiftBooks[] = $cartItem->book_id;
+    }
+
+    /**
+     * Lấy ID quà tặng khả dụng đầu tiên cho sách (để gán vào order_items.book_gift_id)
+     * - Bỏ qua combo và ebook
+     * - Chỉ chọn quà trong thời gian hiệu lực và còn quantity > 0
+     */
+    private function getAvailableGiftIdForBook($cartItem): ?int
+    {
+        // Không áp dụng cho combo
+        if (isset($cartItem->is_combo) && $cartItem->is_combo) {
+            return null;
+        }
+
+        // Không áp dụng cho ebook
+        if ($cartItem->bookFormat && stripos($cartItem->bookFormat->format_name, 'ebook') !== false) {
+            return null;
+        }
+
+        // Tìm quà tặng khả dụng theo cùng tiêu chí với decreaseGiftStock
+        $gift = BookGift::where('book_id', $cartItem->book_id)
+            ->where(function ($query) {
+                $query->whereNull('start_date')
+                    ->orWhere('start_date', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', now());
+            })
+            ->where('quantity', '>', 0)
+            ->orderBy('id', 'asc')
+            ->first();
+
+        return $gift?->id;
     }
 
     /**

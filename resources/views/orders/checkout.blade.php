@@ -1973,6 +1973,25 @@ document.addEventListener('DOMContentLoaded', function () {
         // Recalculate total
         updateTotal();
     }
+
+    function calculateTotalQuantity() {
+        let totalQuantity = 0;
+        
+        // Lấy tất cả các cart items từ DOM
+        const cartItems = document.querySelectorAll('.group.flex.items-start.gap-3');
+        
+        cartItems.forEach(item => {
+            // Tìm badge hiển thị số lượng (có class w-5 h-5)
+            const quantityBadge = item.querySelector('.w-5.h-5.text-xs.font-bold');
+            if (quantityBadge) {
+                const quantity = parseInt(quantityBadge.textContent.trim()) || 0;
+                totalQuantity += quantity;
+            }
+        });
+        
+        return totalQuantity;
+    }
+
     
     // Load shipping services from GHN API
     async function loadShippingServices(districtId) {
@@ -2069,6 +2088,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const selectedService = document.querySelector('input[name="shipping_method"]:checked');
             const serviceTypeId = selectedService ? selectedService.value : 2;
+             const totalQuantity = calculateTotalQuantity();
             
             // Nếu chọn nhận hàng trực tiếp, phí vận chuyển = 0
             if (serviceTypeId === 'pickup') {
@@ -2086,8 +2106,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify({
                     to_district_id: parseInt(districtId),
                     to_ward_code: wardCode,
-                    weight: 500,
-                    service_type_id: parseInt(serviceTypeId)
+                    // weight: 500,
+                    service_type_id: parseInt(serviceTypeId),
+                    quantity: totalQuantity,
                 })
             });
             

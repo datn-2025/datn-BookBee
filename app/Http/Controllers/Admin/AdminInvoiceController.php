@@ -9,9 +9,9 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class AdminInvoiceController extends Controller
-{  
-      public function index(Request $request)
-    {        
+{
+    public function index(Request $request)
+    {
         $query = Invoice::query();
         // $query->with([
         //     'order' => function($q) {
@@ -25,7 +25,7 @@ class AdminInvoiceController extends Controller
         if ($request->filled('invoice_type')) {
             $query->where('type', $request->invoice_type);
         }
-        
+
         // Hiển thị tất cả hóa đơn (bỏ lọc theo trạng thái 'Thành công')
         // $query->where(function($q) {
         //     $q->where('type', 'refund')
@@ -36,16 +36,16 @@ class AdminInvoiceController extends Controller
         //       });
         // });
         $query->with([
-            'order' => function($q) {
+            'order' => function ($q) {
                 $q->with(['user', 'address', 'paymentMethod']);
                 //   ->where('order_status_id', 'completed'); // Thêm điều kiện lọc đơn hàng đã hoàn thành
             },
-            'items' => function($q) {
+            'items' => function ($q) {
                 $q->with(['book', 'book.authors', 'collection']);
             }
-        ]);      
+        ]);
         // Gom các điều kiện tìm kiếm liên quan đến order và user
-        $query->whereHas('order', function($q) use ($request) {
+        $query->whereHas('order', function ($q) use ($request) {
             // Mã đơn hàng
             if ($request->filled('search_order_code')) {
                 $q->where('order_code', 'like', '%' . $request->search_order_code . '%');
@@ -55,7 +55,7 @@ class AdminInvoiceController extends Controller
                 $q->where('payment_method_id', $request->payment_method);
             }
             // Điều kiện liên quan đến user
-            $q->whereHas('user', function($userQ) use ($request) {
+            $q->whereHas('user', function ($userQ) use ($request) {
                 if ($request->filled('customer_name')) {
                     $userQ->where('name', 'like', '%' . $request->customer_name . '%');
                 }
@@ -81,7 +81,7 @@ class AdminInvoiceController extends Controller
     {
         $invoice = Invoice::with(['order.orderStatus', 'order.user', 'order.address', 'order.paymentMethod', 'order.paymentStatus', 'items.book.authors', 'items.collection.books'])
             ->findOrFail($id);
-        
+
         return view('admin.invoices.show', compact('invoice'));
     }
 
@@ -91,7 +91,7 @@ class AdminInvoiceController extends Controller
             ->findOrFail($id);
 
         $pdf = PDF::loadView('admin.invoices.pdf', compact('invoice'));
-        
+
         return $pdf->download('invoice-' . $invoice->order->order_code . '.pdf');
     }
 }

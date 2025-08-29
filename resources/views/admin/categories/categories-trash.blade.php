@@ -25,16 +25,6 @@
             </div>
 
             <div class="card-body">
-                <!-- Thông báo -->
-                @foreach (['success' => 'success', 'error' => 'danger'] as $key => $type)
-                    @if (session($key))
-                        <div class="alert alert-{{ $type }} alert-dismissible fade show" role="alert">
-                            {{ session($key) }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    @endif
-                @endforeach
-
                 <!-- Tìm kiếm -->
                 <form method="GET" action="{{ route('admin.categories.trash') }}"
                     class="d-flex justify-content-end gap-2 mb-3">
@@ -129,7 +119,7 @@
                             <strong>{{ $deletedCategories->lastItem() }}</strong> trong tổng số
                             <strong>{{ $deletedCategories->total() }}</strong> danh mục
                         </small>
-                        {{ $deletedCategories->links('pagination::bootstrap-4') }}
+                        {{ $deletedCategories->withQueryString()->links('pagination::bootstrap-4') }}
                     </div>
                 @endif
             </div>

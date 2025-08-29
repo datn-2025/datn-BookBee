@@ -29,6 +29,15 @@ class BookController extends Controller
         $minRating = $request->input('min_rating');
         $sort = $request->input('sort', 'newest');
 
+        // Debug log
+        \Log::info('BookController@index - Price filters:', [
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
+            'min_price_type' => gettype($minPrice),
+            'max_price_type' => gettype($maxPrice),
+            'all_params' => $request->all()
+        ]);
+
         // Chuyển filter chuỗi sang mảng nếu cần
         if (!is_array($authorIds) && $authorIds !== null) {
             $authorIds = explode(',', $authorIds);
@@ -96,30 +105,12 @@ class BookController extends Controller
             $booksQuery->whereIn('books.brand_id', $brandIds);
         }
 
-        if ($minPrice !== null) {
+        // Lọc theo giá tùy chỉnh - Logic chính xác
+        if ($minPrice !== null && is_numeric($minPrice) && $minPrice > 0) {
             $booksQuery->havingRaw('MIN(book_formats.price) >= ?', [$minPrice]);
         }
-        if ($maxPrice !== null) {
-            $booksQuery->havingRaw('MAX(book_formats.price) <= ?', [$maxPrice]);
-        }
-
-        // Các mốc lọc giá tiền VNĐ (nghìn đồng)
-        $priceRanges = [
-            '1-10' => [0, 10000],
-            '10-50' => [10000, 50000],
-            '50-100' => [50000, 100000],
-            '100+' => [100000, null],
-        ];
-
-        $selectedPriceRange = $request->input('price_range');
-        if ($selectedPriceRange && isset($priceRanges[$selectedPriceRange])) {
-            [$minPrice, $maxPrice] = $priceRanges[$selectedPriceRange];
-            if ($minPrice !== null) {
-                $booksQuery->havingRaw('MIN(book_formats.price) >= ?', [$minPrice]);
-            }
-            if ($maxPrice !== null) {
-                $booksQuery->havingRaw('MAX(book_formats.price) <= ?', [$maxPrice]);
-            }
+        if ($maxPrice !== null && is_numeric($maxPrice) && $maxPrice > 0) {
+            $booksQuery->havingRaw('MIN(book_formats.price) <= ?', [$maxPrice]);
         }
 
         if ($minRating !== null) {
@@ -163,6 +154,14 @@ class BookController extends Controller
                 $booksQuery->orderBy('books.created_at', 'desc');
                 break;
         }
+
+        // Debug: Log SQL query với bindings
+        \Log::info('BookController@index - Final Query:', [
+            'sql' => $booksQuery->toSql(),
+            'bindings' => $booksQuery->getBindings(),
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice
+        ]);
 
         $books = $booksQuery->paginate(6)->withQueryString();
 
@@ -213,6 +212,15 @@ class BookController extends Controller
         $minPrice = $request->input('min_price');
         $maxPrice = $request->input('max_price');
         $sort = $request->input('sort', 'newest');
+
+        // Debug log
+        \Log::info('BookController@search - Price filters:', [
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
+            'min_price_type' => gettype($minPrice),
+            'max_price_type' => gettype($maxPrice),
+            'all_params' => $request->all()
+        ]);
 
         // Kiểm tra có sách nào trong database không
         $totalBooks = DB::table('books')->count();
@@ -322,13 +330,12 @@ class BookController extends Controller
                 });
             }
 
-            // Filter theo giá
-            if ($minPrice) {
+            // Filter theo giá tùy chỉnh - Logic chính xác
+            if ($minPrice && is_numeric($minPrice) && $minPrice > 0) {
                 $booksQuery->having(DB::raw('MIN(book_formats.price)'), '>=', $minPrice);
             }
-
-            if ($maxPrice) {
-                $booksQuery->having(DB::raw('MAX(book_formats.price)'), '<=', $maxPrice);
+            if ($maxPrice && is_numeric($maxPrice) && $maxPrice > 0) {
+                $booksQuery->having(DB::raw('MIN(book_formats.price)'), '<=', $maxPrice);
             }
 
             // Sắp xếp

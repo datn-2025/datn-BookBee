@@ -62,7 +62,7 @@ class ContactController extends Controller
         ]);
 
         // Gửi mail
-        Mail::to($contact->email)->send(new ContactReplyMail($contact, $request->message));
+        Mail::to($contact->email)->queue(new ContactReplyMail($contact, $request->message));
 
         // Cập nhật trạng thái là đã phản hồi
         $contact->status = 'replied';

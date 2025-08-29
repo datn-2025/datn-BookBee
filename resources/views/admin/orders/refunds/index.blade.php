@@ -27,7 +27,7 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <p class="text-uppercase fw-medium text-muted mb-0">Chờ xử lý</p>
-                        <h4 class="mb-0">{{ $refunds->where('status', 'pending')->count() }}</h4>
+                        <h4 class="mb-0">{{ $stats['pending'] ?? 0 }}</h4>
                     </div>
                     <div class="flex-shrink-0">
                         <div class="avatar-sm rounded-circle bg-warning-subtle">
@@ -47,7 +47,7 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <p class="text-uppercase fw-medium text-muted mb-0">Đã duyệt</p>
-                        <h4 class="mb-0">{{ $refunds->where('status', 'approve')->count() }}</h4>
+                        <h4 class="mb-0">{{ $stats['completed'] ?? 0 }}</h4>
                     </div>
                     <div class="flex-shrink-0">
                         <div class="avatar-sm rounded-circle bg-success-subtle">
@@ -67,7 +67,7 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <p class="text-uppercase fw-medium text-muted mb-0">Đã từ chối</p>
-                        <h4 class="mb-0">{{ $refunds->where('status', 'rejected')->count() }}</h4>
+                        <h4 class="mb-0">{{ $stats['rejected'] ?? 0 }}</h4>
                     </div>
                     <div class="flex-shrink-0">
                         <div class="avatar-sm rounded-circle bg-danger-subtle">
@@ -87,7 +87,7 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <p class="text-uppercase fw-medium text-muted mb-0">Tổng số tiền</p>
-                        <h4 class="mb-0">{{ number_format($refunds->where('status', 'approve')->sum('amount')) }}đ</h4>
+                        <h4 class="mb-0">{{ number_format($stats['total_completed_amount'] ?? 0) }}đ</h4>
                     </div>
                     <div class="flex-shrink-0">
                         <div class="avatar-sm rounded-circle bg-info-subtle">
@@ -125,7 +125,7 @@
                             <option value="">Tất cả trạng thái</option>
                             <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Chờ xử lý</option>
                             <option value="processing" {{ request('status') === 'processing' ? 'selected' : '' }}>Đang xử lý</option>
-                            <option value="approve" {{ request('status') === 'approve' ? 'selected' : '' }}>Đã duyệt</option>
+                            <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Đã duyệt</option>
                             <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Đã từ chối</option>
                         </select>
                     </div>
@@ -168,7 +168,19 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $refund->reason)) }}</span>
+                                        @php
+                                            // Bản đồ lý do sang tiếng Việt
+                                            $reasonLabels = [
+                                                'wrong_item' => 'Sản phẩm không đúng mô tả',
+                                                'quality_issue' => 'Vấn đề về chất lượng',
+                                                'shipping_delay' => 'Giao hàng quá chậm',
+                                                'wrong_qty' => 'Số lượng không đúng',
+                                                'damaged' => 'Sản phẩm hư hỏng',
+                                                'other' => 'Lý do khác',
+                                            ];
+                                            $reasonVN = $reasonLabels[$refund->reason] ?? $refund->reason;
+                                        @endphp
+                                        <span class="badge bg-secondary">{{ $reasonVN }}</span>
                                     </td>
                                     <td class="fw-medium">{{ number_format($refund->amount) }}đ</td>
                                     <td>

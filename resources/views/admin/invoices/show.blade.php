@@ -9,7 +9,7 @@
                 <div class="d-flex justify-content-between align-items-center flex-wrap">
                     <div>
                         <div class="d-flex align-items-center mb-2">
-                            <h1 class="h3 text-gray-800 mb-0">HÓA ĐƠN BÁN HÀNG</h1>
+                            <h1 class="h3 text-gray-800 mb-0">HÓA ĐƠN BÁN HÀNG <span class="h5">{{ strtoupper('#INV-' . explode('-', $invoice->id)[0]) }}</span> </h1>
                             <span class="badge bg-success ms-3">
                                 {{ $invoice->order->orderStatus->name }}
                             </span>
@@ -57,7 +57,7 @@
                                     <i class="fas fa-envelope me-2"></i>{{ $invoice->order->user->email }}
                                 </p>
                                 <p class="text-muted mb-0">
-                                    <i class="fas fa-phone me-2"></i>{{ $invoice->order->user->phone ?? 'N/A' }}
+                                    <i class="fas fa-phone me-2"></i>{{ $invoice->order->user->phone ?? '(Chưa Cập Nhật)' }}
                                 </p>
                             </div>
                         </div>
@@ -68,10 +68,10 @@
                             <div class="ps-3">
                                 <h5 class="mb-1">{{ $invoice->order->recipient_name }}</h5>
                                 <p class="text-muted mb-1">
-                                    <i class="fas fa-envelope me-2"></i>{{ $invoice->order->recipient_email ?? 'N/A' }}
+                                    <i class="fas fa-envelope me-2"></i>{{ $invoice->order->recipient_email ?? '(Chưa Cập Nhật)' }}
                                 </p>
                                 <p class="text-muted mb-0">
-                                    <i class="fas fa-phone me-2"></i>{{ $invoice->order->recipient_phone ?? 'N/A' }}
+                                    <i class="fas fa-phone me-2"></i>{{ $invoice->order->recipient_phone ?? '(Chưa Cập Nhật)' }}
                                 </p>
                             </div>
                         </div>
@@ -209,7 +209,7 @@
                             @foreach ($invoice->items as $item)
                                 <tr>
                                     <td class="ps-4">
-                                        @if($item->book)
+                                        @if ($item->book)
                                             <div class="d-flex align-items-center">
                                                 <img src="{{ $item->book->cover_image ? asset('storage/' . $item->book->cover_image) : asset('images/default-book.svg') }}"
                                                     alt="{{ $item->book->title }}" class="me-3"
@@ -223,7 +223,7 @@
                                             </div>
                                         @elseif($item->collection_id)
                                             @php $collection = $item->collection; @endphp
-                                            @if($collection)
+                                            @if ($collection)
                                                 <div class="d-flex align-items-center">
                                                     <img src="{{ $collection->image ? asset('storage/' . $collection->image) : 'https://via.placeholder.com/60x80' }}"
                                                         alt="{{ $collection->name }}" class="me-3"
@@ -237,18 +237,20 @@
                                                 </div>
                                             @else
                                                 <div class="d-flex align-items-center">
-                                                    <img src="https://via.placeholder.com/60x80" alt="Combo không tồn tại" class="me-3"
+                                                    <img src="https://via.placeholder.com/60x80" alt="Combo không tồn tại"
+                                                        class="me-3"
                                                         style="width: 60px; height: 80px; object-fit: cover;">
                                                     <div>
                                                         <h6 class="mb-1">Combo không tồn tại</h6>
-                                                        <p class="text-muted small mb-0">ID: {{ $item->collection_id }}</p>
+                                                        <p class="text-muted small mb-0">ID: {{ $item->collection_id }}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             @endif
                                         @else
                                             <div class="d-flex align-items-center">
-                                                <img src="https://via.placeholder.com/60x80" alt="Sản phẩm không tồn tại" class="me-3"
-                                                    style="width: 60px; height: 80px; object-fit: cover;">
+                                                <img src="https://via.placeholder.com/60x80" alt="Sản phẩm không tồn tại"
+                                                    class="me-3" style="width: 60px; height: 80px; object-fit: cover;">
                                                 <div>
                                                     <h6 class="mb-1">Sản phẩm không tồn tại</h6>
                                                     <p class="text-muted small mb-0">Book ID: {{ $item->book_id }}</p>

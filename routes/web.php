@@ -178,14 +178,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/purchase', [ReviewClientController::class, 'index'])->name('purchase');
 
         Route::prefix('reviews')->name('reviews.')->group(function () {
-            Route::get('/create/{orderId}/{bookId?}', [ReviewClientController::class, 'createForm'])
-                ->where(['orderId' => '[0-9]+', 'bookId' => '[0-9]+'])
-                ->name('create');
-            Route::get('/create-combo/{orderId}/{collectionId}', [ReviewClientController::class, 'createForm'])
-                ->where(['orderId' => '[0-9]+', 'collectionId' => '[0-9]+'])
-                ->name('create.combo');
             Route::post('/', [ReviewClientController::class, 'storeReview'])->name('store');
-
             Route::get('/{id}/edit', [ReviewClientController::class, 'editForm'])->name('edit');
             Route::put('/{id}', [ReviewClientController::class, 'update'])->name('update');
             Route::delete('/{id}', [ReviewClientController::class, 'destroy'])->name('destroy');
@@ -588,14 +581,14 @@ Route::prefix('ai-summary')->name('ai-summary.')->middleware(['web'])->group(fun
 });
 
 // GHN API routes
-Route::prefix('api/ghn')->name('ghn.')->group(function () {
-    Route::get('/provinces', [App\Http\Controllers\GhnController::class, 'getProvinces'])->name('provinces');
-    Route::post('/districts', [App\Http\Controllers\GhnController::class, 'getDistricts'])->name('districts');
-    Route::post('/wards', [App\Http\Controllers\GhnController::class, 'getWards'])->name('wards');
-    Route::post('/shipping-fee', [App\Http\Controllers\GhnController::class, 'calculateShippingFee'])->name('shipping-fee');
-    Route::post('/lead-time', [App\Http\Controllers\GhnController::class, 'getLeadTime'])->name('lead-time');
-    Route::post('/services', [App\Http\Controllers\GhnController::class, 'getServices'])->name('services');
-    Route::post('/track-order', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('track-order');
-    Route::get('/tracking/{orderCode}', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('tracking');
-});
+// Route::prefix('api/ghn')->name('ghn.')->group(function () {
+//     Route::get('/provinces', [App\Http\Controllers\GhnController::class, 'getProvinces'])->name('provinces');
+//     Route::post('/districts', [App\Http\Controllers\GhnController::class, 'getDistricts'])->name('districts');
+//     Route::post('/wards', [App\Http\Controllers\GhnController::class, 'getWards'])->name('wards');
+//     Route::post('/shipping-fee', [App\Http\Controllers\GhnController::class, 'calculateShippingFee'])->name('shipping-fee');
+//     Route::post('/lead-time', [App\Http\Controllers\GhnController::class, 'getLeadTime'])->name('lead-time');
+//     Route::post('/services', [App\Http\Controllers\GhnController::class, 'getServices'])->name('services');
+//     Route::post('/track-order', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('track-order');
+//     Route::get('/tracking/{orderCode}', [App\Http\Controllers\GhnController::class, 'trackOrder'])->name('tracking');
+// });
 

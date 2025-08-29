@@ -7,37 +7,38 @@ use App\Mail\EbookPurchaseConfirmation;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
-use App\Models\BookFormat;
-use App\Services\InvoiceService;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class AdminPaymentMethodController extends Controller
 {
     public function index(Request $request)
     {
-        $search = $request->input('search');
+        try {
+            $search = $request->input('search');
 
-        $query = PaymentMethod::query();
+            $query = PaymentMethod::withCount('payments');
 
-        if ($search) {
-            $query->where('name', 'like', "%{$search}%");
+            if (!empty($search)) {
+                $query->where('name', 'like', '%' . $search . '%');
+            }
+
+            $paymentMethods = $query->latest()->paginate(10);
+            $trashCount = PaymentMethod::onlyTrashed()->count();
+
+            return view('admin.payment-methods.index', compact('paymentMethods', 'trashCount', 'search'));
+        } catch (\Throwable $e) {
+            Log::error('Lỗi khi truy vấn phương thức thanh toán: ' . $e->getMessage());
+            Toastr::error('Không thể truy vấn dữ liệu. Vui lòng thử lại sau.');
+            return back();
         }
-
-        $paymentMethods = $query->latest()->paginate(10);
-        $trashCount = PaymentMethod::onlyTrashed()->count();
-
-        // Giữ lại tham số tìm kiếm khi phân trang
-        if ($request->has('search')) {
-            $paymentMethods->appends(['search' => $search]);
-        }
-
-        return view('admin.payment-methods.index', compact('paymentMethods', 'trashCount'));
     }
+
     public function create()
     {
         return view('admin.payment-methods.create');
@@ -46,14 +47,18 @@ class AdminPaymentMethodController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:100|unique:payment_methods',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean'
+            'name' => 'required|string|max:100|unique:payment_methods,name|not_regex:/<.*?>/i',
+            'description' => 'nullable|string|max:800',
+            'is_active' => 'sometimes|boolean'
         ], [
             'name.required' => 'Tên phương thức thanh toán là bắt buộc',
             'name.string' => 'Tên phương thức thanh toán phải là chuỗi',
-            'name.max' => 'Tên phương thức thanh toán không được vượt quá 100 ký tự',
             'name.unique' => 'Tên phương thức thanh toán đã tồn tại',
+            'name.max' => 'Tên phương thức thanh toán không được vượt quá 100 ký tự',
+            'name.not_regex' => 'Tên phương thức thanh toán không được chứa thẻ HTML',
+            'description.string' => 'Mô tả phải là chuỗi',
+            'description.max' => 'Mô tả không được vượt quá 800 ký tự',
+            'is_active.required' => 'Trạng thái là bắt buộc',
             'is_active.boolean' => 'Trạng thái không hợp lệ'
         ]);
 
@@ -61,8 +66,8 @@ class AdminPaymentMethodController extends Controller
             'is_active' => $request->has('is_active')
         ]));
 
-        return redirect()->route('admin.payment-methods.index')
-            ->with('success', 'Phương thức thanh toán đã được thêm thành công');
+        Toastr::success('Phương thức thanh toán đã được tạo thành công');
+        return redirect()->route('admin.payment-methods.index');
     }
 
     public function edit(PaymentMethod $paymentMethod)
@@ -77,18 +82,91 @@ class AdminPaymentMethodController extends Controller
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('payment_methods')->ignore($paymentMethod->id)
+                'not_regex:/<.*?>/i',
+                Rule::unique('payment_methods', 'name')->ignore($paymentMethod->id)
             ],
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:800',
             'is_active' => 'sometimes|boolean'
+        ], [
+            'name.required' => 'Tên phương thức thanh toán là bắt buộc',
+            'name.string' => 'Tên phương thức thanh toán phải là chuỗi',
+            'name.unique' => 'Tên phương thức thanh toán đã tồn tại',
+            'name.max' => 'Tên phương thức thanh toán không được vượt quá 100 ký tự',
+            'name.not_regex' => 'Tên phương thức thanh toán không được chứa thẻ HTML',
+            'description.string' => 'Mô tả phải là chuỗi',
+            'description.max' => 'Mô tả không được vượt quá 800 ký tự',
+            'is_active.sometimes' => 'Trạng thái là bắt buộc',
+            'is_active.boolean' => 'Trạng thái không hợp lệ',
         ]);
+
         $validated['is_active'] = $request->has('is_active');
+
+        // Kiểm tra thay đổi
+        $original = $paymentMethod->only(['name', 'description', 'is_active']);
+        $incoming = Arr::only($validated, ['name', 'description', 'is_active']);
+
+        if ($original === $incoming) {
+            Toastr::info('Không có thay đổi nào cho phương thức thanh toán');
+            return redirect()->route('admin.payment-methods.index');
+        }
 
         $paymentMethod->update($validated);
 
-        return redirect()->route('admin.payment-methods.index')
-            ->with('success', 'Phương thức thanh toán đã được cập nhật');
+        Toastr::success('Phương thức thanh toán đã được cập nhật thành công');
+        return redirect()->route('admin.payment-methods.index');
     }
+
+    public function destroy(PaymentMethod $paymentMethod)
+    {
+        if ($paymentMethod->trashed()) {
+            Toastr::error('Phương thức thanh toán này đã bị xóa tạm thời. Vui lòng khôi phục trước khi xóa vĩnh viễn.');
+            return redirect()->route('admin.payment-methods.index');
+        }
+
+        Log::info('Xóa mềm phương thức thanh toán ID: ' . $paymentMethod->id . ' bởi ' . Auth::user()->name);
+        $paymentMethod->delete();
+
+        Toastr::success('Đã xóa phương thức thanh toán thành công');
+        return redirect()->route('admin.payment-methods.index');
+    }
+
+    public function trash(Request $request)
+    {
+        $query = PaymentMethod::onlyTrashed()->withCount('payments');
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where('name', 'LIKE', '%' . $search . '%');
+        }
+
+        $paymentMethods = $query->latest()->paginate(10)->withQueryString();
+        return view('admin.payment-methods.trash', compact('paymentMethods'));
+    }
+
+    public function restore($id)
+    {
+        $paymentMethod = PaymentMethod::withTrashed()->findOrFail($id);
+        $paymentMethod->restore();
+
+        Toastr::success('Đã khôi phục phương thức thanh toán thành công');
+        return redirect()->route('admin.payment-methods.trash');
+    }
+
+    public function forceDelete($id)
+    {
+        $paymentMethod = PaymentMethod::withTrashed()->findOrFail($id);
+
+        if ($paymentMethod->payments()->exists()) {
+            Toastr::error('Không thể xóa vĩnh viễn vì có đơn hàng đang sử dụng phương thức này');
+            return redirect()->route('admin.payment-methods.trash');
+        }
+
+        $paymentMethod->forceDelete();
+
+        Toastr::success('Đã xóa vĩnh viễn phương thức thanh toán thành công');
+        return redirect()->route('admin.payment-methods.trash');
+    }
+
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -129,12 +207,12 @@ class AdminPaymentMethodController extends Controller
                     ->exists();
 
                 if ($hasEbook) {
-                    Mail::to($order->user->email)->send(new EbookPurchaseConfirmation($order));
+                    Mail::to($order->user->email)->queue(new EbookPurchaseConfirmation($order));
                 }
-                
+
                 // Cập nhật trạng thái đơn hàng ebook thành 'Thành công' nếu đã thanh toán
                 app(\App\Services\OrderService::class)->updateEbookOrderStatusOnPaymentSuccess($order);
-                
+
                 // Tạo và gửi hóa đơn khi thanh toán thành công
                 try {
                     app(\App\Services\InvoiceService::class)->processInvoiceForPaidOrder($order);
@@ -159,47 +237,6 @@ class AdminPaymentMethodController extends Controller
         return redirect()->back();
     }
 
-    public function destroy(PaymentMethod $paymentMethod)
-    {
-        if ($paymentMethod->payments()->exists()) {
-            return back()->with('error', 'Không thể xóa phương thức thanh toán này vì đã có giao dịch liên quan');
-        }
-
-        $paymentMethod->delete();
-
-        return redirect()->route('admin.payment-methods.index')
-            ->with('success', 'Phương thức thanh toán đã được xóa');
-    }
-
-    public function trash()
-    {
-        $paymentMethods = PaymentMethod::onlyTrashed()->latest()->paginate(10);
-        return view('admin.payment-methods.trash', compact('paymentMethods'));
-    }
-
-    public function restore($id)
-    {
-        $paymentMethod = PaymentMethod::withTrashed()->findOrFail($id);
-        $paymentMethod->restore();
-
-        return redirect()->route('admin.payment-methods.trash')
-            ->with('success', 'Đã khôi phục phương thức thanh toán thành công');
-    }
-
-    public function forceDelete($id)
-    {
-        $paymentMethod = PaymentMethod::withTrashed()->findOrFail($id);
-
-        // Kiểm tra xem có đơn hàng nào đang sử dụng phương thức thanh toán này không
-        if ($paymentMethod->payments()->exists()) {
-            return back()->with('error', 'Không thể xóa vĩnh viễn vì có đơn hàng đang sử dụng phương thức thanh toán này');
-        }
-
-        $paymentMethod->forceDelete();
-
-        return redirect()->route('admin.payment-methods.trash')
-            ->with('success', 'Đã xóa vĩnh viễn phương thức thanh toán');
-    }
     public function history(Request $request)
     {
         $payments = Payment::query();

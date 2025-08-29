@@ -16,6 +16,71 @@
         </div>
     </div>
 
+    <!-- KPIs: Tỉ lệ hoàn tiền & Chọn Ebook -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-1">Tỉ lệ hoàn tiền Ebook</h6>
+                            <div class="h3 mb-0">{{ number_format($this->refundRateEbook, 2) }}%</div>
+                        </div>
+                        <span class="badge bg-warning-subtle text-warning">Theo số đơn</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-1">Tỉ lệ hoàn tiền Sách vật lý</h6>
+                            <div class="h3 mb-0">{{ number_format($this->refundRatePhysical, 2) }}%</div>
+                        </div>
+                        <span class="badge bg-warning-subtle text-warning">Theo số đơn</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-1">Tỉ lệ đơn hàng Ebook</h6>
+                            <div class="h3 mb-0">{{ number_format($this->ebookOrderShare, 2) }}%</div>
+                        </div>
+                        <span class="badge bg-info-subtle text-info">Trên tổng số đơn</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Doanh thu Ebook</h6>
+                        <div class="h4 mb-0">{{ number_format($sumEbook, 0, ',', '.') }} ₫</div>
+                    </div>
+                    <span class="badge bg-orange-100 text-orange-600">Ebook</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Doanh thu Sách vật lý</h6>
+                        <div class="h4 mb-0">{{ number_format($sumPhysical, 0, ',', '.') }} ₫</div>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary">Sách vật lý</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bộ lọc và biểu đồ -->
     <div class="row align-items-end mb-3">
         <!-- Cột trái: dropdown -->
@@ -60,12 +125,16 @@
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        Livewire.on('refreshChart', ({ chartLabels = [], chartData = [] }) => {
+        // Lắng nghe dữ liệu mới và vẽ 2 dataset: Sách vật lý vs Ebook
+        Livewire.on('refreshChart', ({ chartLabels = [], chartDataPhysical = [], chartDataEbook = [] }) => {
             const ctx = document.getElementById('revenueChart');
             const existingChart = Chart.getChart(ctx);
             if (existingChart) existingChart.destroy();
 
-            const hasData = chartData && chartData.length > 0 && chartData.some(val => val > 0);
+            const hasData = (
+                (chartDataPhysical && chartDataPhysical.some(v => v > 0)) ||
+                (chartDataEbook && chartDataEbook.some(v => v > 0))
+            );
 
             // Custom plugin để vẽ text khi không có dữ liệu
             const noDataPlugin = {
@@ -92,17 +161,29 @@
                 type: 'bar',
                 data: {
                     labels: chartLabels,
-                    datasets: [{
-                        label: 'Doanh thu',
-                        data: chartData,
-                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1,
-                        maxBarThickness: 40
-                    }]
+                    datasets: [
+                        {
+                            label: 'Sách vật lý',
+                            data: chartDataPhysical,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1,
+                            maxBarThickness: 40
+                        },
+                        {
+                            label: 'Ebook',
+                            data: chartDataEbook,
+                            backgroundColor: 'rgba(255, 159, 64, 0.5)',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 1,
+                            maxBarThickness: 40
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { position: 'top' } },
                     scales: {
                         y: { beginAtZero: true },
                         x: {

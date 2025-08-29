@@ -53,9 +53,34 @@ class RefundController extends Controller
             });
         }
 
+        // Clone base (before paginate) to aggregate stats on the full filtered set
+        $base = clone $query;
+
+        // Đếm theo trạng thái trên toàn bộ kết quả đã lọc (không bị ảnh hưởng bởi phân trang)
+        $statusCounts = (clone $base)
+            ->reorder()
+            ->select('status', DB::raw('COUNT(*) as cnt'))
+            ->groupBy('status')
+            ->pluck('cnt', 'status');
+
+        // Tổng tiền các yêu cầu đã hoàn tất (completed)
+        $totalCompletedAmount = (clone $base)
+            ->reorder()
+            ->where('status', 'completed')
+            ->sum('amount');
+
+        // Đảm bảo có đủ key với giá trị 0 nếu thiếu
+        $stats = [
+            'pending' => (int) ($statusCounts['pending'] ?? 0),
+            'processing' => (int) ($statusCounts['processing'] ?? 0),
+            'completed' => (int) ($statusCounts['completed'] ?? 0),
+            'rejected' => (int) ($statusCounts['rejected'] ?? 0),
+            'total_completed_amount' => (int) $totalCompletedAmount,
+        ];
+
         $refunds = $query->paginate(20);
 
-        return view('admin.orders.refunds.index', compact('refunds'));
+        return view('admin.orders.refunds.index', compact('refunds', 'stats'));
     }
 
     /**

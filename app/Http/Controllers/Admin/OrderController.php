@@ -128,6 +128,19 @@ class OrderController extends Controller
         $order = Order::with(['user', 'address', 'orderStatus', 'paymentStatus'])->findOrFail($id);
         $currentStatus = $order->orderStatus->name;
         $allowedNames = OrderStatusHelper::getNextStatuses($currentStatus);
+
+        // Không cho phép chọn "Đã giao thành công" nếu đơn chưa thanh toán thành công
+        if ($order->paymentStatus && ($order->paymentStatus->name !== 'Đã Thanh Toán')) {
+            $allowedNames = array_values(array_filter($allowedNames, function ($name) {
+                return $name !== 'Đã giao thành công';
+            }));
+        }
+
+        // Giới hạn quyền admin: chỉ được chỉnh tối đa đến "Đã giao thành công"
+        $allowedNames = array_values(array_filter($allowedNames, function ($name) {
+            return !in_array($name, ['Đã nhận hàng', 'Thành công']);
+        }));
+
         $orderStatuses = OrderStatus::whereIn('name', $allowedNames)->get();
         $paymentStatuses = PaymentStatus::all();
 
@@ -390,18 +403,26 @@ class OrderController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'order_status_id' => 'required|exists:order_statuses,id',
-            'payment_status_id' => 'required|exists:payment_statuses,id',
+            // Cho phép cập nhật độc lập từng trường
+            'order_status_id' => 'nullable|exists:order_statuses,id',
+            'payment_status_id' => 'nullable|exists:payment_statuses,id',
             'cancellation_reason' => 'nullable|string|max:1000',
         ]);
-
+        
         try {
             DB::beginTransaction();
 
             $order = Order::findOrFail($id);
             $currentStatus = $order->orderStatus->name;
-            $newStatus = OrderStatus::findOrFail($request->order_status_id)->name;
-            $allowed = OrderStatusHelper::getNextStatuses($currentStatus);
+
+            // Xác định trạng thái mới nếu có truyền lên; nếu không, giữ nguyên
+            $newStatus = $currentStatus;
+            if ($request->filled('order_status_id')) {
+                $newStatus = OrderStatus::findOrFail($request->order_status_id)->name;
+                $allowed = OrderStatusHelper::getNextStatuses($currentStatus);
+            } else {
+                $allowed = OrderStatusHelper::getNextStatuses($currentStatus); // dùng cho log/kiểm tra khác nếu cần
+            }
 
             // Kiểm tra nếu trạng thái mới là "Đã hủy" thì yêu cầu lý do hủy hàng
             if ($newStatus === 'Đã hủy' && empty($request->cancellation_reason)) {
@@ -409,19 +430,37 @@ class OrderController extends Controller
                 return back()->withInput();
             }
 
-            // ✅ Kiểm tra hợp lệ TRƯỚC khi cập nhật
-            if (!in_array($newStatus, $allowed)) {
-                Toastr::error("Trạng thái mới không hợp lệ với trạng thái hiện tại", 'Lỗi');
+            // Chặn chuyển sang "Đã giao thành công" nếu chưa thanh toán thành công
+            if ($request->filled('order_status_id') && $newStatus === 'Đã giao thành công' && (($order->paymentStatus->name ?? null) !== 'Đã Thanh Toán')) {
+                Toastr::error('Không thể chuyển sang "Đã giao thành công" khi đơn hàng chưa thanh toán thành công', 'Lỗi');
                 return back()->withInput();
             }
 
-            $updateData = [
-                'order_status_id' => $request->order_status_id,
-                'payment_status_id' => $request->payment_status_id,
-            ];
+            // Giới hạn quyền admin: không cho phép chuyển sang "Đã nhận hàng" hoặc "Thành công"
+            if ($request->filled('order_status_id') && in_array($newStatus, ['Đã nhận hàng', 'Thành công'])) {
+                Toastr::error('Admin không được phép chuyển đơn sang trạng thái này. Vui lòng để khách hàng xác nhận nhận hàng.', 'Lỗi');
+                return back()->withInput();
+            }
+
+            // ✅ Kiểm tra hợp lệ TRƯỚC khi cập nhật (chỉ khi có yêu cầu đổi trạng thái đơn hàng)
+            if ($request->filled('order_status_id')) {
+                if (!in_array($newStatus, $allowed)) {
+                    Toastr::error("Trạng thái mới không hợp lệ với trạng thái hiện tại", 'Lỗi');
+                    return back()->withInput();
+                }
+            }
+
+            // Chỉ cập nhật những trường được gửi lên
+            $updateData = [];
+            if ($request->filled('order_status_id')) {
+                $updateData['order_status_id'] = $request->order_status_id;
+            }
+            if ($request->filled('payment_status_id')) {
+                $updateData['payment_status_id'] = $request->payment_status_id;
+            }
 
             // Nếu trạng thái mới là "Đã hủy", thiết lập ngày hủy và lý do hủy
-            if ($newStatus === 'Đã hủy') {
+            if ($request->filled('order_status_id') && $newStatus === 'Đã hủy') {
                 $updateData['cancelled_at'] = now();
                 $updateData['cancellation_reason'] = $request->cancellation_reason;
             }
@@ -437,16 +476,21 @@ class OrderController extends Controller
             event(new OrderStatusUpdated($order, $currentStatus, $newStatus));
 
             // Gửi mail thông báo cập nhật trạng thái đơn hàng qua queue
-            dispatch(new SendOrderStatusUpdatedMail($order, $newStatus));
+            // dispatch(new SendOrderStatusUpdatedMail($order, $newStatus));
 
             Toastr::success('Cập nhật trạng thái đơn hàng thành công', 'Thành công');
             return redirect()->route('admin.orders.show', $order->id);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error updating order status: ' . $e->getMessage());
+            Log::error('Error updating order/payment status', [
+                'order_id' => $id,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
 
-            Toastr::error('Lỗi khi cập nhật trạng thái đơn hàng. Vui lòng thử lại.', 'Lỗi');
-            return back();
+            Toastr::error('Lỗi khi cập nhật. ' . $e->getMessage(), 'Lỗi');
+            return back()->withInput();
         }
     }
 

@@ -101,17 +101,11 @@
         <!-- Quick Action Buttons -->
         <div class="px-4 py-2 bg-white border-t border-gray-100">
             <div class="flex flex-wrap gap-2">
-                <button class="quick-action bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-full px-3 py-1 text-xs font-medium transition-colors" data-message="Sách văn học">
-                    Sách văn học
+                <button class="quick-action bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-full px-3 py-1 text-xs font-medium transition-colors" data-message="Tiểu thuyết">
+                    Tiểu thuyết
                 </button>
-                <button class="quick-action bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-full px-3 py-1 text-xs font-medium transition-colors" data-message="Sách kinh tế">
-                    Sách kinh tế
-                </button>
-                <button class="quick-action bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-full px-3 py-1 text-xs font-medium transition-colors" data-message="Sách kỹ năng sống">
-                    Kỹ năng sống
-                </button>
-                <button class="quick-action bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-full px-3 py-1 text-xs font-medium transition-colors" data-message="Sách thiếu nhi">
-                    Thiếu nhi
+                <button class="quick-action bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-full px-3 py-1 text-xs font-medium transition-colors" data-message="Sách Văn Học">
+                    Sách Văn Học
                 </button>
                 <button class="quick-action bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-full px-3 py-1 text-xs font-medium transition-colors" data-message="Sách bán chạy">
                     Bán chạy nhất

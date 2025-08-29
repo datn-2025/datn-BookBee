@@ -95,16 +95,8 @@
         border-radius: 0.5rem; /* Rounded links */
     }
 
-    .nav-link:hover {
-        background-color: #f3f4f6;
-    }
-
     .nav-link.active {
         background-color: var(--accent-color);
-        color: var(--accent-text-color);
-    }
-
-    .nav-link.active .nav-icon {
         color: var(--accent-text-color);
     }
 
@@ -115,26 +107,11 @@
         font-size: 1rem;
         transition: color 0.2s;
     }
-
-    .account-logout {
-        margin-top: 1.5rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid var(--border-color); /* Lighter border color */
-    }
-    
-    .logout-form { margin: 0; }
-
     .logout-btn {
         width: 100%;
         justify-content: flex-start;
         color: var(--danger-color);
     }
-
-    .logout-btn:hover {
-        background-color: #fef2f2;
-    }
-    
-    .logout-btn .nav-icon { color: var(--danger-color); }
 
     .main-content {
         background-color: var(--sidebar-bg-color);

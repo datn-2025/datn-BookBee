@@ -277,8 +277,9 @@ class AISummaryService
         $prompt .= "2. TUYỆT ĐỐI KHÔNG trả lời về: chính trị, tôn giáo, thời tiết, y tế, lập trình, tài chính, hay bất kỳ chủ đề nào khác\n";
         $prompt .= "3. Nếu câu hỏi không liên quan đến sách này, hãy từ chối lịch sự và yêu cầu hỏi về sách\n";
         $prompt .= "4. Nếu câu hỏi mơ hồ, hãy yêu cầu làm rõ trong bối cảnh của cuốn sách\n";
-        $prompt .= "5. Chỉ thảo luận về: nội dung, nhân vật, cốt truyện, chủ đề, ý nghĩa, phong cách viết, đánh giá\n\n";
-        
+        $prompt .= "5. Bạn được phép thảo luận thêm về: đối tượng độc giả phù hợp (theo lứa tuổi, sở thích, trình độ), mức độ khó/dễ, giá trị tham khảo\n";
+        $prompt .= "6. Chỉ thảo luận về: nội dung, nhân vật, cốt truyện, chủ đề, ý nghĩa, phong cách viết, đánh giá\n\n";
+
         $prompt .= $bookContext . "\n";
         
         $prompt .= "Câu hỏi của người dùng: \"{$cleanUserMessage}\"\n\n";

@@ -51,6 +51,18 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">
+                                    <label for="discount_type">Loại giảm giá <span class="text-danger">*</span></label>
+                                    <select class="form-control @error('discount_type') is-invalid @enderror" id="discount_type" name="discount_type">
+                                        <option value="percent" {{ old('discount_type', 'percent') == 'percent' ? 'selected' : '' }}>Phần trăm (%)</option>
+                                        <option value="fixed" {{ old('discount_type') == 'fixed' ? 'selected' : '' }}>Số tiền cố định</option>
+                                    </select>
+                                    @error('discount_type')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-4" id="percent_group">
+                                <div class="form-group">
                                     <label for="discount_percent">Phần trăm giảm (%) <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control @error('discount_percent') is-invalid @enderror"
                                            id="discount_percent" name="discount_percent" value="{{ old('discount_percent') }}"
@@ -60,24 +72,25 @@
                                     @enderror
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4" id="fixed_group" style="display:none;">
                                 <div class="form-group">
-                                    <label for="max_discount">Giảm tối đa (VNĐ) <span class="text-danger">*</span></label>
+                                    <label for="fixed_discount">Số tiền giảm (VNĐ) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control @error('fixed_discount') is-invalid @enderror"
+                                           id="fixed_discount" name="fixed_discount" value="{{ old('fixed_discount') }}" min="0" step="0.01" >
+                                    @error('fixed_discount')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-4" id="max_group">
+                                <div class="form-group">
+                                    <label for="max_discount">Giảm tối đa (VNĐ)</label>
                                     <input type="number" class="form-control @error('max_discount') is-invalid @enderror"
                                            id="max_discount" name="max_discount" value="{{ old('max_discount') }}" min="0" step="0.01" >
                                     @error('max_discount')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="min_order_value">Đơn tối thiểu (VNĐ) <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control @error('min_order_value') is-invalid @enderror"
-                                           id="min_order_value" name="min_order_value" value="{{ old('min_order_value') }}" min="0" step="0.01" >
-                                    @error('min_order_value')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
+                                    <small class="form-text text-muted">Áp dụng cho loại giảm theo phần trăm. Để trống nếu không giới hạn.</small>
                                 </div>
                             </div>
                         </div>
@@ -186,6 +199,20 @@
 
 <script>
     $(document).ready(function() {
+        function toggleDiscountFields() {
+            const type = $('#discount_type').val();
+            if (type === 'fixed') {
+                $('#percent_group').hide();
+                $('#max_group').hide();
+                $('#fixed_group').show();
+            } else {
+                $('#fixed_group').hide();
+                $('#percent_group').show();
+                $('#max_group').show();
+            }
+        }
+        $('#discount_type').on('change', toggleDiscountFields);
+        toggleDiscountFields();
         // Helper function to get label
         function getLabelForType(type) {
             switch(type) {
@@ -356,7 +383,6 @@
 
         // Kích hoạt sự kiện change khi tải trang nếu có giá trị mặc định
         if($('#condition_type').val() !== '') {
-            alert('Triggering initial change event'); // Test initial trigger
             $('#condition_type').trigger('change');
         }
     });

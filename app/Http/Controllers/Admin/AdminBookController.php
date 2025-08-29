@@ -15,6 +15,7 @@ use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Admin\GiftController;
 use App\Models\BookGift;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class AdminBookController extends Controller
@@ -118,6 +119,26 @@ class AdminBookController extends Controller
 
     public function store(Request $request)
     {
+        // Clear gift data nếu has_gift không được check - TRƯỚC KHI VALIDATE
+        if (!$request->boolean('has_gift')) {
+            $request->merge([
+                'gift_book_id' => null,
+                'gift_name' => null,
+                'gift_description' => null,
+                'quantity' => null,
+                'gift_date_range' => null,
+                'gift_start_date' => null,
+                'gift_end_date' => null
+            ]);
+            $request->files->remove('gift_image');
+            
+            // Xóa old input để tránh validation hiển thị lại
+            $request->session()->forget([
+                'gift_name', 'gift_date_range', 'quantity', 
+                'gift_description', 'gift_start_date', 'gift_end_date'
+            ]);
+        }
+        
         // Kiểm tra slug trùng lặp trước khi validate
         $title = $request->input('title');
         if ($title) {
@@ -129,16 +150,30 @@ class AdminBookController extends Controller
         }
 
         // Validation với rules chung
+        $validationRules = $this->getBookValidationRules(false);
+        
+        // Nếu has_gift = false, xóa hoàn toàn gift validation rules
+        if (!$request->boolean('has_gift')) {
+            unset($validationRules['gift_name']);
+            unset($validationRules['gift_date_range']);
+            unset($validationRules['quantity']);
+            unset($validationRules['gift_start_date']);
+            unset($validationRules['gift_end_date']);
+            unset($validationRules['gift_description']);
+            unset($validationRules['gift_image']);
+            unset($validationRules['gift_book_id']);
+        }
+        
         $validator = Validator::make(
             $request->all(),
-            $this->getBookValidationRules(false),
+            $validationRules,
             $this->getValidationMessages()
         );
 
-        if($validator->fails()) {
+        if ($validator->fails()) {
             return back()->withInput()->withErrors($validator);
         }
-        
+
         // Validation bắt buộc chọn ít nhất một định dạng sách
         if (!$request->boolean('has_physical') && !$request->boolean('has_ebook')) {
             return back()->withInput()->withErrors(['format_required' => 'Vui lòng chọn ít nhất một định dạng sách (Sách vật lý hoặc Ebook).']);
@@ -191,7 +226,7 @@ class AdminBookController extends Controller
         $data['slug'] = $slug;
 
         $book = Book::create($data);
-        
+
         // Xử lý ảnh chính
         if ($request->hasFile('cover_image')) {
             $coverImagePath = $request->file('cover_image')->store('books', 'public');
@@ -272,7 +307,7 @@ class AdminBookController extends Controller
         if ($request->filled('gift_name')) {
             // Nếu có chọn sách khác thì dùng gift_book_id, không thì dùng sách hiện tại
             $bookId = $request->filled('gift_book_id') ? $request->input('gift_book_id') : $book->id;
-            
+
             $giftData = [
                 'book_id' => $bookId,
                 'gift_name' => $request->input('gift_name'),
@@ -289,7 +324,7 @@ class AdminBookController extends Controller
 
         // Gán tác giả cho sách
         $book->authors()->sync($request->input('author_ids', []));
-        
+
         Toastr::success('Thêm sách thành công!');
         return redirect()->route('admin.books.index');
     }
@@ -323,6 +358,7 @@ class AdminBookController extends Controller
             'brand_id' => 'required|uuid|exists:brands,id',
             'publication_date' => 'required|date',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+
             
             // Preorder validation
             'pre_order' => 'boolean',
@@ -333,7 +369,8 @@ class AdminBookController extends Controller
             'preorder_count' => 'nullable|integer|min:0',
             'preorder_description' => 'nullable|string|max:1000',
             
-            // Gift validation - Removed to skip gift validation
+       
+
         ];
 
         // Different rules for create vs update
@@ -352,6 +389,20 @@ class AdminBookController extends Controller
             $rules['formats.ebook.sample_file'] = 'nullable|mimes:pdf,epub|max:10000';
             // For create, attribute values should not be duplicated
             $rules['attribute_values.*.id'] .= '|distinct';
+        }
+
+        // Khi cập nhật (edit), bỏ validate liên quan đến quà tặng
+        if ($isUpdate) {
+            unset(
+                $rules['gift_book_id'],
+                $rules['gift_name'],
+                $rules['gift_description'],
+                $rules['gift_image'],
+                $rules['quantity'],
+                $rules['gift_date_range'],
+                $rules['gift_start_date'],
+                $rules['gift_end_date']
+            );
         }
 
         return $rules;
@@ -405,7 +456,29 @@ class AdminBookController extends Controller
             'attribute_values.*.stock.min' => 'Tồn kho không được âm',
             'publication_date.required' => 'Vui lòng nhập ngày xuất bản',
             'publication_date.date' => 'Ngày xuất bản không hợp lệ',
-            // Gift validation messages removed
+
+            'end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu',
+            // Gift validation messages
+            'gift_book_id.uuid' => 'Sách nhận quà tặng không hợp lệ',
+            'gift_book_id.exists' => 'Sách nhận quà tặng không tồn tại',
+            'gift_name.required_if' => 'Vui lòng nhập tên quà tặng',
+            'gift_name.string' => 'Tên quà tặng phải là chuỗi ký tự',
+            'gift_name.max' => 'Tên quà tặng không được vượt quá 255 ký tự',
+            'gift_description.string' => 'Mô tả quà tặng phải là chuỗi ký tự',
+            'gift_image.image' => 'File quà tặng phải là hình ảnh',
+            'gift_image.mimes' => 'File quà tặng phải có định dạng JPG, PNG, GIF hoặc WebP',
+            'gift_image.max' => 'Kích thước file quà tặng không được vượt quá 2MB',
+            'quantity.required_if' => 'Vui lòng nhập số lượng quà tặng',
+            'quantity.integer' => 'Số lượng quà tặng phải là số nguyên',
+            'quantity.min' => 'Số lượng quà tặng phải lớn hơn 0',
+            'gift_date_range.required_if' => 'Vui lòng chọn thời gian khuyến mãi quà tặng',
+            'gift_date_range.string' => 'Thời gian khuyến mãi quà tặng không hợp lệ',
+            'gift_start_date.required_if' => 'Vui lòng chọn ngày bắt đầu khuyến mãi',
+            'gift_start_date.date' => 'Ngày bắt đầu khuyến mãi không hợp lệ',
+            'gift_end_date.required_if' => 'Vui lòng chọn ngày kết thúc khuyến mãi',
+            'gift_end_date.date' => 'Ngày kết thúc khuyến mãi không hợp lệ',
+            'gift_end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu',
+
         ];
     }
 
@@ -417,19 +490,19 @@ class AdminBookController extends Controller
     {
         // Lấy thông tin attribute value để tạo hậu tố
         $attributeValue = \App\Models\AttributeValue::with('attribute')->find($attributeValueId);
-        
+
         if (!$attributeValue) {
             return $book->isbn . '-VAR-' . substr($attributeValueId, 0, 8);
         }
 
         // Tạo mã cha từ ISBN hoặc ID sách
         $parentCode = $book->isbn ?: 'BOOK-' . substr($book->id, 0, 8);
-        
+
         // Tạo hậu tố dựa trên loại thuộc tính
         $suffix = '';
         $attributeName = strtolower($attributeValue->attribute->name ?? '');
         $attributeValueName = strtolower($attributeValue->value ?? '');
-        
+
         // Định dạng sách
         if (strpos($attributeName, 'định dạng') !== false || strpos($attributeName, 'format') !== false) {
             if (strpos($attributeValueName, 'cứng') !== false) {
@@ -458,7 +531,7 @@ class AdminBookController extends Controller
         else {
             $suffix = 'VAR';
         }
-        
+
         return $parentCode . '-' . $suffix;
     }
 
@@ -471,7 +544,7 @@ class AdminBookController extends Controller
             'formats:id,book_id,format_name,price,discount,stock,file_url,sample_file_url,allow_sample_read',
             'images:id,book_id,image_url',
             'attributeValues.attribute',
-            'reviews' => function($query) {
+            'reviews' => function ($query) {
                 $query->with('user:id,name,email')->orderBy('created_at', 'desc');
             },
             'gifts'
@@ -537,10 +610,10 @@ class AdminBookController extends Controller
         }
 
         $books = Book::select('id', 'title')->get();
-        
+
         // Lấy quà tặng hiện tại của sách (nếu có)
         $currentGift = $book->gifts->first();
-        
+
         return view('admin.books.edit', compact(
             'book',
             'categories',
@@ -559,6 +632,20 @@ class AdminBookController extends Controller
     {
         $book = Book::findOrFail($id);
 
+        // Clear gift data nếu has_gift không được check
+        if (!$request->boolean('has_gift')) {
+            $request->merge([
+                'gift_name' => null,
+                'gift_description' => null,
+                'gift_book_id' => null,
+                'quantity' => null,
+                'gift_date_range' => null,
+                'gift_start_date' => null,
+                'gift_end_date' => null,
+            ]);
+            $request->files->remove('gift_image');
+        }
+
         // Kiểm tra slug trùng lặp trước khi validate
         $title = $request->input('title');
         if ($title) {
@@ -570,16 +657,30 @@ class AdminBookController extends Controller
         }
 
         // Validation với rules chung
+        $validationRules = $this->getBookValidationRules(true);
+        
+        // Nếu has_gift = false, xóa hoàn toàn gift validation rules
+        if (!$request->boolean('has_gift')) {
+            unset($validationRules['gift_name']);
+            unset($validationRules['gift_date_range']);
+            unset($validationRules['quantity']);
+            unset($validationRules['gift_start_date']);
+            unset($validationRules['gift_end_date']);
+            unset($validationRules['gift_description']);
+            unset($validationRules['gift_image']);
+            unset($validationRules['gift_book_id']);
+        }
+        
         $validator = Validator::make(
             $request->all(),
-            $this->getBookValidationRules(true),
+            $validationRules,
             $this->getValidationMessages()
         );
 
         if ($validator->fails()) {
             return back()->withInput()->withErrors($validator->errors());
         }
-        
+
         // Validation bắt buộc chọn ít nhất một định dạng sách
         if (!$request->boolean('has_physical') && !$request->boolean('has_ebook')) {
             return back()->withInput()->withErrors(['format_required' => 'Vui lòng chọn ít nhất một định dạng sách (Sách vật lý hoặc Ebook).']);
@@ -745,7 +846,7 @@ class AdminBookController extends Controller
         if ($request->filled('existing_attributes')) {
             foreach ($request->existing_attributes as $bookAttributeValueId => $data) {
                 $bookAttributeValue = BookAttributeValue::find($bookAttributeValueId);
-                
+
                 if ($bookAttributeValue && $bookAttributeValue->book_id == $book->id) {
                     if (isset($data['keep']) && $data['keep'] == '1') {
                         // Cập nhật thuộc tính hiện có
@@ -768,7 +869,7 @@ class AdminBookController extends Controller
                 $existingBookAttributeValue = BookAttributeValue::where('book_id', $book->id)
                     ->where('attribute_value_id', $data['id'])
                     ->first();
-                    
+
                 if (!$existingBookAttributeValue) {
                     BookAttributeValue::create([
                         'id' => (string) Str::uuid(),
@@ -785,25 +886,25 @@ class AdminBookController extends Controller
         // Cập nhật quà tặng
         // Xóa quà tặng cũ
         $book->gifts()->delete();
-        
+
         // Tạo quà tặng mới nếu có
-         if ($request->filled('gift_name')) {
-             // Nếu có chọn sách khác thì dùng gift_book_id, không thì dùng sách hiện tại
-             $bookId = $request->filled('gift_book_id') ? $request->input('gift_book_id') : $book->id;
-             
-             $giftData = [
-                 'book_id' => $bookId,
-                 'gift_name' => $request->input('gift_name'),
-                 'gift_description' => $request->input('gift_description'),
-                 'quantity' => $request->input('quantity', 0),
-                 'start_date' => $request->input('gift_start_date'),
-                 'end_date' => $request->input('gift_end_date'),
-             ];
-             if ($request->hasFile('gift_image')) {
-                 $giftData['gift_image'] = $request->file('gift_image')->store('gifts', 'public');
-             }
-             BookGift::create($giftData);
-         }
+        if ($request->filled('gift_name')) {
+            // Nếu có chọn sách khác thì dùng gift_book_id, không thì dùng sách hiện tại
+            $bookId = $request->filled('gift_book_id') ? $request->input('gift_book_id') : $book->id;
+
+            $giftData = [
+                'book_id' => $bookId,
+                'gift_name' => $request->input('gift_name'),
+                'gift_description' => $request->input('gift_description'),
+                'quantity' => $request->input('quantity', 0),
+                'start_date' => $request->input('gift_start_date'),
+                'end_date' => $request->input('gift_end_date'),
+            ];
+            if ($request->hasFile('gift_image')) {
+                $giftData['gift_image'] = $request->file('gift_image')->store('gifts', 'public');
+            }
+            BookGift::create($giftData);
+        }
 
         // Cập nhật danh sách tác giả
         $book->authors()->sync($request->input('author_ids', []));

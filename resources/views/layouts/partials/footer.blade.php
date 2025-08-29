@@ -66,29 +66,6 @@
         </div>
     </div>
     
-    <!-- Phần giữa: Đối tác vận chuyển + Hình thức thanh toán -->
-    <div style="border-top: 1px solid #f3f4f6; padding: 2rem 0;">
-        <div style="max-width: 1280px; margin: 0 auto; padding: 0 1rem;">
-            <div class="footer-shipping-payment" style="display: flex; flex-direction: column; justify-content: space-between; align-items: center; gap: 1.5rem;">
-                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                    <span style="font-weight: 700; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: #000000 !important;">Đối tác vận chuyển:</span>
-                    <div style="display: flex; gap: 0.75rem; align-items: center;">
-                        <img src="{{asset('images/dhl.png')}}" alt="DHL" style="height: 2rem; border-radius: 0.25rem; border: 1px solid #e5e7eb; padding: 0.25rem; background-color: white;">
-                        <img src="{{asset('images/shippingcard.png')}}" alt="Shipping" style="height: 2rem; border-radius: 0.25rem; border: 1px solid #e5e7eb; padding: 0.25rem; background-color: white;">
-                    </div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                    <span style="font-weight: 700; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: #000000 !important;">Hình thức thanh toán:</span>
-                    <div style="display: flex; gap: 0.75rem; align-items: center;">
-                        <img src="{{asset('images/visa.jpg')}}" alt="Visa" style="height: 2rem; border-radius: 0.25rem; border: 1px solid #e5e7eb;">
-                        <img src="{{asset('images/mastercard.jpg')}}" alt="Mastercard" style="height: 2rem; border-radius: 0.25rem; border: 1px solid #e5e7eb;">
-                        <img src="{{asset('images/paypal.jpg')}}" alt="PayPal" style="height: 2rem; border-radius: 0.25rem; border: 1px solid #e5e7eb;">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <!-- Footer bottom -->
     <div style="border-top: 1px solid #f3f4f6; padding: 1.5rem 0; background-color: #f9fafb !important;">
         <div style="max-width: 1280px; margin: 0 auto; padding: 0 1rem; text-align: center;">

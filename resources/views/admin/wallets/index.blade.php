@@ -197,11 +197,14 @@
                                         @endif
                                     </td>
                                         <td>
-                                            @if($transaction->amount > 0)
-                                                <span class="text-success">+{{ number_format($transaction->amount, 0, ',', '.') }} đ</span>
-                                            @else
-                                                <span class="text-danger">{{ number_format($transaction->amount, 0, ',', '.') }} đ</span>
-                                            @endif
+                                            @php
+                                                // Xác định giao dịch cộng/trừ theo loại
+                                                $isCredit = in_array($transaction->type, ['NAP', 'HOANTIEN']);
+                                                $sign = $isCredit ? '+' : '-';
+                                                $cls = $isCredit ? 'text-success' : 'text-danger';
+                                                $displayAmount = number_format(abs($transaction->amount), 0, ',', '.');
+                                            @endphp
+                                            <span class="{{ $cls }}">{{ $sign }}{{ $displayAmount }} đ</span>
                                         </td>
                                         <td>
                                             <div class="text-muted">
@@ -210,11 +213,11 @@
                                             </div>
                                         </td>
                                         <td>
-                                            @if($transaction->status == 'completed')
+                                            @if($transaction->status == 'Thành Công')
                                                 <span class="badge bg-success">Thành công</span>
-                                            @elseif($transaction->status == 'pending')
+                                            @elseif($transaction->status == 'Chờ xử lý')
                                                 <span class="badge bg-warning">Đang xử lý</span>
-                                            @elseif($transaction->status == 'failed')
+                                            @elseif($transaction->status == 'Thất bại')
                                                 <span class="badge bg-danger">Thất bại</span>
                                             @else
                                                 <span class="badge bg-secondary">{{ ucfirst($transaction->status) }}</span>
@@ -222,10 +225,12 @@
                                         </td>
                                         <td>
                                             <h4 class="badge fw-medium text-black ">
-                                                @if($transaction->payment_method == 'bank_transfer')
-                                                    Chuyển khoản ngân hàng
+                                                @if($transaction->payment_method == 'wallet')
+                                                    Ví điện tử
                                                 @elseif($transaction->payment_method == 'vnpay')
                                                     VNPay
+                                                @elseif($transaction->payment_method == 'bank_transfer')
+                                                    Chuyển khoản ngân hàng
                                                 @else
                                                     Không xác định
                                                 @endif

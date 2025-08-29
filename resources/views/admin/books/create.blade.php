@@ -17,7 +17,7 @@
         </a>
     </div>
 
-    <form action="{{ route('admin.books.store') }}" method="POST" enctype="multipart/form-data" id="bookForm">
+    <form action="{{ route('admin.books.store') }}" method="POST" enctype="multipart/form-data" id="bookForm" novalidate>
         @csrf
         <div class="row ">
             <!-- Main Content -->
@@ -123,6 +123,7 @@
                                     <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
+
                             
                             <div class="col-md-6">
                                 <label for="language" class="form-label fw-medium">Ngôn ngữ</label>
@@ -222,6 +223,7 @@
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -234,7 +236,12 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <label for="author_ids" class="form-label fw-medium">Chọn tác giả</label>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label for="author_ids" class="form-label fw-medium mb-0">Chọn tác giả</label>
+                            <span class="badge bg-primary-subtle text-primary" id="author_selected_badge" style="display:none;">
+                                0 đã chọn
+                            </span>
+                        </div>
                         <select class="form-select select2-authors @error('author_ids') is-invalid @enderror" 
                                 id="author_ids" name="author_ids[]" multiple>
                             @foreach($authors as $author)
@@ -244,6 +251,9 @@
                                 </option>
                             @endforeach
                         </select>
+                        <div class="form-text mt-2">
+                            Gõ để tìm tác giả, Enter để chọn. Có thể chọn nhiều tác giả.
+                        </div>
                         @error('author_ids')
                             <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
@@ -276,7 +286,7 @@
                                         <label class="form-label fw-medium">Chọn sách nhận quà tặng</label>
                                         <select class="form-select @error('gift_book_id') is-invalid @enderror" 
                                                 name="gift_book_id">
-                                            <option value="" selected>Sách hiện tại (đang tạo)</option>
+                                            <option value="" {{ old('gift_book_id') == '' ? 'selected' : '' }}>Sách hiện tại (đang tạo)</option>
                                             @foreach($books ?? [] as $book)
                                                 <option value="{{ $book->id }}" 
                                                     {{ old('gift_book_id') == $book->id ? 'selected' : '' }}>
@@ -303,8 +313,8 @@
                                     <div class="col-md-6">
                                         <label class="form-label fw-medium">Số lượng quà tặng</label>
                                         <input type="number" class="form-control @error('quantity') is-invalid @enderror" 
-                                               name="quantity" value="{{ old('quantity', 1) }}" 
-                                               placeholder="1" min="1">
+                                               name="quantity" value="{{ old('quantity') }}" 
+                                               placeholder="0" min="1" step="1">
                                         @error('quantity')
                                             <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
@@ -369,7 +379,7 @@
                     </div>
                     <div class="card-body">
                         @error('format_required')
-                            <div class="alert alert-danger mb-3">
+                            <div class="text-danger small mt-1">
                                 <i class="ri-error-warning-line me-2"></i>{{ $message }}
                             </div>
                         @enderror
@@ -539,7 +549,7 @@
                                             <div class="form-text">Chấp nhận file PDF hoặc EPUB, tối đa 50MB</div>
                                         </div>
                                         
-                                        <div class="col-12">
+                                        <div class="col-12" id="ebook_sample_section" style="display: none;">
                                             <label class="form-label fw-medium">File đọc thử</label>
                                             <input type="file" class="form-control" name="formats[ebook][sample_file]" 
                                                    accept=".pdf,.epub">
@@ -696,6 +706,52 @@
     .text-success { color: #1cc88a !important; }
     .text-warning { color: #f6c23e !important; }
     .text-secondary { color: #858796 !important; }
+    /* Select2 authors - look & feel giống ảnh mẫu */
+    .select2-container--bootstrap-5 .select2-selection {
+        border-radius: 8px;
+        border-color: #cfd8e3;
+    }
+    .select2-container--bootstrap-5 .select2-selection--multiple {
+        min-height: 42px;
+        padding: 2px 2px;
+    }
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
+        padding: 2px 6px;
+    }
+    /* Chips đơn giản, nhẹ */
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+        background-color: #eef2f7;
+        border: 1px solid #dbe2ea;
+        color: #1f2937;
+        border-radius: 6px;
+        padding: 0.15rem 0.5rem;
+        margin-top: 4px;
+        line-height: 1.4;
+    }
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+        color: #526581;
+        margin-right: 6px;
+    }
+    .select2-container--bootstrap-5 .select2-search--inline .select2-search__field { 
+        margin-top: 6px; 
+    }
+    /* Dropdown bo góc + đổ bóng nhẹ */
+    .select2-container--bootstrap-5 .select2-dropdown {
+        border-radius: 8px;
+        border-color: #d1d9e6;
+        box-shadow: 0 6px 18px rgba(16, 24, 40, 0.08);
+        overflow: hidden;
+    }
+    /* Item hover/highlight xanh đậm như ảnh */
+    .select2-container--bootstrap-5 .select2-results__option--highlighted {
+        background-color: #2c4775 !important; /* xanh đậm */
+        color: #fff !important;
+    }
+    /* Item đã chọn nhấn nhẹ */
+    .select2-container--bootstrap-5 .select2-results__option[aria-selected=true] {
+        background-color: #f1f5f9;
+        color: #334155;
+    }
 </style>
 @endpush
 
@@ -1025,12 +1081,39 @@ document.addEventListener('DOMContentLoaded', function() {
 $(document).ready(function() {
     // Initialize Select2
     if (typeof $.fn.select2 !== 'undefined') {
-        $('.select2-authors').select2({
+        const $authorSelect = $('.select2-authors');
+        $authorSelect.select2({
             theme: 'bootstrap-5',
             placeholder: 'Tìm kiếm và chọn tác giả...',
             allowClear: true,
-            width: '100%'
+            closeOnSelect: false,
+            width: '100%',
+            maximumSelectionLength: 5,
+            language: {
+                maximumSelected: function (e) {
+                    return 'Bạn chỉ có thể chọn tối đa ' + e.maximum + ' tác giả';
+                }
+            },
+            templateSelection: function (data, container) {
+                if (!data.id) { return data.text; }
+                $(container).addClass('d-flex align-items-center');
+                return data.text;
+            }
         });
+
+        // Badge đếm số tác giả đã chọn
+        const $badge = $('#author_selected_badge');
+        function updateAuthorBadge() {
+            const count = ($authorSelect.val() || []).length;
+            if (count > 0) {
+                $badge.text(count + ' đã chọn').show();
+            } else {
+                $badge.hide();
+            }
+        }
+        $authorSelect.on('change', updateAuthorBadge);
+        // Khởi tạo theo old()
+        updateAuthorBadge();
     }
 
     // Image preview functionality
@@ -1086,6 +1169,24 @@ $(document).ready(function() {
     }
 });
 
+</script>
+<script>
+// Toggle hiển thị 'File đọc thử' theo checkbox 'Cho phép đọc thử'
+document.addEventListener('DOMContentLoaded', function() {
+    const allowSample = document.getElementById('allow_sample_read_create');
+    const sampleSection = document.getElementById('ebook_sample_section');
+
+    function toggleSampleSection() {
+        if (!sampleSection) return;
+        sampleSection.style.display = (allowSample && allowSample.checked) ? '' : 'none';
+    }
+
+    // Khởi tạo theo old() và khi user thay đổi
+    toggleSampleSection();
+    if (allowSample) {
+        allowSample.addEventListener('change', toggleSampleSection);
+    }
+});
 </script>
 @endpush
 @endsection

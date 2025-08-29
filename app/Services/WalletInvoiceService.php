@@ -88,7 +88,7 @@ class WalletInvoiceService
         $storeSettings = \App\Models\Setting::first();
         
         // Gửi email
-        Mail::to($user->email)->send(new WalletWithdrawInvoice($transaction, $invoice, $storeSettings));
+        Mail::to($user->email)->queue(new WalletWithdrawInvoice($transaction, $invoice, $storeSettings));
         
         Log::info('Withdraw invoice email sent', [
             'transaction_id' => $transaction->id,

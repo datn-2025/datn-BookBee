@@ -15,7 +15,9 @@ class Voucher extends Model
     protected $fillable = [
         'code',
         'description',
+        'discount_type',
         'discount_percent',
+        'fixed_discount',
         'max_discount',
         'min_order_value',
         'quantity',
@@ -27,7 +29,9 @@ class Voucher extends Model
     protected $casts = [
         'valid_from' => 'date',
         'valid_to' => 'date',
+        'discount_type' => 'string',
         'discount_percent' => 'decimal:2',
+        'fixed_discount' => 'decimal:2',
         'max_discount' => 'decimal:2',
         'min_order_value' => 'decimal:2',
         'quantity' => 'integer',
@@ -145,7 +149,20 @@ class Voucher extends Model
             return 0;
         }
 
-        $discount = ($totalAmount * $this->discount_percent) / 100;
-        return min($discount, $this->max_discount);
+        if ($this->discount_type === 'fixed') {
+            // Giảm cố định: dùng đúng số tiền cố định, không vượt quá tổng tiền
+            $fixed = (float) $this->fixed_discount;
+            $fixed = max(0, $fixed);
+            return min($fixed, $totalAmount);
+        }
+
+        // Mặc định: phần trăm
+        $percent = (float) $this->discount_percent;
+        $discount = ($totalAmount * $percent) / 100;
+        // Nếu có max_discount thì áp trần, nếu null thì không áp trần
+        if (!is_null($this->max_discount)) {
+            $discount = min($discount, (float) $this->max_discount);
+        }
+        return min($discount, $totalAmount);
     }
 }

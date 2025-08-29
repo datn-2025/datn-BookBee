@@ -1,0 +1,139 @@
+{
+  "info": {
+    "name": "BookBee - GHN API",
+    "_postman_id": "b2f5c33d-0d2f-4e2b-9a1a-aaaa11112222",
+    "description": "Collection các endpoint GHN nội bộ của dự án (proxy qua server). Các endpoint ở prefix /api/ghn, không cần GHN Token phía client.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost" },
+    { "key": "province_id", "value": "201" },
+    { "key": "district_id", "value": "1442" },
+    { "key": "to_district_id", "value": "1442" },
+    { "key": "to_ward_code", "value": "21012" },
+    { "key": "weight", "value": "500" },
+    { "key": "service_type_id", "value": "2" },
+    { "key": "order_code", "value": "GHN_ORDER_CODE_EXAMPLE" }
+  ],
+  "item": [
+    {
+      "name": "GHN - Provinces",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{}" },
+        "url": {
+          "raw": "{{base_url}}/api/ghn/provinces",
+          "host": [ "{{base_url}}" ],
+          "path": [ "api", "ghn", "provinces" ]
+        }
+      }
+    },
+    {
+      "name": "GHN - Districts (by province)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"province_id\": {{province_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ghn/districts",
+          "host": [ "{{base_url}}" ],
+          "path": [ "api", "ghn", "districts" ]
+        }
+      }
+    },
+    {
+      "name": "GHN - Wards (by district)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"district_id\": {{district_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ghn/wards",
+          "host": [ "{{base_url}}" ],
+          "path": [ "api", "ghn", "wards" ]
+        }
+      }
+    },
+    {
+      "name": "GHN - Available Services",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"to_district_id\": {{to_district_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ghn/services",
+          "host": [ "{{base_url}}" ],
+          "path": [ "api", "ghn", "services" ]
+        }
+      }
+    },
+    {
+      "name": "GHN - Calculate Shipping Fee",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"to_district_id\": {{to_district_id}},\n  \"to_ward_code\": \"{{to_ward_code}}\",\n  \"weight\": {{weight}},\n  \"service_type_id\": {{service_type_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ghn/shipping-fee",
+          "host": [ "{{base_url}}" ],
+          "path": [ "api", "ghn", "shipping-fee" ]
+        }
+      }
+    },
+    {
+      "name": "GHN - Lead Time",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"to_district_id\": {{to_district_id}},\n  \"to_ward_code\": \"{{to_ward_code}}\",\n  \"service_type_id\": {{service_type_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ghn/lead-time",
+          "host": [ "{{base_url}}" ],
+          "path": [ "api", "ghn", "lead-time" ]
+        }
+      }
+    },
+    {
+      "name": "GHN - Track Order",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ghn/tracking/{{order_code}}",
+          "host": [ "{{base_url}}" ],
+          "path": [ "api", "ghn", "tracking", "{{order_code}}" ]
+        }
+      }
+    }
+  ]
+}

@@ -54,14 +54,18 @@
                                     <a href="{{ route('admin.orders.edit', $order->id) }}" class="btn btn-success btn-sm">
                                         <i class="ri-pencil-fill align-middle me-1"></i> Cập nhật trạng thái
                                     </a>
-                                    @if($order->orderStatus->name === 'Thành công' && $order->paymentStatus->name === 'Đã Thanh Toán' && !in_array($order->paymentStatus->name, ['Đang Hoàn Tiền', 'Đã Hoàn Tiền']))
+                                    <!-- @if($order->orderStatus->name === 'Thành công' && $order->paymentStatus->name === 'Đã Thanh Toán' && !in_array($order->paymentStatus->name, ['Đang Hoàn Tiền', 'Đã Hoàn Tiền']))
                                         <a href="{{ route('admin.refunds.show', $order->id) }}" class="btn btn-warning btn-sm">
                                             <i class="ri-refund-2-line align-middle me-1"></i> Hoàn tiền
                                         </a>
-                                    @endif
+                                    @endif -->
+                                    @if ($order->invoice)
+                                    <a href="{{ route('admin.invoices.generate-pdf', $order->invoice->id) }}">
                                     <button type="button" class="btn btn-primary btn-sm">
                                         <i class="ri-printer-fill align-middle me-1"></i> In hóa đơn
                                     </button>
+                                    </a>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -274,16 +278,33 @@
                                             </div>
                                             <div class="flex-grow-1 ms-3">
                                                 <h6 class="mb-1">Trạng thái đơn hàng</h6>
+                                                @php
+                                                    $orderName = trim($order->orderStatus->name ?? '');
+                                                    $statusIcon = match($orderName) {
+                                                        'Chờ xác nhận' => 'ri-time-line',
+                                                        'Đã Xác Nhận', 'Đang xử lý', 'Đang chuẩn bị' => 'ri-settings-3-line',
+                                                        'Đang giao hàng', 'Đang giao' => 'ri-truck-line',
+                                                        'Đã giao thành công', 'Thành công', 'Đã nhận hàng' => 'ri-check-double-line',
+                                                        'Đang Hoàn Tiền', 'Đã Hoàn Tiền' => 'ri-refund-2-line',
+                                                        'Đã Hủy' => 'ri-close-line',
+                                                        'Giao thất bại' => 'ri-error-warning-line',
+                                                        default => 'ri-question-line'
+                                                    };
+                                                    $statusBg = match($orderName) {
+                                                        'Chờ xác nhận' => 'bg-warning text-dark',
+                                                        'Đã Xác Nhận', 'Đang xử lý', 'Đang chuẩn bị' => 'bg-primary',
+                                                        'Đang giao hàng', 'Đang giao' => 'bg-info text-dark',
+                                                        'Đã giao thành công', 'Thành công', 'Đã nhận hàng' => 'bg-success',
+                                                        'Đang Hoàn Tiền', 'Đã Hoàn Tiền' => 'bg-info text-dark',
+                                                        'Đã Hủy', 'Giao thất bại' => 'bg-danger',
+                                                        default => 'bg-secondary'
+                                                    };
+                                                @endphp
                                                 <p class="text-muted mb-0">
-                                                <span class="badge rounded-pill
-                                                    @if($order->orderStatus->name == 'Đã giao thành công') bg-success
-                                                    @elseif($order->orderStatus->name == 'Đang xử lý') bg-warning text-dark
-                                                    @elseif($order->orderStatus->name == 'Đang giao hàng') bg-info
-                                                    @elseif($order->orderStatus->name == 'Giao thất bại') bg-danger
-                                                    @elseif($order->orderStatus->name == 'Chờ xác nhận') bg-secondary
-                                                    @else bg-dark  @endif">
-                                                    {{ $order->orderStatus->name ?? 'N/A' }}
-                                                </span>
+                                                    <span class="badge rounded-pill {{ $statusBg }}">
+                                                        <i class="{{ $statusIcon }} me-1"></i>
+                                                        {{ $order->orderStatus->name ?? 'N/A' }}
+                                                    </span>
                                                 </p>
                                             </div>
                                         </div>
@@ -301,14 +322,28 @@
                                             </div>
                                             <div class="flex-grow-1 ms-3">
                                                 <h6 class="mb-1">Trạng thái thanh toán</h6>
+                                                @php
+                                                    $paymentName = trim($order->paymentStatus->name ?? '');
+                                                    $paymentIcon = match($paymentName) {
+                                                        'Đã Thanh Toán', 'Thanh toán thành công' => 'ri-money-dollar-circle-line',
+                                                        'Chưa Thanh Toán', 'Chờ thanh toán', 'Chờ Xử Lý' => 'ri-time-line',
+                                                        'Đã Hoàn Tiền', 'Hoàn tiền', 'Đang Hoàn Tiền' => 'ri-refund-2-line',
+                                                        'Thất Bại' => 'ri-close-circle-line',
+                                                        default => 'ri-question-line'
+                                                    };
+                                                    $paymentBg = match($paymentName) {
+                                                        'Đã Thanh Toán', 'Thanh toán thành công' => 'bg-success',
+                                                        'Chưa Thanh Toán', 'Chờ thanh toán', 'Chờ Xử Lý' => 'bg-secondary',
+                                                        'Đã Hoàn Tiền', 'Hoàn tiền', 'Đang Hoàn Tiền' => 'bg-info',
+                                                        'Thất Bại' => 'bg-danger',
+                                                        default => 'bg-secondary'
+                                                    };
+                                                @endphp
                                                 <p class="text-muted mb-0">
-                                                <span class="badge rounded-pill
-                                                    @if($order->paymentStatus->name == 'Đã Thanh Toán') bg-success
-                                                    @elseif($order->paymentStatus->name == 'Chưa Thanh Toán') bg-warning text-dark
-                                                    @elseif($order->paymentStatus->name == 'Thất Bại') bg-danger
-                                                    @else bg-secondary  @endif">
-                                                    {{ $order->paymentStatus->name ?? 'N/A' }}
-                                                </span>
+                                                    <span class="badge rounded-pill {{ $paymentBg }}">
+                                                        <i class="{{ $paymentIcon }} me-1"></i>
+                                                        {{ $order->paymentStatus->name ?? 'N/A' }}
+                                                    </span>
                                                 </p>
                                             </div>
                                         </div>
@@ -740,7 +775,7 @@
                                         <i class="ri-hashtag me-2"></i>Mã hóa đơn
                                     </div>
                                     <div class="ps-3">
-                                        <p class="mb-0">{{ $order->invoice->code ?? 'N/A' }}</p>
+                                        <p class="mb-0">{{ strtoupper( 'INV-' . explode('-', $order->invoice->id)[0]) }}</p>
                                     </div>
                                 </div>
                                 <div class="mb-3">

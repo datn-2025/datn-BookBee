@@ -70,6 +70,13 @@
                     </div>
                     <!-- End Header -->
 
+                    <!-- Insight Story (Admin) -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <livewire:insight-story />
+                        </div>
+                    </div>
+
                     <!-- 4 Thẻ thống kê chính -->
                     <livewire:dashboard-stats />
 

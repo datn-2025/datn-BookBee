@@ -48,7 +48,18 @@
                     <div class="col-lg-6">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Lý do hoàn tiền:</label>
-                            <p class="text-muted mb-0">{{ ucfirst(str_replace('_', ' ', $refund->reason)) }}</p>
+                            @php
+                                $reasonLabels = [
+                                    'wrong_item' => 'Sản phẩm không đúng mô tả',
+                                    'quality_issue' => 'Vấn đề về chất lượng',
+                                    'shipping_delay' => 'Giao hàng quá chậm',
+                                    'wrong_qty' => 'Số lượng không đúng',
+                                    'damaged' => 'Sản phẩm hư hỏng',
+                                    'other' => 'Lý do khác',
+                                ];
+                                $reasonVN = $reasonLabels[$refund->reason] ?? $refund->reason;
+                            @endphp
+                            <p class="text-muted mb-0">{{ $reasonVN }}</p>
                         </div>
                     </div>
                     <div class="col-lg-6">
@@ -152,14 +163,14 @@
                             <label class="form-label">Quyết định <span class="text-danger">*</span></label>
                             <div class="mt-2">
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="status" 
+                                    <input class="form-check-input" type="radio" name="action" 
                                            id="approve" value="approve" required>
                                     <label class="form-check-label text-success fw-medium" for="approve">
                                         <i class="ri-check-line me-1"></i> Duyệt hoàn tiền
                                     </label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="status" 
+                                    <input class="form-check-input" type="radio" name="action" 
                                            id="reject" value="rejected" required>
                                     <label class="form-check-label text-danger fw-medium" for="reject">
                                         <i class="ri-close-line me-1"></i> Từ chối hoàn tiền
@@ -285,8 +296,8 @@
 $(document).ready(function() {
     // Confirmation for form submission
     $('form').on('submit', function(e) {
-        const selectedStatus = $('input[name="status"]:checked').val();
-        const actionText = selectedStatus === 'approve' ? 'duyệt hoàn tiền' : 'từ chối yêu cầu';
+        const selectedAction = $('input[name="action"]:checked').val();
+        const actionText = selectedAction === 'approve' ? 'duyệt hoàn tiền' : 'từ chối yêu cầu';
         
         if (!confirm(`Bạn có chắc chắn muốn ${actionText} cho yêu cầu này?`)) {
             e.preventDefault();

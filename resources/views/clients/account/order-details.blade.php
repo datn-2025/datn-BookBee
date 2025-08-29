@@ -713,6 +713,10 @@
                                 <span class="text-gray-600 uppercase tracking-wide">Phí vận chuyển</span>
                                 <span class="font-bold text-black">{{ number_format($order->shipping_fee) }}đ</span>
                             </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 uppercase tracking-wide">Giảm giá</span>
+                                <span class="font-bold text-black">-{{ number_format($order->discount_amount) }}đ</span>
+                            </div>
                             <div class="border-t-2 border-black pt-4 flex justify-between">
                                 <span class="text-lg font-black text-black uppercase tracking-wide">Tổng cộng</span>
                                 <span class="text-2xl font-black text-black">{{ number_format($order->total_amount) }}đ</span>
@@ -769,7 +773,7 @@
                                                             Không khả dụng
                                                         </span>
                                                     @else
-                                                        <a href="{{ route('ebook.view', $item->bookFormat->id) }}" 
+                                                        {{-- <a href="{{ route('ebook.view', $item->bookFormat->id) }}" 
                                                            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wide transition-all duration-300"
                                                            target="_blank">
                                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -777,7 +781,7 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                                             </svg>
                                                             Đọc Online
-                                                        </a>
+                                                        </a> --}}
                                                         <a href="{{ route('ebook.download', $item->bookFormat->id) }}?order_id={{ $order->id }}" 
                                                            class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wide transition-all duration-300">
                                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -798,7 +802,7 @@
                                         <svg class="inline h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        <strong>Lưu ý:</strong> Bạn có thể đọc ebook online hoặc tải xuống để đọc offline. File tải xuống sẽ có định dạng PDF.
+                                        <strong>Lưu ý:</strong> Bạn chỉ có thể tải xuống để đọc offline. File tải xuống sẽ có định dạng PDF.
                                     </p>
                                 </div>
                                 {{-- Hiển thị thông báo khi có yêu cầu hoàn tiền (dựa trên trạng thái từ bảng refund_request) --}}

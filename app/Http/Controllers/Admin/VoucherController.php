@@ -87,15 +87,25 @@ class VoucherController extends Controller
 
             // Clean up numeric inputs
             $validated = $request->validated();
-            $validated['max_discount'] = (float) str_replace(',', '', $validated['max_discount']);
-            $validated['min_order_value'] = (float) str_replace(',', '', $validated['min_order_value']);
-
+            if (isset($validated['max_discount']) && $validated['max_discount'] !== null && $validated['max_discount'] !== '') {
+                $validated['max_discount'] = (float) str_replace(',', '', $validated['max_discount']);
+            }
+            if (isset($validated['min_order_value']) && $validated['min_order_value'] !== null && $validated['min_order_value'] !== '') {
+                $validated['min_order_value'] = (float) str_replace(',', '', $validated['min_order_value']);
+            } else {
+                $validated['min_order_value'] = 0; // hoặc null tùy yêu cầu
+            }
+            if (isset($validated['fixed_discount'])) {
+                $validated['fixed_discount'] = (float) str_replace(',', '', $validated['fixed_discount']);
+            }
             // Create voucher
             $voucher = Voucher::create([
                 'code' => strtoupper($validated['code']),
                 'description' => $validated['description'] ?? null,
-                'discount_percent' => $validated['discount_percent'],
-                'max_discount' => $validated['max_discount'],
+                'discount_type' => $validated['discount_type'] ?? 'percent',
+                'discount_percent' => $validated['discount_percent'] ?? null,
+                'fixed_discount' => $validated['fixed_discount'] ?? null,
+                'max_discount' => $validated['max_discount'] ?? null,
                 'min_order_value' => $validated['min_order_value'],
                 'quantity' => $validated['quantity'],
                 'valid_from' => $validated['valid_from'],
@@ -213,14 +223,21 @@ class VoucherController extends Controller
 
             // Clean up numeric inputs
             $validated = $request->validated();
-            $validated['max_discount'] = (float) str_replace(',', '', $validated['max_discount']);
+            if (isset($validated['max_discount']) && $validated['max_discount'] !== null && $validated['max_discount'] !== '') {
+                $validated['max_discount'] = (float) str_replace(',', '', $validated['max_discount']);
+            }
             $validated['min_order_value'] = (float) str_replace(',', '', $validated['min_order_value']);
+            if (isset($validated['fixed_discount'])) {
+                $validated['fixed_discount'] = (float) str_replace(',', '', $validated['fixed_discount']);
+            }
 
             // Update voucher (bỏ qua trường code)
             $voucher->update([
                 'description' => $validated['description'] ?? null,
-                'discount_percent' => $validated['discount_percent'],
-                'max_discount' => $validated['max_discount'],
+                'discount_type' => $validated['discount_type'] ?? $voucher->discount_type,
+                'discount_percent' => $validated['discount_percent'] ?? null,
+                'fixed_discount' => $validated['fixed_discount'] ?? null,
+                'max_discount' => $validated['max_discount'] ?? null,
                 'min_order_value' => $validated['min_order_value'],
                 'quantity' => $validated['quantity'],
                 'valid_from' => $validated['valid_from'],
