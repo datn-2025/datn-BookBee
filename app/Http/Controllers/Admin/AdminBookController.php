@@ -759,6 +759,23 @@ class AdminBookController extends Controller
         ]);
 
         $data['slug'] = Str::slug($data['title']);
+        // --- Cập nhật các trường preorder từ form ---
+        // Lưu ý: không cập nhật preorder_count ở đây (readonly trong form)
+        $data['pre_order'] = $request->boolean('pre_order');
+        if ($data['pre_order']) {
+            // Khi bật đặt trước, nhận các giá trị từ form
+            $data['release_date'] = $request->input('release_date');
+            $data['stock_preorder_limit'] = $request->input('stock_preorder_limit');
+            $data['pre_order_price'] = $request->input('pre_order_price');
+            $data['preorder_description'] = $request->input('preorder_description');
+        } else {
+            // Khi tắt đặt trước, xóa các giá trị liên quan để đồng bộ dữ liệu
+            $data['release_date'] = null;
+            $data['stock_preorder_limit'] = null;
+            $data['pre_order_price'] = null;
+            $data['preorder_description'] = null;
+        }
+
         $book->update($data);
 
         // Xử lý ảnh chính nếu có cập nhật
