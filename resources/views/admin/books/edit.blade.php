@@ -385,48 +385,48 @@
                                         </div>
                                         
                                         @if($attributes->count() > 0)
-    <div class="row g-3 mb-4">
-        @foreach($attributes as $attribute)
-            <div class="attribute-group mb-4 p-3 border col-md-4 rounded bg-white">
-                <h6 class="fw-bold text-primary mb-3">
-                    <i class="ri-bookmark-line me-1"></i>{{ $attribute->name }}
-                </h6>
+                                            <div class="row g-3 mb-4">
+                                                @foreach($attributes as $attribute)
+                                                    <div class="attribute-group mb-4 p-3 border col-md-4 rounded bg-white">
+                                                        <h6 class="fw-bold text-primary mb-3">
+                                                            <i class="ri-bookmark-line me-1"></i>{{ $attribute->name }}
+                                                        </h6>
 
-                <div class="row g-2 mb-2">
-                    <div class="col-md-10">
-                        <select class="form-select attribute-select"
-                                data-attribute-id="{{ $attribute->id }}"
-                                data-attribute-name="{{ $attribute->name }}">
-                            <option value="">-- Chọn {{ $attribute->name }} --</option>
-                            @foreach($attribute->values as $value)
-                                <option value="{{ $value->id }}" data-value-name="{{ $value->value }}">
-                                    {{ $value->value }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                                                        <div class="row g-2 mb-2">
+                                                            <div class="col-md-10">
+                                                                <select class="form-select attribute-select"
+                                                                        data-attribute-id="{{ $attribute->id }}"
+                                                                        data-attribute-name="{{ $attribute->name }}">
+                                                                    <option value="">-- Chọn {{ $attribute->name }} --</option>
+                                                                    @foreach($attribute->values as $value)
+                                                                        <option value="{{ $value->id }}" data-value-name="{{ $value->value }}">
+                                                                            {{ $value->value }}
+                                                                        </option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
 
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-primary d-block add-attribute-btn btn-sm">
-                            <i class="ri-add-line"></i>
-                        </button>
-                    </div>
-                </div>
+                                                            <div class="col-md-2">
+                                                                <button type="button" class="btn btn-primary d-block add-attribute-btn btn-sm">
+                                                                    <i class="ri-add-line"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
 
-                <!-- Container hiển thị các thuộc tính đã chọn -->
-                <div class="selected-variants-container d-flex flex-wrap gap-2" 
-                     data-attribute-id="{{ $attribute->id }}">
-                </div>
-            </div>
-        @endforeach
-    </div>
-@else
-    <div class="text-center py-4">
-        <i class="ri-price-tag-3-line text-muted" style="font-size: 48px;"></i>
-        <p class="text-muted mt-2">Chưa có thuộc tính nào được tạo.</p>
-        <small class="text-muted">Vui lòng tạo thuộc tính trong phần quản lý thuộc tính trước.</small>
-    </div>
-@endif
+                                                        <!-- Container hiển thị các thuộc tính đã chọn -->
+                                                        <div class="selected-variants-container d-flex flex-wrap gap-2" 
+                                                            data-attribute-id="{{ $attribute->id }}">
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <div class="text-center py-4">
+                                                <i class="ri-price-tag-3-line text-muted" style="font-size: 48px;"></i>
+                                                <p class="text-muted mt-2">Chưa có thuộc tính nào được tạo.</p>
+                                                <small class="text-muted">Vui lòng tạo thuộc tính trong phần quản lý thuộc tính trước.</small>
+                                            </div>
+                                        @endif
                                         <div class="border-top pt-4 mt-3">
                                         <h6 class="fw-bold text-purple mb-2">
                                             <i class="ri-shape-line me-2"></i>Biến thể (tổ hợp thuộc tính)
@@ -735,7 +735,7 @@
                     </div>
                     <div class="card-body">
                         <label for="status" class="form-label fw-medium">Trạng thái sách</label>
-                        <select class="form-select @error('status') is-invalid @enderror" id="status" name="status">
+                        <select class="form-select @error('status') is-invalid @enderror" name="status">
                             <option value="Còn Hàng" {{ old('status', $book->status) == 'Còn Hàng' ? 'selected' : '' }}>Còn Hàng</option>
                             <option value="Hết Hàng Tồn Kho" {{ old('status', $book->status) == 'Hết Hàng Tồn Kho' ? 'selected' : '' }}>Hết Hàng Tồn Kho</option>
                             <option value="Sắp Ra Mắt" {{ old('status', $book->status) == 'Sắp Ra Mắt' ? 'selected' : '' }}>Sắp Ra Mắt</option>

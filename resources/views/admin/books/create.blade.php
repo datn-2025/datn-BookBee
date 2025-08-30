@@ -17,9 +17,9 @@
         </a>
     </div>
 
-    <form action="{{ route('admin.books.store') }}" method="POST" enctype="multipart/form-data" id="bookForm" novalidate>
+    <form action="{{ route('admin.books.store') }}" method="POST" enctype="multipart/form-data"      novalidate>
         @csrf
-        <div class="row ">
+        <div class="row">
             <!-- Main Content -->
             <div class="col-lg-8">
                 <!-- Thông tin cơ bản -->
@@ -139,9 +139,6 @@
                                 @error('language')
                                     <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
-                                @error('language')
-                                    <div class="text-danger small mt-1">{{ $message }}</div>
-                                @enderror
                             </div>
                             
                             <!-- Preorder Section -->
@@ -166,16 +163,6 @@
                                         </div>
                                         
                                         <div id="preorder_section" style="display: none;">
-                                            <style>
-                                                #preorder_section .col-md-6 {
-                                                    width: 50% !important;
-                                                    flex: 0 0 auto !important;
-                                                }
-                                                #preorder_section .row {
-                                                    display: flex !important;
-                                                    flex-wrap: wrap !important;
-                                                }
-                                            </style>
                                             <div class="row g-3">
                                                 <div class="col-md-6">
                                                     <label for="release_date" class="form-label fw-medium">Ngày ra mắt <span class="text-danger">*</span></label>
@@ -443,14 +430,13 @@
                                         @if($attributes->count() > 0)
                                         <div class="row g-3 mb-4">
                                             @foreach($attributes as $attribute)
-                                                <div class="attribute-group mb-4 p-3 border col-md-4 rounde">
+                                                <div class="attribute-group mb-4 p-3 border col-md-4 rounded">
                                                     <h6 class="fw-bold text-primary mb-3">
                                                         <i class="ri-bookmark-line me-1"></i>{{ $attribute->name }}
                                                     </h6>
                                                     
                                                     <div class="row g-2 mb-2">
                                                         <div class="col-md-10">
-                                                            {{-- <label class="form-label fw-medium">Chọn giá trị</label> --}}
                                                             <select class="form-select attribute-select" 
                                                                     data-attribute-id="{{ $attribute->id }}" 
                                                                     data-attribute-name="{{ $attribute->name }}">
@@ -464,7 +450,6 @@
                                                         </div>
                                                         
                                                         <div class="col-md-2">
-                                                            {{-- <label class="form-label fw-medium">&nbsp;</label> --}}
                                                             <button type="button" class="btn btn-primary d-block add-attribute-btn btn-sm">
                                                                 <i class="ri-add-line"></i>
                                                             </button>
@@ -536,13 +521,11 @@
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control format-price" name="formats[ebook][price]" 
                                                    value="{{ old('formats.ebook.price') }}" placeholder="0" min="0">
-
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][discount]" 
                                                    value="{{ old('formats.ebook.discount') }}" placeholder="0" min="0">
-
                                         </div>
                                     </div>
                                     
@@ -551,6 +534,7 @@
                                         <i class="ri-information-line me-2"></i>
                                         <strong>Chế độ đặt trước:</strong> Khi bật chế độ đặt trước, giá bán sẽ được sử dụng từ "Giá ưu đãi đặt trước" đã cấu hình ở phần trên thay vì giá định dạng này.
                                     </div>
+                                    <div class="row g-3">
                                         <div class="col-12">
                                             <label class="form-label fw-medium">File Ebook</label>
                                             <input type="file" class="form-control" name="formats[ebook][file]" 
