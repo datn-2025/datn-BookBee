@@ -441,6 +441,7 @@ const CartProducts = {
             requestData.book_id = bookId;
             requestData.book_format_id = cartItem.dataset.bookFormatId || null;
             requestData.attribute_value_ids = cartItem.dataset.attributeValueIds || null;
+            requestData.variant_id = cartItem.dataset.variantId || null; // Thêm variant_id support
             requestData.is_combo = false;
         }
 
