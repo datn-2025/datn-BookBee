@@ -107,7 +107,8 @@ class HomeController extends Controller
             'reviews' => function($query) {
                 $query->whereIn('status', ['approved', 'visible'])->with('user');
             },
-            'attributeValues.attribute'
+            'attributeValues.attribute', // Thuộc tính cũ (legacy)
+            'variants.attributeValues.attribute' // Biến thể mới
         ])->where('slug', $slug)->firstOrFail();
 
         $relatedBooks = Book::where('category_id', $book->category_id)

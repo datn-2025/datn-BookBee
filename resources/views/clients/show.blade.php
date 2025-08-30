@@ -622,6 +622,85 @@
                 line-height: 1.5;
             }
         }
+
+        /* Enhanced Variant Attributes Styling */
+        .product-detail-page .variant-option-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border-radius: 0;
+        }
+
+        .product-detail-page .variant-option-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.15);
+            border-color: #d97706;
+        }
+
+        .product-detail-page .variant-option-card:has(input:checked) {
+            border-color: #d97706 !important;
+            background-color: #fff7ed !important;
+            box-shadow: 0 0 0 1px #d97706;
+        }
+
+        .product-detail-page .variant-option-card input[type="radio"] {
+            accent-color: #d97706;
+            scale: 1.2;
+        }
+
+        .product-detail-page .variant-option-card input[type="radio"]:focus {
+            outline: 2px solid #d97706;
+            outline-offset: 2px;
+        }
+
+        .product-detail-page .attribute-group-item {
+            border-left: 4px solid #d97706;
+            padding-left: 1rem;
+            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        .product-detail-page #attributesSummary {
+            animation: slideUp 0.3s ease-out;
+            border-radius: 0;
+        }
+
+        .product-detail-page #attributesSummary .grid > div {
+            transition: all 0.2s ease;
+            border-radius: 0;
+        }
+
+        .product-detail-page #attributesSummary .grid > div:hover {
+            background-color: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        /* Mobile responsive for variant options */
+        @media (max-width: 768px) {
+            .product-detail-page .variant-option-card {
+                padding: 0.75rem;
+            }
+
+            .product-detail-page .variant-option-card .flex {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .product-detail-page .variant-option-card .text-right {
+                text-align: left;
+                align-self: stretch;
+            }
+
+            .product-detail-page .attribute-group-item {
+                padding: 0.75rem;
+                margin: 0.25rem 0;
+            }
+
+            .product-detail-page #attributesSummary .grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 @endpush
 @section('content')
@@ -1816,31 +1895,37 @@
                                         <select id="bookFormatSelect" data-gifts-section="giftsSection"
                                             class="adidas-select w-full px-6 py-4 text-lg font-semibold appearance-none bg-white border-2 border-gray-300 focus:border-black rounded-none transition-colors duration-300">
                                             @php
+                                                // Prioritize physical books first, then ebook
+                                                $physicalFormats = $book->formats->filter(function ($f) {
+                                                    return stripos($f->format_name, 'ebook') === false;
+                                                });
                                                 $ebookFormat = $book->formats->first(function ($f) {
                                                     return stripos($f->format_name, 'ebook') !== false;
                                                 });
-                                                $otherFormats = $book->formats->filter(function ($f) {
-                                                    return stripos($f->format_name, 'ebook') === false;
-                                                });
                                             @endphp
+                                            {{-- Show physical formats first (selected by default) --}}
+                                            @foreach($physicalFormats as $index => $format)
+                                                <option value="{{ $format->id }}" data-price="{{ $format->price }}"
+                                                    data-stock="{{ $format->stock }}" data-discount="{{ $format->discount }}"
+                                                    data-format="{{ $format->format_name }}"
+                                                    {{ $index === 0 ? 'selected' : '' }}>
+                                                    {{ strtoupper($format->format_name) }} - {{ number_format($format->price, 0, ',', '.') }}₫
+                                                    @if($format->discount > 0)
+                                                        <span class="text-red-600">(-{{ number_format($format->discount, 0, ',', '.') }}₫)</span>
+                                                    @endif
+                                                </option>
+                                            @endforeach
+                                            {{-- Show ebook format last --}}
                                             @if($ebookFormat)
                                                 <option value="{{ $ebookFormat->id }}" data-price="{{ $ebookFormat->price }}"
                                                     data-stock="{{ $ebookFormat->stock }}" data-discount="{{ $ebookFormat->discount }}"
                                                     data-format="{{ $ebookFormat->format_name }}"
                                                     data-sample-url="{{ $ebookFormat->sample_file_url ? route('ebook.sample.view', $ebookFormat->id) : '' }}"
-                                                    data-allow-sample="{{ $ebookFormat->allow_sample_read ? '1' : '0' }}" selected>
+                                                    data-allow-sample="{{ $ebookFormat->allow_sample_read ? '1' : '0' }}"
+                                                    {{ $physicalFormats->count() === 0 ? 'selected' : '' }}>
                                                     {{ $ebookFormat->format_name }}
                                                 </option>
                                             @endif
-                                            @foreach($otherFormats as $format)
-                                                <option value="{{ $format->id }}" data-price="{{ $format->price }}"
-                                                    data-stock="{{ $format->stock }}" data-discount="{{ $format->discount }}"
-                                                    data-format="{{ $format->format_name }}"
-                                                    data-sample-url="{{ $format->sample_file_url ? route('ebook.sample.view', $format->id) : '' }}"
-                                                    data-allow-sample="{{ $format->allow_sample_read ? '1' : '0' }}">
-                                                    {{ $format->format_name }}
-                                                </option>
-                                            @endforeach
                                         </select>
                                         <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
                                             <i class="fas fa-chevron-down text-black"></i>
@@ -1860,197 +1945,46 @@
                                     </div>
                                 </div>
                             @endif
-                            <!-- Enhanced Attributes -->
-                            {{-- Thuộc tính --}}
-                            @if($book->attributeValues->count())
-                                <div id="bookAttributesGroup" class="attribute-group space-y-4" @if(in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho'])) style="display: none;" @endif>
-                                    <h3 class="text-sm font-bold text-black uppercase tracking-wider adidas-font">Tuỳ chọn sản phẩm</h3>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        @foreach($book->attributeValues->unique('attribute_id') as $attrVal)
-                                            @php
-                                                $attributeName = $attrVal->attribute->name ?? '';
-                                                $isLanguageAttribute = stripos($attributeName, 'Ngôn Ngữ') !== false || stripos($attributeName, 'language') !== false;
-                                            @endphp
-                                            <div class="space-y-2 col-span-1 attribute-item"
-                                                data-attribute-name="{{ strtolower($attributeName) }}"
-                                                data-is-language="{{ $isLanguageAttribute ? 'true' : 'false' }}">
-                                                <label for="attribute_{{ $attrVal->attribute_id }}"
-                                                    class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">
-                                                    {{ $attributeName ?: 'Không rõ' }}
-                                                </label>
-                                                @php
-                                                    $filteredValues = \App\Models\BookAttributeValue::with('attributeValue')
-                                                        ->where('book_id', $book->id)
-                                                        ->whereHas('attributeValue', function ($q) use ($attrVal) {
-                                                            $q->where('attribute_id', $attrVal->attribute_id);
-                                                        })
-                                                        ->get();
-                                                @endphp
-                                                <div class="relative">
-                                                    <select name="attributes[{{ $attrVal->attribute_id }}]"
-                                                        id="attribute_{{ $attrVal->attribute_id }}"
-                                                        class="adidas-select w-full appearance-none bg-white">
-                                                        @foreach($filteredValues as $bookAttrVal) @php
-                                                                $variantStock = $bookAttrVal->stock ?? 0;
-                                                                $variantSku = $bookAttrVal->sku ?? '';
-                                                                $extraPrice = $bookAttrVal->extra_price ?? 0;
-                                                                $displayText = $bookAttrVal->attributeValue->value ?? 'Không rõ';
-
-                                                                // Build option text with price and stock info - logic will be dynamic via JavaScript
-                                                                $optionText = $displayText;
-
-                                                                // Always show actual extra price in dropdown initially (JavaScript will handle ebook case)
-                                                                if ($extraPrice > 0) {
-                                                                    $optionText .= ' (+' . number_format($extraPrice, 0, ',', '.') . '₫)';
-                                                                }
-
-                                                                // Add stock info
-                                                                if ($variantStock <= 0) {
-                                                                    $optionText .= ' - Hết hàng';
-                                                                } else if ($variantStock <= 5) {
-                                                                    $optionText .= ' - Còn ' . $variantStock . ' cuốn';
-                                                                }
-                                                            @endphp <option value="{{ $bookAttrVal->attribute_value_id }}"
-                                                                data-price="{{ $extraPrice }}" data-stock="{{ $variantStock }}"
-                                                                data-sku="{{ $variantSku }}" {{ $variantStock == 0 ? 'disabled' : '' }}>
-                                                                {{ $optionText }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                    <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
-                                                        <i class="fas fa-chevron-down text-black"></i>
-                                                    </div>
-                                                </div>
-                                                {{-- Thông tin biến thể đã chọn --}}
-                                                <div id="variant_info_{{ $attrVal->attribute_id }}" class="mt-4 hidden">
-                                                    <div
-                                                        class="variant-info-card bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 shadow-sm">
-                                                        <div class="variant-info-header bg-black text-white px-4 py-3 flex items-center">
-                                                            <i class="fas fa-info-circle mr-2 text-sm"></i>
-                                                            <span class="text-sm font-bold uppercase tracking-wider adidas-font">Thông tin
-                                                                đã chọn</span>
-                                                        </div>
-
-                                                        <!-- For Physical Books -->
-                                                        <div id="physical_variant_info_{{ $attrVal->attribute_id }}" class="p-4 space-y-3">
-                                                            <div
-                                                                class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
-                                                                <div class="flex items-center">
-                                                                    <div
-                                                                        class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
-                                                                        <i class="fas fa-boxes text-xs"></i>
-                                                                    </div>
-                                                                    <span
-                                                                        class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Số
-                                                                        lượng:</span>
-                                                                </div>
-                                                                <span id="selected_stock_{{ $attrVal->attribute_id }}"
-                                                                    class="variant-info-value font-bold text-green-700 bg-white px-3 py-1 border border-green-300 text-sm">-</span>
-                                                            </div>
-                                                            <div
-                                                                class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
-                                                                <div class="flex items-center">
-                                                                    <div
-                                                                        class="icon-container w-8 h-8 bg-yellow-500 text-white rounded-sm flex items-center justify-center mr-3">
-                                                                        <i class="fas fa-coins text-xs"></i>
-                                                                    </div>
-                                                                    <span
-                                                                        class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Phí
-                                                                        cộng thêm:</span>
-                                                                </div>
-                                                                <span id="selected_extra_price_{{ $attrVal->attribute_id }}"
-                                                                    class="variant-info-value font-bold text-yellow-700 bg-white px-3 py-1 border border-yellow-300 text-sm">0₫</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <!-- For Ebooks -->
-                                                        <div id="ebook_variant_info_{{ $attrVal->attribute_id }}"
-                                                            class="p-4 space-y-3 hidden">
-                                                            <div
-                                                                class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
-                                                                <div class="flex items-center">
-                                                                    <div
-                                                                        class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
-                                                                        <i class="fas fa-check-circle text-xs"></i>
-                                                                    </div>
-                                                                    <span
-                                                                        class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Trạng
-                                                                        thái:</span>
-                                                                </div>
-                                                                <div
-                                                                    class="variant-info-badge inline-flex items-center px-3 py-1 bg-green-100 text-green-800 border border-green-300 text-xs font-bold uppercase tracking-wide adidas-font">
-                                                                    <i class="fas fa-check-circle mr-1"></i>
-                                                                    Còn hàng
-                                                                </div>
-                                                            </div>
-                                                            <div
-                                                                class="variant-info-item flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
-                                                                <div class="flex items-center">
-                                                                    <div
-                                                                        class="icon-container w-8 h-8 bg-green-600 text-white rounded-sm flex items-center justify-center mr-3">
-                                                                        <i class="fas fa-coins text-xs"></i>
-                                                                    </div>
-                                                                    <span
-                                                                        class="text-sm font-semibold text-gray-800 uppercase tracking-wide adidas-font">Phí
-                                                                        cộng thêm:</span>
-                                                                </div>
-                                                                <span
-                                                                    class="variant-info-value font-bold text-green-700 bg-white px-3 py-1 border border-green-300 text-sm">Miễn
-                                                                    phí</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                            <!-- Enhanced Attributes - Improved UI -->
+                            {{-- Thuộc tính & Biến thể --}}
+                            @php
+                                // Kiểm tra xem sách có biến thể không (cả cách cũ và mới)
+                                $hasBookAttributeValues = $book->bookAttributeValues && $book->bookAttributeValues->count() > 0;
+                                $hasVariants = $book->variants && $book->variants->count() > 0;
+                                $hasAnyVariants = $hasBookAttributeValues || $hasVariants;
+                            @endphp
+                            
+                            @if($hasAnyVariants)
+                                <div class="mb-4">
+                                    <label for="variantCombinationSelect" class="block font-semibold mb-2">Chọn tổ hợp biến thể:</label>
+                                    <select id="variantCombinationSelect" name="variant_id" class="adidas-select w-full">
+                                        @foreach($book->variants as $variant)
+                                            <option value="{{ $variant->id }}"
+                                                data-price="{{ $variant->price }}"
+                                                data-discount="{{ $variant->discount ?? 0 }}"
+                                                data-stock="{{ $variant->stock ?? 0 }}"
+                                            >
+                                                {{ $variant->attributeValues->pluck('value')->implode(' - ') }}
+                                                @if($variant->stock === 0) (Hết hàng)@endif
+                                            </option>
                                         @endforeach
+                                    </select>
+                                </div>
+                                                    <span class="text-xs font-medium text-gray-600">Tồn kho:</span>
+                                                    <span id="selectedVariantStock" class="font-bold text-green-600 text-sm">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-
-                                    {{-- Tổng kết phí cộng thêm và stock biến thể --}}
-                                    {{-- <div id="attributesSummary"
-                                        class="mt-6 bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 p-4 rounded-lg shadow-sm hidden">
-                                        <div class="flex items-center mb-3">
-                                            <i class="fas fa-calculator text-gray-600 mr-2"></i>
-                                            <span class="text-sm font-bold text-gray-800 uppercase tracking-wide">Tổng kết lựa
-                                                chọn</span>
-                                        </div>
-
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <!-- Tổng phí cộng thêm -->
-                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-100">
-                                                <div class="flex items-center">
-                                                    <i class="fas fa-plus-circle text-yellow-500 mr-2 text-sm"></i>
-                                                    <span class="text-sm font-medium text-gray-700" id="extraPriceLabel">Tổng phí cộng
-                                                        thêm:</span>
-                                                </div>
-                                                <span id="totalExtraPrice"
-                                                    class="font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-sm">0₫</span>
-                                            </div>
-
-                                            <!-- Stock thấp nhất (cho sách vật lý) -->
-                                            <div id="minStockSummary"
-                                                class="flex items-center justify-between p-2 bg-white rounded border border-gray-100">
-                                                <div class="flex items-center">
-                                                    <i class="fas fa-warehouse text-green-500 mr-2 text-sm"></i>
-                                                    <span class="text-sm font-medium text-gray-700">Tồn kho khả dụng:</span>
-                                                </div>
-                                                <span id="minStockValue"
-                                                    class="font-bold text-green-600 bg-green-100 px-2 py-1 rounded text-sm">-</span>
-                                            </div>
-                                        </div>
-                                    </div> --}}
                                 </div>
                             @endif
                             <!-- Enhanced Quantity & Add to Cart Section -->
                             <div class="purchase-section space-y-6 pt-6">
                                 @php
-                                    $isEbook = false;
-                                    if (isset($defaultFormat->format_name)) {
-                                        $isEbook = stripos($defaultFormat->format_name, 'ebook') !== false;
-                                    }
+                                    // Only hide for special statuses, let JavaScript handle ebook/physical logic
                                     $isSpecialStatus = in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho']);
                                 @endphp
-                                <div class="quantity-section space-y-3" @if($isEbook || $isSpecialStatus) style="display:none"
-                                @endif>
+                                <div class="quantity-section space-y-3" @if($isSpecialStatus) style="display:none" @else style="display:block" @endif>
                                     <label for="quantity"
                                         class="block text-sm font-bold text-black uppercase tracking-wider adidas-font">Số
                                         lượng</label>
@@ -3334,6 +3268,7 @@
                     discount = parseFloat(selectedOption.dataset.discount) || 0; // Giảm theo định dạng (VND, cố định)
                     const selectedText = selectedOption.textContent.trim().toLowerCase();
                     isEbook = selectedText.includes('ebook');
+                    console.log('updatePriceAndStock - Format selected:', selectedText, 'isEbook:', isEbook);
                 }
 
                 // Add attribute extra costs and get variant stock (only for physical books)
@@ -3601,6 +3536,13 @@
                     bookStatus === 'Sắp Ra Mắt' ||
                     bookStatus === 'Hết Hàng Tồn Kho';
 
+                // Re-check isEbook value here to ensure consistency
+                let currentIsEbook = false;
+                if (formatSelect && formatSelect.selectedOptions[0]) {
+                    const currentSelectedText = formatSelect.selectedOptions[0].textContent.trim().toLowerCase();
+                    currentIsEbook = currentSelectedText.includes('ebook');
+                }
+
                 if (attributesGroup) {
                     const attributeItems = attributesGroup.querySelectorAll('.attribute-item');
 
@@ -3625,8 +3567,8 @@
                         document.querySelectorAll('[id^="variant_info_"]').forEach(el => {
                             el.style.display = 'none';
                         });
-                    } else if (isEbook) {
-                        // For ebooks, hide all attributes/variants
+                    } else if (currentIsEbook) {
+                        // For ebooks, always hide attributes/variants
                         attributesGroup.style.display = 'none';
                     } else {
                         attributesGroup.style.display = 'block';
@@ -3656,12 +3598,14 @@
                 if (quantitySection) {
                     if (isSpecialStatus) {
                         quantitySection.style.display = 'none';
-                    } else if (isEbook) {
+                    } else if (currentIsEbook) {
                         // For ebooks, always hide quantity section
                         quantitySection.style.display = 'none';
+                        console.log('updatePriceAndStock: Hidden quantity for ebook');
                     } else {
                         // For physical books that are available
                         quantitySection.style.display = 'block';
+                        console.log('updatePriceAndStock: Shown quantity for physical book');
                     }
                 }
 
@@ -3886,14 +3830,45 @@
                 const formatSelect = document.getElementById('bookFormatSelect');
                 if (formatSelect) {
                     formatSelect.addEventListener('change', function () {
+                        console.log('formatSelect change event triggered');
                         updatePriceAndStock();
                         updateRealTimeStockDisplay(); // Update real-time stock display
 
-                        // Update dropdown options display only for physical books
+                        // Hide/show variants based on format type
                         const selectedOption = formatSelect.selectedOptions[0];
                         if (selectedOption) {
                             const selectedText = selectedOption.textContent.trim().toLowerCase();
                             const isEbook = selectedText.includes('ebook');
+                            const attributesGroup = document.getElementById('bookAttributesGroup');
+                            const quantitySection = document.querySelector('.quantity-section');
+                            
+                            console.log('Format change handler:', {
+                                selectedText: selectedText,
+                                isEbook: isEbook,
+                                attributesGroup: !!attributesGroup,
+                                quantitySection: !!quantitySection
+                            });
+                            
+                            if (attributesGroup) {
+                                if (isEbook) {
+                                    attributesGroup.style.display = 'none';
+                                    console.log('Format change: Hidden attributes for ebook');
+                                } else {
+                                    attributesGroup.style.display = 'block';
+                                    console.log('Format change: Shown attributes for physical book');
+                                }
+                            }
+                            
+                            if (quantitySection) {
+                                if (isEbook) {
+                                    quantitySection.style.display = 'none';
+                                    console.log('Format change: Hidden quantity for ebook');
+                                } else {
+                                    quantitySection.style.display = 'block';
+                                    console.log('Format change: Shown quantity for physical book');
+                                }
+                            }
+                            
                             if (!isEbook) {
                                 // Force re-check of attribute visibility based on stock
                                 setTimeout(() => {
@@ -3964,6 +3939,115 @@
                 // Initialize price and stock on page load
                 updatePriceAndStock();
                 updateRealTimeStockDisplay(); // Initialize real-time stock display
+
+                // Check initial format and hide/show variants accordingly - with delay
+                setTimeout(() => {
+                    const initialFormatSelect = document.getElementById('bookFormatSelect');
+                    const initialAttributesGroup = document.getElementById('bookAttributesGroup');
+                    
+                    console.log('Initial format check:', {
+                        formatSelect: !!initialFormatSelect,
+                        attributesGroup: !!initialAttributesGroup,
+                        selectedOption: initialFormatSelect?.selectedOptions[0]?.textContent
+                    });
+                    
+                    if (initialFormatSelect && initialFormatSelect.selectedOptions[0] && initialAttributesGroup) {
+                        const selectedText = initialFormatSelect.selectedOptions[0].textContent.trim().toLowerCase();
+                        const isEbook = selectedText.includes('ebook');
+                        
+                        console.log('Initial format logic:', {
+                            selectedText: selectedText,
+                            isEbook: isEbook,
+                            currentDisplay: initialAttributesGroup.style.display
+                        });
+                        
+                        if (isEbook) {
+                            initialAttributesGroup.style.display = 'none';
+                            console.log('Hidden attributes for ebook');
+                        } else {
+                            initialAttributesGroup.style.display = 'block';
+                            console.log('Shown attributes for physical book - initial display set to:', initialAttributesGroup.style.display);
+                        }
+                    }
+                }, 100);
+
+                // Enhanced Radio Button Variant Selection
+                const variantRadios = document.querySelectorAll('input[name^="attributes["]');
+                const attributesSummary = document.getElementById('attributesSummary');
+                
+                variantRadios.forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        if (this.checked) {
+                            updateVariantSummary();
+                            updatePriceAndStock();
+                            updateRealTimeStockDisplay();
+                        }
+                    });
+                });
+
+                function updateVariantSummary() {
+                    const selectedRadios = document.querySelectorAll('input[name^="attributes["]:checked');
+                    const summaryLabel = document.getElementById('selectedVariantLabel');
+                    const totalPriceElement = document.getElementById('totalExtraPrice');
+                    const stockElement = document.getElementById('selectedVariantStock');
+                    
+                    if (selectedRadios.length > 0) {
+                        // Build variant label theo format: AttributeName: ValueName | AttributeName: ValueName
+                        const labelParts = [];
+                        let totalExtraPrice = 0;
+                        let minStock = Infinity;
+                        
+                        selectedRadios.forEach(radio => {
+                            const label = radio.dataset.label || '';
+                            const price = parseFloat(radio.dataset.price || 0);
+                            const stock = parseInt(radio.dataset.stock || 0);
+                            
+                            if (label) labelParts.push(label);
+                            totalExtraPrice += price;
+                            if (stock < minStock) minStock = stock;
+                        });
+                        
+                        // Update summary display
+                        if (summaryLabel) {
+                            summaryLabel.textContent = labelParts.join(' | ') || 'Đã chọn biến thể';
+                        }
+                        
+                        if (totalPriceElement) {
+                            if (totalExtraPrice > 0) {
+                                totalPriceElement.textContent = '+' + new Intl.NumberFormat('vi-VN').format(totalExtraPrice) + '₫';
+                                totalPriceElement.className = 'font-bold text-orange-600 text-sm';
+                            } else {
+                                totalPriceElement.textContent = 'Miễn phí';
+                                totalPriceElement.className = 'font-bold text-green-600 text-sm';
+                            }
+                        }
+                        
+                        if (stockElement) {
+                            if (minStock === Infinity) {
+                                stockElement.textContent = '-';
+                            } else if (minStock <= 0) {
+                                stockElement.textContent = 'Hết hàng';
+                                stockElement.className = 'font-bold text-red-600 text-sm';
+                            } else if (minStock <= 5) {
+                                stockElement.textContent = minStock + ' cuốn';
+                                stockElement.className = 'font-bold text-yellow-600 text-sm';
+                            } else {
+                                stockElement.textContent = minStock + ' cuốn';
+                                stockElement.className = 'font-bold text-green-600 text-sm';
+                            }
+                        }
+                        
+                        // Show summary
+                        if (attributesSummary) {
+                            attributesSummary.classList.remove('hidden');
+                        }
+                    } else {
+                        // Hide summary if no selection
+                        if (attributesSummary) {
+                            attributesSummary.classList.add('hidden');
+                        }
+                    }
+                }
 
                 // Initialize attribute visibility on page load - Double check after DOM fully loaded
                 setTimeout(() => {
@@ -5471,4 +5555,96 @@
             }
         </style>
     @endpush
+
+    @push('styles')
+    <style>
+        .variant-option-card {
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .variant-option-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .variant-option-card input[type="radio"]:checked + div {
+            background-color: #fed7aa;
+        }
+        
+        .variant-option-card:has(input[type="radio"]:checked) {
+            border-color: #ea580c;
+            background-color: #fff7ed;
+        }
+    </style>
+    @endpush
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle variant selection
+            const variantRadios = document.querySelectorAll('input[type="radio"][name^="attributes"]');
+            const summaryDiv = document.getElementById('attributesSummary');
+            const selectedLabel = document.getElementById('selectedVariantLabel');
+            const totalExtraPrice = document.getElementById('totalExtraPrice');
+            const selectedStock = document.getElementById('selectedVariantStock');
+
+            if (variantRadios.length > 0) {
+                variantRadios.forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        updateVariantSummary();
+                    });
+                });
+            }
+
+            function updateVariantSummary() {
+                const selectedVariants = [];
+                let totalExtra = 0;
+                let minStock = Infinity;
+
+                variantRadios.forEach(radio => {
+                    if (radio.checked) {
+                        const label = radio.getAttribute('data-label');
+                        const price = parseFloat(radio.getAttribute('data-price')) || 0;
+                        const stock = parseInt(radio.getAttribute('data-stock')) || 0;
+                        
+                        selectedVariants.push(label);
+                        totalExtra += price;
+                        minStock = Math.min(minStock, stock);
+                    }
+                });
+
+                if (selectedVariants.length > 0) {
+                    summaryDiv.classList.remove('hidden');
+                    selectedLabel.textContent = selectedVariants.join(' | ');
+                    totalExtraPrice.textContent = new Intl.NumberFormat('vi-VN').format(totalExtra) + '₫';
+                    selectedStock.textContent = minStock === Infinity ? '-' : minStock;
+                } else {
+                    summaryDiv.classList.add('hidden');
+                }
+            }
+        });
+    </script>
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const formatSelect = document.getElementById('bookFormatSelect');
+    const attributesGroup = document.getElementById('bookAttributesGroup');
+    // Số lượng
+    const quantitySection = document.querySelector('.quantity-section');
+    if (formatSelect && attributesGroup) {
+        function updateAttributesGroupDisplay() {
+            const selectedOption = formatSelect.options[formatSelect.selectedIndex];
+            const isEbook = selectedOption && selectedOption.text.toLowerCase().includes('ebook');
+            // Chỉ ẩn biến thể khi là ebook, còn lại luôn hiện
+            attributesGroup.style.display = isEbook ? 'none' : 'block';
+            // Số lượng: LUÔN hiển thị, chỉ ẩn nếu là trạng thái đặc biệt (đã xử lý ở PHP)
+            if (quantitySection) quantitySection.style.display = 'block';
+        }
+        // Gọi khi load trang và khi đổi định dạng
+        updateAttributesGroupDisplay();
+        formatSelect.addEventListener('change', updateAttributesGroupDisplay);
+    }
+});
+</script>
+@endpush
 @endsection

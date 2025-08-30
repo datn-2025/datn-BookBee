@@ -97,26 +97,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (discountText && discountAmount) {
-            console.log('Debug discount in quantity.js:', {
-                discount: discount,
-                discountAmount: discountAmount,
-                discountText: discountText
-            });
-            
             if (discount > 0) {
                 discountText.style.display = 'inline';
                 // Hiển thị discount như số tiền VNĐ với định dạng
                 const formattedDiscount = discount.toLocaleString('vi-VN', { minimumFractionDigits: 0 });
-                console.log('Setting discount amount in quantity.js:', formattedDiscount);
                 discountAmount.textContent = formattedDiscount;
             } else {
                 discountText.style.display = 'none';
             }
-        } else {
-            console.log('Discount elements not found in quantity.js:', {
-                discountText: discountText,
-                discountAmount: discountAmount
-            });
         }
 
         // Badge logic giống combo
@@ -169,11 +157,11 @@ document.addEventListener('DOMContentLoaded', function () {
         // Ẩn input số lượng nếu là ebook hoặc kiểm tra trạng thái không khả dụng cho ebook
         if (isEbook) {
             const isUnavailable = stock === -1 || stock === -2; // Sắp ra mắt (-1) hoặc Ngừng kinh doanh (-2)
-            
             if (quantityGroup) quantityGroup.style.display = 'none';
             quantityInput.value = 1;
             quantityInput.disabled = true;
 
+            // Ẩn tất cả attribute group (biến thể) trừ thuộc tính ngôn ngữ (nếu có)
             attributeGroups.forEach(select => {
                 const label = document.querySelector(`label[for="${select.id}"]`);
                 const isLanguage = label?.textContent.toLowerCase().includes('ngôn ngữ');
@@ -192,9 +180,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (quantityGroup) quantityGroup.style.display = 'flex';
             quantityInput.disabled = false;
 
-            // Hiện lại tất cả thuộc tính
-            document.querySelectorAll('#bookAttributesGroup .space-y-2').forEach(group => {
-                group.style.display = '';
+            // LUÔN hiện lại tất cả thuộc tính (biến thể) khi là sách vật lý
+            attributeGroups.forEach(select => {
+                select.closest('.col-span-1').style.display = '';
             });
 
             productQuantityDisplay.textContent = stock > 0 ? stock : 0;
@@ -205,16 +193,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const outOfStock = stock <= 0;
             const isUnavailable = stock === -1 || stock === -2; // Sắp ra mắt (-1) hoặc Ngừng kinh doanh (-2)
-            
             addToCartBtn.disabled = outOfStock || isUnavailable;
             addToCartBtn.classList.toggle('bg-gray-300', outOfStock || isUnavailable);
             addToCartBtn.classList.toggle('bg-black', !outOfStock && !isUnavailable);
-            
             // Ẩn/hiện nút cộng trừ số lượng dựa trên trạng thái
             const shouldDisableQuantityControls = outOfStock || isUnavailable;
             incrementBtn.disabled = shouldDisableQuantityControls;
             decrementBtn.disabled = shouldDisableQuantityControls;
-            
             // Ẩn hoàn toàn quantityGroup nếu sản phẩm không khả dụng
             if (quantityGroup) {
                 if (shouldDisableQuantityControls) {
@@ -223,7 +208,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     quantityGroup.style.display = 'flex';
                 }
             }
-
             stockDisplay.textContent = outOfStock ? 'Hết hàng' : 'Còn hàng';
             stockDisplay.className = `font-bold px-3 py-1.5 rounded text-white ${outOfStock ? 'bg-gray-900' : 'bg-green-500'}`;
         }
