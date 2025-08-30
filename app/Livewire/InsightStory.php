@@ -83,9 +83,28 @@ class InsightStory extends Component
             : 'Chưa ghi nhận khách hàng nổi bật trong kỳ.';
 
         // __4) Cảnh báo tồn kho thấp__
-        // - Ưu tiên cảnh báo theo biến thể (book_attribute_values.stock)
-        // - Nếu không có, fallback theo stock ở book_formats (vật lý)
-        $lowVariant = DB::table('book_attribute_values as bav')
+        // - Ưu tiên cảnh báo theo hệ biến thể mới (book_variants.stock)
+        // - Fallback 1: biến thể legacy (book_attribute_values.stock)
+        // - Fallback 2: stock ở book_formats (vật lý)
+        $lowVariantNew = DB::table('book_variants as bv')
+            ->join('books as b', 'bv.book_id', '=', 'b.id')
+            ->leftJoin('book_variant_attribute_values as pv', 'pv.book_variant_id', '=', 'bv.id')
+            ->leftJoin('attribute_values as av', 'pv.attribute_value_id', '=', 'av.id')
+            ->leftJoin('attributes as at', 'av.attribute_id', '=', 'at.id')
+            ->whereNotNull('bv.stock')
+            ->where('bv.stock', '>=', 0)
+            ->groupBy('bv.id', 'b.title', 'bv.stock')
+            ->orderBy('bv.stock', 'asc')
+            ->limit(1)
+            ->select(
+                'b.title',
+                'bv.stock',
+                DB::raw("GROUP_CONCAT(DISTINCT CONCAT(at.name, ': ', av.value) ORDER BY at.name SEPARATOR ' | ') as variant")
+            )
+            ->first();
+
+        // Legacy fallback: lấy 1 biến thể cũ có stock thấp nhất
+        $lowVariantLegacy = DB::table('book_attribute_values as bav')
             ->join('books as b', 'bav.book_id', '=', 'b.id')
             ->join('attribute_values as av', 'bav.attribute_value_id', '=', 'av.id')
             ->whereNotNull('bav.stock')
@@ -106,12 +125,20 @@ class InsightStory extends Component
             ->first();
 
         $warningText = 'Tồn kho ổn định.';
-        if ($lowVariant && (int) $lowVariant->stock <= 5) {
+        if ($lowVariantNew && (int) $lowVariantNew->stock <= 5) {
+            $variantLabel = $lowVariantNew->variant ?: 'Biến thể';
             $warningText = sprintf(
                 'Cảnh báo: "%s" biến thể "%s" sắp hết (còn %d). Nên nhập thêm.',
-                $lowVariant->title,
-                $lowVariant->variant,
-                (int) $lowVariant->stock
+                $lowVariantNew->title,
+                $variantLabel,
+                (int) $lowVariantNew->stock
+            );
+        } elseif ($lowVariantLegacy && (int) $lowVariantLegacy->stock <= 5) {
+            $warningText = sprintf(
+                'Cảnh báo: "%s" biến thể "%s" sắp hết (còn %d). Nên nhập thêm.',
+                $lowVariantLegacy->title,
+                $lowVariantLegacy->variant,
+                (int) $lowVariantLegacy->stock
             );
         } elseif ($lowFormat && (int) $lowFormat->stock <= 5) {
             $warningText = sprintf(

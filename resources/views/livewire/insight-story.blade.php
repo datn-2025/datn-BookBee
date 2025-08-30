@@ -5,7 +5,7 @@
                 <span class="text-2xl">💡</span>
                 <h3 class="text-lg md:text-xl font-bold text-amber-800 uppercase tracking-wide">Insight Story</h3>
             </div>
-            <span class="text-xs text-amber-700">Tự động từ dữ liệu (demo)</span>
+            {{-- <span class="text-xs text-amber-700">Tự động từ dữ liệu (demo)</span> --}}
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
