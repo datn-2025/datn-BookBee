@@ -223,6 +223,27 @@ class AdminBookController extends Controller
             'preorder_description'
         ]);
 
+        // Chuẩn hóa dữ liệu preorder để không insert NULL vào các cột bắt buộc
+        $data['pre_order'] = $request->boolean('pre_order');
+        if ($data['pre_order']) {
+            // Nếu có bật preorder mà không nhập giá -> mặc định 0
+            if (!isset($data['pre_order_price']) || $data['pre_order_price'] === null || $data['pre_order_price'] === '') {
+                $data['pre_order_price'] = 0;
+            }
+            // Đếm đặt trước mặc định 0 nếu null
+            if (!isset($data['preorder_count']) || $data['preorder_count'] === null || $data['preorder_count'] === '') {
+                $data['preorder_count'] = 0;
+            }
+        } else {
+            // Nếu không phải preorder, reset các trường liên quan
+            $data['release_date'] = null;
+            $data['stock_preorder_limit'] = null;
+            $data['preorder_description'] = null;
+            $data['preorder_discount_percent'] = null;
+            $data['pre_order_price'] = 0; // Cột DB có default 0 nhưng tránh gửi NULL ghi đè default
+            $data['preorder_count'] = 0;
+        }
+
         $slug = Str::slug($data['title']);
         $data['slug'] = $slug;
 
@@ -766,13 +787,16 @@ class AdminBookController extends Controller
             // Khi bật đặt trước, nhận các giá trị từ form
             $data['release_date'] = $request->input('release_date');
             $data['stock_preorder_limit'] = $request->input('stock_preorder_limit');
-            $data['pre_order_price'] = $request->input('pre_order_price');
+            // Nếu không nhập giá đặt trước thì mặc định 0 để tránh NULL
+            $inputPreOrderPrice = $request->input('pre_order_price');
+            $data['pre_order_price'] = ($inputPreOrderPrice === null || $inputPreOrderPrice === '') ? 0 : $inputPreOrderPrice;
             $data['preorder_description'] = $request->input('preorder_description');
         } else {
             // Khi tắt đặt trước, xóa các giá trị liên quan để đồng bộ dữ liệu
             $data['release_date'] = null;
             $data['stock_preorder_limit'] = null;
-            $data['pre_order_price'] = null;
+            // Đặt 0 thay vì NULL để phù hợp ràng buộc DB (NOT NULL, default 0)
+            $data['pre_order_price'] = 0;
             $data['preorder_description'] = null;
         }
 
