@@ -16,6 +16,7 @@ class Cart extends Model
         'user_id',
         'book_id',
         'book_format_id',
+        'variant_id', // Thêm variant_id cho hệ thống biến thể mới
         'collection_id',
         'is_combo',
         'is_preorder',
@@ -65,6 +66,11 @@ class Cart extends Model
     public function collection(): BelongsTo
     {
         return $this->belongsTo(Collection::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(BookVariant::class, 'variant_id');
     }
 
     /**

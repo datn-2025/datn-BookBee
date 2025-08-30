@@ -312,6 +312,7 @@
                              data-book-id="{{ $item->book_id }}" 
                              data-book-format-id="{{ $item->book_format_id }}"
                              data-attribute-value-ids="{{ $item->attribute_value_ids }}"
+                             data-variant-id="{{ $item->variant_id ?? '' }}"
                              data-price="{{ $item->price }}" 
                              data-base-price="{{ $item->original_price ?? $item->price }}"
                              data-discount="{{ $item->discount ?? 0 }}"
@@ -373,12 +374,42 @@
                                         </div>
                                     </div>
 
-                                    {{-- Attributes - Hiển thị đầy đủ thông tin biến thể bao gồm stock và SKU --}}
-                                    @if($item->attribute_value_ids && $item->attribute_value_ids !== '[]')
+                                    {{-- Attributes - Hiển thị thông tin biến thể từ cả hệ thống mới và cũ --}}
+                                    @php
+                                        $attributes = collect();
+                                        $isEbook = isset($item->format_name) && (stripos($item->format_name, 'ebook') !== false);
+                                    @endphp
+
+                                    @if(!empty($item->variant_id))
+                                        {{-- New variant system - lấy thông tin từ book_variants --}}
+                                        @php
+                                            // Get variant information
+                                            $variantInfo = DB::table('book_variants')
+                                                ->where('id', $item->variant_id)
+                                                ->first();
+                                            
+                                            // Get variant attribute values
+                                            $variantAttributes = collect();
+                                            if ($variantInfo) {
+                                                $variantAttributes = DB::table('book_variant_attribute_values')
+                                                    ->join('attribute_values', 'book_variant_attribute_values.attribute_value_id', '=', 'attribute_values.id')
+                                                    ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
+                                                    ->where('book_variant_attribute_values.book_variant_id', $item->variant_id)
+                                                    ->select(
+                                                        'attributes.name as attr_name', 
+                                                        'attribute_values.value as attr_value',
+                                                        DB::raw("'{$variantInfo->extra_price}' as extra_price"),
+                                                        DB::raw("'{$variantInfo->stock}' as stock"),
+                                                        DB::raw("'{$variantInfo->sku}' as sku")
+                                                    )->get();
+                                            }
+                                            
+                                            $attributes = $variantAttributes;
+                                        @endphp
+                                    @elseif($item->attribute_value_ids && $item->attribute_value_ids !== '[]')
+                                        {{-- Legacy system - lấy thông tin từ book_attribute_values --}}
                                         @php
                                             $attributeIds = json_decode($item->attribute_value_ids, true);
-                                            $attributes = collect();
-                                            // Use the already calculated $attributeExtraPrice
                                             if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
                                                 $query = DB::table('attribute_values')
                                                     ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
@@ -406,8 +437,10 @@
                                                 )->get();
                                             }
                                         @endphp
-                                        @if($attributes->count() > 0)
-                                            <div class="bg-gray-50 p-3 border-l-4 border-gray-400 mb-4">
+                                    @endif
+
+                                    @if($attributes->count() > 0)
+                                        <div class="bg-gray-50 p-3 border-l-4 border-gray-400 mb-4">
                                                 <div class="text-xs text-gray-500 uppercase tracking-wide font-bold mb-2">
                                                     <i class="fas fa-tags"></i> 
                                                     @if($isEbook)
@@ -473,7 +506,6 @@
                                                 </div>
                                             </div>
                                         @endif
-                                    @endif
                                     
                                     {{-- Gifts - Chỉ hiển thị cho sách vật lý --}}
                                     @if(!$isEbook && isset($item->gifts) && count($item->gifts) > 0)

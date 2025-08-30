@@ -4282,8 +4282,13 @@
                         book_format_id: bookFormatId
                     };
 
-                    // Only add attributes for physical books
-                    if (!isEbook) {
+                    // Check if new variant system is available
+                    const variantSelect = document.getElementById('variantCombinationSelect');
+                    if (variantSelect && variantSelect.value) {
+                        // Use new variant system - send variant_id
+                        requestData.variant_id = variantSelect.value;
+                    } else if (!isEbook) {
+                        // Use legacy system - send attribute_value_ids for physical books only
                         requestData.attribute_value_ids = JSON.stringify(attributeValueIds);
                         requestData.attributes = attributes;
                     }
