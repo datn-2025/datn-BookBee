@@ -304,6 +304,26 @@
                             // Price is already calculated with attribute extra price in the database/controller
                             // No need to add extra_price again as it causes duplicate pricing
                             $isEbook = isset($item->format_name) && (stripos($item->format_name, 'ebook') !== false);
+                            
+                            // Calculate current stock based on variant system
+                            $itemCurrentStock = 0;
+                            if (!empty($item->variant_id)) {
+                                // Get variant stock
+                                $variantInfo = DB::table('book_variants')->where('id', $item->variant_id)->first();
+                                $itemCurrentStock = $variantInfo ? (int)$variantInfo->stock : 0;
+                            } elseif (!empty($item->attribute_value_ids) && $item->attribute_value_ids !== '[]') {
+                                // Get legacy attribute combination stock
+                                $attributeIds = json_decode($item->attribute_value_ids, true);
+                                if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
+                                    $legacyStockQuery = DB::table('book_attribute_values')
+                                        ->whereIn('attribute_value_id', $attributeIds)
+                                        ->where('book_id', $item->book_id);
+                                    $itemCurrentStock = $legacyStockQuery->min('stock') ?: 0;
+                                }
+                            } else {
+                                // Use base book stock
+                                $itemCurrentStock = (int)($item->stock ?? 0);
+                            }
                         @endphp
                         
                         {{-- Individual Book Item --}}
@@ -317,7 +337,7 @@
                              data-base-price="{{ $item->original_price ?? $item->price }}"
                              data-discount="{{ $item->discount ?? 0 }}"
                              data-extra-price="0"
-                             data-stock="{{ $item->stock ?? 0 }}"
+                             data-stock="{{ $itemCurrentStock }}"
                              data-format-name="{{ $item->format_name ?? '' }}"
                              data-is-combo="false">
                             
@@ -378,6 +398,12 @@
                                     @php
                                         $attributes = collect();
                                         $isEbook = isset($item->format_name) && (stripos($item->format_name, 'ebook') !== false);
+                                        
+                                        // Calculate current stock for this specific item based on variant system
+                                        $currentItemStock = 0;
+                                        $variantStock = 0;
+                                        $legacyStock = 0;
+                                        $baseBookStock = 0;
                                     @endphp
 
                                     @if(!empty($item->variant_id))
@@ -391,6 +417,8 @@
                                             // Get variant attribute values
                                             $variantAttributes = collect();
                                             if ($variantInfo) {
+                                                $variantStock = (int) $variantInfo->stock;
+                                                $currentItemStock = $variantStock; // Set stock for this item
                                                 $variantAttributes = DB::table('book_variant_attribute_values')
                                                     ->join('attribute_values', 'book_variant_attribute_values.attribute_value_id', '=', 'attribute_values.id')
                                                     ->join('attributes', 'attribute_values.attribute_id', '=', 'attributes.id')
@@ -435,7 +463,17 @@
                                                     'book_attribute_values.stock',
                                                     'book_attribute_values.sku'
                                                 )->get();
+                                                
+                                                // Get the minimum stock from all selected attributes
+                                                $legacyStock = $attributes->min('stock') ?: 0;
+                                                $currentItemStock = $legacyStock; // Set stock for this item
                                             }
+                                        @endphp
+                                    @else
+                                        @php
+                                            // No variants or attributes - use base book stock
+                                            $baseBookStock = (int) ($item->stock ?? 0);
+                                            $currentItemStock = $baseBookStock; // Set stock for this item
                                         @endphp
                                     @endif
 
@@ -594,25 +632,52 @@
                                                            class="w-16 h-10 text-center border-t-2 border-b-2 border-black text-black font-bold quantity-input" 
                                                            value="{{ $item->quantity }}" 
                                                            min="1" 
-                                                           max="{{ $item->stock ?? 1 }}" 
+                                                           max="{{ $currentItemStock }}" 
                                                            data-cart-id="{{ $item->id }}"
                                                            data-book-id="{{ $item->book_id }}" 
                                                            data-last-value="{{ $item->quantity }}"
+                                                           data-variant-stock="{{ $currentItemStock }}"
                                                            data-is-combo="false">
                                                     <button type="button" 
                                                             class="w-10 h-10 bg-black text-white hover:bg-gray-800 transition-colors duration-200 increase-quantity" 
                                                             data-action="increase" 
-                                                            {{ $item->quantity >= ($item->stock ?? 1) ? 'disabled' : '' }}>
+                                                            {{ $item->quantity >= $currentItemStock ? 'disabled' : '' }}>
                                                         <i class="fas fa-plus"></i>
                                                     </button>
                                                 </div>
-                                                <div class="text-xs text-gray-500 mt-1">
-                                                    @if($item->stock && $item->quantity >= $item->stock)
-                                                        <span class="text-red-600"><i class="fas fa-exclamation-triangle"></i> Đã đạt tối đa</span>
-                                                    @elseif($item->stock)
-                                                        <span><i class="fas fa-boxes"></i> Còn {{ $item->stock }} sản phẩm</span>
+                                                
+                                                <div class="text-xs mt-1">
+                                                    @if($currentItemStock <= 0)
+                                                        <span class="text-red-600 font-bold bg-red-50 px-2 py-1 rounded">
+                                                            <i class="fas fa-exclamation-triangle"></i> Hết hàng
+                                                        </span>
+                                                    @elseif($item->quantity >= $currentItemStock)
+                                                        <span class="text-orange-600 font-bold bg-orange-50 px-2 py-1 rounded">
+                                                            <i class="fas fa-exclamation-triangle"></i> Đã đạt tối đa
+                                                        </span>
+                                                    @elseif($currentItemStock <= 5)
+                                                        <span class="text-yellow-600 font-bold bg-yellow-50 px-2 py-1 rounded">
+                                                            <i class="fas fa-exclamation-circle"></i> Chỉ còn {{ $currentItemStock }} sản phẩm
+                                                        </span>
                                                     @else
-                                                        <span class="text-orange-600"><i class="fas fa-question-circle"></i> Kiểm tra tồn kho</span>
+                                                        <span class="text-green-600 bg-green-50 px-2 py-1 rounded">
+                                                            <i class="fas fa-boxes"></i> Còn {{ $currentItemStock }} sản phẩm
+                                                        </span>
+                                                    @endif
+                                                    
+                                                    {{-- Show variant-specific info if applicable --}}
+                                                    @if (!empty($item->variant_id))
+                                                        <div class="text-xs text-blue-600 mt-1">
+                                                            <i class="fas fa-layer-group"></i> Biến thể cụ thể (Stock: {{ $currentItemStock }})
+                                                        </div>
+                                                    @elseif (!empty($item->attribute_value_ids) && $item->attribute_value_ids !== '[]')
+                                                        <div class="text-xs text-blue-600 mt-1">
+                                                            <i class="fas fa-tags"></i> Tổ hợp thuộc tính (Stock: {{ $currentItemStock }})
+                                                        </div>
+                                                    @else
+                                                        <div class="text-xs text-blue-600 mt-1">
+                                                            <i class="fas fa-book"></i> Sách cơ bản (Stock: {{ $currentItemStock }})
+                                                        </div>
                                                     @endif
                                                 </div>
                                             @endif
@@ -753,6 +818,7 @@
     <script src="{{ asset('js/cart/cart_products.js') }}"></script>
     <script src="{{ asset('js/cart/cart.js') }}"></script>
     <script src="{{ asset('js/cart/cart_stock_validation.js') }}"></script>
+    <script src="{{ asset('js/cart/cart_variant_stock_fix.js') }}"></script>
     {{-- <script src="{{ asset('js/cart/cart_voucher.js') }}"></script>
     <script src="{{ asset('js/cart/cart_enhanced_ux.js') }}"></script>
     <script src="{{ asset('js/cart/cart_smart_ux.js') }}"></script> --}}

@@ -2132,7 +2132,22 @@ class CartController extends Controller
                         }
 
                         // Thêm extra price từ biến thể nếu có (chỉ cho sách vật lý)
-                        if ($cartItem->attribute_value_ids && $cartItem->attribute_value_ids !== '[]') {
+                        // Priority: New variant system (variant_id) > Legacy system (attribute_value_ids)
+                        if (!empty($cartItem->variant_id)) {
+                            // NEW SYSTEM: Sử dụng book_variants table
+                            $variantInfo = DB::table('book_variants')
+                                ->where('id', $cartItem->variant_id)
+                                ->first();
+                            
+                            if ($variantInfo) {
+                                // Check if this is a physical book (not ebook)
+                                $isEbook = $bookFormat->format_name && stripos($bookFormat->format_name, 'ebook') !== false;
+                                if (!$isEbook) {
+                                    $finalPrice += $variantInfo->extra_price;
+                                }
+                            }
+                        } elseif ($cartItem->attribute_value_ids && $cartItem->attribute_value_ids !== '[]') {
+                            // LEGACY SYSTEM: Sử dụng book_attribute_values table
                             $attributeIds = json_decode($cartItem->attribute_value_ids, true);
                             if ($attributeIds && is_array($attributeIds)) {
                                 // Kiểm tra xem có phải ebook không
