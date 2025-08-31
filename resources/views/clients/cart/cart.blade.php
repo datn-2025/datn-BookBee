@@ -377,6 +377,10 @@
                                         </h3>
                                         <button class="text-red-600 hover:text-red-800 p-2 cart-product-remove" 
                                                 data-book-id="{{ $item->book_id }}" 
+                                                data-cart-id="{{ $item->id }}"
+                                                data-book-format-id="{{ $item->book_format_id }}"
+                                                data-attribute-value-ids="{{ $item->attribute_value_ids }}"
+                                                data-variant-id="{{ $item->variant_id ?? '' }}"
                                                 data-is-combo="false" 
                                                 title="Xóa sản phẩm">
                                             <i class="fas fa-trash text-lg"></i>

@@ -1674,29 +1674,71 @@ class CartController extends Controller
                 $bookId = $request->book_id;
                 $bookFormatId = $request->book_format_id;
                 $attributeValueIds = $request->attribute_value_ids;
+                $cartId = $request->cart_id; // Priority: use cart_id if available
+                $variantId = $request->variant_id; // Support new variant system
 
-                if (!$bookId) {
+                if (!$bookId && !$cartId) {
                     return response()->json(['error' => 'Thiếu thông tin sách để xóa.'], 400);
                 }
 
+                Log::info('Removing book from cart:', [
+                    'user_id' => Auth::id(),
+                    'cart_id' => $cartId,
+                    'book_id' => $bookId,
+                    'book_format_id' => $bookFormatId,
+                    'variant_id' => $variantId,
+                    'attribute_value_ids' => $attributeValueIds
+                ]);
+
                 $query = DB::table('carts')
                     ->where('user_id', Auth::id())
-                    ->where('book_id', $bookId)
                     ->where('is_combo', false);
 
-                if ($bookFormatId) {
-                    $query->where('book_format_id', $bookFormatId);
+                if ($cartId) {
+                    // MOST RELIABLE: Use cart_id to delete specific cart item
+                    $query->where('id', $cartId);
+                    Log::info('Using cart_id for deletion', ['cart_id' => $cartId]);
+                } else {
+                    // FALLBACK: Use book info to find cart item
+                    $query->where('book_id', $bookId);
+                    
+                    if ($bookFormatId) {
+                        $query->where('book_format_id', $bookFormatId);
+                    }
+
+                    // Support both new variant system and legacy system
+                    if ($variantId) {
+                        // NEW SYSTEM: Match by variant_id
+                        $query->where('variant_id', $variantId);
+                        Log::info('Using variant_id for deletion', ['variant_id' => $variantId]);
+                    } elseif ($attributeValueIds) {
+                        // LEGACY SYSTEM: Match by attribute_value_ids
+                        $query->whereNull('variant_id'); // Ensure no variant_id for legacy items
+                        
+                        if (is_string($attributeValueIds)) {
+                            $attributeValueIdsArray = json_decode($attributeValueIds, true);
+                        } else {
+                            $attributeValueIdsArray = $attributeValueIds;
+                        }
+                        
+                        if (is_array($attributeValueIdsArray) && !empty($attributeValueIdsArray)) {
+                            // Use JSON comparison for exact match
+                            $query->where('attribute_value_ids', json_encode($attributeValueIdsArray));
+                            Log::info('Using attribute_value_ids for deletion', [
+                                'attribute_value_ids' => $attributeValueIdsArray
+                            ]);
+                        }
+                    } else {
+                        // No variants: match items without variant_id and without attribute_value_ids
+                        $query->whereNull('variant_id')
+                              ->where(function($q) {
+                                  $q->whereNull('attribute_value_ids')
+                                    ->orWhere('attribute_value_ids', '[]')
+                                    ->orWhere('attribute_value_ids', '');
+                              });
+                        Log::info('Deleting non-variant book');
+                    }
                 }
-                // TẠM THỜI BỎ QUA attribute_value_ids để đảm bảo xóa được sản phẩm
-                // Nếu muốn kiểm tra sâu hơn, sẽ bổ sung logic so sánh sau
-                // if ($attributeValueIds) {
-                //     if (is_string($attributeValueIds)) {
-                //         $attributeValueIdsArray = json_decode($attributeValueIds, true);
-                //     } else {
-                //         $attributeValueIdsArray = $attributeValueIds;
-                //     }
-                //     $query->whereJsonContains('attribute_value_ids', $attributeValueIdsArray);
-                // }
 
                 $deletedCount = $query->delete();
 

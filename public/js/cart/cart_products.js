@@ -89,16 +89,22 @@ const CartProducts = {
             };
         } else {
             // Xóa sách riêng lẻ - lấy dữ liệu từ cart item hoặc button
+            const cartId = cartItem.dataset.cartId || cartItem.getAttribute('data-cart-id') || null;
             const bookFormatId = cartItem.dataset.bookFormatId || cartItem.getAttribute('data-book-format-id') || null;
             const attributeValueIds = cartItem.dataset.attributeValueIds || cartItem.getAttribute('data-attribute-value-ids') || null;
+            const variantId = cartItem.dataset.variantId || cartItem.getAttribute('data-variant-id') || null;
 
             requestData = {
                 book_id: bookId,
                 book_format_id: bookFormatId,
                 attribute_value_ids: attributeValueIds,
+                cart_id: cartId, // Add cart_id for most reliable deletion
+                variant_id: variantId, // Add variant_id support for new system
                 is_combo: false,
                 _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             };
+            
+            console.log('Remove item request data:', requestData);
         }
 
         // Gửi yêu cầu AJAX
