@@ -107,9 +107,58 @@ class HomeController extends Controller
             'reviews' => function($query) {
                 $query->whereIn('status', ['approved', 'visible'])->with('user');
             },
-            'attributeValues.attribute', // Thuộc tính cũ (legacy)
-            'variants.attributeValues.attribute' // Biến thể mới
+            'bookAttributeValues.attributeValue.attribute', // Legacy system
+            'variants.attributeValues.attribute' // New variants system
         ])->where('slug', $slug)->firstOrFail();
+
+        // Tạo danh sách tổ hợp biến thể theo logic của CartController
+        $variantCombinations = [];
+        
+        // Kiểm tra hệ thống biến thể theo logic Cart
+        $hasLegacyAttributes = $book->bookAttributeValues && $book->bookAttributeValues->count() > 0;
+        $hasNewVariants = $book->variants && $book->variants->count() > 0;
+        $hasAnyVariants = $hasLegacyAttributes || $hasNewVariants;
+
+        if ($hasNewVariants) {
+            // Hệ thống mới - mỗi variant là 1 tổ hợp hoàn chỉnh (ưu tiên)
+            foreach ($book->variants as $variant) {
+                $attributeLabels = [];
+                $attributeValueIds = [];
+                foreach ($variant->attributeValues as $attributeValue) {
+                    $attrName = $attributeValue->attribute->name ?? 'Unknown';
+                    $attributeLabels[] = $attrName . ': ' . $attributeValue->value;
+                    $attributeValueIds[] = $attributeValue->id;
+                }
+
+                $variantCombinations[] = [
+                    'id' => $variant->id,
+                    'variant_id' => $variant->id, // Thêm variant_id để tương thích với CartController
+                    'label' => implode(' | ', $attributeLabels),
+                    'attribute_value_ids' => $attributeValueIds,
+                    'extra_price' => $variant->extra_price ?? 0,
+                    'stock' => $variant->stock ?? 0,
+                    'sku' => $variant->sku ?? '',
+                    'type' => 'new_variant'
+                ];
+            }
+        } elseif ($hasLegacyAttributes) {
+            // Hệ thống cũ - tạo tổ hợp từ legacy system
+            foreach ($book->bookAttributeValues as $bookAttrValue) {
+                $attrValue = $bookAttrValue->attributeValue;
+                $attrName = $attrValue->attribute->name ?? 'Unknown';
+
+                $variantCombinations[] = [
+                    'id' => $bookAttrValue->id,
+                    'variant_id' => null, // Không có variant_id cho hệ thống cũ
+                    'label' => $attrName . ': ' . $attrValue->value,
+                    'attribute_value_ids' => [$attrValue->id],
+                    'extra_price' => $bookAttrValue->extra_price ?? 0,
+                    'stock' => $bookAttrValue->stock ?? 0,
+                    'sku' => $bookAttrValue->sku ?? '',
+                    'type' => 'legacy'
+                ];
+            }
+        }
 
         $relatedBooks = Book::where('category_id', $book->category_id)
             ->where('id', '!=', $book->id)
@@ -133,7 +182,7 @@ class HomeController extends Controller
         // Thêm payment methods để tránh lỗi undefined variable
         $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)->get();
         
-        return view('clients.show', compact('book', 'relatedBooks', 'shareButtons', 'bookGifts', 'paymentMethods'));
+        return view('clients.show', compact('book', 'relatedBooks', 'shareButtons', 'bookGifts', 'paymentMethods', 'variantCombinations'));
     }
 
     /**
