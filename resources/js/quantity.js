@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const quantityGroup = quantityInput?.closest('.mt-4.flex');
     const attributeGroups = document.querySelectorAll('[id^="attribute_"]');
 
-    // 🎯 HELPER FUNCTION: Lấy stock hiện tại từ biến thể đã chọn
+    // 🎯 HELPER FUNCTION: Lấy stock hiện tại từ biến thể đã chọn (để control quantity)
     function getCurrentVariantStock() {
         const selectedVariantRadio = document.querySelector('input[name="selected_variant"]:checked');
         if (selectedVariantRadio && selectedVariantRadio.dataset.stock) {
@@ -71,6 +71,28 @@ document.addEventListener('DOMContentLoaded', function () {
         // Fallback về stock của format nếu không có biến thể
         const selectedOption = formatSelect?.selectedOptions?.[0];
         return parseInt(selectedOption?.getAttribute('data-stock')) || 0;
+    }
+
+    // 🏪 HELPER FUNCTION: Tính tổng stock của tất cả biến thể (để hiển thị)
+    function getTotalVariantsStock() {
+        const variantRadios = document.querySelectorAll('input[name="selected_variant"]');
+        let totalStock = 0;
+        
+        variantRadios.forEach(radio => {
+            const variantStock = parseInt(radio.dataset.stock) || 0;
+            if (variantStock > 0) { // Chỉ cộng những biến thể còn hàng
+                totalStock += variantStock;
+            }
+        });
+        
+        // Nếu không có biến thể, fallback về stock của format
+        if (variantRadios.length === 0) {
+            const selectedOption = formatSelect?.selectedOptions?.[0];
+            totalStock = parseInt(selectedOption?.getAttribute('data-stock')) || 0;
+        }
+        
+        console.log('🏪 quantity.js: Total variants stock:', totalStock);
+        return totalStock;
     }
 
     function updatePriceAndStock() {
@@ -175,10 +197,15 @@ document.addEventListener('DOMContentLoaded', function () {
         stockDot.className = 'w-2 h-2 rounded-full mr-2 inline-block ' + dotClass;
         stockText.textContent = statusText;
 
-        // Số lượng còn lại
+        // Số lượng còn lại - HIỂN THỊ TỔNG STOCK CỦA TẤT CẢ BIẾN THỂ
+        const totalStock = getTotalVariantsStock();
         if ((effectiveStock > 0 || isEbook) && effectiveStock !== -1 && effectiveStock !== -2) {
             stockQuantityDisplay.style.display = '';
-            if (productQuantity) productQuantity.textContent = effectiveStock;
+            if (productQuantity) {
+                // 🏪 HIỂN THỊ TỔNG STOCK GIỐNG ADMIN
+                productQuantity.textContent = totalStock;
+                console.log('🏪 quantity.js: Displaying total stock:', totalStock, 'while controlling with variant stock:', effectiveStock);
+            }
         } else {
             stockQuantityDisplay.style.display = 'none';
         }
@@ -253,8 +280,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            // 🎯 CẬP NHẬT LOGIC DỰA VÀO STOCK CỦA BIẾN THỂ
-            productQuantityDisplay.textContent = effectiveStock > 0 ? effectiveStock : 0;
+            // 🎯 CẬP NHẬT LOGIC DỰA VÀO STOCK CỦA BIẾN THỂ (cho controls) và TỔNG STOCK (cho hiển thị)
+            const totalStock = getTotalVariantsStock();
+            productQuantityDisplay.textContent = totalStock > 0 ? totalStock : 0;
+            
+            // ⚠️ QUAN TRỌNG: quantityInput.max vẫn dựa vào effectiveStock để control đúng
             quantityInput.max = effectiveStock;
             if (parseInt(quantityInput.value) > effectiveStock) {
                 quantityInput.value = effectiveStock > 0 ? 1 : 0;
@@ -282,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function () {
             stockDisplay.textContent = outOfStock ? 'Hết hàng' : 'Còn hàng';
             stockDisplay.className = `font-bold px-3 py-1.5 rounded text-white ${outOfStock ? 'bg-gray-900' : 'bg-green-500'}`;
             
-            console.log('📚 quantity.js: Updated quantity controls for variant stock:', effectiveStock);
+            console.log('📚 quantity.js: Updated quantity controls - Total display:', totalStock, ', Variant control:', effectiveStock);
         }
 
         // 🔄 ĐỒNG BỘ: Trigger custom event để thông báo cho các script khác
