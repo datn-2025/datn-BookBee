@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const swiperMap={}; // lưu instance swiper
 
+    // Chỉ khởi tạo swiper nếu có element .categorySwiper
     document.querySelectorAll('.categorySwiper').forEach(swiperEl => {
         const parent = swiperEl.closest('.tab-content');
         const tabId = parent?.id ;
@@ -41,7 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         swiperMap[tabId] = swiperInstance; // lưu instance swiper vào map
     });
-     // ✅ Hàm cập nhật nút điều hướng
+     
+    // ✅ Hàm cập nhật nút điều hướng (chỉ cho swiper)
     function updateNavButtons(swiper, parent) {
         const prev = parent.querySelector('.swiper-prev');
         const next = parent.querySelector('.swiper-next');
@@ -49,33 +51,53 @@ document.addEventListener('DOMContentLoaded', () => {
         prev?.classList.toggle('hidden', swiper.isBeginning);
         next?.classList.toggle('hidden', swiper.isEnd);
     }
-    // ✅ Tab switching
+    
+    // ✅ Tab switching - hoạt động cho cả grid layout và swiper
     const buttons = document.querySelectorAll('.tab-button');
     const contents = document.querySelectorAll('.tab-content');
 
-    buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tab = btn.dataset.tab;
-            const tabId = `tab-${tab}`;
+    if (buttons.length > 0 && contents.length > 0) {
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab; // data-tab đã có format "tab-{id}" rồi
+                console.log('Switching to tab:', tabId); // Debug log
 
-            contents.forEach(c => c.classList.add('hidden'));
-            const activeTab = document.getElementById(tabId);
-            activeTab.classList.remove('hidden');
+                // Hide all tab contents
+                contents.forEach(c => {
+                    c.classList.add('hidden');
+                    c.classList.remove('block');
+                });
+                
+                // Show active tab
+                const activeTab = document.getElementById(tabId);
+                if (activeTab) {
+                    activeTab.classList.remove('hidden');
+                    activeTab.classList.add('block');
+                    console.log('Active tab found and shown:', tabId); // Debug log
+                } else {
+                    console.error('Tab not found:', tabId); // Debug log
+                }
 
-            // buttons.forEach(b => b.classList.remove('bg-black', 'text-white'));
-            // btn.classList.add('bg-black', 'text-white');
+                // Update button styles
+                buttons.forEach(b => {
+                    b.classList.remove('bg-amber-600', 'text-white');
+                    b.classList.add('bg-gray-100', 'text-black', 'hover:bg-gray-200');
+                });
+                btn.classList.remove('bg-gray-100', 'text-black', 'hover:bg-gray-200');
+                btn.classList.add('bg-amber-600', 'text-white');
 
-            // ✅ Reset slide về đầu khi chuyển tab
-            const swiper = swiperMap[tabId];
-            if(swiper){
-                swiper.slideTo(0); // Trở về slide đầu tiên
-                setTimeout(()=>{
-                    swiper.update();
-                    swiper.navigation.update();
-                    swiper.scrollbar?.updateSize();
-                    updateNavButtons(swiper, activeTab);
-                },100);
-            }
+                // ✅ Reset slide về đầu khi chuyển tab (chỉ nếu có swiper)
+                const swiper = swiperMap[tabId]; // tabId đã đúng format rồi
+                if(swiper){
+                    swiper.slideTo(0); // Trở về slide đầu tiên
+                    setTimeout(()=>{
+                        swiper.update();
+                        swiper.navigation.update();
+                        swiper.scrollbar?.updateSize();
+                        updateNavButtons(swiper, activeTab);
+                    },100);
+                }
+            });
         });
-    });
+    }
 });
