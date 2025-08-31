@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Khởi tạo trạng thái đúng khi load trang
         comboInput.dispatchEvent(new Event('input'));
     }
-    const formatSelect = document.getElementById('bookFormatSelect');
+    const formatSelect = document.getElementById('bookFormatSelect'); // ✅ FIXED: Use correct ID
     const priceDisplay = document.getElementById('bookPrice');
     const originalPriceElement = document.getElementById('originalPrice');
     const stockDisplay = document.getElementById('bookStock');
@@ -69,10 +69,12 @@ document.addEventListener('DOMContentLoaded', function () {
         let isEbook = selectedOption?.textContent?.toLowerCase().includes('ebook');
 
         let totalExtra = 0;
-        document.querySelectorAll('select[id^="attribute_"]').forEach(select => {
-            const extra = parseFloat(select.selectedOptions?.[0]?.getAttribute('data-price')) || 0;
+        // Updated to work with new variant combination system - using radio buttons
+        const selectedVariantRadio = document.querySelector('input[name="selected_variant"]:checked');
+        if (selectedVariantRadio && selectedVariantRadio.value) {
+            const extra = parseFloat(selectedVariantRadio.dataset.extraPrice) || 0;
             totalExtra += extra;
-        });
+        }
 
         const totalBase = basePrice + totalExtra;
 
@@ -156,16 +158,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Ẩn input số lượng nếu là ebook hoặc kiểm tra trạng thái không khả dụng cho ebook
         if (isEbook) {
+            console.log('📱 quantity.js: Processing EBOOK format');
             const isUnavailable = stock === -1 || stock === -2; // Sắp ra mắt (-1) hoặc Ngừng kinh doanh (-2)
             if (quantityGroup) quantityGroup.style.display = 'none';
             quantityInput.value = 1;
             quantityInput.disabled = true;
 
-            // Ẩn tất cả attribute group (biến thể) trừ thuộc tính ngôn ngữ (nếu có)
+            // Ẩn bookAttributesGroup (hệ thống biến thể mới) cho ebook
+            const bookAttributesGroup = document.getElementById('bookAttributesGroup');
+            if (bookAttributesGroup) {
+                console.log('🔴 quantity.js: Hiding bookAttributesGroup for ebook');
+                bookAttributesGroup.style.display = 'none';
+            }
+
+            // Ẩn tất cả attribute group (hệ thống cũ) trừ thuộc tính ngôn ngữ (nếu có)
             attributeGroups.forEach(select => {
-                const label = document.querySelector(`label[for="${select.id}"]`);
-                const isLanguage = label?.textContent.toLowerCase().includes('ngôn ngữ');
-                select.closest('.col-span-1').style.display = isLanguage ? 'block' : 'none';
+                const attributeItem = select.closest('.attribute-item');
+                if (attributeItem) {
+                    const label = attributeItem.querySelector('label');
+                    const isLanguage = label?.textContent.toLowerCase().includes('ngôn ngữ');
+                    attributeItem.style.display = isLanguage ? 'block' : 'none';
+                }
             });
 
             productQuantityDisplay.textContent = 'Không giới hạn';
@@ -177,12 +190,40 @@ document.addEventListener('DOMContentLoaded', function () {
             incrementBtn.disabled = true;
             decrementBtn.disabled = true;
         } else {
+            console.log('📚 quantity.js: Processing PHYSICAL book format');
             if (quantityGroup) quantityGroup.style.display = 'flex';
             quantityInput.disabled = false;
 
-            // LUÔN hiện lại tất cả thuộc tính (biến thể) khi là sách vật lý
+            // Hiện lại bookAttributesGroup (hệ thống biến thể mới) cho sách vật lý
+            const bookAttributesGroup = document.getElementById('bookAttributesGroup');
+            if (bookAttributesGroup) {
+                // 🔄 CẢI THIỆN: Kiểm tra xem có bị ẩn bởi server hay không
+                const serverStyle = bookAttributesGroup.getAttribute('style');
+                const isHiddenByServer = serverStyle && serverStyle.includes('display: none') && !serverStyle.includes('display:none');
+                const isCurrentlyHidden = bookAttributesGroup.style.display === 'none';
+                
+                console.log('📚 quantity.js: Physical book attributes check:', {
+                    serverStyle: serverStyle,
+                    isHiddenByServer: isHiddenByServer,
+                    isCurrentlyHidden: isCurrentlyHidden,
+                    shouldShow: !isHiddenByServer
+                });
+                
+                // Chỉ hiện lại nếu không bị server ẩn, hoặc đang ẩn do ebook trước đó
+                if (!isHiddenByServer) {
+                    console.log('✅ quantity.js: Showing bookAttributesGroup for physical book');
+                    bookAttributesGroup.style.display = 'block';
+                } else {
+                    console.log('❌ quantity.js: Attributes hidden by server for physical book');
+                }
+            }
+
+            // LUÔN hiện lại tất cả thuộc tính (biến thể cũ) khi là sách vật lý
             attributeGroups.forEach(select => {
-                select.closest('.col-span-1').style.display = '';
+                const attributeItem = select.closest('.attribute-item');
+                if (attributeItem) {
+                    attributeItem.style.display = '';
+                }
             });
 
             productQuantityDisplay.textContent = stock > 0 ? stock : 0;
@@ -211,6 +252,15 @@ document.addEventListener('DOMContentLoaded', function () {
             stockDisplay.textContent = outOfStock ? 'Hết hàng' : 'Còn hàng';
             stockDisplay.className = `font-bold px-3 py-1.5 rounded text-white ${outOfStock ? 'bg-gray-900' : 'bg-green-500'}`;
         }
+
+        // 🔄 ĐỒNG BỘ: Trigger custom event để thông báo cho các script khác
+        setTimeout(() => {
+            const formatChangeEvent = new CustomEvent('quantityJsFormatProcessed', {
+                detail: { isEbook, stock, formatSelect }
+            });
+            document.dispatchEvent(formatChangeEvent);
+            console.log('🔄 quantity.js: Dispatched quantityJsFormatProcessed event', { isEbook, stock });
+        }, 10);
     }
 
     incrementBtn?.addEventListener('click', () => {
@@ -239,8 +289,20 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     formatSelect?.addEventListener('change', updatePriceAndStock);
-    document.querySelectorAll('select[id^="attribute_"]').forEach(select => {
-        select.addEventListener('change', updatePriceAndStock);
+    // Updated to work with new variant combination system - using radio buttons
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('input[name="selected_variant"]')) {
+            updatePriceAndStock();
+            
+            // Add visual feedback for selection
+            const card = e.target.closest('.variant-option-card');
+            if (card) {
+                card.classList.add('selecting');
+                setTimeout(() => {
+                    card.classList.remove('selecting');
+                }, 600);
+            }
+        }
     });
 
     updatePriceAndStock();
