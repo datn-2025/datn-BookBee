@@ -41,11 +41,11 @@
         <div class="right-section">
             <div class="form-container">
                 <h2>Tạo tài khoản</h2>
-                <div class="social-buttons">
+                {{-- <div class="social-buttons">
                     <a href="#" class="social-button google">
                         <i class="fab fa-google"></i>
                     </a>
-                </div>
+                </div> --}}
                 <div class="divider">hoặc sử dụng email để đăng ký</div>
 
                 @if ($errors->any())
