@@ -2383,7 +2383,7 @@
                                         ($book->status === 'Còn Hàng' && $defaultStock > 0) ||
                                         $isEbook
                                     )
-                                    @if(!in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho']))
+                                    @if(!in_array($book->status, ['Ngừng Kinh Doanh', 'Hết Hàng Tồn Kho']))
                                         <span id="stockQuantityDisplay"
                                             class="text-xs sm:text-sm text-gray-600 adidas-font whitespace-nowrap">
                                             (<span class="font-bold text-black" id="productQuantity">{{ $defaultStock }}</span> cuốn
@@ -2395,7 +2395,7 @@
                         </div>
 
                         <!-- Quà tặng kèm - Chỉ hiển thị khi chọn định dạng sách vật lý -->
-                        @if(!in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho']))
+                        @if(!in_array($book->status, ['Ngừng Kinh Doanh', 'Hết Hàng Tồn Kho']))
                             @php
                                 $selectedFormat = $book->formats->first(); // Lấy định dạng mặc định hoặc đầu tiên
 
@@ -2533,7 +2533,7 @@
 
                         <!-- Enhanced Format Selection -->
                         @if ($book->formats->count())
-                            <div class="format-selection space-y-3" @if(in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho'])) style="display: none;" @endif>
+                            <div class="format-selection space-y-3" @if(in_array($book->status, ['Ngừng Kinh Doanh', 'Hết Hàng Tồn Kho'])) style="display: none;" @endif>
                                 <label for="bookFormatSelect"
                                     class="block text-sm font-bold text-black uppercase tracking-wider">Định dạng sách</label>
                                 <div class="relative">
@@ -2641,7 +2641,7 @@
 
                         @if($hasAnyVariants && count($variantCombinations) > 0)
                             @php
-                                $shouldHideByStatus = in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho']);
+                                $shouldHideByStatus = in_array($book->status, ['Ngừng Kinh Doanh', 'Hết Hàng Tồn Kho']);
                             @endphp
                             {{-- Debug info --}}
                             <script>
@@ -2786,7 +2786,7 @@
                         <div class="purchase-section space-y-6 pt-6">
                             @php
                                 // Only hide for special statuses, let JavaScript handle ebook/physical logic
-                                $isSpecialStatus = in_array($book->status, ['Ngừng Kinh Doanh', 'Sắp Ra Mắt', 'Hết Hàng Tồn Kho']);
+                                $isSpecialStatus = in_array($book->status, ['Ngừng Kinh Doanh', 'Hết Hàng Tồn Kho']);
                             @endphp
                             <div class="quantity-section space-y-3" @if($isSpecialStatus) style="display:none" @else
                             style="display:block" @endif>
@@ -5372,16 +5372,17 @@
                 const bookPriceElement = document.getElementById('bookPrice');
                 const bookStatus = bookPriceElement?.dataset.bookStatus || 'Còn Hàng';
                 const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+                const allowSample = selectedOption.getAttribute('data-allow-sample') === '1';
+                const sampleUrl = selectedOption.getAttribute('data-sample-url');
 
                 // Ẩn nút đọc thử nếu sản phẩm có trạng thái không khả dụng
+                // Cho phép Đọc thử đối với Ebook khi "Sắp Ra Mắt"
                 const isUnavailable =
                     bookStatus === 'Ngừng Kinh Doanh' ||
-                    bookStatus === 'Sắp Ra Mắt' ||
                     bookStatus === 'Hết Hàng Tồn Kho' ||
-                    stock === -1 || // Sắp ra mắt  
                     stock === -2;   // Ngừng kinh doanh
 
-                if (isUnavailable) {
+                if (isUnavailable || !allowSample || !sampleUrl) {
                     previewSection.classList.add('hidden');
                 } else {
                     previewSection.classList.remove('hidden');
