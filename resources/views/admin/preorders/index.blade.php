@@ -181,9 +181,9 @@
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">Danh Sách Đơn Đặt Trước</h6>
             <div>
-                <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#bulkUpdateModal">
+                {{-- <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#bulkUpdateModal">
                     <i class="fas fa-edit"></i> Cập nhật hàng loạt
-                </button>
+                </button> --}}
             </div>
         </div>
         <div class="card-body">
