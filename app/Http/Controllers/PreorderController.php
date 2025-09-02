@@ -259,7 +259,7 @@ class PreorderController extends Controller
                     'payment_status' => 'paid',
                 ]);
                 
-                DB::commit();
+                DB::commit(); 
                 
                 // Gửi email xác nhận
                 try {
@@ -476,7 +476,7 @@ class PreorderController extends Controller
             $preorder->update([
                 'vnpay_transaction_id' => $data['order_code'],
                 // Sử dụng giá trị hợp lệ theo enum: pending | paid | failed
-                'payment_status' => 'paid'
+                'payment_status' => 'paid'       
             ]);
         }
         
@@ -484,7 +484,7 @@ class PreorderController extends Controller
         return redirect($vnp_Url);
         
     }
-
+    
     /**
      * Xử lý callback từ VNPay cho preorder
      * STEPS:
