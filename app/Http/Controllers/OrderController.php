@@ -95,8 +95,16 @@ class OrderController extends Controller
             return redirect()->route('cart.index');
         }
 
-        // Lấy chi tiết giỏ hàng
-        $cartItems = $user->cart()->with(['book.images', 'bookFormat', 'collection.books'])->where('is_selected', 1)->get();
+        // Lấy chi tiết giỏ hàng (eager load đầy đủ để hiển thị thuộc tính biến thể)
+        $cartItems = $user->cart()
+            ->with([
+                'book.images',
+                'bookFormat',
+                'collection.books',
+                'variant.attributeValues.attribute'
+            ])
+            ->where('is_selected', 1)
+            ->get();
 
         // Gifts
         foreach ($cartItems as $item) {
@@ -165,7 +173,8 @@ class OrderController extends Controller
         }
 
         $subtotal = $cartItems->sum(function ($item) {
-            return $item->price * $item->quantity;
+            // Sử dụng logic tính tiền chuẩn từ Model Cart (hỗ trợ combo và biến thể)
+            return method_exists($item, 'getTotalPrice') ? $item->getTotalPrice() : ($item->price * $item->quantity);
         });
 
         return view('orders.checkout', compact(

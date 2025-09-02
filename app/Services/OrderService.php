@@ -548,8 +548,8 @@ class OrderService
         // Cập nhật tồn kho từ book_format (không phải từ book)
         $cartItem->bookFormat->decrement('stock', $cartItem->quantity);
         
-        // ✨ THÊM MỚI: Trừ stock thuộc tính sản phẩm
-        $this->decreaseAttributeStock($cartItem);
+        // ✨ Cập nhật: Trừ stock theo biến thể mới (book_variants)
+        $this->decreaseVariantStock($cartItem);
 
         // ✨ THÊM MỚI: Trừ số lượng quà tặng
         $this->decreaseGiftStock($cartItem);
@@ -564,63 +564,51 @@ class OrderService
     }
 
     /**
-     * Trừ stock thuộc tính sản phẩm
+     * Trừ stock biến thể mới khi tạo đơn hàng
      */
-    private function decreaseAttributeStock($cartItem)
+    private function decreaseVariantStock($cartItem)
     {
-        $attributeValueIds = $cartItem->attribute_value_ids ?? [];
-        
-        // Xử lý attribute_value_ids có thể là JSON string hoặc array
-        if (is_string($attributeValueIds) && !empty($attributeValueIds) && $attributeValueIds !== '[]') {
-            $decoded = json_decode($attributeValueIds, true);
-            if (is_array($decoded)) {
-                $attributeValueIds = $decoded;
-            } else {
-                $attributeValueIds = [];
-            }
-        } elseif (!is_array($attributeValueIds)) {
-            $attributeValueIds = [];
+        // Bỏ qua combo và ebook
+        if (isset($cartItem->is_combo) && $cartItem->is_combo) {
+            return;
         }
-        
-        if (!empty($attributeValueIds) && is_array($attributeValueIds)) {
-            foreach ($attributeValueIds as $attributeValueId) {
-                // Kiểm tra attributeValueId hợp lệ (không phải null, empty, hoặc 0)
-                if ($attributeValueId && !empty(trim($attributeValueId)) && $attributeValueId !== '0') {
-                    $bookAttributeValue = BookAttributeValue::where('book_id', $cartItem->book_id)
-                        ->where('attribute_value_id', $attributeValueId)
-                        ->first();
-                    
-                    if ($bookAttributeValue) {
-                        // Kiểm tra stock đủ trước khi trừ
-                        if ($bookAttributeValue->stock >= $cartItem->quantity) {
-                            $bookAttributeValue->decrement('stock', $cartItem->quantity);
-                            
-                            Log::info('Decreased attribute stock:', [
-                                'book_id' => $cartItem->book_id,
-                                'attribute_value_id' => $attributeValueId,
-                                'quantity_decreased' => $cartItem->quantity,
-                                'remaining_stock' => $bookAttributeValue->fresh()->stock
-                            ]);
-                        } else {
-                            Log::warning('Insufficient attribute stock:', [
-                                'book_id' => $cartItem->book_id,
-                                'attribute_value_id' => $attributeValueId,
-                                'available_stock' => $bookAttributeValue->stock,
-                                'requested_quantity' => $cartItem->quantity
-                            ]);
-                            
-                            // Có thể throw exception hoặc xử lý theo business logic
-                            throw new \Exception("Không đủ tồn kho cho thuộc tính sản phẩm (ID: {$attributeValueId})");
-                        }
-                    } else {
-                        Log::warning('BookAttributeValue not found:', [
-                            'book_id' => $cartItem->book_id,
-                            'attribute_value_id' => $attributeValueId
-                        ]);
-                    }
-                }
-            }
+        if ($cartItem->bookFormat && stripos($cartItem->bookFormat->format_name, 'ebook') !== false) {
+            return;
         }
+
+        // Bắt buộc phải có variant_id (đã được validate trước đó)
+        if (empty($cartItem->variant_id)) {
+            throw new \Exception('Thiếu biến thể khi trừ tồn kho.');
+        }
+
+        // Lấy biến thể và trừ stock an toàn
+        $variant = DB::table('book_variants')->where('id', $cartItem->variant_id)->lockForUpdate()->first();
+        if (!$variant) {
+            throw new \Exception('Không tìm thấy biến thể để trừ tồn kho.');
+        }
+
+        if ($variant->stock === null) {
+            // Không giới hạn: không cần trừ
+            Log::info('Variant has null stock, skip decrement', [
+                'variant_id' => $cartItem->variant_id,
+            ]);
+            return;
+        }
+
+        if ((int)$variant->stock < (int)$cartItem->quantity) {
+            throw new \Exception('Tồn kho biến thể không đủ để trừ.');
+        }
+
+        DB::table('book_variants')
+            ->where('id', $cartItem->variant_id)
+            ->decrement('stock', $cartItem->quantity);
+
+        $remaining = DB::table('book_variants')->where('id', $cartItem->variant_id)->value('stock');
+        Log::info('Decreased variant stock:', [
+            'variant_id' => $cartItem->variant_id,
+            'quantity_decreased' => $cartItem->quantity,
+            'remaining_stock' => $remaining
+        ]);
     }
 
     /**
@@ -1059,53 +1047,51 @@ class OrderService
             throw new \Exception('Sách "' . $freshBook->title . '" (định dạng: ' . $freshBookFormat->format_name . ') không đủ số lượng. Còn lại: ' . $formatStock);
         }
 
-        // Step 2: Validate variant stock if item has attributes
+        // Bắt buộc: Sách vật lý phải có biến thể (variant_id) theo hệ biến thể mới
+        if (empty($cartItem->variant_id)) {
+            throw new \Exception('Thiếu biến thể cho sách vật lý "' . $freshBook->title . '". Vui lòng chọn biến thể hợp lệ.');
+        }
+
+        // Step 2: Validate variant stock – ưu tiên hệ biến thể mới
         $availableStock = $formatStock;
-        if (!empty($cartItem->attribute_value_ids) && $cartItem->attribute_value_ids !== '[]') {
-            $attributeValueIds = is_string($cartItem->attribute_value_ids) 
-                ? json_decode($cartItem->attribute_value_ids, true) 
-                : $cartItem->attribute_value_ids;
+        $usedVariantSystem = false;
 
-            if ($attributeValueIds && is_array($attributeValueIds) && count($attributeValueIds) > 0) {
-                $variantStockInfo = DB::table('book_attribute_values')
-                    ->whereIn('attribute_value_id', $attributeValueIds)
-                    ->where('book_id', $cartItem->book_id)
-                    ->select('attribute_value_id', 'stock', 'sku')
-                    ->get();
+        // 2a. New system: variant_id -> book_variants.stock
+        if (!empty($cartItem->variant_id)) {
+            $variant = DB::table('book_variants')
+                ->where('id', $cartItem->variant_id)
+                ->where('book_id', $cartItem->book_id)
+                ->first();
 
-                if ($variantStockInfo->isEmpty()) {
-                    throw new \Exception('Không tìm thấy thông tin tồn kho cho thuộc tính đã chọn của sách "' . $freshBook->title . '".');
-                }
+            if (!$variant) {
+                throw new \Exception('Biến thể không hợp lệ cho sách "' . $freshBook->title . '".');
+            }
 
-                // Check for out of stock variants
-                $outOfStockVariants = $variantStockInfo->filter(function ($variant) {
-                    return $variant->stock <= 0;
-                });
-
-                if ($outOfStockVariants->isNotEmpty()) {
-                    $outOfStockSkus = $outOfStockVariants->pluck('sku')->filter()->implode(', ');
-                    throw new \Exception('Thuộc tính đã hết hàng cho sách "' . $freshBook->title . '": ' . ($outOfStockSkus ?: 'N/A'));
-                }
-
-                // Get minimum variant stock and apply hierarchical logic
-                $minVariantStock = $variantStockInfo->min('stock');
-                $availableStock = min($formatStock, $minVariantStock);
-
-                Log::info('OrderService - Hierarchical stock validation', [
+            if ($variant->stock !== null) {
+                $availableStock = min($formatStock, (int) $variant->stock);
+                Log::info('OrderService - Variant stock (new system) applied', [
                     'book_id' => $cartItem->book_id,
                     'format_stock' => $formatStock,
-                    'min_variant_stock' => $minVariantStock,
+                    'variant_stock' => (int) $variant->stock,
                     'final_available_stock' => $availableStock,
                     'requested_quantity' => $cartItem->quantity
                 ]);
 
-                if ($cartItem->quantity > $minVariantStock) {
-                    $lowStockVariant = $variantStockInfo->where('stock', $minVariantStock)->first();
-                    throw new \Exception('Thuộc tính không đủ số lượng cho sách "' . $freshBook->title . '". Tồn kho hiện tại: ' . $minVariantStock . 
-                        ($lowStockVariant->sku ? " (SKU: {$lowStockVariant->sku})" : ""));
+                if ($cartItem->quantity > (int) $variant->stock) {
+                    throw new \Exception('Biến thể không đủ số lượng cho sách "' . $freshBook->title . '". Tồn kho biến thể: ' . (int) $variant->stock);
                 }
+            } else {
+                // Variant stock null => coi như không giới hạn, dùng stock của format
+                Log::info('OrderService - Variant stock is null (treated as unlimited or fallback to format)', [
+                    'book_id' => $cartItem->book_id,
+                    'format_stock' => $formatStock,
+                    'requested_quantity' => $cartItem->quantity
+                ]);
             }
+            $usedVariantSystem = true;
         }
+
+        // 2b. Legacy flow removed: luôn ưu tiên hệ biến thể mới theo tài liệu.
 
         // Step 3: Validate gift stock if book has gifts
         $this->validateGiftStock($cartItem, $freshBook);
@@ -1228,7 +1214,8 @@ class OrderService
     public function calculateCartSubtotal($cartItems)
     {
         return $cartItems->sum(function ($item) {
-            return $item->price * $item->quantity;
+            // Ưu tiên logic tính tiền chuẩn từ Model Cart (hỗ trợ combo & biến thể)
+            return method_exists($item, 'getTotalPrice') ? $item->getTotalPrice() : ($item->price * $item->quantity);
         });
     }
 
@@ -1523,33 +1510,31 @@ class OrderService
                 'book_status' => $book->status ?? 'Unknown'
             ];
 
-            $isEbook = strtolower($bookFormat->format_name ?? '') === 'ebook';
+            // Ebook: nhận diện linh hoạt theo tên format (ví dụ: Ebook, eBook, EBOOK, ...)
+            $isEbook = stripos($bookFormat->format_name ?? '', 'ebook') !== false;
             if ($isEbook) {
                 $stockInfo['available_stock'] = 'Unlimited (Ebook)';
                 $stockInfo['sufficient'] = true;
             } else {
                 $availableStock = $bookFormat->stock;
-                
-                // Check variant stock if applicable
-                if (!empty($cartItem->attribute_value_ids) && $cartItem->attribute_value_ids !== '[]') {
-                    $attributeValueIds = is_string($cartItem->attribute_value_ids) 
-                        ? json_decode($cartItem->attribute_value_ids, true) 
-                        : $cartItem->attribute_value_ids;
 
-                    if ($attributeValueIds && is_array($attributeValueIds)) {
-                        $variantStocks = DB::table('book_attribute_values')
-                            ->whereIn('attribute_value_id', $attributeValueIds)
-                            ->where('book_id', $cartItem->book_id)
-                            ->pluck('stock', 'sku')
-                            ->toArray();
-                        
-                        $minVariantStock = min($variantStocks);
-                        $availableStock = min($availableStock, $minVariantStock);
-                        
+                // Chỉ dùng hệ biến thể mới nếu có book_variant_id
+                if (!empty($cartItem->book_variant_id)) {
+                    $variant = DB::table('book_variants')
+                        ->where('id', $cartItem->book_variant_id)
+                        ->first();
+                    if ($variant && $variant->stock !== null) {
+                        $availableStock = min($availableStock, (int) $variant->stock);
                         $stockInfo['variant_info'] = [
-                            'variant_stocks' => $variantStocks,
-                            'min_variant_stock' => $minVariantStock,
+                            'variant_id' => $cartItem->book_variant_id,
+                            'variant_stock' => (int) $variant->stock,
                             'hierarchical_stock' => $availableStock
+                        ];
+                    } else {
+                        $stockInfo['variant_info'] = [
+                            'variant_id' => $cartItem->book_variant_id,
+                            'variant_stock' => $variant->stock ?? null,
+                            'note' => 'Biến thể không có stock cụ thể (coi như không giới hạn hoặc dùng stock theo format)'
                         ];
                     }
                 }
