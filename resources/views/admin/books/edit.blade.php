@@ -502,7 +502,7 @@
                                 </label>
                             </div>
                             
-                            <div id="ebook_format" style="display: {{ $ebookFormat ? 'block' : 'none' }};">
+                            <div id="ebook_format" style="display: {{ old('has_ebook', $ebookFormat ? '1' : '') ? 'block' : 'none' }};">
                                 <div class="border rounded p-3 bg-light">
                                     <!-- Thông báo khi bật preorder -->
                                     <div class="alert alert-info preorder-price-notice" style="display: none;">
@@ -564,6 +564,37 @@
                                             </div>
                                             <div class="form-text">Khách hàng có thể đọc thử một phần nội dung sách trước khi mua.</div>
                                         </div>
+
+                                        <!-- Cài đặt DRM (nằm trong phần Ebook) -->
+                                        <div class="col-12 mt-3">
+                                            <div class="border-top pt-3">
+                                                <h6 class="fw-bold text-dark mb-3">
+                                                    <i class="ri-shield-keyhole-line me-2 text-danger"></i>Cài đặt DRM cho Ebook
+                                                </h6>
+                                                <div class="form-check form-switch mb-3">
+                                                    <input class="form-check-input" type="checkbox" id="drm_enabled" name="formats[ebook][drm_enabled]" 
+                                                           value="1" {{ old('formats.ebook.drm_enabled', $ebookFormat->drm_enabled ?? true) ? 'checked' : '' }}>
+                                                    <label class="form-check-label fw-medium" for="drm_enabled">
+                                                        Bật/Tắt DRM (Giới hạn lượt tải)
+                                                    </label>
+                                                </div>
+
+                                                <div id="drm_settings" class="row g-3" style="display: {{ old('formats.ebook.drm_enabled', $ebookFormat->drm_enabled ?? true) ? 'block' : 'none' }};">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-medium">Số lần tải tối đa</label>
+                                                        <input type="number" class="form-control" name="formats[ebook][max_downloads]" 
+                                                               value="{{ old('formats.ebook.max_downloads', $ebookFormat->max_downloads ?? 5) }}" placeholder="5" min="1">
+                                                        <div class="form-text">Số lần người dùng có thể tải ebook.</div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-medium">Số ngày hết hạn tải</label>
+                                                        <input type="number" class="form-control" name="formats[ebook][download_expiry_days]" 
+                                                               value="{{ old('formats.ebook.download_expiry_days', $ebookFormat->download_expiry_days ?? 365) }}" placeholder="365" min="1">
+                                                        <div class="form-text">Thời gian (ngày) link tải có hiệu lực.</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -607,34 +638,7 @@
                             <div id="ebook_file_info" class="mt-2 small text-muted"></div>
                         </div>
                         
-                        <!-- Cài đặt DRM -->
-                        <div class="border-top pt-4 mt-4">
-                            <h6 class="fw-bold text-dark mb-3">
-                                <i class="ri-shield-keyhole-line me-2 text-danger"></i>Cài đặt DRM cho Ebook
-                            </h6>
-                            <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" type="checkbox" id="drm_enabled" name="formats[ebook][drm_enabled]" 
-                                       value="1" {{ old('formats.ebook.drm_enabled', $ebookFormat->drm_enabled ?? true) ? 'checked' : '' }}>
-                                <label class="form-check-label fw-medium" for="drm_enabled">
-                                    Bật/Tắt DRM (Giới hạn lượt tải)
-                                </label>
-                            </div>
-
-                            <div id="drm_settings" class="row g-3" style="display: {{ old('formats.ebook.drm_enabled', $ebookFormat->drm_enabled ?? true) ? 'block' : 'none' }};">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-medium">Số lần tải tối đa</label>
-                                    <input type="number" class="form-control" name="formats[ebook][max_downloads]" 
-                                           value="{{ old('formats.ebook.max_downloads', $ebookFormat->max_downloads ?? 5) }}" placeholder="5" min="1">
-                                    <div class="form-text">Số lần người dùng có thể tải ebook.</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-medium">Số ngày hết hạn tải</label>
-                                    <input type="number" class="form-control" name="formats[ebook][download_expiry_days]" 
-                                           value="{{ old('formats.ebook.download_expiry_days', $ebookFormat->download_expiry_days ?? 365) }}" placeholder="365" min="1">
-                                    <div class="form-text">Thời gian (ngày) link tải có hiệu lực.</div>
-                                </div>
-                            </div>
-                        </div>
+                        
 
                         <!-- Ảnh phụ -->
                         <div>
@@ -888,6 +892,22 @@ $(document).ready(function() {
     // Initial toggle
     toggleFormatSections();
     toggleGiftSection();
+    // Khôi phục thuộc tính & biến thể từ old() nếu có
+    restoreSelectedAttributesFromOld();
+    restoreVariantsFromOld();
+
+    // Toggle DRM settings inside Ebook
+    const drmEnabled = document.getElementById('drm_enabled');
+    const drmSettings = document.getElementById('drm_settings');
+    function toggleDrmSettings() {
+        if (drmEnabled && drmSettings) {
+            drmSettings.style.display = drmEnabled.checked ? 'block' : 'none';
+        }
+    }
+    if (drmEnabled) {
+        drmEnabled.addEventListener('change', toggleDrmSettings);
+        toggleDrmSettings();
+    }
 
     // Image preview
     const coverInput = document.getElementById('cover_image');
@@ -1007,6 +1027,93 @@ $(document).ready(function() {
             .replace(/[^a-zA-Z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '')
             .slice(0, 20);
+    }
+
+    // Khôi phục UI thuộc tính đã chọn từ old('attribute_values')
+    function restoreSelectedAttributesFromOld() {
+        const oldAttributeValues = @json(old('attribute_values', []));
+        if (!oldAttributeValues || Object.keys(oldAttributeValues).length === 0) return;
+        // Xoá chip cũ để tránh trùng (trong trường hợp model đã render)
+        document.querySelectorAll('.selected-variants-container').forEach(c => c.innerHTML = '');
+
+        Object.keys(oldAttributeValues).forEach((valueId) => {
+            const option = document.querySelector(`.attribute-select option[value="${valueId}"]`);
+            if (!option) return;
+            const select = option.closest('select.attribute-select');
+            const attributeGroup = select.closest('.attribute-group');
+            const selectedValuesContainer = attributeGroup.querySelector('.selected-variants-container');
+            if (!selectedValuesContainer) return;
+            const attributeId = select.getAttribute('data-attribute-id');
+            const valueName = option.getAttribute('data-value-name') || option.textContent.trim();
+            // Tạo chip theo đúng style của trang edit
+            const selectedDiv = document.createElement('div');
+            selectedDiv.className = 'selected-attribute-value badge bg-light text-dark border px-2 py-2';
+            selectedDiv.innerHTML = `
+                <i class=\"ri-bookmark-line me-1 text-primary\"></i>${valueName}
+                <button type=\"button\" class=\"btn btn-link p-0 ms-2 align-middle remove-attribute-value\" title=\"Xóa\">
+                    <i class=\"ri-close-line\"></i>
+                </button>
+                <input type=\"hidden\" name=\"attribute_values[${valueId}][id]\" value=\"${valueId}\">
+                <input type=\"hidden\" data-attribute-id=\"${attributeId}\" data-value-id=\"${valueId}\" data-value-name=\"${valueName}\">
+            `;
+            selectedValuesContainer.appendChild(selectedDiv);
+        });
+    }
+
+    // Khôi phục bảng biến thể từ old('variants')
+    function restoreVariantsFromOld() {
+        const oldVariants = @json(old('variants', []));
+        if (!oldVariants || Object.keys(oldVariants).length === 0) return;
+        const tbody = document.getElementById('variants_tbody');
+        const section = document.getElementById('variants_section');
+        if (!tbody || !section) return;
+        tbody.innerHTML = '';
+        section.style.display = '';
+
+        // Dựng map valueId -> {attrName, valueName}
+        const valueInfo = {};
+        document.querySelectorAll('.attribute-group').forEach(group => {
+            const select = group.querySelector('.attribute-select');
+            const attrName = select?.getAttribute('data-attribute-name') || 'Thuộc tính';
+            group.querySelectorAll('option[value]').forEach(opt => {
+                const vid = opt.value;
+                const vname = opt.getAttribute('data-value-name') || opt.textContent.trim();
+                valueInfo[vid] = { attrName, valueName: vname };
+            });
+        });
+
+        Object.keys(oldVariants).forEach((key, idx) => {
+            const variant = oldVariants[key];
+            const ids = variant && variant.attribute_value_ids ? variant.attribute_value_ids : [];
+            const label = (ids || []).map((vid) => {
+                const info = valueInfo[String(vid)] || { attrName: 'Thuộc tính', valueName: '' };
+                return `${info.attrName}: ${info.valueName}`;
+            }).join(' | ');
+            const sku = variant && variant.sku ? variant.sku : '';
+            const extra = variant && (variant.extra_price || variant.extra_price === 0) ? variant.extra_price : 0;
+            const stock = variant && (variant.stock || variant.stock === 0) ? variant.stock : 0;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div class=\"fw-medium\">${label}</div>
+                    ${(ids || []).map(v => `<input type=\"hidden\" name=\"variants[${idx}][attribute_value_ids][]\" value=\"${v}\">`).join('')}
+                </td>
+                <td>
+                    <input type=\"text\" class=\"form-control form-control-sm\" name=\"variants[${idx}][sku]\" value=\"${sku}\">
+                </td>
+                <td>
+                    <input type=\"number\" class=\"form-control form-control-sm\" name=\"variants[${idx}][extra_price]\" value=\"${extra}\">
+                </td>
+                <td>
+                    <input type=\"number\" class=\"form-control form-control-sm\" name=\"variants[${idx}][stock]\" min=\"0\" value=\"${stock}\">
+                </td>
+                <td class=\"text-center\">
+                    <button type=\"button\" class=\"btn btn-sm btn-outline-danger remove-variant-row\"><i class=\"ri-delete-bin-line\"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        updateTotalVariantStock();
     }
 
     function updateTotalVariantStock() {

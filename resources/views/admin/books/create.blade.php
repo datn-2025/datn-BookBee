@@ -943,6 +943,10 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleGiftSection();
     togglePreorderSection();
     
+    // Khôi phục thuộc tính và biến thể từ old() sau khi validate lỗi
+    restoreSelectedAttributesFromOld();
+    restoreVariantsFromOld();
+    
     // Preview images
     const coverInput = document.getElementById('cover_image');
     const imagesInput = document.getElementById('images');
@@ -1194,6 +1198,107 @@ document.addEventListener('DOMContentLoaded', function() {
             .replace(/[^a-zA-Z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '')
             .slice(0, 20);
+    }
+    
+    // Khôi phục UI thuộc tính đã chọn từ old('attribute_values')
+    function restoreSelectedAttributesFromOld() {
+        const oldAttributeValues = @json(old('attribute_values', []));
+        if (!oldAttributeValues || Object.keys(oldAttributeValues).length === 0) return;
+        // Duyệt theo từng valueId đã submit
+        Object.keys(oldAttributeValues).forEach((valueId) => {
+            // Tìm option có value tương ứng để biết nó thuộc attribute nào
+            const option = document.querySelector(`.attribute-select option[value="${valueId}"]`);
+            if (!option) return;
+            const select = option.closest('select.attribute-select');
+            const attributeGroup = select.closest('.attribute-group');
+            const selectedValuesContainer = attributeGroup.querySelector('.selected-variants-container');
+            if (!selectedValuesContainer) return;
+            const attributeId = select.getAttribute('data-attribute-id');
+            const valueName = option.getAttribute('data-value-name') || option.textContent.trim();
+            // Nếu đã có thì bỏ qua tránh trùng
+            const exists = attributeGroup.querySelector(`input[name="attribute_values[${valueId}][id]"]`);
+            if (exists) return;
+            // Tạo chip hiển thị tương tự khi ấn +
+            const selectedDiv = document.createElement('div');
+            selectedDiv.className = 'selected-attribute-value mb-2 p-3 border rounded bg-white shadow-sm';
+            selectedDiv.dataset.attributeId = attributeId;
+            selectedDiv.dataset.valueId = valueId;
+            selectedDiv.dataset.valueName = valueName;
+            selectedDiv.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="fw-medium text-dark mb-1">
+                            <i class="ri-bookmark-line me-1 text-primary"></i>${valueName}
+                        </div>
+                        <div class="small text-muted">
+                            <span class="badge bg-secondary-subtle text-secondary">
+                                <i class="ri-barcode-line me-1"></i>SKU: Tự động tạo
+                            </span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-attribute-value">
+                        <i class="ri-delete-bin-line"></i>
+                    </button>
+                </div>
+                <input type="hidden" name="attribute_values[${valueId}][id]" value="${valueId}">
+            `;
+            selectedValuesContainer.appendChild(selectedDiv);
+        });
+    }
+    
+    // Khôi phục bảng biến thể từ old('variants')
+    function restoreVariantsFromOld() {
+        const oldVariants = @json(old('variants', []));
+        if (!oldVariants || Object.keys(oldVariants).length === 0) return;
+        const tbody = document.getElementById('variants_tbody');
+        const section = document.getElementById('variants_section');
+        if (!tbody || !section) return;
+        tbody.innerHTML = '';
+        section.style.display = '';
+        // Dựng map valueId -> {attrName, valueName}
+        const valueInfo = {};
+        document.querySelectorAll('.attribute-group').forEach(group => {
+            const select = group.querySelector('.attribute-select');
+            const attrName = select?.getAttribute('data-attribute-name') || 'Thuộc tính';
+            group.querySelectorAll('option[value]').forEach(opt => {
+                const vid = opt.value;
+                const vname = opt.getAttribute('data-value-name') || opt.textContent.trim();
+                valueInfo[vid] = { attrName, valueName: vname };
+            });
+        });
+        // Render từng biến thể
+        Object.keys(oldVariants).forEach((key, idx) => {
+            const variant = oldVariants[key];
+            const ids = variant && variant.attribute_value_ids ? variant.attribute_value_ids : [];
+            const label = (ids || []).map((vid) => {
+                const info = valueInfo[String(vid)] || { attrName: 'Thuộc tính', valueName: '' };
+                return `${info.attrName}: ${info.valueName}`;
+            }).join(' | ');
+            const sku = variant && variant.sku ? variant.sku : '';
+            const extra = variant && variant.extra_price ? variant.extra_price : 0;
+            const stock = variant && variant.stock ? variant.stock : 0;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div class="fw-medium">${label}</div>
+                    ${(ids || []).map(v => `<input type=\"hidden\" name=\"variants[${idx}][attribute_value_ids][]\" value=\"${v}\">`).join('')}
+                </td>
+                <td>
+                    <input type="text" class="form-control" name="variants[${idx}][sku]" placeholder="SKU tùy chọn" value="${sku}">
+                </td>
+                <td>
+                    <input type="number" class="form-control" name="variants[${idx}][extra_price]" min="0" value="${extra}">
+                </td>
+                <td>
+                    <input type="number" class="form-control" name="variants[${idx}][stock]" min="0" value="${stock}">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-variant-row"><i class="ri-delete-bin-line"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        updateTotalVariantStock();
     }
     
     // Initialize gift date range picker
