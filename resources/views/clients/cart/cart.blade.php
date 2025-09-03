@@ -410,8 +410,8 @@
                                         $baseBookStock = 0;
                                     @endphp
 
-                                    @if(!empty($item->variant_id))
-                                        {{-- New variant system - lấy thông tin từ book_variants --}}
+                                    @if(!empty($item->variant_id) && !$isEbook)
+                                        {{-- New variant system - chỉ lấy thông tin cho sách vật lý --}}
                                         @php
                                             // Get variant information
                                             $variantInfo = DB::table('book_variants')
@@ -438,8 +438,8 @@
                                             
                                             $attributes = $variantAttributes;
                                         @endphp
-                                    @elseif($item->attribute_value_ids && $item->attribute_value_ids !== '[]')
-                                        {{-- Legacy system - lấy thông tin từ book_attribute_values --}}
+                                    @elseif($item->attribute_value_ids && $item->attribute_value_ids !== '[]' && !$isEbook)
+                                        {{-- Legacy system - chỉ lấy thông tin cho sách vật lý --}}
                                         @php
                                             $attributeIds = json_decode($item->attribute_value_ids, true);
                                             if ($attributeIds && is_array($attributeIds) && count($attributeIds) > 0) {
@@ -450,15 +450,6 @@
                                                              ->where('book_attribute_values.book_id', '=', $item->book_id);
                                                     })
                                                     ->whereIn('attribute_values.id', $attributeIds);
-                                                
-                                                // Nếu là ebook, chỉ lấy thuộc tính ngôn ngữ
-                                                if ($isEbook) {
-                                                    $query->where(function($q) {
-                                                        $q->where('attributes.name', 'LIKE', '%Ngôn Ngữ%')
-                                                          ->orWhere('attributes.name', 'LIKE', '%language%')
-                                                          ->orWhere('attributes.name', 'LIKE', '%Language%');
-                                                    });
-                                                }
                                                 
                                                 $attributes = $query->select(
                                                     'attributes.name as attr_name', 
@@ -478,76 +469,90 @@
                                             // No variants or attributes - use base book stock
                                             $baseBookStock = (int) ($item->stock ?? 0);
                                             $currentItemStock = $baseBookStock; // Set stock for this item
+                                            
+                                            // For ebooks, stock doesn't matter but we set it for consistency
+                                            if ($isEbook) {
+                                                $currentItemStock = 999; // Unlimited for ebooks
+                                            }
                                         @endphp
                                     @endif
 
-                                    @if($attributes->count() > 0)
-                                        <div class="bg-gray-50 p-3 border-l-4 border-gray-400 mb-4">
-                                                <div class="text-xs text-gray-500 uppercase tracking-wide font-bold mb-2">
-                                                    <i class="fas fa-tags"></i> 
-                                                    @if($isEbook)
-                                                        Ngôn ngữ:
-                                                    @else
-                                                        Thuộc tính sản phẩm:
+                                    {{-- Chỉ hiển thị thuộc tính cho sách vật lý, không hiển thị cho ebook --}}
+                                    @if($attributes->count() > 0 && !$isEbook)
+                                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 p-4 border-l-4 border-blue-500 mb-4 rounded-r-lg shadow-sm">
+                                            <div class="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+                                                <i class="fas fa-layer-group text-blue-500"></i>
+                                                <span class="uppercase tracking-wide">Tổ hợp sản phẩm đã chọn</span>
+                                            </div>
+                                            
+                                            {{-- Hiển thị attributes dưới dạng tags gọn gàng (không hiển thị extra_price riêng lẻ) --}}
+                                            <div class="flex flex-wrap gap-2 mb-3">
+                                                @foreach($attributes->unique(function($attr) { return $attr->attr_name . ':' . $attr->attr_value; }) as $attr)
+                                                    <div class="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full px-3 py-1.5 text-sm">
+                                                        <span class="text-gray-600 font-medium">{{ $attr->attr_name }}:</span>
+                                                        <span class="text-gray-900 font-bold">{{ $attr->attr_value }}</span>
+                                                    </div>
+                                                @endforeach
+                                                
+                                                {{-- Hiển thị giá của tổ hợp biến thể (chỉ lấy từ 1 record đầu tiên vì tất cả cùng tổ hợp có cùng giá) --}}
+                                                @php
+                                                    $variantExtraPrice = $attributes->first()->extra_price ?? 0;
+                                                @endphp
+                                                @if($variantExtraPrice > 0)
+                                                    <div class="inline-flex items-center gap-1.5 bg-amber-100 border border-amber-200 rounded-full px-3 py-1.5 text-sm">
+                                                        <i class="fas fa-plus text-amber-600"></i>
+                                                        <span class="text-amber-800 font-bold">{{ number_format($variantExtraPrice) }}đ</span>
+                                                        <span class="text-amber-700 text-xs">(phụ phí biến thể)</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            
+                                            {{-- Thông tin tổng hợp: SKU và Stock --}}
+                                            <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border border-gray-200">
+                                                <div class="flex items-center gap-4 text-xs">
+                                                    {{-- SKU nếu có --}}
+                                                    @php
+                                                        $firstAttr = $attributes->first();
+                                                    @endphp
+                                                    @if($firstAttr && $firstAttr->sku)
+                                                        <div class="flex items-center gap-1.5">
+                                                            <i class="fas fa-barcode text-gray-500"></i>
+                                                            <span class="text-gray-600">Mã:</span>
+                                                            <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded font-mono font-semibold">
+                                                                {{ $firstAttr->sku }}
+                                                            </span>
+                                                        </div>
                                                     @endif
                                                 </div>
-                                                <div class="space-y-2">
-                                                    @foreach($attributes->unique(function($attr) { return $attr->attr_name . ':' . $attr->attr_value; }) as $attr)
-                                                        <div class="flex items-center justify-between bg-white p-2 rounded border">
-                                                            <div class="flex items-center gap-2">
-                                                                <span class="text-sm font-medium text-gray-800">
-                                                                    @if($isEbook)
-                                                                        {{ $attr->attr_value }}
-                                                                    @else
-                                                                        {{ $attr->attr_name }}: <span class="font-bold">{{ $attr->attr_value }}</span>
-                                                                    @endif
-                                                                </span>
-                                                                @if($attr->extra_price > 0)
-                                                                    <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium">
-                                                                        +{{ number_format($attr->extra_price) }}đ
-                                                                    </span>
-                                                                @endif
-                                                            </div>
-                                                            
-                                                            {{-- Hiển thị stock và SKU cho sách vật lý --}}
-                                                            @if(!$isEbook)
-                                                                <div class="flex items-center gap-3 text-xs">
-                                                                    {{-- SKU --}}
-                                                                    @if($attr->sku)
-                                                                        <div class="flex items-center gap-1">
-                                                                            <i class="fas fa-barcode text-gray-500"></i>
-                                                                            <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded font-mono">
-                                                                                {{ $attr->sku }}
-                                                                            </span>
-                                                                        </div>
-                                                                    @endif
-                                                                    
-                                                                    {{-- Stock --}}
-                                                                    <div class="flex items-center gap-1">
-                                                                        <i class="fas fa-boxes text-gray-500"></i>
-                                                                        <span class="
-                                                                            @if($attr->stock > 10) 
-                                                                                bg-green-100 text-green-700 
-                                                                            @elseif($attr->stock > 0) 
-                                                                                bg-yellow-100 text-yellow-700 
-                                                                            @else 
-                                                                                bg-red-100 text-red-700 
-                                                                            @endif
-                                                                            px-2 py-1 rounded font-medium">
-                                                                            @if($attr->stock > 0)
-                                                                                {{ $attr->stock }} có sẵn
-                                                                            @else
-                                                                                Hết hàng
-                                                                            @endif
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            @endif
-                                                        </div>
-                                                    @endforeach
+                                                
+                                                {{-- Stock status --}}
+                                                <div class="flex items-center gap-1.5">
+                                                    <i class="fas fa-warehouse text-gray-500"></i>
+                                                    @php
+                                                        $minStock = $attributes->min('stock') ?: 0;
+                                                    @endphp
+                                                    <span class="text-xs font-medium text-gray-600">Tồn kho:</span>
+                                                    <span class="
+                                                        @if($minStock > 20) 
+                                                            bg-green-100 text-green-700 border-green-200
+                                                        @elseif($minStock > 5) 
+                                                            bg-yellow-100 text-yellow-700 border-yellow-200
+                                                        @elseif($minStock > 0) 
+                                                            bg-orange-100 text-orange-700 border-orange-200
+                                                        @else 
+                                                            bg-red-100 text-red-700 border-red-200
+                                                        @endif
+                                                        px-2.5 py-1 rounded-full text-xs font-bold border">
+                                                        @if($minStock > 0)
+                                                            {{ $minStock }} sản phẩm
+                                                        @else
+                                                            Hết hàng
+                                                        @endif
+                                                    </span>
                                                 </div>
                                             </div>
-                                        @endif
+                                        </div>
+                                    @endif
                                     
                                     {{-- Gifts - Chỉ hiển thị cho sách vật lý --}}
                                     @if(!$isEbook && isset($item->gifts) && count($item->gifts) > 0)
@@ -671,9 +676,9 @@
                                                     
                                                     {{-- Show variant-specific info if applicable --}}
                                                     @if (!empty($item->variant_id))
-                                                        <div class="text-xs text-blue-600 mt-1">
+                                                        {{-- <div class="text-xs text-blue-600 mt-1">
                                                             <i class="fas fa-layer-group"></i> Biến thể cụ thể (Stock: {{ $currentItemStock }})
-                                                        </div>
+                                                        </div> --}}
                                                     @elseif (!empty($item->attribute_value_ids) && $item->attribute_value_ids !== '[]')
                                                         <div class="text-xs text-blue-600 mt-1">
                                                             <i class="fas fa-tags"></i> Tổ hợp thuộc tính (Stock: {{ $currentItemStock }})
