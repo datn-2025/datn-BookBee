@@ -485,19 +485,26 @@
                                                 <span class="uppercase tracking-wide">Tổ hợp sản phẩm đã chọn</span>
                                             </div>
                                             
-                                            {{-- Hiển thị attributes dưới dạng tags gọn gàng --}}
+                                            {{-- Hiển thị attributes dưới dạng tags gọn gàng (không hiển thị extra_price riêng lẻ) --}}
                                             <div class="flex flex-wrap gap-2 mb-3">
                                                 @foreach($attributes->unique(function($attr) { return $attr->attr_name . ':' . $attr->attr_value; }) as $attr)
                                                     <div class="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full px-3 py-1.5 text-sm">
                                                         <span class="text-gray-600 font-medium">{{ $attr->attr_name }}:</span>
                                                         <span class="text-gray-900 font-bold">{{ $attr->attr_value }}</span>
-                                                        @if($attr->extra_price > 0)
-                                                            <span class="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-xs font-semibold">
-                                                                +{{ number_format($attr->extra_price) }}đ
-                                                            </span>
-                                                        @endif
                                                     </div>
                                                 @endforeach
+                                                
+                                                {{-- Hiển thị giá của tổ hợp biến thể (chỉ lấy từ 1 record đầu tiên vì tất cả cùng tổ hợp có cùng giá) --}}
+                                                @php
+                                                    $variantExtraPrice = $attributes->first()->extra_price ?? 0;
+                                                @endphp
+                                                @if($variantExtraPrice > 0)
+                                                    <div class="inline-flex items-center gap-1.5 bg-amber-100 border border-amber-200 rounded-full px-3 py-1.5 text-sm">
+                                                        <i class="fas fa-plus text-amber-600"></i>
+                                                        <span class="text-amber-800 font-bold">{{ number_format($variantExtraPrice) }}đ</span>
+                                                        <span class="text-amber-700 text-xs">(phụ phí biến thể)</span>
+                                                    </div>
+                                                @endif
                                             </div>
                                             
                                             {{-- Thông tin tổng hợp: SKU và Stock --}}
