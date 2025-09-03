@@ -603,10 +603,39 @@
                             @error('cover_image')
                                 <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
-                            <div class="form-text">Để trống nếu không muốn thay đổi ảnh bìa</div>
-                            <div id="cover_preview" class="mt-2"></div>
+                            <div class="form-text">Để trống nếu không muốn thay đổi file.</div>
+                            <div id="ebook_file_info" class="mt-2 small text-muted"></div>
                         </div>
                         
+                        <!-- Cài đặt DRM -->
+                        <div class="border-top pt-4 mt-4">
+                            <h6 class="fw-bold text-dark mb-3">
+                                <i class="ri-shield-keyhole-line me-2 text-danger"></i>Cài đặt DRM cho Ebook
+                            </h6>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="drm_enabled" name="formats[ebook][drm_enabled]" 
+                                       value="1" {{ old('formats.ebook.drm_enabled', $ebookFormat->drm_enabled ?? true) ? 'checked' : '' }}>
+                                <label class="form-check-label fw-medium" for="drm_enabled">
+                                    Bật/Tắt DRM (Giới hạn lượt tải)
+                                </label>
+                            </div>
+
+                            <div id="drm_settings" class="row g-3" style="display: {{ old('formats.ebook.drm_enabled', $ebookFormat->drm_enabled ?? true) ? 'block' : 'none' }};">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium">Số lần tải tối đa</label>
+                                    <input type="number" class="form-control" name="formats[ebook][max_downloads]" 
+                                           value="{{ old('formats.ebook.max_downloads', $ebookFormat->max_downloads ?? 5) }}" placeholder="5" min="1">
+                                    <div class="form-text">Số lần người dùng có thể tải ebook.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium">Số ngày hết hạn tải</label>
+                                    <input type="number" class="form-control" name="formats[ebook][download_expiry_days]" 
+                                           value="{{ old('formats.ebook.download_expiry_days', $ebookFormat->download_expiry_days ?? 365) }}" placeholder="365" min="1">
+                                    <div class="form-text">Thời gian (ngày) link tải có hiệu lực.</div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Ảnh phụ -->
                         <div>
                             <label for="images" class="form-label fw-medium">Ảnh phụ</label>

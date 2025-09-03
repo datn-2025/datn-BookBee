@@ -320,7 +320,7 @@ class OrderController extends Controller
                 if ($isWalletPayment) {
                     $this->paymentService->createPayment([
                         'order_id' => $parentOrder->id,
-                        'transaction_id' => $parentOrder->order_code . '_WALLET',
+                        'transaction_id' => $parentOrder->order_code . '-WALLET',
                         'payment_method_id' => $request->payment_method_id,
                         'payment_status_id' => $parentOrder->payment_status_id,
                         'amount' => $parentOrder->total_amount,
@@ -425,7 +425,7 @@ class OrderController extends Controller
                 // dd(1);
                 $payment = $this->paymentService->createPayment([
                     'order_id' => $order->id,
-                    'transaction_id' => $order->order_code . '_WALLET',
+                    'transaction_id' => $order->order_code . '-WALLET',
                     'payment_method_id' => $request->payment_method_id,
                     'payment_status_id' => $order->payment_status_id,
                     'amount' => $order->total_amount,

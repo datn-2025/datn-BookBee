@@ -291,6 +291,10 @@ class AdminBookController extends Controller
                 'price' => $ebookPrice,
                 'discount' => $request->input('formats.ebook.discount'),
                 'allow_sample_read' => $request->boolean('formats.ebook.allow_sample_read'),
+                // DRM fields
+                'drm_enabled' => $request->boolean('formats.ebook.drm_enabled'),
+                'max_downloads' => $request->input('formats.ebook.max_downloads'),
+                'download_expiry_days' => $request->input('formats.ebook.download_expiry_days'),
             ];
 
             // Upload file ebook chính
@@ -407,6 +411,10 @@ class AdminBookController extends Controller
             'formats.ebook.price' => 'nullable|numeric|min:0',
             'formats.ebook.discount' => 'nullable|numeric|min:0',
             'formats.ebook.allow_sample_read' => 'boolean',
+            // DRM validation
+            'formats.ebook.drm_enabled' => 'nullable|boolean',
+            'formats.ebook.max_downloads' => 'required_if:formats.ebook.drm_enabled,1|nullable|integer|min:1',
+            'formats.ebook.download_expiry_days' => 'required_if:formats.ebook.drm_enabled,1|nullable|integer|min:1',
             'status' => 'required|string|max:50',
             'category_id' => 'required|uuid|exists:categories,id',
             'author_ids' => 'required|array|min:1',
@@ -905,13 +913,24 @@ class AdminBookController extends Controller
                 $sampleFile = $request->file('formats.ebook.sample_file');
                 $sampleFilename = time() . '_sample_' . Str::slug(pathinfo($sampleFile->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $sampleFile->getClientOriginalExtension();
                 $samplePath = $sampleFile->storeAs('ebook-samples', $sampleFilename, 'public');
-                $ebookData['sample_file_url'] = $samplePath;
+                $ebookFormatData['sample_file_url'] = $samplePath;
+            }
+
+            // Thêm logic cập nhật DRM
+            $ebookFormatData['drm_enabled'] = $request->boolean('formats.ebook.drm_enabled');
+            if ($ebookFormatData['drm_enabled']) {
+                $ebookFormatData['max_downloads'] = $request->input('formats.ebook.max_downloads', 5);
+                $ebookFormatData['download_expiry_days'] = $request->input('formats.ebook.download_expiry_days', 365);
+            } else {
+                // Reset về giá trị mặc định hoặc null nếu cần khi tắt DRM
+                $ebookFormatData['max_downloads'] = 5; // Hoặc giá trị mặc định của DB
+                $ebookFormatData['download_expiry_days'] = 365; // Hoặc giá trị mặc định của DB
             }
 
             if ($ebookFormat) {
-                $ebookFormat->update($ebookData);
+                $ebookFormat->update($ebookFormatData);
             } else {
-                $book->formats()->create($ebookData);
+                $book->formats()->create($ebookFormatData);
             }
         } else {
             // Xóa định dạng ebook nếu không còn sử dụng

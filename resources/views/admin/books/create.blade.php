@@ -384,7 +384,7 @@
                             <div id="physical_format" style="display: none;">
                                 <div class="border rounded p-3 bg-light">
                                     <!-- Thông tin cơ bản sách vật lý -->
-                                    <div class="row g-3 mb-4" id="physical_price_section">
+                                    <div class="row g-3 mb-4 d-flex" id="physical_price_section">
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control format-price" name="formats[physical][price]" 
@@ -516,7 +516,7 @@
                             
                             <div id="ebook_format" style="display: none;">
                                 <div class="border rounded p-3 bg-light">
-                                    <div class="row g-3" id="ebook_price_section">
+                                    <div class="row g-3 d-flex" id="ebook_price_section">
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control format-price" name="formats[ebook][price]" 
@@ -545,16 +545,6 @@
                                             <div class="form-text">Chấp nhận file PDF hoặc EPUB, tối đa 50MB</div>
                                         </div>
                                         
-                                        <div class="col-12" id="ebook_sample_section" style="display: none;">
-                                            <label class="form-label fw-medium">File đọc thử</label>
-                                            <input type="file" class="form-control" name="formats[ebook][sample_file]" 
-                                                   accept=".pdf,.epub">
-                                            @error('formats.ebook.sample_file')
-                                                <div class="text-danger small mt-1">{{ $message }}</div>
-                                            @enderror
-                                            <div class="form-text">File đọc thử cho khách hàng. Chấp nhận file PDF hoặc EPUB, tối đa 10MB.</div>
-                                        </div>
-                                        
                                         <div class="col-12">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" id="allow_sample_read_create" 
@@ -565,6 +555,46 @@
                                                 </label>
                                             </div>
                                             <div class="form-text">Khách hàng có thể đọc thử một phần nội dung sách trước khi mua.</div>
+                                        </div>
+
+                                        <div class="col-12" id="ebook_sample_section" style="display: none;">
+                                            <label class="form-label fw-medium">File đọc thử</label>
+                                            <input type="file" class="form-control" name="formats[ebook][sample_file]" 
+                                                   accept=".pdf,.epub">
+                                            @error('formats.ebook.sample_file')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
+                                            <div class="form-text">File đọc thử cho khách hàng. Chấp nhận file PDF hoặc EPUB, tối đa 10MB.</div>
+                                        </div>
+                                        
+                                        <!-- Cài đặt DRM cho Ebook -->
+                                        <div class="col-12 mt-3 border-top pt-3">
+                                            <h6 class="fw-bold text-dark mb-2">
+                                                <i class="ri-shield-keyhole-line me-2 text-danger"></i>Cài đặt DRM cho Ebook
+                                            </h6>
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="drm_enabled_create" name="formats[ebook][drm_enabled]" value="1" {{ old('formats.ebook.drm_enabled', true) ? 'checked' : '' }}>
+                                                <label class="form-check-label fw-medium" for="drm_enabled_create">Bật/Tắt DRM (Giới hạn lượt tải)</label>
+                                            </div>
+
+                                            <div id="drm_settings_create" class="row g-3" style="display: {{ old('formats.ebook.drm_enabled', true) ? 'flex' : 'none' }};">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-medium">Số lần tải tối đa</label>
+                                                    <input type="number" class="form-control @error('formats.ebook.max_downloads') is-invalid @enderror" name="formats[ebook][max_downloads]" value="{{ old('formats.ebook.max_downloads', 5) }}" placeholder="5" min="1">
+                                                    @error('formats.ebook.max_downloads')
+                                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                                    @enderror
+                                                    <div class="form-text">Số lượt tải tối đa cho phép khi bật DRM.</div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-medium">Số ngày hết hạn tải</label>
+                                                    <input type="number" class="form-control @error('formats.ebook.download_expiry_days') is-invalid @enderror" name="formats[ebook][download_expiry_days]" value="{{ old('formats.ebook.download_expiry_days', 365) }}" placeholder="365" min="1">
+                                                    @error('formats.ebook.download_expiry_days')
+                                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                                    @enderror
+                                                    <div class="form-text">Thời gian (ngày) kể từ ngày mua mà link tải còn hiệu lực.</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -759,7 +789,11 @@ function toggleFormatSections() {
     const physicalForm = document.getElementById('physical_format');
     const ebookCheckbox = document.getElementById('has_ebook');
     const ebookForm = document.getElementById('ebook_format');
-    
+    // Lấy phần tử DRM trong phạm vi hàm để tránh undefined
+    const drmEnabledCreate = document.getElementById('drm_enabled_create');
+    const drmSettingsCreate = document.getElementById('drm_settings_create');
+    console.log(drmEnabledCreate, drmSettingsCreate);
+
     if (physicalCheckbox && physicalForm) {
         physicalForm.style.display = physicalCheckbox.checked ? 'block' : 'none';
     }
@@ -770,6 +804,10 @@ function toggleFormatSections() {
     
     // Call preorder toggle to update price sections
     togglePreorderSection();
+    // Init DRM settings visibility
+    if (drmEnabledCreate && drmSettingsCreate) {
+        drmSettingsCreate.style.display = drmEnabledCreate.checked ? 'flex' : 'none';
+    }
 }
 
 // Toggle gift section
@@ -785,6 +823,8 @@ function toggleGiftSection() {
 // Preorder section toggle
 function togglePreorderSection() {
     const preOrderCheckbox = document.getElementById('pre_order');
+    const drmEnabledCreate = document.getElementById('drm_enabled_create');
+    const drmSettingsCreate = document.getElementById('drm_settings_create');
     const preorderSection = document.getElementById('preorder_section');
     const releaseDateInput = document.getElementById('release_date');
     const stockPreorderLimitInput = document.getElementById('stock_preorder_limit');
@@ -871,6 +911,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const ebookCheckbox = document.getElementById('has_ebook');
     const giftCheckbox = document.getElementById('has_gift');
     const preOrderCheckbox = document.getElementById('pre_order');
+    const drmEnabledCreate = document.getElementById('drm_enabled_create');
+    const drmSettingsCreate = document.getElementById('drm_settings_create');
     
     // Add event listeners
     if (physicalCheckbox) {
@@ -887,6 +929,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (preOrderCheckbox) {
         preOrderCheckbox.addEventListener('change', togglePreorderSection);
+    }
+    
+    // Toggle DRM settings on create
+    if (drmEnabledCreate && drmSettingsCreate) {
+        drmEnabledCreate.addEventListener('change', function() {
+            drmSettingsCreate.style.display = this.checked ? 'flex' : 'none';
+        });
     }
     
     // Initial toggle

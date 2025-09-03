@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
 use App\Models\EbookDownload;
+use App\Models\Order;
 class BookFormat extends Model
 {
     use HasFactory;
@@ -65,14 +66,35 @@ class BookFormat extends Model
     public function canUserDownload($userId, $orderId = null)
     {
         if (!$this->drm_enabled) {
-            return true;
+            return true; // DRM is off, always allow download
         }
 
+        // For DRM checks, an order context is mandatory
+        if (!$orderId) {
+            return false;
+        }
+
+        // 1. Check download expiry date
+        if ($this->download_expiry_days > 0) {
+            $order = Order::find($orderId);
+
+            // Ensure the order exists and belongs to the user
+            if (!$order || $order->user_id != $userId) {
+                return false; 
+            }
+
+            $purchaseDate = $order->created_at;
+            $expiryDate = $purchaseDate->addDays($this->download_expiry_days);
+
+            if (now()->gt($expiryDate)) {
+                return false; // Download link has expired
+            }
+        }
+
+        // 2. Check remaining download count
         $downloadCount = $this->downloads()
             ->where('user_id', $userId)
-            ->when($orderId, function($query) use ($orderId) {
-                return $query->where('order_id', $orderId);
-            })
+            ->where('order_id', $orderId)
             ->count();
 
         return $downloadCount < $this->max_downloads;
