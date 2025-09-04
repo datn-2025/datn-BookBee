@@ -1308,7 +1308,7 @@ class OrderService
      */
     public function clearUserCart(User $user)
     {
-        $user->cart()->delete();
+        $user->cart()->where('is_selected', 1)->delete();
     }
 
     /**
