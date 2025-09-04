@@ -501,11 +501,27 @@
                                                          @endif
                                                     </td>
                                                     <td>
-                                                        @if($item->attributeValues && $item->attributeValues->count() > 0)
+                                                        @php $hasAttr = $item->attributeValues && $item->attributeValues->count() > 0; @endphp
+                                                        @if(!empty($item->variant_label) || !empty($item->variant_sku) || !is_null($item->variant_extra_price))
+                                                            <div class="mb-1">
+                                                                <span class="badge bg-light text-dark border">
+                                                                    <i class="ri-shape-line me-1"></i>
+                                                                    {{ $item->variant_label ?? 'Biến thể' }}
+                                                                </span>
+                                                                @if(!empty($item->variant_sku))
+                                                                    <span class="badge bg-secondary ms-1">SKU: {{ $item->variant_sku }}</span>
+                                                                @endif
+                                                                @if(!is_null($item->variant_extra_price))
+                                                                    <span class="badge bg-info text-dark ms-1">+{{ number_format($item->variant_extra_price, 0, ',', '.') }}đ</span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                        @if($hasAttr)
                                                             @foreach($item->attributeValues as $attrValue)
                                                                 <span class="attribute-badge">{{ $attrValue->attribute->name }}: {{ $attrValue->value }}</span>
                                                             @endforeach
-                                                        @else
+                                                        @endif
+                                                        @if(!$hasAttr && empty($item->variant_label) && empty($item->variant_sku) && is_null($item->variant_extra_price))
                                                             <span class="text-muted">Không có</span>
                                                         @endif
                                                     </td>
