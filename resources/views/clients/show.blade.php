@@ -2715,7 +2715,7 @@
                                     </div>
                                 </div>
                                 <!-- Summary hiển thị tổ hợp đã chọn theo format docs -->
-                                <div id="variantSummary"
+                                {{-- <div id="variantSummary"
                                     class="mt-6 p-6 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-200 rounded-lg">
                                     <div class="flex items-center justify-between mb-4">
                                         <h4 class="font-bold text-lg text-gray-900 adidas-font uppercase tracking-wider">
@@ -2757,7 +2757,7 @@
                                             </p>
                                         </div>
                                     </div>
-                                </div>
+                                </div> --}}
                             </div>
                         @else
                             {{-- Debug: No variants found --}}
