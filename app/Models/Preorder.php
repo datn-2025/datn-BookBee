@@ -74,7 +74,8 @@ class Preorder extends Model
         'converted_at',
         'converted_order_id',
         'payment_method_id',
-        'payment_status'
+        'payment_status',
+        'vnpay_transaction_id'
     ];
 
     protected $casts = [
@@ -89,7 +90,9 @@ class Preorder extends Model
         'confirmed_at' => 'datetime',
         'shipped_at' => 'datetime',
         'delivered_at' => 'datetime',
-        'converted_at' => 'datetime'
+        'converted_at' => 'datetime',
+        'payment_status' => 'string',
+        'vnpay_transaction_id' => 'string',
     ];
 
     protected static function boot()

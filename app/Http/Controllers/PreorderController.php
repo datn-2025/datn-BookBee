@@ -332,6 +332,7 @@ class PreorderController extends Controller
                 // Cập nhật trạng thái thanh toán preorder — đánh dấu đã trả tiền
                 $preorder->update([
                     'payment_status' => 'paid',
+                    'status' => 'Đã duyệt'
                 ]);
                 
                 DB::commit();
@@ -609,7 +610,6 @@ class PreorderController extends Controller
         $vnp_TxnRef = $request->vnp_TxnRef;
         $vnp_Amount = $request->vnp_Amount / 100;
         $vnp_TransactionNo = $request->vnp_TransactionNo;
-
         try {
             DB::beginTransaction();
 
@@ -626,8 +626,7 @@ class PreorderController extends Controller
                 // Thanh toán thành công — đánh dấu paid và cập nhật transaction id thực tế từ VNPay
                 $preorder->update([
                     'payment_status' => 'paid',
-                    'vnpay_transaction_id' => $vnp_TransactionNo,
-                    'status' => 'Đã xác nhận'
+                    'status' => 'Đã duyệt'
                 ]);
                 
                 Log::info('Preorder payment successful', [
