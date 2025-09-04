@@ -138,6 +138,59 @@
                                 <div class="col-sm-4"><strong>Đơn giá:</strong></div>
                                 <div class="col-sm-8">{{ number_format($preorder->unit_price, 0, ',', '.') }}đ</div>
                             </div>
+                            @php
+                                // Tính chi tiết giá
+                                // Parse selected_attributes có thể là JSON string
+                                $selectedAttrsCalc = $preorder->selected_attributes;
+                                if (is_string($selectedAttrsCalc)) {
+                                    $decoded = json_decode($selectedAttrsCalc, true);
+                                    $selectedAttrsCalc = is_array($decoded) ? $decoded : [];
+                                }
+                                if (!is_array($selectedAttrsCalc)) { $selectedAttrsCalc = []; }
+                                // Loại bỏ rỗng
+                                $selectedAttrsCalc = array_filter($selectedAttrsCalc, function($v){ return $v!==null && $v!==''; });
+                                $attributeExtraAdmin = 0;
+                                if (!$preorder->isEbook() && !empty($selectedAttrsCalc)) {
+                                    foreach ($selectedAttrsCalc as $attrName => $attrValue) {
+                                        $bav = $preorder->book->bookAttributeValues()
+                                            ->whereHas('attributeValue', function($q) use ($attrValue){ $q->where('value', $attrValue); })
+                                            ->whereHas('attributeValue.attribute', function($q) use ($attrName){ $q->where('name', $attrName); })
+                                            ->first();
+                                        if ($bav && $bav->extra_price > 0) {
+                                            $attributeExtraAdmin += (float)$bav->extra_price;
+                                        }
+                                    }
+                                }
+                                $variantExtraAdmin = (float)($preorder->variant_extra_price ?? 0);
+                                $basePriceAdmin = max(0, (float)$preorder->unit_price - $attributeExtraAdmin - $variantExtraAdmin);
+                            @endphp
+                            @if($preorder->variant_label || $preorder->variant_sku)
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Biến thể:</strong></div>
+                                    <div class="col-sm-8">{{ $preorder->variant_label ?? '—' }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>SKU biến thể:</strong></div>
+                                    <div class="col-sm-8">{{ $preorder->variant_sku ?? '—' }}</div>
+                                </div>
+                            @endif
+                            <div class="border-top pt-2 mt-2 small text-muted">Chi tiết giá:</div>
+                            <div class="row mb-1 small">
+                                <div class="col-sm-6">Giá cơ bản</div>
+                                <div class="col-sm-6 text-end">{{ number_format($basePriceAdmin, 0, ',', '.') }}đ</div>
+                            </div>
+                            @if($variantExtraAdmin > 0)
+                                <div class="row mb-1 small">
+                                    <div class="col-sm-6">Phụ phí biến thể</div>
+                                    <div class="col-sm-6 text-end text-info">+{{ number_format($variantExtraAdmin, 0, ',', '.') }}đ</div>
+                                </div>
+                            @endif
+                            @if($attributeExtraAdmin > 0)
+                                <div class="row mb-1 small">
+                                    <div class="col-sm-6">Phí thuộc tính</div>
+                                    <div class="col-sm-6 text-end text-info">+{{ number_format($attributeExtraAdmin, 0, ',', '.') }}đ</div>
+                                </div>
+                            @endif
                             
                             <div class="row mb-2">
                                 <div class="col-sm-4"><strong>Tổng tiền:</strong></div>
@@ -163,6 +216,10 @@
             <!-- Thuộc tính đã chọn -->
             @php
                 $selectedAttrs = $preorder->selected_attributes ?? [];
+                if (is_string($selectedAttrs)) {
+                    $decoded = json_decode($selectedAttrs, true);
+                    $selectedAttrs = is_array($decoded) ? $decoded : [];
+                }
                 if (is_array($selectedAttrs)) {
                     // Loại bỏ các giá trị rỗng/null
                     $selectedAttrs = array_filter($selectedAttrs, function($v) { return $v !== null && $v !== ''; });

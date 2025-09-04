@@ -13,6 +13,8 @@ class OrderItem extends Model
 
     protected $fillable = [
         'id', 'order_id', 'book_id', 'book_format_id', 'book_gift_id', 'collection_id', 'is_combo', 'item_type', 'quantity', 'price', 'total',
+        // Variant fields
+        'variant_id', 'variant_label', 'variant_sku', 'variant_extra_price',
     ];
 
     protected static function boot()
@@ -41,6 +43,14 @@ class OrderItem extends Model
         return $this->belongsTo(BookFormat::class);
     }
 
+    /**
+     * Quan hệ tới biến thể sách (nếu có)
+     */
+    public function variant()
+    {
+        return $this->belongsTo(BookVariant::class, 'variant_id');
+    }
+
     public function attributeValues()
     {
         return $this->belongsToMany(
@@ -66,6 +76,7 @@ class OrderItem extends Model
 
     protected $casts = [
         'is_combo' => 'boolean',
+        'variant_extra_price' => 'decimal:2',
     ];
 
     /**

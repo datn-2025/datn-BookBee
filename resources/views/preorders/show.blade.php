@@ -69,6 +69,20 @@
                                         <span class="fw-bold">{{ $preorder->quantity }}</span>
                                     </div>
                                 </div>
+                                @if($preorder->variant_label || $preorder->variant_sku)
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid #dee2e6;">
+                                        <span class="text-muted" style="font-size: 14px;">Biến thể:</span>
+                                        <span class="fw-bold">{{ $preorder->variant_label ?? '—' }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid #dee2e6;">
+                                        <span class="text-muted" style="font-size: 14px;">SKU biến thể:</span>
+                                        <span class="fw-bold">{{ $preorder->variant_sku ?? '—' }}</span>
+                                    </div>
+                                </div>
+                                @endif
                                 <div class="col-md-6">
                                     <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid #dee2e6;">
                                         <span class="text-muted" style="font-size: 14px;">Ngày ra mắt:</span>
@@ -121,13 +135,20 @@
                                                 }
                                             }
                                         }
+                                        $variantExtra = (float)($preorder->variant_extra_price ?? 0);
                                         // Suy ra giá cơ bản từ đơn giá đã lưu
-                                        $basePrice = max(0, (float)$preorder->unit_price - $attributeExtra);
+                                        $basePrice = max(0, (float)$preorder->unit_price - $attributeExtra - $variantExtra);
                                     @endphp
                                     <div class="d-flex justify-content-between py-2" style="border-bottom: 1px solid #eee;">
                                         <span class="text-muted">Giá cơ bản:</span>
                                         <span class="fw-bold">{{ number_format($basePrice, 0, ',', '.') }}đ</span>
                                     </div>
+                                    @if($variantExtra > 0)
+                                        <div class="d-flex justify-content-between py-2" style="border-bottom: 1px solid #eee;">
+                                            <span class="text-muted">Phụ phí biến thể:</span>
+                                            <span class="fw-bold text-info">+{{ number_format($variantExtra, 0, ',', '.') }}đ</span>
+                                        </div>
+                                    @endif
                                     @if($attributeExtra > 0)
                                         <div class="d-flex justify-content-between py-2" style="border-bottom: 1px solid #eee;">
                                             <span class="text-muted">Phí thuộc tính:</span>

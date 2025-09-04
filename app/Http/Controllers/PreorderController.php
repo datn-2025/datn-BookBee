@@ -94,6 +94,9 @@ class PreorderController extends Controller
             'book_format_id' => 'nullable|exists:book_formats,id',
             'quantity' => 'required|integer|min:1|max:10',
             'selected_attributes' => 'nullable|array',
+            // Biến thể (kiểu mới)
+            'selected_variant_ids' => 'nullable|string', // chuỗi JSON mảng id value
+            'selected_variant' => 'nullable', // fallback từ radio value
             'customer_name' => 'required|string|max:255',
             'email' => 'required|email',
             'phone' => 'required|string|max:20',
@@ -148,6 +151,62 @@ class PreorderController extends Controller
                 }
             }
 
+            // Parse lựa chọn biến thể (kiểu mới)
+            $selectedVariantValueIds = [];
+            if ($request->filled('selected_variant_ids')) {
+                // từ hidden input (chuỗi JSON)
+                $decoded = json_decode($request->input('selected_variant_ids'), true);
+                if (is_array($decoded)) {
+                    $selectedVariantValueIds = array_values(array_filter($decoded));
+                }
+            } elseif ($request->filled('selected_variant')) {
+                // từ radio value (chuỗi JSON)
+                $decoded = json_decode($request->input('selected_variant'), true);
+                if (is_array($decoded)) {
+                    $selectedVariantValueIds = array_values(array_filter($decoded));
+                }
+            }
+
+            // Tìm biến thể khớp (nếu có chọn)
+            $variant = null;
+            $variantExtraPrice = 0;
+            $variantLabel = null;
+            $variantSku = null;
+            if (!empty($selectedVariantValueIds)) {
+                // Lấy toàn bộ variants của sách và so set ID
+                $variants = $book->variants()->with(['attributeValues.attribute'])->get();
+                foreach ($variants as $v) {
+                    $ids = $v->attributeValues->pluck('id')->sort()->values()->toArray();
+                    $chosen = collect($selectedVariantValueIds)->map(fn($x) => (string)$x)->sort()->values()->toArray();
+                    $ids = array_map('strval', $ids);
+                    if ($ids === $chosen) {
+                        $variant = $v;
+                        break;
+                    }
+                }
+                if ($variant) {
+                    $variantExtraPrice = (float)($variant->extra_price ?? 0);
+                    // Tạo label từ các giá trị thuộc tính
+                    $parts = [];
+                    foreach ($variant->attributeValues as $av) {
+                        $attrName = $av->attribute?->name;
+                        $val = $av->value;
+                        $parts[] = $attrName ? ($attrName . ': ' . $val) : $val;
+                    }
+                    $variantLabel = implode(', ', $parts);
+                    $variantSku = $variant->sku ?? null;
+                }
+            }
+
+            // Nếu là Ebook: bỏ qua hoàn toàn biến thể (không cộng phụ phí, không lưu field variant)
+            if ($isEbook) {
+                $selectedVariantValueIds = [];
+                $variant = null;
+                $variantExtraPrice = 0;
+                $variantLabel = null;
+                $variantSku = null;
+            }
+
             // Tính giá thêm từ thuộc tính (chỉ áp dụng cho sách vật lý)
             $attributeExtraPrice = 0; // Tổng giá trị từ các thuộc tính
             if (!empty($selectedAttributes) && !$isEbook) { // Kiểm tra nếu có thuộc tính được chọn và sách không phải ebook
@@ -168,8 +227,8 @@ class PreorderController extends Controller
                  }
              }
             
-            // Đơn giá cuối cùng = giá cơ bản + phụ thu từ thuộc tính
-            $unitPrice = $basePrice + $attributeExtraPrice; // Tính đơn giá cuối cùng
+            // Đơn giá cuối cùng = giá cơ bản + phụ thu biến thể + phụ thu thuộc tính
+            $unitPrice = $basePrice + $variantExtraPrice + $attributeExtraPrice; // Tính đơn giá cuối cùng
             // Thành tiền = đơn giá cuối cùng * số lượng
             $subtotal = $unitPrice * $validated['quantity']; // Tính tổng tiền sản phẩm
             
@@ -208,6 +267,22 @@ class PreorderController extends Controller
                 'payment_status' => 'pending'
             ];
 
+            // Thêm thông tin biến thể nếu có
+            if ($variant) {
+                $preorderData = array_merge($preorderData, [
+                    'variant_id' => $variant->id,
+                    'selected_variant_value_ids' => $selectedVariantValueIds,
+                    'variant_label' => $variantLabel,
+                    'variant_extra_price' => $variantExtraPrice,
+                    'variant_sku' => $variantSku,
+                ]);
+            } elseif (!empty($selectedVariantValueIds)) {
+                // Lưu tối thiểu danh sách giá trị đã chọn nếu chưa map ra variant record
+                $preorderData = array_merge($preorderData, [
+                    'selected_variant_value_ids' => $selectedVariantValueIds,
+                ]);
+            }
+
             // Chỉ lưu địa chỉ nếu không phải ebook (ebook không cần địa chỉ giao hàng)
             if (!$isEbook) {
                 $preorderData = array_merge($preorderData, [
@@ -224,7 +299,7 @@ class PreorderController extends Controller
             // dd($preorder);
 
             // Trừ số lượng tồn kho khi tạo preorder
-            $this->decreaseStockForPreorder($book, $bookFormat, $validated);
+            $this->decreaseStockForPreorder($book, $bookFormat, $validated, $variant);
 
             // Xử lý thanh toán ví điện tử
             // Lưu ý: Đây là luồng "thu tiền ngay" cho preorder. Sau bước này
@@ -296,7 +371,7 @@ class PreorderController extends Controller
             try {
                 Mail::to($preorder->email)->send(new PreorderConfirmation($preorder));
             } catch (\Exception $e) {
-                \Log::error('Lỗi gửi email preorder: ' . $e->getMessage());
+                Log::error('Lỗi gửi email preorder: ' . $e->getMessage());
             }
 
             return redirect()->route('preorders.show', $preorder)
@@ -304,7 +379,7 @@ class PreorderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Lỗi tạo preorder: ' . $e->getMessage());
+            Log::error('Lỗi tạo preorder: ' . $e->getMessage());
             return back()->with('error', 'Có lỗi xảy ra. Vui lòng thử lại.');
         }
     }
@@ -319,7 +394,7 @@ class PreorderController extends Controller
             abort(403);
         }
 
-        $preorder->load(['book', 'bookFormat', 'paymentMethod']);
+        $preorder->load(['book', 'bookFormat', 'paymentMethod', 'variant.attributeValues.attribute']);
         
         return view('preorders.show', compact('preorder'));
     }
@@ -342,13 +417,19 @@ class PreorderController extends Controller
     /**
      * Trừ số lượng tồn kho khi tạo preorder
      */
-    private function decreaseStockForPreorder($book, $bookFormat, $validated)
+    private function decreaseStockForPreorder($book, $bookFormat, $validated, $variant = null)
     {
         $quantity = $validated['quantity'];
         
         // Trừ preorder_count của sách
         $book->increment('preorder_count', $quantity);
         
+        // Trừ stock của biến thể nếu có
+        if ($variant && $variant->stock > 0) {
+            $newStock = max(0, $variant->stock - $quantity);
+            $variant->update(['stock' => $newStock]);
+        }
+
         // Trừ stock của book format nếu có
         if ($bookFormat && $bookFormat->stock > 0) {
             $newStock = max(0, $bookFormat->stock - $quantity);

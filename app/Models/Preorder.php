@@ -44,6 +44,11 @@ class Preorder extends Model
         'user_id',
         'book_id',
         'book_format_id',
+        'variant_id',
+        'selected_variant_value_ids',
+        'variant_label',
+        'variant_extra_price',
+        'variant_sku',
         'customer_name',
         'email',
         'ebook_delivery_email',
@@ -74,10 +79,12 @@ class Preorder extends Model
 
     protected $casts = [
         'selected_attributes' => 'array',
+        'selected_variant_value_ids' => 'array',
         'quantity' => 'integer',
         'unit_price' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'shipping_fee' => 'decimal:2',
+        'variant_extra_price' => 'decimal:2',
         'expected_delivery_date' => 'datetime',
         'confirmed_at' => 'datetime',
         'shipped_at' => 'datetime',
@@ -121,6 +128,14 @@ class Preorder extends Model
     public function bookFormat(): BelongsTo
     {
         return $this->belongsTo(BookFormat::class);
+    }
+
+    /**
+     * Quan hệ với BookVariant (biến thể mới)
+     */
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(BookVariant::class, 'variant_id');
     }
 
     /**
@@ -371,6 +386,14 @@ class Preorder extends Model
         // Trừ preorder_count của sách
         $this->book->decrement('preorder_count', $this->quantity);
         
+        // Hoàn trả stock của biến thể mới nếu có
+        if (!empty($this->variant_id)) {
+            $variant = \App\Models\BookVariant::find($this->variant_id);
+            if ($variant) {
+                $variant->increment('stock', $this->quantity);
+            }
+        }
+
         // Hoàn trả stock của book format nếu có
         if ($this->bookFormat) {
             $this->bookFormat->increment('stock', $this->quantity);

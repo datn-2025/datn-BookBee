@@ -184,6 +184,95 @@
                                 </div>
                             </div>
 
+                            {{-- Chọn tổ hợp biến thể (hiển thị cho sách vật lý) --}}
+                            @php
+                                // Xây dựng danh sách tổ hợp biến thể tương tự trang chi tiết sách
+                                $hasLegacyAttributesForVariants = ($book->bookAttributeValues && $book->bookAttributeValues->count() > 0);
+                                $hasNewVariantsForVariants = ($book->variants && $book->variants->count() > 0);
+                                $variantCombinations = [];
+                                if ($hasNewVariantsForVariants) {
+                                    foreach ($book->variants as $variant) {
+                                        $attributeLabels = [];
+                                        $attributeValueIds = [];
+                                        foreach ($variant->attributeValues as $attributeValue) {
+                                            $attrName = $attributeValue->attribute->name ?? 'Unknown';
+                                            $attributeLabels[] = $attrName . ': ' . $attributeValue->value;
+                                            $attributeValueIds[] = $attributeValue->id;
+                                        }
+                                        $variantCombinations[] = [
+                                            'id' => $variant->id,
+                                            'label' => implode(' | ', $attributeLabels),
+                                            'attribute_value_ids' => $attributeValueIds,
+                                            'extra_price' => $variant->extra_price ?? 0,
+                                            'stock' => $variant->stock ?? 0,
+                                            'sku' => $variant->sku ?? '',
+                                            'type' => 'new_variant'
+                                        ];
+                                    }
+                                } elseif ($hasLegacyAttributesForVariants) {
+                                    foreach ($book->bookAttributeValues as $bookAttrValue) {
+                                        $attrValue = $bookAttrValue->attributeValue;
+                                        $attrName = $attrValue->attribute->name ?? 'Unknown';
+                                        $variantCombinations[] = [
+                                            'id' => $bookAttrValue->id,
+                                            'label' => $attrName . ': ' . $attrValue->value,
+                                            'attribute_value_ids' => [$attrValue->id],
+                                            'extra_price' => $bookAttrValue->extra_price ?? 0,
+                                            'stock' => $bookAttrValue->stock ?? 0,
+                                            'sku' => $bookAttrValue->sku ?? '',
+                                            'type' => 'legacy'
+                                        ];
+                                    }
+                                }
+                            @endphp
+
+                            @if(count($variantCombinations) > 0)
+                                <div class="col-12" id="variantCombinationSection" style="display: none;">
+                                    <label class="form-label fw-medium d-flex align-items-center">
+                                        <i class="ri-stack-line me-2"></i>Chọn tổ hợp biến thể
+                                    </label>
+                                    <div class="row g-2">
+                                        @foreach($variantCombinations as $index => $variant)
+                                            <div class="col-12">
+                                                <div class="border rounded p-2 d-flex align-items-start">
+                                                    <div class="form-check me-2 mt-1">
+                                                        <input class="form-check-input variant-radio" type="radio"
+                                                               name="selected_variant" id="variant_{{ $variant['id'] }}"
+                                                               value='@json($variant['attribute_value_ids'])'
+                                                               data-variant-id="{{ $variant['id'] }}"
+                                                               data-variant-type="{{ $variant['type'] }}"
+                                                               data-extra-price="{{ $variant['extra_price'] }}"
+                                                               data-stock="{{ $variant['stock'] }}"
+                                                               data-label="{{ $variant['label'] }}"
+                                                               @if($index === 0) checked @endif
+                                                               @if(($variant['stock'] ?? 0) <= 0) disabled @endif>
+                                                    </div>
+                                                    <label class="flex-grow-1" for="variant_{{ $variant['id'] }}">
+                                                        <div class="fw-semibold">{{ $variant['label'] }}</div>
+                                                        <div class="small text-muted">
+                                                            @if(($variant['extra_price'] ?? 0) > 0)
+                                                                +{{ number_format($variant['extra_price'], 0, ',', '.') }}đ
+                                                            @else
+                                                                Không phụ thu
+                                                            @endif
+                                                            @if(($variant['stock'] ?? 0) > 0)
+                                                                • <span class="text-success">{{ $variant['stock'] }} cuốn</span>
+                                                            @else
+                                                                • <span class="text-danger">Hết hàng</span>
+                                                            @endif
+                                                            @if(!empty($variant['sku']))
+                                                                • SKU: {{ $variant['sku'] }}
+                                                            @endif
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    <input type="hidden" name="selected_variant_ids" id="selectedVariantIds" value="">
+                                </div>
+                            @endif
+
                             <!-- Thuộc tính sách -->
                             @php
                                 $hasAnyAvailableAttributes = false;
@@ -586,6 +675,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const attributesSection = document.getElementById('attributesSection');
     const quantityInput = document.querySelector('input[name="quantity"]');
     const quantitySection = document.getElementById('quantitySection');
+    const variantSection = document.getElementById('variantCombinationSection');
+    const variantRadios = document.querySelectorAll('.variant-radio');
+    const selectedVariantIdsInput = document.getElementById('selectedVariantIds');
     const totalAmountElement = document.getElementById('totalAmount');
     const bookPriceElement = document.getElementById('bookPrice');
     const attributePriceElement = document.getElementById('attributePrice');
@@ -609,6 +701,36 @@ document.addEventListener('DOMContentLoaded', function() {
     let isEbookSelected = false;
     const bookPreorderPrice = {{ $book->pre_order_price ?? 'null' }};
 
+    function syncVariantSelectionToForm() {
+        const checked = document.querySelector('.variant-radio:checked');
+        if (checked && selectedVariantIdsInput) {
+            selectedVariantIdsInput.value = checked.value; // JSON array string of attribute_value_ids
+        }
+    }
+
+    function applyVariantEffects() {
+        const checked = document.querySelector('.variant-radio:checked');
+        if (!checked) {
+            extraPrice = 0;
+            return;
+        }
+        const variantExtra = parseFloat(checked.dataset.extraPrice || 0);
+        const variantStock = parseInt(checked.dataset.stock || '0');
+        extraPrice = isNaN(variantExtra) ? 0 : variantExtra;
+
+        // Hạn chế số lượng theo stock của tổ hợp và remainingPreorderStock
+        if (quantityInput) {
+            const maxByVariant = Math.max(0, Math.min(10, variantStock, remainingPreorderStock));
+            if (maxByVariant > 0) {
+                quantityInput.max = maxByVariant;
+                if (parseInt(quantityInput.value) > maxByVariant) {
+                    quantityInput.value = maxByVariant;
+                }
+            }
+        }
+        syncVariantSelectionToForm();
+    }
+
     // Khởi tạo trạng thái ban đầu
     function initializeFormState() {
         if (formatSelect && formatSelect.selectedIndex >= 0) {
@@ -617,7 +739,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 isEbookSelected = selectedOption.dataset.isEbook === 'true';
                 if (isEbookSelected) {
                     addressSection.style.display = 'none';
-                    attributesSection.style.display = 'none';
+                    if (attributesSection) attributesSection.style.display = 'none';
+                    if (variantSection) variantSection.style.display = 'none';
                     if (shippingFeeSection) shippingFeeSection.style.display = 'none';
                     if (shippingPriceRow) shippingPriceRow.style.display = 'none';
                 }
@@ -672,11 +795,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Hiển thị/ẩn phần địa chỉ và thuộc tính
         if (isEbookSelected) {
             addressSection.style.display = 'none';
-            attributesSection.style.display = 'none';
+            if (attributesSection) attributesSection.style.display = 'none';
+            if (variantSection) variantSection.style.display = 'none';
             shippingFeeSection.style.display = 'none';
             shippingPriceRow.style.display = 'none';
             shippingFee = 0;
             extraPrice = 0;
+            // Xóa lựa chọn biến thể khi chọn Ebook
+            if (selectedVariantIdsInput) selectedVariantIdsInput.value = '';
+            if (variantRadios && variantRadios.length > 0) {
+                variantRadios.forEach(r => { r.checked = false; });
+            }
             // Hiển thị form email nhận ebook
             document.getElementById('ebookEmailSection').style.display = 'block';
             // Ẩn và bỏ required số lượng cho ebook, đặt về 1
@@ -696,7 +825,19 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         } else {
             addressSection.style.display = 'block';
-            attributesSection.style.display = 'block';
+            // Ưu tiên chọn theo tổ hợp biến thể nếu có, nếu không fallback về attributes
+            if (variantSection && variantRadios.length > 0) {
+                variantSection.style.display = 'block';
+                if (!document.querySelector('.variant-radio:checked')) {
+                    const firstEnabled = Array.from(variantRadios).find(r => !r.disabled);
+                    if (firstEnabled) firstEnabled.checked = true;
+                }
+                applyVariantEffects();
+                // Khi dùng tổ hợp biến thể, có thể ẩn attributesSection nếu bạn muốn không cho chọn rời rạc
+                if (attributesSection) attributesSection.style.display = 'none';
+            } else if (attributesSection) {
+                attributesSection.style.display = 'block';
+            }
             shippingPriceRow.style.display = 'block';
             // Ẩn form email nhận ebook
             document.getElementById('ebookEmailSection').style.display = 'none';
@@ -730,6 +871,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Xử lý thay đổi thuộc tính (extra price)
     document.querySelectorAll('select[name^="selected_attributes"]').forEach(select => {
         select.addEventListener('change', function() {
+            // Nếu dùng tổ hợp biến thể thì bỏ qua cộng extra từ thuộc tính rời rạc
+            if (variantSection && variantSection.style.display !== 'none' && variantRadios.length > 0) {
+                return;
+            }
             extraPrice = 0;
             document.querySelectorAll('select[name^="selected_attributes"] option:checked').forEach(option => {
                 extraPrice += parseFloat(option.dataset.extraPrice || 0);
@@ -737,6 +882,18 @@ document.addEventListener('DOMContentLoaded', function() {
             updateTotalAmount();
         });
     });
+
+    // Xử lý thay đổi tổ hợp biến thể
+    if (variantRadios && variantRadios.length > 0) {
+        variantRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                applyVariantEffects();
+                updateTotalAmount();
+            });
+        });
+        // Đồng bộ hidden input ban đầu
+        applyVariantEffects();
+    }
 
     // Khởi tạo trạng thái ngay khi tải trang (ẩn số lượng nếu mặc định là ebook)
     if (formatSelect) {
@@ -749,7 +906,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (quantitySection) quantitySection.style.display = 'block';
             if (quantityInput) quantityInput.setAttribute('required', '');
             if (addressSection) addressSection.style.display = 'block';
-            if (attributesSection) attributesSection.style.display = 'block';
+            if (variantSection && variantRadios.length > 0) {
+                variantSection.style.display = 'block';
+                applyVariantEffects();
+                if (attributesSection) attributesSection.style.display = 'none';
+            } else if (attributesSection) {
+                attributesSection.style.display = 'block';
+            }
             if (shippingPriceRow) shippingPriceRow.style.display = 'block';
             // Thêm required cho các trường địa chỉ
             document.getElementById('provinceSelect').setAttribute('required', '');
@@ -1065,6 +1228,11 @@ function updateTotalAmount() {
                 alert('Vui lòng nhập email hợp lệ để nhận file ebook');
                 return;
             }
+
+            // Đảm bảo không gửi dữ liệu biến thể cho Ebook
+            const hiddenVariantIds = document.getElementById('selectedVariantIds');
+            if (hiddenVariantIds) hiddenVariantIds.value = '';
+            document.querySelectorAll('.variant-radio').forEach(r => { r.checked = false; });
         } else {
             const requiredFields = ['province_code', 'district_code', 'ward_code'];
             for (let field of requiredFields) {
