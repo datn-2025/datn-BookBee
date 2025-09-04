@@ -161,9 +161,10 @@ class GhnService
                 'Content-Type' => 'application/json'
             ])->post($this->apiUrl . '/shiip/public-api/v2/shipping-order/leadtime', [
                 'from_district_id' => $this->fromDistrictId,
+                'from_ward_code' => $this->fromWardCode,
                 'to_district_id' => $toDistrictId,
                 'to_ward_code' => $toWardCode,
-                'service_type_id' => $serviceTypeId
+                'service_id' => $serviceTypeId
             ]);
 
             if ($response->successful()) {
