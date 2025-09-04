@@ -141,7 +141,7 @@
                         <ul class="text-sm text-blue-700 space-y-1">
                             <li>• <strong>Chưa tải file:</strong> Hoàn 100% giá trị ebook</li>
                             {{-- <li>• <strong>Đã tải 1 lần:</strong> Hoàn 40% giá trị ebook</li> --}}
-                            <li>• <strong class="text-red-600">Đã tải trên 1 lần:</strong> <span class="text-red-600">Không được hoàn tiền</span></li>
+                            <li>• <strong class="text-red-600">Đã tải:</strong> <span class="text-red-600">Không được hoàn tiền</span></li>
                             <li>• Thời hạn yêu cầu: 7 ngày kể từ ngày mua</li>
                             <li>• Tiền sẽ được hoàn về ví điện tử trong 24-48 giờ</li>
                         </ul>

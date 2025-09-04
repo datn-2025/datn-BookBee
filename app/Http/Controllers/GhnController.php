@@ -110,8 +110,8 @@ class GhnController extends Controller
                 $request->to_district_id,
                 $request->to_ward_code,
                 $weight * $request->quantity, // weight in grams
-                30 * $request->quantity, // length
-                21 * $request->quantity, // width
+                25 , // length
+                17 , // width
                 3 * $request->quantity, // height
                 $serviceTypeId
             );

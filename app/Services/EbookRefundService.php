@@ -29,8 +29,13 @@ class EbookRefundService
             // dd($item);
             if ($item->bookFormat && $item->bookFormat->format_name === 'Ebook') {
                 // Đếm lượt tải theo user + book_format (không phụ thuộc order_item)
+                // $downloadCount = EbookDownload::where('user_id', $user->id)
+                //     ->where('book_format_id', $item->book_format_id)
+                //     ->count();
+
                 $downloadCount = EbookDownload::where('user_id', $user->id)
                     ->where('book_format_id', $item->book_format_id)
+                    ->where('order_item_id', $item->id) // thêm điều kiện theo order_item
                     ->count();
                 
                 $itemTotal = $item->total;
@@ -222,13 +227,14 @@ class EbookRefundService
 
         // Kiểm tra điều kiện tải xuống cho từng ebook trong đơn hàng
         $hasRefundableEbook = false;
+        // dd($order);
         foreach ($order->orderItems as $item) {
             if ($item->bookFormat && $item->bookFormat->format_name === 'Ebook') {
                 // Đếm lượt tải theo user + book_format (không phụ thuộc order_item)
                 $downloadCount = EbookDownload::where('user_id', $user->id)
-                    ->where('book_format_id', $item->book_format_id)
-                    ->count();
-                
+                ->where('book_format_id', $item->book_format_id)
+                ->where('order_item_id', $item->id) // thêm điều kiện theo order_item
+                ->count();
                 // Chỉ cho phép hoàn tiền nếu CHƯA tải lần nào
                 if ($downloadCount === 0) {
                     $hasRefundableEbook = true;
