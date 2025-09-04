@@ -636,11 +636,11 @@ class AdminPreorderController extends Controller
                  'order_id' => $order->id,
                  'book_id' => $preorder->book_id,
                  'book_format_id' => $preorder->book_format_id,
-                 // Copy variant fields from preorder
-                 'variant_id' => $preorder->variant_id,
-                 'variant_label' => $preorder->variant_label,
-                 'variant_sku' => $preorder->variant_sku,
-                 'variant_extra_price' => $preorder->variant_extra_price,
+                 // Copy variant fields from preorder (không áp dụng cho Ebook)
+                 'variant_id' => $isEbook ? null : $preorder->variant_id,
+                 'variant_label' => $isEbook ? null : $preorder->variant_label,
+                 'variant_sku' => $isEbook ? null : $preorder->variant_sku,
+                 'variant_extra_price' => $isEbook ? 0 : $preorder->variant_extra_price,
                  'quantity' => $preorder->quantity,
                  'price' => $preorder->unit_price,
                  'total' => $preorder->total_amount,
@@ -653,7 +653,7 @@ class AdminPreorderController extends Controller
 
             // B8.1: Xử lý selected_attributes nếu có (cho sách vật lý)
             Log::info('Processing selected attributes', ['preorder_id' => $preorder->id, 'selected_attributes' => $preorder->selected_attributes]);
-            if (!empty($preorder->selected_attributes)) {
+            if (!$isEbook && !empty($preorder->selected_attributes)) {
                 $selectedAttributes = is_string($preorder->selected_attributes) 
                     ? json_decode($preorder->selected_attributes, true) 
                     : $preorder->selected_attributes;
@@ -676,7 +676,7 @@ class AdminPreorderController extends Controller
                                 'updated_at' => now()
                             ]);
                         } else {
-                            \Log::warning("Không tìm thấy attribute_value_id cho {$attributeName}: {$attributeValue}");
+                            Log::warning("Không tìm thấy attribute_value_id cho {$attributeName}: {$attributeValue}");
                         }
                     }
                 }
