@@ -261,7 +261,7 @@ class AdminPreorderController extends Controller
     public function show(Preorder $preorder)
     {
         // Load thêm quan hệ để hiển thị đầy đủ trên view
-        $preorder->load(['user', 'book', 'bookFormat', 'paymentMethod']);
+        $preorder->load(['user', 'book', 'bookFormat', 'paymentMethod', 'variant.attributeValues.attribute']);
         
         return view('admin.preorders.show', compact('preorder'));
     }
@@ -636,6 +636,11 @@ class AdminPreorderController extends Controller
                  'order_id' => $order->id,
                  'book_id' => $preorder->book_id,
                  'book_format_id' => $preorder->book_format_id,
+                 // Copy variant fields from preorder
+                 'variant_id' => $preorder->variant_id,
+                 'variant_label' => $preorder->variant_label,
+                 'variant_sku' => $preorder->variant_sku,
+                 'variant_extra_price' => $preorder->variant_extra_price,
                  'quantity' => $preorder->quantity,
                  'price' => $preorder->unit_price,
                  'total' => $preorder->total_amount,
