@@ -749,11 +749,13 @@
                                 </div>
                             </li>
                         @endpermission
+                        @permission('chat.view')
                         <li class="nav-item">
                             <a class="nav-link menu-link" href="{{ route('admin.chat.index') }}">
                                 <i class="ri-file-list-3-line"></i> <span data-key="t-forms">Chat</span>
                             </a>
                         </li>
+                        @endpermission
                         @permission('review.view')
                             <li class="nav-item">
                                 <a class="nav-link menu-link" href="{{ route('admin.reviews.index') }}">

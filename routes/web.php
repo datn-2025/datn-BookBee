@@ -326,12 +326,20 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
         Route::post('/reject/{id}', [WalletController::class, 'rejectTransaction'])->name('rejectTransaction')->middleware('checkpermission:wallet.reject');
     });
     // chat real-time
+    // Route::prefix('chat')->name('chat.')->group(function () {
+    //     Route::get('/', [AdminChatrealtimeController::class, 'index'])->name('index');
+    //     Route::get('/{id}', [AdminChatrealtimeController::class, 'show'])->name('show');
+    //     Route::post('/send', [AdminChatRealTimeController::class, 'send'])->name('send');
+    //     Route::post('/create-conversation', [AdminChatrealtimeController::class, 'createConversation'])->name('create-conversation');
+    //     Route::get('/users/active', [AdminChatrealtimeController::class, 'getActiveUsers'])->name('users.active');
+    // });
+    // chat real-time
     Route::prefix('chat')->name('chat.')->group(function () {
-        Route::get('/', [AdminChatrealtimeController::class, 'index'])->name('index');
-        Route::get('/{id}', [AdminChatrealtimeController::class, 'show'])->name('show');
-        Route::post('/send', [AdminChatRealTimeController::class, 'send'])->name('send');
-        Route::post('/create-conversation', [AdminChatrealtimeController::class, 'createConversation'])->name('create-conversation');
-        Route::get('/users/active', [AdminChatrealtimeController::class, 'getActiveUsers'])->name('users.active');
+        Route::get('/', [AdminChatrealtimeController::class, 'index'])->name('index')->middleware('checkpermission:chat.view');
+        Route::get('/{id}', [AdminChatrealtimeController::class, 'show'])->name('show')->middleware('checkpermission:chat.show');
+        Route::post('/send', [AdminChatRealTimeController::class, 'send'])->name('send')->middleware('checkpermission:chat.send');
+        Route::post('/create-conversation', [AdminChatrealtimeController::class, 'createConversation'])->name('create-conversation')->middleware('checkpermission:chat.create-conversation');
+        Route::get('/users/active', [AdminChatrealtimeController::class, 'getActiveUsers'])->name('users.active')->middleware('checkpermission:chat.users.active');
     });
 
     // Admin Notifications
