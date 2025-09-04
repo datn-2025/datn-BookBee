@@ -67,6 +67,10 @@
                 <div class="balance-display px-6 py-4">
                     <p class="text-gray-300 text-sm font-medium mb-1">Số dư hiện tại</p>
                     <p class="text-2xl font-semibold text-white">₫{{ number_format($wallet->balance ?? 0, 0, ',', '.') }}</p>
+                    <div class="mt-3 pt-3 border-t border-gray-600">
+                        <p class="text-gray-300 text-sm font-medium mb-1">Số dư khóa</p>
+                        <p class="text-xl font-medium text-gray-400">₫{{ number_format(Auth::user()->wallet_lock ?? 0, 0, ',', '.') }}</p>
+                    </div>
                 </div>
             </div>
         </div>

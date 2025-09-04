@@ -319,11 +319,11 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     // Wallets
     Route::prefix('wallets')->name('wallets.')->middleware('checkpermission:wallet.view')->group(function () {
         Route::get('/', [WalletController::class, 'index'])->name('index')->middleware('checkpermission:wallet.view');
-        Route::get('/deposit-history', [WalletController::class, 'depositHistory'])->name('depositHistory')->middleware('checkpermission:wallet.deposit-history');
-        Route::get('/withdraw-history', [WalletController::class, 'withdrawHistory'])->name('withdrawHistory')->middleware('checkpermission:wallet.withdraw-history');
+        Route::get('/deposit-history', [WalletController::class, 'depositHistory'])->name('depositHistory')->middleware('checkpermission:wallet.view');
+        Route::get('/withdraw-history', [WalletController::class, 'withdrawHistory'])->name('withdrawHistory')->middleware('checkpermission:wallet.view');
         Route::get('/transaction/{id}/pdf', [WalletController::class, 'generateTransactionPdf'])->name('transaction.pdf')->middleware('checkpermission:wallet.view');
-        Route::post('/approve/{id}', [WalletController::class, 'approveTransaction'])->name('approveTransaction')->middleware('checkpermission:wallet.approve');
-        Route::post('/reject/{id}', [WalletController::class, 'rejectTransaction'])->name('rejectTransaction')->middleware('checkpermission:wallet.reject');
+        Route::post('/approve/{id}', [WalletController::class, 'approveTransaction'])->name('approveTransaction')->middleware('checkpermission:wallet.view');
+        Route::post('/reject/{id}', [WalletController::class, 'rejectTransaction'])->name('rejectTransaction')->middleware('checkpermission:wallet.view');
     });
     // chat real-time
     // Route::prefix('chat')->name('chat.')->group(function () {
