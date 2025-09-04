@@ -128,7 +128,9 @@
                                 <label class="form-label fw-semibold">Trạng thái</label>
                                 <select name="status" class="form-select">
                                     <option value="">Tất cả trạng thái</option>
-                                    <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Hoạt động</option>
+                                    <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Đang hoạt động</option>
+                                    <option value="future" {{ request('status') == 'future' ? 'selected' : '' }}>Sắp diễn ra</option>
+                                    <option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Hết hạn</option>
                                     <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Không hoạt động</option>
                                 </select>
                             </div>

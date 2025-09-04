@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class VoucherController extends Controller
 {
@@ -35,9 +36,33 @@ class VoucherController extends Controller
             });
         }
 
-        // Filter by discount range
-        if ($request->filled('min_discount') && $request->filled('max_discount')) {
-            $query->whereBetween('discount_percent', [$request->min_discount, $request->max_discount]);
+        // Filter by status with expanded logic
+        if ($request->filled('status')) {
+            $now = Carbon::now();
+            
+            switch ($request->status) {
+                case 'active':
+                    // Đang hoạt động: status = active VÀ trong thời gian hiệu lực
+                    $query->where('status', 'active')
+                          ->where('valid_from', '<=', $now)
+                          ->where('valid_to', '>=', $now);
+                    break;
+                    
+                case 'future':
+                    // Sắp diễn ra: thời gian bắt đầu trong tương lai
+                    $query->where('valid_from', '>', $now);
+                    break;
+                    
+                case 'expired':
+                    // Hết hạn: thời gian kết thúc đã qua
+                    $query->where('valid_to', '<', $now);
+                    break;
+                    
+                case 'inactive':
+                    // Không hoạt động: status = inactive
+                    $query->where('status', 'inactive');
+                    break;
+            }
         }
 
         // Filter by validity period
@@ -48,16 +73,17 @@ class VoucherController extends Controller
             $query->where('valid_to', '<=', $request->date_to);
         }
 
-        // Filter by status
-        if ($request->has('status') && in_array($request->status, ['active', 'inactive'])) {
-            $query->where('status', $request->status);
-        }
-
         $vouchers = $query->latest()->paginate(10);
 
-        // Thống kê số lượng voucher theo trạng thái đơn giản (chỉ active/inactive)
+        // Statistics with expanded status counting
+        $now = Carbon::now();
+        
         $totalVouchers = Voucher::count();
-        $activeVouchers = Voucher::where('status', 'active')->count();
+        
+        $activeVouchers = Voucher::where('status', 'active')
+            ->where('valid_from', '<=', $now)
+            ->where('valid_to', '>=', $now)
+            ->count();
         $inactiveVouchers = Voucher::where('status', 'inactive')->count();
         $usedVouchersCount = \App\Models\AppliedVoucher::count();
 

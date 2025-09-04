@@ -65,9 +65,9 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse ($staffs as $staff)
+                                        @forelse ($staffs as $key => $staff)
                                             <tr>
-                                                <td>{{ $staff->id }}</td>
+                                                <td>{{ ++$key }}</td>
                                                 <td>{{ $staff->name }}</td>
                                                 <td>{{ $staff->email }}</td>
                                                 <td>{{ $staff->phone }}</td>
