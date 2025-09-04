@@ -823,8 +823,6 @@ function toggleGiftSection() {
 // Preorder section toggle
 function togglePreorderSection() {
     const preOrderCheckbox = document.getElementById('pre_order');
-    const drmEnabledCreate = document.getElementById('drm_enabled_create');
-    const drmSettingsCreate = document.getElementById('drm_settings_create');
     const preorderSection = document.getElementById('preorder_section');
     const releaseDateInput = document.getElementById('release_date');
     const stockPreorderLimitInput = document.getElementById('stock_preorder_limit');
@@ -833,72 +831,108 @@ function togglePreorderSection() {
     const preorderPriceNotices = document.querySelectorAll('.preorder-price-notice');
     const physicalCheckbox = document.getElementById('has_physical');
     const ebookCheckbox = document.getElementById('has_ebook');
-    
-    if (!preOrderCheckbox || !preorderSection) {
-        return;
-    }
-    
+
+    if (!preOrderCheckbox || !preorderSection) return;
+
     if (preOrderCheckbox.checked) {
         preorderSection.style.display = 'block';
-        
-        // Make required fields required
+
+        // Required fields
         if (releaseDateInput) releaseDateInput.required = true;
         if (stockPreorderLimitInput) stockPreorderLimitInput.required = true;
-        
-        // Set minimum date to today
+
+        // Min date
         if (releaseDateInput) {
-            const today = new Date().toISOString().split('T')[0];
-            releaseDateInput.min = today;
+            releaseDateInput.min = new Date().toISOString().split('T')[0];
+        }
+
+        // Thay thế section giá bằng thông báo
+        if (physicalCheckbox && physicalCheckbox.checked && physicalPriceSection) {
+            physicalPriceSection.innerHTML = `
+                <div class="alert alert-info mb-0">
+                    <i class="ri-information-line me-2"></i>
+                    <strong>Lưu ý:</strong> Giá bán sẽ được thiết lập sau khi kết thúc giai đoạn đặt trước.
+                </div>
+            `;
         }
         
-        // Hide price sections and show notices only for enabled formats
-        if (physicalPriceSection && physicalCheckbox && physicalCheckbox.checked) {
-            physicalPriceSection.style.display = 'none';
+        if (ebookCheckbox && ebookCheckbox.checked && ebookPriceSection) {
+            ebookPriceSection.innerHTML = `
+                <div class="alert alert-info mb-0">
+                    <i class="ri-information-line me-2"></i>
+                    <strong>Lưu ý:</strong> Giá bán sẽ được thiết lập sau khi kết thúc giai đoạn đặt trước.
+                </div>
+            `;
         }
-        if (ebookPriceSection && ebookCheckbox && ebookCheckbox.checked) {
-            ebookPriceSection.style.display = 'none';
-        }
-        
-        // Show preorder notices for enabled formats
-        preorderPriceNotices.forEach(notice => {
-            const parentCard = notice.closest('.border');
-            if (parentCard) {
-                // Check if this is physical format notice
-                if (parentCard.closest('#physical_format') && physicalCheckbox && physicalCheckbox.checked) {
-                    notice.style.display = 'block';
-                }
-                // Check if this is ebook format notice
-                else if (parentCard.closest('#ebook_format') && ebookCheckbox && ebookCheckbox.checked) {
-                    notice.style.display = 'block';
-                }
-            }
-        });
-        
-        // Set default stock limit if empty
+
+        // Default stock
         if (stockPreorderLimitInput && !stockPreorderLimitInput.value) {
             stockPreorderLimitInput.value = 100;
         }
     } else {
         preorderSection.style.display = 'none';
-        
-        // Remove required from fields
-        if (releaseDateInput) {
-            releaseDateInput.required = false;
-            releaseDateInput.value = '';
-        }
-        if (stockPreorderLimitInput) {
-            stockPreorderLimitInput.required = false;
-            stockPreorderLimitInput.value = '';
-        }
-        
-        // Show price sections and hide notices for enabled formats
+
+        // Remove required
+        if (releaseDateInput) { releaseDateInput.required = false; releaseDateInput.value = ''; }
+        if (stockPreorderLimitInput) { stockPreorderLimitInput.required = false; stockPreorderLimitInput.value = ''; }
+
+        // Khôi phục lại form nhập giá gốc
         if (physicalPriceSection && physicalCheckbox && physicalCheckbox.checked) {
-            physicalPriceSection.style.display = 'block';
-        }
-        if (ebookPriceSection && ebookCheckbox && ebookCheckbox.checked) {
-            ebookPriceSection.style.display = 'block';
+            physicalPriceSection.innerHTML = `
+                <div class="col-md-4">
+                    <label class="form-label fw-medium">Giá bán <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" name="physical_price" 
+                               value="{{ old('physical_price') }}" min="0" required>
+                        <span class="input-group-text">đ</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-medium">Giá khuyến mãi</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" name="physical_sale_price" 
+                               value="{{ old('physical_sale_price') }}" min="0">
+                        <span class="input-group-text">đ</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-medium">Số Lượng Tổng</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="total_variant_stock_display" readonly 
+                               placeholder="Tổng số lượng từ các biến thể">
+                        <span class="input-group-text">cuốn</span>
+                    </div>
+                    <input type="hidden" name="physical_stock" id="total_variant_stock_hidden">
+                    <div class="form-text">
+                        <i class="ri-information-line me-1"></i>
+                        Số lượng sẽ được tính tổng từ các biến thể
+                    </div>
+                </div>
+            `;
         }
         
+        if (ebookPriceSection && ebookCheckbox && ebookCheckbox.checked) {
+            ebookPriceSection.innerHTML = `
+                <div class="col-md-6">
+                    <label class="form-label fw-medium">Giá bán <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" name="ebook_price" 
+                               value="{{ old('ebook_price') }}" min="0" required>
+                        <span class="input-group-text">đ</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-medium">Giá khuyến mãi</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" name="ebook_sale_price" 
+                               value="{{ old('ebook_sale_price') }}" min="0">
+                        <span class="input-group-text">đ</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Ẩn tất cả preorder notices
         preorderPriceNotices.forEach(notice => {
             notice.style.display = 'none';
         });
@@ -913,6 +947,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const preOrderCheckbox = document.getElementById('pre_order');
     const drmEnabledCreate = document.getElementById('drm_enabled_create');
     const drmSettingsCreate = document.getElementById('drm_settings_create');
+    console.log(preOrderCheckbox);
     
     // Add event listeners
     if (physicalCheckbox) {
