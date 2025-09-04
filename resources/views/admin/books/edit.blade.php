@@ -342,7 +342,7 @@
                                     </div>
                                     
                                     <!-- Thông tin cơ bản sách vật lý -->
-                                    <div id="physical_price_section" class="row g-3 mb-4">
+                                    <div id="physical_price_section" class="d-flex row g-3 mb-4">
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][price]" 
@@ -510,7 +510,7 @@
                                         <strong>Chế độ đặt trước:</strong> Giá sách sẽ sử dụng "Giá ưu đãi đặt trước" đã cấu hình ở phần trên.
                                     </div>
                                     
-                                    <div id="ebook_price_section" class="row g-3">
+                                    <div id="ebook_price_section" class="d-flex row g-3">
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][price]" 
@@ -579,7 +579,7 @@
                                                     </label>
                                                 </div>
 
-                                                <div id="drm_settings" class="row g-3" style="display: {{ old('formats.ebook.drm_enabled', $ebookFormat->drm_enabled ?? true) ? 'block' : 'none' }};">
+                                                <div id="drm_settings" class="d-flex row g-3" style="display: {{ old('formats.ebook.drm_enabled', $ebookFormat->drm_enabled ?? true) ? 'block' : 'none' }};">
                                                     <div class="col-md-6">
                                                         <label class="form-label fw-medium">Số lần tải tối đa</label>
                                                         <input type="number" class="form-control" name="formats[ebook][max_downloads]" 
