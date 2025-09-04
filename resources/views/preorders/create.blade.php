@@ -801,6 +801,11 @@ document.addEventListener('DOMContentLoaded', function() {
             shippingPriceRow.style.display = 'none';
             shippingFee = 0;
             extraPrice = 0;
+            // Xóa lựa chọn biến thể khi chọn Ebook
+            if (selectedVariantIdsInput) selectedVariantIdsInput.value = '';
+            if (variantRadios && variantRadios.length > 0) {
+                variantRadios.forEach(r => { r.checked = false; });
+            }
             // Hiển thị form email nhận ebook
             document.getElementById('ebookEmailSection').style.display = 'block';
             // Ẩn và bỏ required số lượng cho ebook, đặt về 1
@@ -1223,6 +1228,11 @@ function updateTotalAmount() {
                 alert('Vui lòng nhập email hợp lệ để nhận file ebook');
                 return;
             }
+
+            // Đảm bảo không gửi dữ liệu biến thể cho Ebook
+            const hiddenVariantIds = document.getElementById('selectedVariantIds');
+            if (hiddenVariantIds) hiddenVariantIds.value = '';
+            document.querySelectorAll('.variant-radio').forEach(r => { r.checked = false; });
         } else {
             const requiredFields = ['province_code', 'district_code', 'ward_code'];
             for (let field of requiredFields) {
