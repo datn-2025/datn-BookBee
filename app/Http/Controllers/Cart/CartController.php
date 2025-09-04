@@ -1356,7 +1356,8 @@ class CartController extends Controller
                         DB::raw('COALESCE(book_formats.format_name, "Bản thường") as format_name'),
                         DB::raw('COALESCE(authors.name, "Chưa cập nhật") as author_name'),
                         DB::raw('COALESCE(book_formats.stock, 0) as stock'),
-                        DB::raw('COALESCE(book_formats.price, 0) as price')
+                        DB::raw('COALESCE(book_formats.price, 0) as price'),
+                        DB::raw('COALESCE(book_formats.discount, 0) as discount')
                     )
                     ->first();
 
@@ -1372,8 +1373,10 @@ class CartController extends Controller
 
                 // Tính giá hiện tại (bao gồm discount và extra_price từ variants)
                 $currentPrice = $bookInfo->price;
-                if (isset($bookInfo->discount) && $bookInfo->discount > 0) {
+                // Trừ khuyến mãi nếu có
+                if ($bookInfo->discount > 0) {
                     $currentPrice = $bookInfo->price - $bookInfo->discount;
+                    $currentPrice = max(0, $currentPrice); // Đảm bảo giá không âm
                 }
 
                 // Add extra price from variants (chỉ cho sách vật lý)

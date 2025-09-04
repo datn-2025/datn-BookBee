@@ -1421,7 +1421,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const selectedVoucherDiscount = document.getElementById('selected-voucher-discount');
         
         if (selectedVoucherCode) selectedVoucherCode.textContent = voucherData.code;
-        if (selectedVoucherDesc) selectedVoucherDesc.textContent = voucherData.description || 'Mã giảm giá';
+        if (selectedVoucherDesc) {
+            const parser = new DOMParser();
+            const parsed = parser.parseFromString(voucherData.description || '', 'text/html');
+            selectedVoucherDesc.textContent = parsed.body.textContent || 'Mã giảm giá';
+        }
         if (selectedVoucherDiscount) {
             selectedVoucherDiscount.textContent = `Giảm ${number_format(voucherData.discount_amount)}đ`;
         }
