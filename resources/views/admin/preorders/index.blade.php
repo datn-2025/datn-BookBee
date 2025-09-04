@@ -3,6 +3,14 @@
 @section('title', 'Quản Lý Đơn Đặt Trước')
 
 @section('content')
+    @if(session('warning'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const warningData = @json(session('warning'));
+                showConvertWarningModal(warningData);
+            });
+        </script>
+    @endif
 <div class="container-fluid">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -355,38 +363,40 @@
 <div class="modal fade" id="convertModal" tabindex="-1" aria-labelledby="convertModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-warning">
                 <h5 class="modal-title" id="convertModalLabel">
-                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    <i class="fas fa-exclamation-triangle"></i>
                     Xác nhận chuyển đổi đơn đặt trước
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-info" id="convertInfo">
-                    <strong>Thông tin đơn hàng:</strong>
-                    <br>• Sách: <span id="bookTitle"></span>
-                    <br>• Ngày phát hành: <span id="releaseDate"></span>
+                <div class="mb-4">
+                    <h6 class="fw-bold">Thông tin đơn hàng:</h6>
+                    <div class="ps-3">
+                        <p class="mb-2">• Tên sách: <span id="bookTitle" class="fw-bold"></span></p>
+                        <p class="mb-2">• Ngày phát hành: <span id="releaseDate" class="fw-bold"></span></p>
+                        <p class="mb-0" id="releaseStatus"></p>
+                    </div>
                 </div>
-                <div class="alert alert-warning" id="earlyWarning" style="display: none;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <strong>Cảnh báo:</strong> Sách chưa đến ngày phát hành chính thức. 
-                    Việc chuyển đổi sớm có thể ảnh hưởng đến quy trình giao hàng.
+
+                <div class="alert alert-warning mb-4" id="warningMessage">
+                    <!-- Nội dung cảnh báo sẽ được điền bằng JavaScript -->
                 </div>
-                <div class="alert alert-success" id="readyInfo" style="display: none;">
-                    <i class="fas fa-check-circle"></i>
-                    Sách đã được phát hành và sẵn sàng để chuyển đổi thành đơn hàng.
+                
+                <div class="mb-3">
+                    <p class="fw-bold mb-1">Xác nhận chuyển đổi:</p>
+                    <p class="text-muted small">Sau khi chuyển đổi thành đơn hàng, thao tác này không thể hoàn tác. 
+                    Hãy chắc chắn rằng bạn muốn thực hiện chuyển đổi.</p>
                 </div>
-                <p><strong>Bạn có chắc chắn muốn chuyển đổi đơn đặt trước này thành đơn hàng chính thức không?</strong></p>
-                <p class="text-muted small">Sau khi chuyển đổi, đơn đặt trước sẽ trở thành đơn hàng và không thể hoàn tác.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                     <i class="fas fa-times"></i> Hủy bỏ
                 </button>
                 <form id="convertForm" method="POST" class="d-inline">
                     @csrf
-                    <button type="submit" class="btn btn-primary" id="confirmConvertBtn">
+                    <button type="submit" class="btn btn-warning" id="confirmConvertBtn">
                         <i class="fas fa-exchange-alt"></i> Xác nhận chuyển đổi
                     </button>
                 </form>
@@ -516,49 +526,52 @@ function updateBulkUpdateButton() {
     bulkUpdateBtn.disabled = checkedBoxes.length === 0;
 }
 
-// Modal xác nhận chuyển đổi
-function showConvertModal(preorderId, bookTitle, isReleased, releaseDate) {
-    // Cập nhật thông tin trong modal
-    document.getElementById('bookTitle').textContent = bookTitle;
-    document.getElementById('releaseDate').textContent = releaseDate;
+// Hiển thị modal cảnh báo từ controller
+function showConvertWarningModal(warningData) {
+    document.getElementById('bookTitle').textContent = warningData.bookTitle || '';
+    document.getElementById('releaseDate').textContent = warningData.releaseDate || '';
     
-    // Hiển thị cảnh báo phù hợp
-    const earlyWarning = document.getElementById('earlyWarning');
-    const readyInfo = document.getElementById('readyInfo');
-    const confirmBtn = document.getElementById('confirmConvertBtn');
-    
-    if (isReleased) {
-        earlyWarning.style.display = 'none';
-        readyInfo.style.display = 'block';
-        confirmBtn.className = 'btn btn-success';
-        confirmBtn.innerHTML = '<i class="fas fa-exchange-alt"></i> Xác nhận chuyển đổi';
-    } else {
-        earlyWarning.style.display = 'block';
-        readyInfo.style.display = 'none';
-        confirmBtn.className = 'btn btn-warning';
-        confirmBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Xác nhận chuyển đổi sớm';
-    }
-    
-    // Cập nhật action của form
+    // Cập nhật nội dung cảnh báo
+    const warningMessage = document.getElementById('warningMessage');
+    warningMessage.innerHTML = `
+        <i class="fas fa-exclamation-triangle"></i>
+        ${warningData.message}
+    `;
+    warningMessage.className = 'alert alert-warning mb-4';
+
+    // Cập nhật form action
     const form = document.getElementById('convertForm');
-    form.action = `/admin/preorders/${preorderId}/convert-to-order`;
-    
-    // Xóa input force_convert cũ nếu có
-    const existingInput = form.querySelector('input[name="force_convert"]');
-    if (existingInput) {
-        existingInput.remove();
-    }
-    
-    // Thêm input force_convert=1
-    const forceConvertInput = document.createElement('input');
-    forceConvertInput.type = 'hidden';
-    forceConvertInput.name = 'force_convert';
-    forceConvertInput.value = '1';
-    form.appendChild(forceConvertInput);
-    
+    form.action = warningData.confirm_url;
+
     // Hiển thị modal
     const modal = new bootstrap.Modal(document.getElementById('convertModal'));
     modal.show();
+}
+
+// Modal xác nhận chuyển đổi ban đầu
+function showConvertModal(preorderId, bookTitle, isReleased, releaseDate) {
+    // Tạo request đến controller để lấy cảnh báo
+    fetch(`/admin/preorders/${preorderId}/convert-to-order`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.toast) {
+            toastr[data.toast.type](data.toast.message);
+            return;
+        }
+        if (data.warning) {
+            showConvertWarningModal(data.warning);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 }
 
 // Modal cập nhật trạng thái

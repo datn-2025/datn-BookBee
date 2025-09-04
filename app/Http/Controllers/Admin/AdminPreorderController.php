@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Spatie\Permission\Models\Role;
 
 class AdminPreorderController extends Controller
 {
@@ -421,60 +422,120 @@ class AdminPreorderController extends Controller
             'request_data' => $request->all(),
             'user' => Auth::user()->email ?? 'system'
         ]);
-        // dd(!$preorder->canBeConverted());
+        // Kiểm tra ngày phát hành
+        $bookFormat = $preorder->bookFormat;
+        $isEbook = !empty($bookFormat->file_url);
+        // if ($isEbook) {
+        //     if ($request->ajax()) {
+        //         return response()->json([
+        //             'error' => 'Không thể chuyển đổi và gửi ebook trước ngày phát hành chính thức.'
+        //         ], 422);
+        //     } else {
+        //         toastr()->error('Không thể chuyển đổi và gửi ebook trước ngày phát hành chính thức.');
+        //         return back();
+        //     }
+        // }
+
+        // Nếu là AJAX request, trả về warning message
+        if ($request->ajax()) {
+            if ($isEbook) {
+                return response()->json([
+                    'toast' => [
+                        'type' => 'error',
+                        'message' => 'Không thể chuyển đổi và gửi ebook trước ngày phát hành chính thức.'
+                    ]
+                ]);
+            }
+            $warning = [
+                'message' => "Bạn có chắc chắn muốn chuyển đổi đơn đặt trước của khách hàng '{$preorder->customer_name}' cho sách '{$preorder->book->title}' (Tổng tiền: " . number_format($preorder->total_amount, 0, ',', '.') . " VNĐ) thành đơn hàng chính thức không? Hành động này không thể hoàn tác.",
+                'bookTitle' => $preorder->book->title,
+                'releaseDate' => $preorder->book->release_date->format('d/m/Y'),
+                'confirm_url' => route('admin.preorders.convert-to-order', ['preorder' => $preorder, 'force_convert' => 1])
+            ];
+
+            if (!$preorder->book->isReleased()) {
+                $warning['message'] = "CẢNH BÁO: Bạn đang chuyển đổi đơn đặt trước sách '{$preorder->book->title}' của khách hàng '{$preorder->customer_name}' (Tổng tiền: " . number_format($preorder->total_amount, 0, ',', '.') . " VNĐ) trước ngày phát hành ({$preorder->book->release_date->format('d/m/Y')}). Hành động này có thể ảnh hưởng đến quy trình phát hành sách và trải nghiệm của khách hàng. Bạn có chắc chắn muốn tiếp tục?";
+                $warning['confirm_url'] = route('admin.preorders.convert-to-order', [
+                    'preorder' => $preorder,
+                    'force_early_convert' => 1,
+                    'force_convert' => 1
+                ]);
+            }
+
+            return response()->json(['warning' => $warning]);
+        }
+
         // B1: Kiểm tra điều kiện chuyển đổi
         if (!$preorder->canBeConverted()) {
-            // dd(10);
             Log::warning('Cannot convert preorder - invalid status', [
                 'preorder_id' => $preorder->id,
                 'current_status' => $preorder->status
             ]);
             return back()->with('error', 'Chỉ có thể chuyển đổi đơn đã được duyệt và chưa chuyển đổi.');
         }
-        // dd(1);
         
         Log::info('Preorder can be converted', ['preorder_id' => $preorder->id]);
         
         // Kiểm tra đã được chuyển đổi chưa
-        // dd($preorder->isConverted());
         if ($preorder->isConverted()) {
-            // dd(1);
             Log::warning('Preorder already converted', ['preorder_id' => $preorder->id]);
             return back()->with('error', 'Đơn đặt trước này đã được chuyển đổi thành đơn hàng.');
         }
-        // dd(10);
-        
-        Log::info('Preorder not yet converted, proceeding', ['preorder_id' => $preorder->id]);
 
-        // Thêm cảnh báo xác nhận cho admin trước khi chuyển đổi
-        if (!$request->has('force_convert')) {
-            // dd(3);
-            $bookTitle = $preorder->book->title;
-            $customerName = $preorder->customer_name;
-            $totalAmount = number_format($preorder->total_amount, 0, ',', '.') . ' VNĐ';
-            // dd($bookTitle, $customerName, $totalAmount);
-            return back()->with('warning', [
-                'message' => "Bạn có chắc chắn muốn chuyển đổi đơn đặt trước của khách hàng '{$customerName}' cho sách '{$bookTitle}' (Tổng tiền: {$totalAmount}) thành đơn hàng chính thức không? Hành động này không thể hoàn tác.",
-                'confirm_url' => route('admin.preorders.convert-to-order', $preorder) . '?force_convert=1',
-                'preorder_id' => $preorder->id
-            ]);
-        }
-        // dd(1);
-        // Allow conversion even if book is not released yet, with a warning
-        // Cho phép convert kể cả khi sách chưa phát hành (ghi log cảnh báo)
         if (!$preorder->book->isReleased()) {
-            Log::info("Converting preorder to order before release date", [
+            // dd(1);
+            if ($isEbook) {
+                toastr()->error('Không thể chuyển đổi và gửi ebook trước ngày phát hành chính thức.');
+                return back();
+            }
+            // dd(1);
+            // Kiểm tra quyền đặc biệt cho việc chuyển đổi sớm sách vật lý
+            // Kiểm tra user có quyền admin
+            // if (!Auth::user()->is_admin) {
+            //     return back()->with('error', 'Không có quyền chuyển đổi đơn hàng trước ngày phát hành.');
+            // }
+            // dd(1);
+
+            // Yêu cầu xác nhận đặc biệt cho việc chuyển đổi sớm
+            // dd($request->all());
+            if (!$request->has('force_early_convert')) {
+                // dd(1);
+                $releaseDate = $preorder->book->release_date->format('d/m/Y');
+                $bookTitle = $preorder->book->title;
+                $customerName = $preorder->customer_name;
+                $totalAmount = number_format($preorder->total_amount, 0, ',', '.') . ' VNĐ';
+
+                return back()->with('warning', [
+                    'message' => "CẢNH BÁO: Bạn đang chuyển đổi đơn đặt trước sách '{$bookTitle}' của khách hàng '{$customerName}' (Tổng tiền: {$totalAmount}) trước ngày phát hành ({$releaseDate}). 
+                                 Hành động này có thể ảnh hưởng đến quy trình phát hành sách và trải nghiệm của khách hàng.
+                                 Bạn có chắc chắn muốn tiếp tục?",
+                    'confirm_url' => route('admin.preorders.convert-to-order', [
+                        'preorder' => $preorder,
+                        'force_early_convert' => 1,
+                        'force_convert' => 1
+                    ]),
+                    'preorder_id' => $preorder->id
+                ]);
+            }
+
+            Log::warning('Early preorder conversion initiated', [
                 'preorder_id' => $preorder->id,
                 'book_title' => $preorder->book->title,
                 'release_date' => $preorder->book->release_date,
-                'converted_by' => Auth::user()->email ?? 'system'
+                'converted_by' => Auth::user()->email
             ]);
-            
-            // Thêm thông báo cảnh báo cho admin
-            toastr()->warning(
-                'Cảnh báo: Sách "' . $preorder->book->title . '" chưa đến ngày phát hành (' . 
-                $preorder->book->release_date->format('d/m/Y') . '). Đơn hàng vẫn được tạo thành công.'
-            );
+        } else {
+            // Thêm cảnh báo xác nhận thông thường cho admin
+            if (!$request->has('force_convert')) {
+                $bookTitle = $preorder->book->title;
+                $customerName = $preorder->customer_name;
+                $totalAmount = number_format($preorder->total_amount, 0, ',', '.') . ' VNĐ';
+                return back()->with('warning', [
+                    'message' => "Bạn có chắc chắn muốn chuyển đổi đơn đặt trước của khách hàng '{$customerName}' cho sách '{$bookTitle}' (Tổng tiền: {$totalAmount}) thành đơn hàng chính thức không? Hành động này không thể hoàn tác.",
+                    'confirm_url' => route('admin.preorders.convert-to-order', $preorder) . '?force_convert=1',
+                    'preorder_id' => $preorder->id
+                ]);
+            }
         }
 
         try {
@@ -809,7 +870,7 @@ class AdminPreorderController extends Controller
             
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Lỗi bulk update preorder status: ' . $e->getMessage());
+            Log::error('Lỗi bulk update preorder status: ' . $e->getMessage());
             return back()->with('error', 'Có lỗi xảy ra khi cập nhật hàng loạt.');
         }
     }
