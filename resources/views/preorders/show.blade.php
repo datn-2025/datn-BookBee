@@ -37,6 +37,9 @@
                                 </div>
                                 <div class="col-md-6 order-md-2 text-md-end">
                                     <p class="mb-2"><strong>Trạng thái:</strong> <span class="badge bg-success">{{ $preorder->status_text }}</span></p>
+                                    @if ($preorder->notes)
+                                        <p class="mb-2"><strong>Lý do:</strong> {{ $preorder->notes }}</p>
+                                    @endif
                                     <p class="mb-2"><strong>Tổng tiền:</strong> <span class="text-warning fw-bold fs-5">{{ number_format($preorder->total_amount, 0, ',', '.') }}đ</span></p>
                                 </div>
                             </div>
