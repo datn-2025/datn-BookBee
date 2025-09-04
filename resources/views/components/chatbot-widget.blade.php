@@ -21,7 +21,7 @@
         {{-- <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
             <span class="text-white text-xs font-bold">1</span>
         </div> --}}
-        <img style=" border-radius: 50%; object-fit: cover;" src="{{ asset('storage/avtchatbot.jpg') }}" alt="">
+        <img style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid black;" src="{{ asset('storage/images/chatbot.jpg') }}" alt="">
     </button>
 
     <!-- Chat Window - Style -->
@@ -705,7 +705,7 @@ class ChatbotWidget {
                 U
             </div>` :
             `<div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">
-                <img style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" src="{{ asset('images/avtchatbot.jpg') }}" alt="">
+                <img style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" src="{{ asset('storage/images/chatbot.jpg') }}" alt="">
             </div>`;
             
         const messageClass = sender === 'user' ? 'message-user' : 'message-bot';

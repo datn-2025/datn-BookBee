@@ -3,7 +3,7 @@
         <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-3">
                 <span class="text-2xl">💡</span>
-                <h3 class="text-lg md:text-xl font-bold text-amber-800 uppercase tracking-wide">Insight Story</h3>
+                <h3 class="text-lg md:text-xl font-bold text-amber-800 uppercase tracking-wide">Thông tin nổi bật</h3>
             </div>
             {{-- <span class="text-xs text-amber-700">Tự động từ dữ liệu (demo)</span> --}}
         </div>

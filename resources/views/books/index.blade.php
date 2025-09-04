@@ -212,7 +212,7 @@
                 <div class="relative group">
                     <!-- Enhanced Background image style như home -->
                     <div class="relative h-80 md:h-96 w-80 md:w-96 bg-cover bg-center bg-no-repeat transform group-hover:scale-105 transition-transform duration-700"
-                         style="background-image: url('{{ asset('storage/images/banner-image2.png') }}');">
+                         style="background-image: url('{{ asset('storage/images/banner_sach.jpg') }}');">
                         
                         <!-- Enhanced Badge với amber theme -->
                         <div class="absolute -top-6 -left-6 bg-amber-600 text-white px-6 py-3 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-500 shadow-lg">

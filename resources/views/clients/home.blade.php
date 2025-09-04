@@ -70,7 +70,7 @@
                 <div class="relative group">
                     <!-- Background image style -->
                     <div class="relative h-80 md:h-96 w-80 md:w-96 bg-cover bg-center bg-no-repeat transform group-hover:scale-105 transition-transform duration-700"
-                         style="background-image: url('{{ asset('storage/images/banner-image2.png') }}');">
+                         style="background-image: url('{{ asset('storage/images/banner_home.jpg') }}');">
                     </div>
 
                     <!-- Background geometric shape -->
