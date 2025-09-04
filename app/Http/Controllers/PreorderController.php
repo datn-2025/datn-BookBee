@@ -48,9 +48,10 @@ class PreorderController extends Controller
     {
         // Kiểm tra điều kiện cho phép đặt trước (ví dụ: cờ pre_order, thời gian mở preorder, tồn kho dự kiến...)
         if (!$book->canPreorder()) {
+            toastr()->error('Sách này không thể đặt trước.');
             return redirect()->back()->with('error', 'Sách này không thể đặt trước.');
         }  //Đoạn code kiểm tra nếu sách không thể đặt trước ($book->canPreorder() trả về false) thì sẽ chuyển người dùng về trang trước và hiển thị thông báo lỗi "Sách này không thể đặt trước.".
-
+        // dd($book);
         // Danh sách định dạng sách (bìa cứng, bìa mềm, ebook, ...)
         $formats = $book->formats()->get();
         // Thuộc tính/biến thể hiển thị cho người dùng lựa chọn (màu, chữ ký, tặng kèm...)
@@ -117,8 +118,11 @@ class PreorderController extends Controller
         $bookFormat = $validated['book_format_id'] ? BookFormat::findOrFail($validated['book_format_id']) : null; //Nếu người dùng có chọn định dạng sách (ví dụ: bìa mềm, bìa cứng, ebook) thì lấy bản ghi BookFormat. Nếu không có thì để null.
         $paymentMethod = PaymentMethod::findOrFail($validated['payment_method_id']);//Lấy phương thức thanh toán đã chọn từ bảng payment_methods.
         // Kiểm tra xem sách có thể đặt trước không
+        // dd($book->canPreorder());
         if (!$book->canPreorder()) {
-            return back()->with('error', 'Sách này không thể đặt trước.');
+            // dd(1);
+            toastr()->error('Sách này không thể đặt trước.');
+            return redirect()->route('books.show', $book->slug)->with('error', 'Sách này không thể đặt trước.');
         }
 
         // Kiểm tra định dạng có phải ebook không (ebook: không cần địa chỉ giao hàng)
