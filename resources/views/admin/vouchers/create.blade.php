@@ -100,7 +100,7 @@
                                 <div class="form-group">
                                     <label for="quantity">Số lượng <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control @error('quantity') is-invalid @enderror"
-                                           id="quantity" name="quantity" value="{{ old('quantity') }}" min="1" >
+                                            name="quantity" value="{{ old('quantity') }}" min="1" >
                                     @error('quantity')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
