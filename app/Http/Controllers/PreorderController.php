@@ -556,8 +556,8 @@ class PreorderController extends Controller
         if ($preorder) {
             $preorder->update([
                 'vnpay_transaction_id' => $data['order_code'],
-                // Sử dụng giá trị hợp lệ theo enum: pending | paid | failed
-                'payment_status' => 'paid'
+                // Đánh dấu là pending cho đến khi nhận được kết quả từ VNPay
+                'payment_status' => 'pending'
             ]);
         }
         
