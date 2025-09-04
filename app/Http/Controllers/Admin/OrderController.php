@@ -106,6 +106,7 @@ class OrderController extends Controller
             'invoice.items.collection',
             'orderItems.book.images',
             'orderItems.bookFormat',
+            'orderItems.variant',
             'orderItems.collection',
             'orderItems.attributeValues.attribute',
             'childOrders.orderStatus',
