@@ -198,6 +198,15 @@ class PreorderController extends Controller
                 }
             }
 
+            // Nếu là Ebook: bỏ qua hoàn toàn biến thể (không cộng phụ phí, không lưu field variant)
+            if ($isEbook) {
+                $selectedVariantValueIds = [];
+                $variant = null;
+                $variantExtraPrice = 0;
+                $variantLabel = null;
+                $variantSku = null;
+            }
+
             // Tính giá thêm từ thuộc tính (chỉ áp dụng cho sách vật lý)
             $attributeExtraPrice = 0; // Tổng giá trị từ các thuộc tính
             if (!empty($selectedAttributes) && !$isEbook) { // Kiểm tra nếu có thuộc tính được chọn và sách không phải ebook
@@ -362,7 +371,7 @@ class PreorderController extends Controller
             try {
                 Mail::to($preorder->email)->send(new PreorderConfirmation($preorder));
             } catch (\Exception $e) {
-                \Log::error('Lỗi gửi email preorder: ' . $e->getMessage());
+                Log::error('Lỗi gửi email preorder: ' . $e->getMessage());
             }
 
             return redirect()->route('preorders.show', $preorder)
@@ -370,7 +379,7 @@ class PreorderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Lỗi tạo preorder: ' . $e->getMessage());
+            Log::error('Lỗi tạo preorder: ' . $e->getMessage());
             return back()->with('error', 'Có lỗi xảy ra. Vui lòng thử lại.');
         }
     }
