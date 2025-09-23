@@ -18,6 +18,7 @@ use App\Models\BookGift;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Models\BookVariant;
+use Illuminate\Support\Facades\Log;
 
 class AdminBookController extends Controller
 {
@@ -152,7 +153,7 @@ class AdminBookController extends Controller
 
         // Validation với rules chung
         $validationRules = $this->getBookValidationRules(false);
-        
+        // dd($request->all());
         // Nếu has_gift = false, xóa hoàn toàn gift validation rules
         if (!$request->boolean('has_gift')) {
             unset($validationRules['gift_name']);
@@ -165,15 +166,18 @@ class AdminBookController extends Controller
             unset($validationRules['gift_book_id']);
         }
         
+        // dd($request->all());
         $validator = Validator::make(
             $request->all(),
             $validationRules,
             $this->getValidationMessages()
         );
-
+        
         if ($validator->fails()) {
+            Log::error('Validation errors: ', $validator->errors()->toArray());
             return back()->withInput()->withErrors($validator);
         }
+        // dd(1);
 
         // Validation bắt buộc chọn ít nhất một định dạng sách
         if (!$request->boolean('has_physical') && !$request->boolean('has_ebook')) {
@@ -200,7 +204,7 @@ class AdminBookController extends Controller
                 }
             }
         }
-        
+        // dd($errors);
         if (!empty($errors)) {
             return back()->withInput()->withErrors($errors);
         }

@@ -29,8 +29,10 @@ class OrderClientController extends Controller
     {
         $order = Order::with([
             'orderItems.book.gifts',
+            'orderItems.book.authors',
             'orderItems.collection',
             'orderItems.bookFormat',
+            'orderItems.ebookDownloads',
             'orderItems.attributeValues.attribute',
             'orderStatus',
             'paymentStatus',
@@ -42,8 +44,10 @@ class OrderClientController extends Controller
             'parentOrder', // Thêm parent order relationship
             'parentOrder.voucher', // Thêm voucher của parent order
             'childOrders.orderItems.book.gifts',
+            'childOrders.orderItems.book.authors',
             'childOrders.orderItems.collection',
             'childOrders.orderItems.bookFormat',
+            'childOrders.orderItems.ebookDownloads',
             'childOrders.orderItems.attributeValues.attribute',
             'childOrders.orderStatus',
             'childOrders.paymentStatus',
@@ -206,6 +210,7 @@ class OrderClientController extends Controller
             'orderItems.book.gifts',
             'orderItems.collection', 
             'orderItems.bookFormat',
+            'orderItems.ebookDownloads', // Eager load ebook download relations
             'orderItems.attributeValues.attribute',
             'orderStatus', 
             'paymentStatus',
@@ -217,6 +222,7 @@ class OrderClientController extends Controller
             'childOrders.orderItems.book.gifts',
             'childOrders.orderItems.collection',
             'childOrders.orderItems.bookFormat',
+            'childOrders.orderItems.ebookDownloads', // Eager load ebook download relations
             'childOrders.orderItems.attributeValues.attribute',
             'childOrders.orderStatus',
             'childOrders.paymentStatus',

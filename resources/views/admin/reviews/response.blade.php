@@ -278,14 +278,14 @@
                                             <p><strong>Số lượng đánh giá:</strong> {{ $review->book->reviews_count ?? 0 }}</p>
                                             <p><strong>Số lượng đã bán:</strong> {{ $review->book->sold_count ?? 0 }}</p>
 
-                                            <div class="mt-3 d-flex gap-2">
+                                            {{-- <div class="mt-3 d-flex gap-2">
                                                 <a href="{{ route('admin.books.show', ['id' => $review->book->id, 'slug' => $review->book->slug ?? Str::slug($review->book->title)]) }}" class="btn btn-outline-dark" target="_blank">
                                                     <i class="fas fa-cogs me-1"></i> Xem ở trang quản trị
                                                 </a>
                                                 <a href="{{ route('books.show', $review->book->slug ?? $review->book->id) }}" class="btn btn-outline-primary" target="_blank">
                                                     <i class="fas fa-eye me-1"></i> Xem ở giao diện khách hàng
                                                 </a>
-                                            </div>
+                                            </div> --}}
                                         </div>
                                     </div>
                                 </div>

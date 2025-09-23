@@ -44,6 +44,14 @@ class OrderItem extends Model
     }
 
     /**
+     * Quan hệ tới lịch sử tải ebook của từng dòng đơn hàng
+     */
+    public function ebookDownloads()
+    {
+        return $this->hasMany(EbookDownload::class, 'order_item_id');
+    }
+
+    /**
      * Quan hệ tới biến thể sách (nếu có)
      */
     public function variant()

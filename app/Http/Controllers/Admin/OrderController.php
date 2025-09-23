@@ -109,6 +109,7 @@ class OrderController extends Controller
             'orderItems.variant',
             'orderItems.collection',
             'orderItems.attributeValues.attribute',
+            'orderItems.ebookDownloads',
             'childOrders.orderStatus',
             'childOrders.paymentStatus'
         ])->findOrFail($id);

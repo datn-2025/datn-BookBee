@@ -530,12 +530,10 @@
                                                     <td class="ebook-download-cell">
                                                         @if($item->bookFormat && $item->bookFormat->format_name === 'Ebook')
                                                             @php
-                                                                $downloadCount = \App\Models\EbookDownload::where('user_id', $order->user_id)
-                                                                    ->where('order_id', $order->id)
-                                                                    ->where('book_format_id', $item->bookFormat->id)
-                                                                    ->count();
+                                                                $downloadCount = $item->ebookDownloads?->count() ?? 0;
                                                                 $maxDownloads = $item->bookFormat->max_downloads ?? 5;
                                                                 $drmEnabled = $item->bookFormat->drm_enabled ?? true;
+                                                                $lastDownload = optional($item->ebookDownloads?->sortByDesc('downloaded_at')?->first())->downloaded_at;
                                                             @endphp
                                                             <div class="text-center">
                                                                 <div class="mb-1">
@@ -559,10 +557,10 @@
                                                                         <span class="ebook-unlimited" style="font-size: 0.8rem;">∞</span>
                                                                     </div>
                                                                 @endif
-                                                                @if($downloadCount > 0)
+                                                                @if($downloadCount > 0 && $lastDownload)
                                                                     <div class="ebook-last-download" style="font-size: 0.65rem;">
                                                                         <i class="ri-time-line"></i>
-                                                                        <span>{{ \App\Models\EbookDownload::where('user_id', $order->user_id)->where('order_id', $order->id)->where('book_format_id', $item->bookFormat->id)->latest()->first()?->downloaded_at?->format('d/m H:i') ?? 'N/A' }}</span>
+                                                                        <span>{{ $lastDownload->format('d/m H:i') }}</span>
                                                                     </div>
                                                                 @endif
                                                             </div>
@@ -695,6 +693,87 @@
                                 </table>
                             </div>
                         </div>
+                        @php
+                            // Gom tất cả lịch sử tải xuống Ebook từ các order item
+                            $allDownloads = collect();
+                            if(isset($orderItems)) {
+                                foreach ($orderItems as $it) {
+                                    if ($it->ebookDownloads && $it->ebookDownloads->count() > 0) {
+                                        foreach ($it->ebookDownloads as $dl) {
+                                            $allDownloads->push([
+                                                'item' => $it,
+                                                'download' => $dl,
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+                            $allDownloads = $allDownloads->sortByDesc(function($row){
+                                return optional($row['download']->downloaded_at)->timestamp ?? 0;
+                            })->values();
+                        @endphp
+                        @if($allDownloads->count() > 0)
+                        <div class="mt-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <h5 class="text-muted mb-0 flex-grow-1">
+                                    <i class="ri-download-2-line me-2"></i>Lịch sử tải Ebook ({{ $allDownloads->count() }})
+                                </h5>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 60px;">#</th>
+                                            <th>Sản phẩm</th>
+                                            <th style="width: 140px;">Định dạng</th>
+                                            <th style="width: 160px;">Thời gian</th>
+                                            <th style="width: 140px;">IP</th>
+                                            <th>Thiết bị (User Agent)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($allDownloads as $i => $row)
+                                            @php
+                                                $it = $row['item'];
+                                                $dl = $row['download'];
+                                                $book = $it->book;
+                                            @endphp
+                                            <tr>
+                                                <td>{{ $i + 1 }}</td>
+                                                <td>
+                                                    @if($book)
+                                                        <div class="d-flex align-items-center">
+                                                            @if($book->cover_image)
+                                                                <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" class="me-2" style="width: 32px; height: 40px; object-fit: cover;">
+                                                            @endif
+                                                            <div>
+                                                                <div class="fw-semibold">{{ $book->title }}</div>
+                                                                <small class="text-muted">Mã Item: {{ $it->id }}</small>
+                                                            </div>
+                                                        </div>
+                                                    @elseif($it->collection_id)
+                                                        <div class="fw-semibold">Combo #{{ $it->collection_id }}</div>
+                                                    @else
+                                                        <span class="text-muted">N/A</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if($it->bookFormat)
+                                                        <span class="badge bg-primary">{{ $it->bookFormat->format_name }}</span>
+                                                    @else
+                                                        <span class="text-muted">N/A</span>
+                                                    @endif
+                                                </td>
+                                                <td>{{ optional($dl->downloaded_at)->format('d/m/Y H:i') }}</td>
+                                                <td>{{ $dl->ip_address ?? '-' }}</td>
+                                                <td class="text-truncate" style="max-width: 420px;" title="{{ $dl->user_agent }}">{{ \Illuminate\Support\Str::limit($dl->user_agent ?? '-', 100) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        @endif
                         @endif
                     </div>
                 </div>

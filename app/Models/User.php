@@ -39,7 +39,8 @@ class User extends Authenticatable
         'activation_token',
         'activation_expires',
         'google_id',
-        'last_seen'
+        'last_seen',
+        'role_id'
     ];
 
     /**

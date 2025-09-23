@@ -27,21 +27,23 @@ class AdminPreorderController extends Controller
     public function index(Request $request)
     {
         // Eager-load để giảm N+1 query trên danh sách
-        $query = Preorder::with(['user', 'book', 'bookFormat']); 
+        $query = Preorder::with(['user', 'book' => function($q) {
+            // Include cả sách đã xóa mềm
+            $q->withTrashed();
+        }, 'bookFormat']); 
 
-        // Filter theo status
         // Lọc theo trạng thái nếu có
-        if ($request->filled('status')) { //
-            $query->where('status', $request->status); //
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
-        // Filter theo sách
-        // Lọc theo sách (book_id)
+        // Lọc theo sách (book_id), bao gồm cả sách đã xóa
         if ($request->filled('book_id')) {
-            $query->where('book_id', $request->book_id);
+            $query->whereHas('book', function($q) use ($request) {
+                $q->withTrashed()->where('id', $request->book_id);
+            });
         }
 
-        // Tìm kiếm theo tên khách hàng hoặc email
         // Tìm kiếm theo tên/email/điện thoại
         if ($request->filled('search')) {
             $search = $request->search;
@@ -52,7 +54,15 @@ class AdminPreorderController extends Controller
             });
         }
 
-        // Filter theo ngày
+        // Lọc theo trạng thái xóa
+        if ($request->filled('trashed')) {
+            if ($request->trashed === 'only') {
+                $query->onlyTrashed(); // Chỉ lấy đơn đã xóa
+            } else if ($request->trashed === 'with') {
+                $query->withTrashed(); // Lấy cả đơn đã xóa và chưa xóa
+            }
+        }
+
         // Lọc theo ngày tạo từ ... đến ...
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
@@ -74,7 +84,7 @@ class AdminPreorderController extends Controller
             'da_huy' => Preorder::where('status', Preorder::STATUS_DA_HUY)->count(),
         ];
 
-        $books = Book::where('pre_order', true)->get(['id', 'title']);
+        $books = Book::where('pre_order', true)->withTrashed()->get(['id', 'title']);
 
         return view('admin.preorders.index', compact('preorders', 'stats', 'books'));
     }

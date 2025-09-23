@@ -19,6 +19,10 @@
 
     <form action="{{ route('admin.books.store') }}" method="POST" enctype="multipart/form-data"      novalidate>
         @csrf
+        <!-- Hidden inputs for required fields -->
+        <input type="hidden" name="formats[physical][stock]" value="{{ old('formats.physical.stock', 0) }}">
+        <input type="hidden" name="formats[ebook][price]" value="{{ old('formats.ebook.price', 0) }}" id="ebook_price_hidden">
+        
         <div class="row">
             <!-- Main Content -->
             <div class="col-lg-8">
@@ -381,6 +385,11 @@
                                 </label>
                             </div>
                             
+                            <!-- Hidden inputs cho giá trị mặc định -->
+                            <input type="hidden" name="formats[physical][price]" value="0" id="physical_price_hidden">
+                            <input type="hidden" name="formats[physical][discount]" value="0" id="physical_discount_hidden">
+                            {{-- <input type="hidden" name="formats[physical][stock]" value="0" id="physical_stock_hidden"> --}}
+
                             <div id="physical_format" style="display: none;">
                                 <div class="border rounded p-3 bg-light">
                                     <!-- Thông tin cơ bản sách vật lý -->
@@ -388,12 +397,16 @@
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giá bán (VNĐ)</label>
                                             <input type="number" class="form-control format-price" name="formats[physical][price]" 
-                                                   value="{{ old('formats.physical.price') }}" placeholder="0" min="0">
+                                                   value="{{ old('formats.physical.price') }}" placeholder="0" min="0" required
+                                                   id="physical_price_input">
+                                            @error('formats.physical.price')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[physical][discount]" 
-                                                   id="physical_discount" value="{{ old('formats.physical.discount') }}" placeholder="0" min="0">
+                                                   id="physical_discount_input" value="{{ old('formats.physical.discount') }}" placeholder="0" min="0">
                                             @error('formats.physical.discount')
                                                 <div class="text-danger small mt-1">{{ $message }}</div>
                                             @enderror
@@ -518,14 +531,20 @@
                                 <div class="border rounded p-3 bg-light">
                                     <div class="row g-3 d-flex" id="ebook_price_section">
                                         <div class="col-md-6">
-                                            <label class="form-label fw-medium">Giá bán (VNĐ)</label>
+                                            <label class="form-label fw-medium">Giá bán (VNĐ) <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control format-price" name="formats[ebook][price]" 
-                                                   value="{{ old('formats.ebook.price') }}" placeholder="0" min="0">
+                                                   value="{{ old('formats.ebook.price') }}" placeholder="0" min="0" required>
+                                            @error('formats.ebook.price')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium">Giảm giá (VNĐ)</label>
                                             <input type="number" class="form-control" name="formats[ebook][discount]" 
                                                    value="{{ old('formats.ebook.discount') }}" placeholder="0" min="0">
+                                            @error('formats.ebook.discount')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
                                         </div>
                                     </div>
                                     
@@ -536,13 +555,19 @@
                                     </div>
                                     <div class="row g-3">
                                         <div class="col-12">
-                                            <label class="form-label fw-medium">File Ebook</label>
+                                            <label class="form-label fw-medium">File Ebook <span class="text-danger">*</span></label>
                                             <input type="file" class="form-control" name="formats[ebook][file]" 
-                                                   accept=".pdf,.epub">
+                                                   accept=".pdf,.epub" required>
                                             @error('formats.ebook.file')
                                                 <div class="text-danger small mt-1">{{ $message }}</div>
                                             @enderror
                                             <div class="form-text">Chấp nhận file PDF hoặc EPUB, tối đa 50MB</div>
+                                            @if ($errors->any() && old('has_ebook'))
+                                                <div class="alert alert-warning mt-2 py-2 mb-0">
+                                                    <i class="ri-alert-line me-1"></i>
+                                                    Vì lý do bảo mật của trình duyệt, bạn cần chọn lại file sau khi form báo lỗi.
+                                                </div>
+                                            @endif
                                         </div>
                                         
                                         <div class="col-12">
@@ -792,14 +817,46 @@ function toggleFormatSections() {
     // Lấy phần tử DRM trong phạm vi hàm để tránh undefined
     const drmEnabledCreate = document.getElementById('drm_enabled_create');
     const drmSettingsCreate = document.getElementById('drm_settings_create');
-    console.log(drmEnabledCreate, drmSettingsCreate);
+
+    // Physical format elements
+    const physicalPriceInput = document.getElementById('physical_price_input');
+    const physicalDiscountInput = document.getElementById('physical_discount_input');
+    const physicalPriceHidden = document.getElementById('physical_price_hidden');
+    const physicalDiscountHidden = document.getElementById('physical_discount_hidden');
 
     if (physicalCheckbox && physicalForm) {
-        physicalForm.style.display = physicalCheckbox.checked ? 'block' : 'none';
+        const isChecked = physicalCheckbox.checked;
+        physicalForm.style.display = isChecked ? 'block' : 'none';
+
+        // Nếu checkbox được chọn, sử dụng giá trị từ input visible
+        if (isChecked) {
+            physicalPriceHidden.disabled = true;
+            physicalDiscountHidden.disabled = true;
+            
+            // Set default values if empty
+            if (!physicalPriceInput.value) physicalPriceInput.value = '0';
+            if (!physicalDiscountInput.value) physicalDiscountInput.value = '0';
+        } else {
+            // Nếu checkbox không được chọn, sử dụng hidden inputs với giá trị mặc định
+            physicalPriceHidden.disabled = false;
+            physicalDiscountHidden.disabled = false;
+        }
     }
     
     if (ebookCheckbox && ebookForm) {
         ebookForm.style.display = ebookCheckbox.checked ? 'block' : 'none';
+        
+        // Enable/disable required validation on ebook inputs when toggling
+        const ebookInputs = ebookForm.querySelectorAll('input[required]');
+        ebookInputs.forEach(input => {
+            input.required = ebookCheckbox.checked;
+        });
+        
+        // Tránh trùng name giữa hidden và visible: nếu đã bật ebook thì disable hidden input mặc định
+        const ebookPriceHidden = document.getElementById('ebook_price_hidden');
+        if (ebookPriceHidden) {
+            ebookPriceHidden.disabled = ebookCheckbox.checked ? true : false;
+        }
     }
     
     // Call preorder toggle to update price sections
@@ -819,6 +876,20 @@ function toggleGiftSection() {
         giftSection.style.display = giftCheckbox.checked ? 'block' : 'none';
     }
 }
+
+// Initialize form when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial toggle
+    toggleFormatSections();
+    toggleGiftSection();
+    togglePreorderSection();
+
+    // Add event listeners
+    const physicalCheckbox = document.getElementById('has_physical');
+    if (physicalCheckbox) {
+        physicalCheckbox.addEventListener('change', toggleFormatSections);
+    }
+});
 
 // Preorder section toggle
 function togglePreorderSection() {
@@ -880,29 +951,22 @@ function togglePreorderSection() {
         if (physicalPriceSection && physicalCheckbox && physicalCheckbox.checked) {
             physicalPriceSection.innerHTML = `
                 <div class="col-md-4">
-                    <label class="form-label fw-medium">Giá bán <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" name="physical_price" 
-                               value="{{ old('physical_price') }}" min="0" required>
-                        <span class="input-group-text">đ</span>
-                    </div>
+                    <label class="form-label fw-medium">Giá bán (VNĐ) <span class=\"text-danger\">*</span></label>
+                    <input type=\"number\" class=\"form-control format-price\" name=\"formats[physical][price]\" 
+                           value=\"{{ old('formats.physical.price') }}\" placeholder=\"0\" min=\"0\" required id=\"physical_price_input\">
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label fw-medium">Giá khuyến mãi</label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" name="physical_sale_price" 
-                               value="{{ old('physical_sale_price') }}" min="0">
-                        <span class="input-group-text">đ</span>
-                    </div>
+                    <label class=\"form-label fw-medium\">Giảm giá (VNĐ)</label>
+                    <input type=\"number\" class=\"form-control\" name=\"formats[physical][discount]\" 
+                           id=\"physical_discount_input\" value=\"{{ old('formats.physical.discount') }}\" placeholder=\"0\" min=\"0\">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-medium">Số Lượng Tổng</label>
                     <div class="input-group">
-                        <input type="number" class="form-control" id="total_variant_stock_display" readonly 
-                               placeholder="Tổng số lượng từ các biến thể">
+                        <input type=\"text\" class=\"form-control\" id=\"total_variant_stock_display\" value=\"0\" readonly>
                         <span class="input-group-text">cuốn</span>
                     </div>
-                    <input type="hidden" name="physical_stock" id="total_variant_stock_hidden">
+                    <input type=\"hidden\" name=\"formats[physical][stock]\" id=\"total_variant_stock_hidden\" value=\"{{ old('formats.physical.stock', 0) }}\">
                     <div class="form-text">
                         <i class="ri-information-line me-1"></i>
                         Số lượng sẽ được tính tổng từ các biến thể
@@ -914,20 +978,14 @@ function togglePreorderSection() {
         if (ebookPriceSection && ebookCheckbox && ebookCheckbox.checked) {
             ebookPriceSection.innerHTML = `
                 <div class="col-md-6">
-                    <label class="form-label fw-medium">Giá bán <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" name="ebook_price" 
-                               value="{{ old('ebook_price') }}" min="0" required>
-                        <span class="input-group-text">đ</span>
-                    </div>
+                    <label class=\"form-label fw-medium\">Giá bán (VNĐ) <span class=\"text-danger\">*</span></label>
+                    <input type=\"number\" class=\"form-control format-price\" name=\"formats[ebook][price]\" 
+                           value=\"{{ old('formats.ebook.price') }}\" placeholder=\"0\" min=\"0\" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-medium">Giá khuyến mãi</label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" name="ebook_sale_price" 
-                               value="{{ old('ebook_sale_price') }}" min="0">
-                        <span class="input-group-text">đ</span>
-                    </div>
+                    <label class=\"form-label fw-medium\">Giảm giá (VNĐ)</label>
+                    <input type=\"number\" class=\"form-control\" name=\"formats[ebook][discount]\" 
+                           value=\"{{ old('formats.ebook.discount') }}\" placeholder=\"0\" min=\"0\">        
                 </div>
             `;
         }
@@ -981,6 +1039,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Khôi phục thuộc tính và biến thể từ old() sau khi validate lỗi
     restoreSelectedAttributesFromOld();
     restoreVariantsFromOld();
+    // Fallback: Khôi phục giá & giảm giá sách vật lý từ old() (nếu có)
+    try {
+        const oldPhysical = @json(old('formats.physical')) || {};
+        const priceEl = document.getElementById('physical_price_input');
+        const discountEl = document.getElementById('physical_discount_input');
+        const stockDisplayEl = document.getElementById('total_variant_stock_display');
+        const stockHiddenEl = document.querySelector('input[name="formats[physical][stock]"]');
+        if (priceEl && typeof oldPhysical.price !== 'undefined' && oldPhysical.price !== null && oldPhysical.price !== '') {
+            priceEl.value = oldPhysical.price;
+        }
+        if (discountEl && typeof oldPhysical.discount !== 'undefined' && oldPhysical.discount !== null && oldPhysical.discount !== '') {
+            discountEl.value = oldPhysical.discount;
+        }
+        if (stockDisplayEl && stockHiddenEl) {
+            const oldStock = (typeof oldPhysical.stock !== 'undefined' && oldPhysical.stock !== null && oldPhysical.stock !== '') ? oldPhysical.stock : stockHiddenEl.value || 0;
+            stockDisplayEl.value = oldStock;
+            stockHiddenEl.value = oldStock;
+        }
+    } catch (e) { /* ignore */ }
     
     // Preview images
     const coverInput = document.getElementById('cover_image');
@@ -1186,10 +1263,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="number" class="form-control" name="variants[${idx}][extra_price]" min="0" value="${sumExtra}">
                 </td>
                 <td>
-                    <input type="number" class="form-control" name="variants[${idx}][stock]" min="0" value="${stockDefault}">
+                    <input type="number" class="form-control variant-stock-input" name="variants[${idx}][stock]" min="0" value="${stockDefault}" 
+                           onchange="updateTotalVariantStock()">
                 </td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-outline-danger remove-variant-row"><i class="ri-delete-bin-line"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-variant-row" onclick="setTimeout(updateTotalVariantStock, 0)">
+                        <i class="ri-delete-bin-line"></i>
+                    </button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -1220,10 +1300,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const v = parseInt(inp.value, 10);
             if (!isNaN(v)) total += v;
         });
+        // Cập nhật cả display và hidden input của formats[physical][stock]
         const totalDisplay = document.getElementById('total_variant_stock_display');
         if (totalDisplay) totalDisplay.value = total;
-        const totalHidden = document.getElementById('total_variant_stock_hidden');
-        if (totalHidden) totalHidden.value = total;
+        
+        // Đảm bảo giá trị được cập nhật vào input của format
+        const formatStockInput = document.querySelector('input[name="formats[physical][stock]"]');
+        if (formatStockInput) formatStockInput.value = total;
+        
+        console.log('Updated total stock:', total); // Debug log
     }
     
     // Sinh suffix SKU từ value name (đơn giản hoá)

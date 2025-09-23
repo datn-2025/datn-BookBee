@@ -230,10 +230,10 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ $preorder->book->cover_image ? asset('storage/' . $preorder->book->cover_image) : asset('images/default-book.svg') }}" 
-                                                 alt="{{ $preorder->book->title }}" class="me-2" style="width: 40px; height: 50px; object-fit: cover;">
+                                            <img src="{{ ($preorder->book && $preorder->book->cover_image) ? asset('storage/' . $preorder->book->cover_image) : asset('images/default-book.svg') }}" 
+                                                 alt="{{ $preorder->book ? $preorder->book->title : 'No title' }}" class="me-2" style="width: 40px; height: 50px; object-fit: cover;">
                                             <div>
-                                                <strong>{{ Str::limit($preorder->book->title, 30) }}</strong><br>
+                                                <strong>{{ $preorder->book ? Str::limit($preorder->book->title, 30) : 'Sách không tồn tại' }}</strong><br>
                                                 <small class="text-muted">Ngày ra mắt: {{ $preorder->expected_delivery_date ? $preorder->expected_delivery_date->format('d/m/Y') : 'N/A' }}</small>
                                             </div>
                                         </div>
@@ -292,9 +292,9 @@
                                                     </li>
                                                 @elseif($preorder->isApproved())
                                                     <li>
-                                                        @if($preorder->book->isReleased())
+                                                        @if($preorder->book && $preorder->book->isReleased())
                                                             <button type="button" class="dropdown-item text-success" 
-                                                                    onclick="showConvertModal('{{ $preorder->id }}', '{{ $preorder->book->title }}', true, '{{ $preorder->book->release_date->format('d/m/Y') }}')">
+                                                                    onclick="showConvertModal('{{ $preorder->id }}', '{{ $preorder->book ? $preorder->book->title : 'No title' }}', true, '{{ $preorder->book && $preorder->book->release_date ? $preorder->book->release_date->format('d/m/Y') : 'N/A' }}')">
                                                                 <i class="fas fa-exchange-alt"></i>
                                                                 Chuyển thành đơn hàng
                                                             </button>
@@ -309,7 +309,7 @@
                                                 @elseif($preorder->isReadyToConvert())
                                                     <li>
                                                         <button type="button" class="dropdown-item text-info" 
-                                                                onclick="showConvertModal('{{ $preorder->id }}', '{{ $preorder->book->title }}', true, '{{ $preorder->book->release_date->format('d/m/Y') }}')">
+                                                                onclick="showConvertModal('{{ $preorder->id }}', '{{ $preorder->book ? $preorder->book->title : 'No title' }}', true, '{{ $preorder->book && $preorder->book->release_date ? $preorder->book->release_date->format('d/m/Y') : 'N/A' }}')">
                                                             <i class="fas fa-rocket"></i>
                                                             Chuyển thành đơn hàng
                                                         </button>

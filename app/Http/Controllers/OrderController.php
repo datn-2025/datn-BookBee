@@ -582,8 +582,10 @@ class OrderController extends Controller
 
         $order->load([
             'orderItems.book.images',
+            'orderItems.book.authors',
             'orderItems.bookFormat',
             'orderItems.collection',
+            'orderItems.ebookDownloads',
             'orderStatus',
             'paymentStatus',
             'payments.paymentMethod',

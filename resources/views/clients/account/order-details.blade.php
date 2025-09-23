@@ -763,6 +763,46 @@
                                                     @if($item->book->authors->isNotEmpty())
                                                         <p class="text-sm text-gray-600">Tác giả: {{ $item->book->authors->first()->name }}</p>
                                                     @endif
+                                                    {{-- Lịch sử tải xuống ebook (đã eager load) --}}
+                                                    @php
+                                                        $downloads = $item->ebookDownloads ?? collect();
+                                                    @endphp
+                                                    @if($downloads->count() > 0)
+                                                        <div class="mt-3">
+                                                            <div class="flex items-center gap-2 mb-2">
+                                                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v8m0 0l-3-3m3 3l3-3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H9l-4 4v10a2 2 0 002 2z" />
+                                                                </svg>
+                                                                <span class="text-xs font-bold text-green-700 uppercase tracking-wide">Lịch sử tải xuống ({{ $downloads->count() }})</span>
+                                                            </div>
+                                                            <div class="overflow-x-auto">
+                                                                <table class="min-w-full text-xs border border-green-200">
+                                                                    <thead class="bg-green-100 text-green-800">
+                                                                        <tr>
+                                                                            <th class="px-2 py-1 text-left border border-green-200 w-10">#</th>
+                                                                            <th class="px-2 py-1 text-left border border-green-200">Thời gian</th>
+                                                                            <th class="px-2 py-1 text-left border border-green-200">IP</th>
+                                                                            <th class="px-2 py-1 text-left border border-green-200">Thiết bị</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        @foreach($downloads->sortByDesc('downloaded_at')->values() as $idx => $dl)
+                                                                            <tr class="odd:bg-white even:bg-green-50">
+                                                                                <td class="px-2 py-1 border border-green-200">{{ $idx + 1 }}</td>
+                                                                                <td class="px-2 py-1 border border-green-200">{{ optional($dl->downloaded_at)->format('d/m/Y H:i') }}</td>
+                                                                                <td class="px-2 py-1 border border-green-200">{{ $dl->ip_address ?? '-' }}</td>
+                                                                                <td class="px-2 py-1 border border-green-200 truncate max-w-[220px]" title="{{ $dl->user_agent }}">{{ 
+                                                                                    \Illuminate\Support\Str::limit($dl->user_agent ?? '-', 40) 
+                                                                                }}</td>
+                                                                            </tr>
+                                                                        @endforeach
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    @else
+                                                        <p class="mt-3 text-xs text-gray-500">Chưa có lượt tải xuống nào.</p>
+                                                    @endif
                                                 </div>
                                                 <div class="flex gap-2">
                                                     @if(in_array($order->paymentStatus->name, ['Đang Hoàn Tiền', 'Đã Hoàn Tiền']))
